@@ -1,3 +1,41 @@
 <resources>
-    <string name="app_name">Kern Launcher</string>
+    <string name="app_name">Fokus Launcher</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_welcome_title">Fokus Launcher</string>
+    <string name="onboarding_welcome_subtitle">A minimal home screen</string>
+    <string name="onboarding_get_started">Get started</string>
+    <string name="onboarding_location_title">Location for weather</string>
+    <string name="onboarding_location_subtitle">We use your location to show the current weather on your home screen. If you skip, the weather widget will be hidden.</string>
+    <string name="onboarding_location_allow">Allow</string>
+    <string name="onboarding_location_skip">Skip</string>
+    <string name="onboarding_set_default_title">Set as default</string>
+    <string name="onboarding_set_default_subtitle">Set Fokus as your default to use it every time you go home</string>
+    <string name="onboarding_set_default_button">Set as default</string>
+    <string name="onboarding_customize_title">Customize home screen</string>
+    <string name="onboarding_customize_subtitle">Pick the apps that appear on your home screen</string>
+    <string name="onboarding_choose_apps">Choose apps</string>
+    <string name="onboarding_swipe_title">Swipe shortcuts</string>
+    <string name="onboarding_swipe_subtitle">Swipe left or right on the home screen to launch your favorite apps</string>
+    <string name="onboarding_swipe_left">Swipe left</string>
+    <string name="onboarding_swipe_right">Swipe right</string>
+    <string name="onboarding_swipe_change">Change</string>
+    <string name="onboarding_swipe_not_set">Not set</string>
+    <string name="onboarding_swipe_pick_app">Select app</string>
+    <string name="onboarding_swipe_cancel">Cancel</string>
+    <string name="onboarding_tips_title">Quick tips</string>
+    <string name="onboarding_tip_swipe">Swipe up to open app drawer</string>
+    <string name="onboarding_tip_longpress">Long-press on home to edit or open settings</string>
+    <string name="onboarding_done">Done</string>
+    <string name="onboarding_skip">Skip</string>
+    <string name="onboarding_next">Next</string>
+
+    <!-- Settings - Weather location (shown only when disabled) -->
+    <string name="settings_weather_location_disabled">Enable location for weather</string>
+    <string name="settings_weather_location_disabled_subtitle">Tap to allow location access</string>
+    <string name="settings_weather_location_enable_button">Enable</string>
+
+    <!-- Settings - Weather app -->
+    <string name="settings_weather_app_system_default">System default</string>
+    <string name="settings_weather_app_not_configured">Not configured</string>
 </resources>
