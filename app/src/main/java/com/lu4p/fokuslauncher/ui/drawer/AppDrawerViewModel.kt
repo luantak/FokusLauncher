@@ -107,7 +107,10 @@ constructor(
     private fun loadApps() {
         viewModelScope.launch {
             val apps = withContext(Dispatchers.IO) { appRepository.getInstalledApps() }
-            _uiState.update { it.copy(allApps = apps) }
+            _uiState.update { state ->
+                val filtered = applyFilters(state.searchQuery, state.selectedCategory, apps)
+                state.copy(allApps = apps, filteredApps = filtered)
+            }
         }
     }
 

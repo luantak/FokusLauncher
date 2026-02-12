@@ -360,5 +360,31 @@ class AppDrawerViewModelTest {
         // Verify apps are reloaded
         verify(atLeast = 2) { appRepository.getInstalledApps() }
     }
+
+    @Test
+    fun `package changes reapply active search query`() = runTest {
+        // Set a search query
+        viewModel.onSearchQueryChanged("cal")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val stateBeforeChange = viewModel.uiState.value
+        assertEquals(2, stateBeforeChange.filteredApps.size)
+        assertEquals("cal", stateBeforeChange.searchQuery)
+
+        // Simulate a package being removed
+        val appsAfterRemoval = testApps.filter { it.packageName != "com.lu4p.calendar" }
+        every { appRepository.getInstalledApps() } returns appsAfterRemoval
+
+        // Emit a package change event
+        packageChangesFlow.emit(PackageChange.Removed("com.lu4p.calendar"))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Verify the search query is still active and filters are reapplied
+        val stateAfterChange = viewModel.uiState.value
+        assertEquals("cal", stateAfterChange.searchQuery)
+        assertEquals(1, stateAfterChange.filteredApps.size) // Only Calculator remains
+        assertTrue(stateAfterChange.filteredApps.any { it.label == "Calculator" })
+        assertFalse(stateAfterChange.filteredApps.any { it.label == "Calendar" })
+    }
 }
 }
