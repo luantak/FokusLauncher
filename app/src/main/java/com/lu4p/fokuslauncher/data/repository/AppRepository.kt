@@ -7,6 +7,7 @@ import android.content.pm.ResolveInfo
 import android.os.Build
 import android.os.Bundle
 import android.os.Process
+import android.util.Log
 import com.lu4p.fokuslauncher.data.database.dao.AppDao
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryEntity
 import com.lu4p.fokuslauncher.data.database.entity.CategoryEntity
@@ -276,7 +277,7 @@ constructor(@ApplicationContext private val context: Context, private val appDao
             }
         } catch (e: Exception) {
             // Log error but don't crash - categories will be created later if needed
-            android.util.Log.e("AppRepository", "Failed to initialize predefined categories", e)
+            Log.e("AppRepository", "Failed to initialize predefined categories", e)
         }
     }
 

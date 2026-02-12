@@ -258,6 +258,7 @@ private fun AppInCategoryItem(
         modifier = Modifier
             .fillMaxWidth()
             .combinedClickable(
+                onClick = {},  // Empty click for standard interaction
                 onLongClick = { showRemoveDialog = true }
             )
             .padding(horizontal = 24.dp, vertical = 12.dp)
