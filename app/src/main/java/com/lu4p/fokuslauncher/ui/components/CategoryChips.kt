@@ -14,6 +14,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.lu4p.fokuslauncher.ui.theme.ChipBackground
 import com.lu4p.fokuslauncher.ui.theme.ChipSelectedBackground
@@ -38,59 +39,44 @@ fun CategoryChips(
     ) {
         categories.forEach { category ->
             val isSelected = category == selectedCategory
-            if (onCategoryLongPress != null) {
-                FilterChip(
-                    selected = isSelected,
-                    onClick = {},  // handled by combinedClickable
-                    label = {
-                        Text(
-                            text = category,
-                            style = MaterialTheme.typography.labelMedium
-                        )
-                    },
-                    shape = RoundedCornerShape(20.dp),
-                    colors = FilterChipDefaults.filterChipColors(
-                        containerColor = ChipBackground,
-                        selectedContainerColor = ChipSelectedBackground,
-                        labelColor = MaterialTheme.colorScheme.onSurface,
-                        selectedLabelColor = MaterialTheme.colorScheme.onSurface
-                    ),
-                    border = FilterChipDefaults.filterChipBorder(
-                        borderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                        selectedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                        enabled = true,
-                        selected = isSelected
-                    ),
-                    modifier = Modifier.combinedClickable(
-                        onClick = { onCategorySelected(category) },
-                        onLongClick = { onCategoryLongPress(category) }
-                    )
+            val chipModifier = if (onCategoryLongPress != null) {
+                Modifier.combinedClickable(
+                    onClick = { onCategorySelected(category) },
+                    onLongClick = { onCategoryLongPress(category) }
                 )
             } else {
-                FilterChip(
-                    selected = isSelected,
-                    onClick = { onCategorySelected(category) },
-                    label = {
-                        Text(
-                            text = category,
-                            style = MaterialTheme.typography.labelMedium
-                        )
-                    },
-                    shape = RoundedCornerShape(20.dp),
-                    colors = FilterChipDefaults.filterChipColors(
-                        containerColor = ChipBackground,
-                        selectedContainerColor = ChipSelectedBackground,
-                        labelColor = MaterialTheme.colorScheme.onSurface,
-                        selectedLabelColor = MaterialTheme.colorScheme.onSurface
-                    ),
-                    border = FilterChipDefaults.filterChipBorder(
-                        borderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                        selectedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                        enabled = true,
-                        selected = isSelected
-                    )
-                )
+                Modifier
             }
+            
+            FilterChip(
+                selected = isSelected,
+                onClick = { 
+                    if (onCategoryLongPress == null) {
+                        onCategorySelected(category)
+                    }
+                    // If onCategoryLongPress is set, clicks are handled by combinedClickable
+                },
+                label = {
+                    Text(
+                        text = category,
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                },
+                shape = RoundedCornerShape(20.dp),
+                colors = FilterChipDefaults.filterChipColors(
+                    containerColor = ChipBackground,
+                    selectedContainerColor = ChipSelectedBackground,
+                    labelColor = MaterialTheme.colorScheme.onSurface,
+                    selectedLabelColor = MaterialTheme.colorScheme.onSurface
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    borderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                    selectedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                    enabled = true,
+                    selected = isSelected
+                ),
+                modifier = chipModifier
+            )
         }
     }
 }

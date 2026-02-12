@@ -117,19 +117,24 @@ constructor(
             combine(
                             appRepository.getHiddenPackageNames(),
                             appRepository.getAllRenamedApps(),
-                            appRepository.getAllAppCategories()
-                    ) { hiddenNames, renamedApps, categories ->
-                Triple(
+                            appRepository.getAllAppCategories(),
+                            appRepository.getAllCategories()
+                    ) { hiddenNames, renamedApps, appCategories, customCategories ->
+                Quadruple(
                         hiddenNames.toSet(),
                         renamedApps.associate { it.packageName to it.customName },
-                        categories.associate { it.packageName to it.category }
+                        appCategories.associate { it.packageName to it.category },
+                        customCategories.map { it.name }.toSet()
                 )
             }
-                    .collect { (hiddenSet, renameMap, categoryMap) ->
-                        rebuildVisibleApps(hiddenSet, renameMap, categoryMap)
+                    .collect { (hiddenSet, renameMap, categoryMap, customCategoryNames) ->
+                        rebuildVisibleApps(hiddenSet, renameMap, categoryMap, customCategoryNames)
                     }
         }
     }
+    
+    // Helper data class for combining 4 flows
+    private data class Quadruple<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
 
     /**
      * Applies hidden + renamed overlays and updates filteredApps. Runs the expensive PackageManager
@@ -138,7 +143,8 @@ constructor(
     private suspend fun rebuildVisibleApps(
             hiddenSet: Set<String>,
             renameMap: Map<String, String>,
-            categoryMap: Map<String, String>
+            categoryMap: Map<String, String>,
+            customCategoryNames: Set<String>
     ) {
         val base = withContext(Dispatchers.IO) { appRepository.getInstalledApps() }
         val visible =
@@ -159,6 +165,7 @@ constructor(
             val categories =
                     deriveCategories(
                             apps = visible,
+                            customCategories = customCategoryNames,
                             includePrivate =
                                     state.isPrivateSpaceUnlocked &&
                                             state.privateSpaceApps.isNotEmpty()
@@ -399,12 +406,17 @@ constructor(
         }
     }
 
-    private fun deriveCategories(apps: List<AppInfo>, includePrivate: Boolean): List<String> {
-        val dynamic = apps.map { it.category.trim() }.filter { it.isNotBlank() }.distinct().sorted()
+    private fun deriveCategories(apps: List<AppInfo>, customCategories: Set<String>, includePrivate: Boolean): List<String> {
+        // Get categories from apps that have been assigned
+        val dynamicFromApps = apps.map { it.category.trim() }.filter { it.isNotBlank() }.toSet()
+        
+        // Combine with custom categories from database (this includes predefined categories)
+        val allCategories = (dynamicFromApps + customCategories).sorted()
+        
         return buildList {
             add(CategoryConstants.ALL_APPS)
             if (includePrivate) add(CategoryConstants.PRIVATE)
-            addAll(dynamic)
+            addAll(allCategories)
         }
     }
 
