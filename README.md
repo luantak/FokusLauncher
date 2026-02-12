@@ -44,6 +44,16 @@ Fokus Launcher targets Android 8.0+ (API 26). It currently builds with compile
 SDK / target SDK `36`, Gradle `9.1.0`, AGP `9.0.0`, and JDK toolchain `21` (the
 project code is compiled with Java 11 compatibility).
 
+### Development Environment
+
+- JDK 21 installed and available via `JAVA_HOME`
+- Android SDK with platform-tools, `platforms;android-36`, and `build-tools;36.0.0`
+- Gradle wrapper (included in this repository)
+
+Android Studio is optional. The Gradle commands below are sufficient for builds
+and tests; use Android Studio only if you want the emulator, layout inspector,
+or Compose previews.
+
 ```bash
 ./gradlew assembleDebug
 ```

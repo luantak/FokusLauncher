@@ -22,6 +22,9 @@ Fokus Launcher is an Android launcher application designed for a minimal, clean 
 
 **CRITICAL:** Always use JDK 21. The project requires JDK 21 as specified in the GitHub Actions workflow. The `gradle/gradle-daemon-jvm.properties` file specifies a JetBrains JDK vendor, but in environments where this is not available (like CI with Temurin), the build may require toolchain auto-provisioning or manual JDK configuration.
 
+Android Studio is optional. The Gradle commands below are sufficient for builds
+and unit tests.
+
 ### Building the Project
 
 ```bash
@@ -149,7 +152,6 @@ The project uses GitHub Actions for CI/CD (`.github/workflows/android-build-and-
 - Always test builds locally before pushing
 - Ensure unit tests pass with `./gradlew testDebugUnitTest`
 - Do not commit changes that break the build or tests
-- Release builds in CI require all signing secrets to be configured
 
 ## Common Development Tasks
 
@@ -234,12 +236,6 @@ When adding features that require new permissions, update both `AndroidManifest.
 - If tests time out: Increase timeout in test configuration
 - If coroutine tests fail: Ensure test dispatcher is properly set up
 - If Hilt tests fail: Verify `@HiltAndroidTest` annotation and test runner are configured
-
-### Release Build Issues
-
-- Release builds require signing configuration (see Build Instructions section)
-- ProGuard may require additional rules for reflection-based libraries
-- Test release builds locally before creating a release
 
 ## Best Practices
 

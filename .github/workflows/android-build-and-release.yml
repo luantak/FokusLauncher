@@ -32,9 +32,8 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
-
-      - name: Install SDK packages
-        run: sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+        with:
+          packages: "tools platform-tools platforms;android-36 build-tools;36.0.0"
 
       - name: Build debug APK
         run: ./gradlew :app:assembleDebug
@@ -66,9 +65,8 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
-
-      - name: Install SDK packages
-        run: sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+        with:
+          packages: "tools platform-tools platforms;android-36 build-tools;36.0.0"
 
       - name: Validate signing secrets
         env:
