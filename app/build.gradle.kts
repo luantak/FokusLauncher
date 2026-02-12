@@ -1,3 +1,5 @@
+import org.gradle.api.GradleException
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.ksp)
@@ -21,6 +23,22 @@ val hasReleaseSigning = !releaseKeystorePath.isNullOrBlank() &&
         !releaseKeystorePassword.isNullOrBlank() &&
         !releaseKeyAlias.isNullOrBlank() &&
         !releaseKeyPassword.isNullOrBlank()
+val missingReleaseSigningInputs = buildList {
+    if (releaseKeystorePath.isNullOrBlank()) add("ANDROID_KEYSTORE_PATH")
+    if (releaseKeystorePassword.isNullOrBlank()) add("ANDROID_KEYSTORE_PASSWORD")
+    if (releaseKeyAlias.isNullOrBlank()) add("ANDROID_KEY_ALIAS")
+    if (releaseKeyPassword.isNullOrBlank()) add("ANDROID_KEY_PASSWORD")
+}
+val isCi = providers.environmentVariable("CI").orNull == "true"
+val isReleaseTaskRequested = gradle.startParameter.taskNames.any {
+    it.contains("release", ignoreCase = true)
+}
+
+if (isCi && isReleaseTaskRequested && missingReleaseSigningInputs.isNotEmpty()) {
+    throw GradleException(
+            "Release signing is required in CI. Missing: ${missingReleaseSigningInputs.joinToString(", ")}"
+    )
+}
 
 android {
     namespace = "com.lu4p.fokuslauncher"

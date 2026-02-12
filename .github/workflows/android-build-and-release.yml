@@ -1,13 +1,17 @@
 name: Android Build
 
 on:
+  workflow_dispatch:
   push:
     branches:
+      - main
       - master
   pull_request:
   release:
     types:
       - published
+      - released
+      - prereleased
 
 jobs:
   build:
@@ -66,8 +70,35 @@ jobs:
       - name: Install SDK packages
         run: sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
 
+      - name: Validate signing secrets
+        env:
+          ANDROID_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          missing=()
+          [ -n "${ANDROID_KEYSTORE_B64}" ] || missing+=("ANDROID_KEYSTORE_B64")
+          [ -n "${ANDROID_KEYSTORE_PASSWORD}" ] || missing+=("ANDROID_KEYSTORE_PASSWORD")
+          [ -n "${ANDROID_KEY_ALIAS}" ] || missing+=("ANDROID_KEY_ALIAS")
+          [ -n "${ANDROID_KEY_PASSWORD}" ] || missing+=("ANDROID_KEY_PASSWORD")
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "Missing required GitHub secrets: ${missing[*]}"
+            exit 1
+          fi
+
       - name: Decode release keystore
-        run: echo "${{ secrets.ANDROID_KEYSTORE_B64 }}" | base64 --decode > "${{ runner.temp }}/release.keystore"
+        run: printf '%s' "${{ secrets.ANDROID_KEYSTORE_B64 }}" | base64 --decode > "${{ runner.temp }}/release.keystore"
+
+      - name: Validate keystore and alias
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          keytool -list \
+            -keystore "${{ runner.temp }}/release.keystore" \
+            -storepass "${ANDROID_KEYSTORE_PASSWORD}" \
+            -alias "${ANDROID_KEY_ALIAS}" > /dev/null
 
       - name: Build release APK
         env:
