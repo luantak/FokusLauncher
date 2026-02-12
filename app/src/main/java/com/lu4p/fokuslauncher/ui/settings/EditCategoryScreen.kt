@@ -252,12 +252,10 @@ private fun AppInCategoryItem(
     ) {
         app.icon?.let {
             androidx.compose.foundation.Image(
-                bitmap = androidx.compose.ui.graphics.asImageBitmap(
-                    android.graphics.drawable.BitmapDrawable(
-                        androidx.compose.ui.platform.LocalContext.current.resources,
-                        it.toBitmap()
-                    ).bitmap
-                ),
+                bitmap = android.graphics.drawable.BitmapDrawable(
+                    androidx.compose.ui.platform.LocalContext.current.resources,
+                    it.toBitmap()
+                ).bitmap.asImageBitmap(),
                 contentDescription = null,
                 modifier = Modifier.size(40.dp)
             )
