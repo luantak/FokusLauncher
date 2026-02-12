@@ -45,7 +45,7 @@ fun ManageCategoriesScreen(
     onNavigateBack: () -> Unit = {},
     onEditCategory: (String) -> Unit = {}
 ) {
-    val customCategories by viewModel.customCategories.collectAsStateWithLifecycle()
+    val customCategories by viewModel.customCategories.collectAsStateWithLifecycle(initialValue = emptyList())
     var showCreateDialog by remember { mutableStateOf(false) }
     var newCategoryName by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
