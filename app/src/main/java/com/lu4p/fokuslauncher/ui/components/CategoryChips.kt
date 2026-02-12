@@ -44,15 +44,7 @@ fun CategoryChips(
                 label = {
                     Text(
                         text = category,
-                        style = MaterialTheme.typography.labelMedium,
-                        modifier = if (onCategoryLongPress != null) {
-                            Modifier.combinedClickable(
-                                onClick = { onCategorySelected(category) },
-                                onLongClick = { onCategoryLongPress(category) }
-                            )
-                        } else {
-                            Modifier
-                        }
+                        style = MaterialTheme.typography.labelMedium
                     )
                 },
                 shape = RoundedCornerShape(20.dp),
@@ -67,7 +59,15 @@ fun CategoryChips(
                     selectedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                     enabled = true,
                     selected = isSelected
-                )
+                ),
+                modifier = if (onCategoryLongPress != null) {
+                    Modifier.combinedClickable(
+                        onClick = { onCategorySelected(category) },
+                        onLongClick = { onCategoryLongPress(category) }
+                    )
+                } else {
+                    Modifier
+                }
             )
         }
     }

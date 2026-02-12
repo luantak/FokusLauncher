@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.data.model.AppInfo
+import com.lu4p.fokuslauncher.utils.toBitmap
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -159,19 +160,4 @@ private fun SelectableAppItem(
             onCheckedChange = { onToggle() }
         )
     }
-}
-
-private fun android.graphics.drawable.Drawable.toBitmap(): android.graphics.Bitmap {
-    if (this is android.graphics.drawable.BitmapDrawable) {
-        return bitmap
-    }
-    val bitmap = android.graphics.Bitmap.createBitmap(
-        intrinsicWidth.coerceAtLeast(1),
-        intrinsicHeight.coerceAtLeast(1),
-        android.graphics.Bitmap.Config.ARGB_8888
-    )
-    val canvas = android.graphics.Canvas(bitmap)
-    setBounds(0, 0, canvas.width, canvas.height)
-    draw(canvas)
-    return bitmap
 }
