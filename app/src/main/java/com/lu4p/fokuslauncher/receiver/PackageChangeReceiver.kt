@@ -21,16 +21,23 @@ class PackageChangeReceiver : BroadcastReceiver() {
     @Inject
     lateinit var appRepository: AppRepository
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
             Intent.ACTION_PACKAGE_ADDED,
             Intent.ACTION_PACKAGE_REMOVED,
             Intent.ACTION_PACKAGE_CHANGED -> {
-                // Invalidate the app repository cache so the next load will get fresh data
+                // Use goAsync() to extend the receiver's lifetime beyond onReceive()
+                val pendingResult = goAsync()
+                val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+                
                 scope.launch {
-                    appRepository.invalidateCache()
+                    try {
+                        // Invalidate the app repository cache so the next load will get fresh data
+                        appRepository.invalidateCache()
+                    } finally {
+                        // Signal that the async work is complete
+                        pendingResult.finish()
+                    }
                 }
             }
         }
