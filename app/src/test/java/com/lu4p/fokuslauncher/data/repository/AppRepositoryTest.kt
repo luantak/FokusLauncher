@@ -276,7 +276,7 @@ class AppRepositoryTest {
     }
 
     @Test
-    fun `onPackageRemoved emits removal event`() = runTest {
+    fun `onPackageRemoved invalidates cache and emits event`() = runTest {
         val resolveInfos = listOf(
             createResolveInfo("com.lu4p.app1", "App 1"),
             createResolveInfo("com.lu4p.app2", "App 2")
@@ -285,6 +285,7 @@ class AppRepositoryTest {
             packageManager.queryIntentActivities(any<Intent>(), any<Int>())
         } returns resolveInfos
 
+        // Load apps initially
         repository.getInstalledApps()
 
         val events = mutableListOf<PackageChange>()
@@ -294,12 +295,19 @@ class AppRepositoryTest {
             }
         }
 
+        // Simulate package removal by updating PackageManager response
+        val appsAfterRemoval = listOf(createResolveInfo("com.lu4p.app2", "App 2"))
+        every {
+            packageManager.queryIntentActivities(any<Intent>(), any<Int>())
+        } returns appsAfterRemoval
+
         repository.onPackageRemoved("com.lu4p.app1")
 
         assertEquals(1, events.size)
         assertTrue(events[0] is PackageChange.Removed)
         assertEquals("com.lu4p.app1", (events[0] as PackageChange.Removed).packageName)
         
+        // Cache should be invalidated, so next call reloads from PackageManager
         val apps = repository.getInstalledApps()
         assertEquals(1, apps.size)
         assertEquals("com.lu4p.app2", apps[0].packageName)

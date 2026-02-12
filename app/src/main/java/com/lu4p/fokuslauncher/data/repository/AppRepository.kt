@@ -94,59 +94,27 @@ constructor(@ApplicationContext private val context: Context, private val appDao
     }
 
     /**
-     * Handles a package being added by adding it to the cached list.
+     * Handles a package being added by invalidating cache and emitting event.
      */
     suspend fun onPackageAdded(packageName: String) {
-        val pm = context.packageManager
-        val mainIntent = Intent(Intent.ACTION_MAIN, null).apply { 
-            addCategory(Intent.CATEGORY_LAUNCHER)
-            `package` = packageName
-        }
-        
-        val resolveInfo = pm.queryIntentActivities(mainIntent, 0).firstOrNull()
-        val newApp = resolveInfo?.let { createAppInfoFromResolveInfo(it, packageName) }
-        
-        if (newApp != null) {
-            cachedApps?.let { apps ->
-                cachedApps = (apps + newApp).sortedBy { it.label.lowercase() }
-            }
-            
-            _packageChanges.emit(PackageChange.Added(packageName))
-        }
+        cachedApps = null
+        _packageChanges.emit(PackageChange.Added(packageName))
     }
 
     /**
-     * Handles a package being removed by removing it from the cached list.
+     * Handles a package being removed by invalidating cache and emitting event.
      */
     suspend fun onPackageRemoved(packageName: String) {
-        cachedApps?.let { apps ->
-            cachedApps = apps.filter { it.packageName != packageName }
-        }
+        cachedApps = null
         _packageChanges.emit(PackageChange.Removed(packageName))
     }
 
     /**
-     * Handles a package being changed by updating it in the cached list.
+     * Handles a package being changed by invalidating cache and emitting event.
      */
     suspend fun onPackageChanged(packageName: String) {
-        val pm = context.packageManager
-        val mainIntent = Intent(Intent.ACTION_MAIN, null).apply { 
-            addCategory(Intent.CATEGORY_LAUNCHER)
-            `package` = packageName
-        }
-        
-        val resolveInfo = pm.queryIntentActivities(mainIntent, 0).firstOrNull()
-        val updatedApp = resolveInfo?.let { createAppInfoFromResolveInfo(it, packageName) }
-        
-        if (updatedApp != null) {
-            cachedApps?.let { apps ->
-                cachedApps = apps.map { app ->
-                    if (app.packageName == packageName) updatedApp else app
-                }.sortedBy { it.label.lowercase() }
-            }
-            
-            _packageChanges.emit(PackageChange.Changed(packageName))
-        }
+        cachedApps = null
+        _packageChanges.emit(PackageChange.Changed(packageName))
     }
 
     /**
@@ -319,27 +287,6 @@ constructor(@ApplicationContext private val context: Context, private val appDao
         appDao.clearAllHiddenApps()
         appDao.clearAllRenamedApps()
         appDao.clearAllAppCategories()
-    }
-
-    /**
-     * Creates an AppInfo from a ResolveInfo and package name.
-     * Returns null if the app should be excluded (e.g., is this launcher).
-     */
-    private fun createAppInfoFromResolveInfo(resolveInfo: ResolveInfo, packageName: String): AppInfo? {
-        if (resolveInfo.activityInfo.packageName == context.packageName) return null
-        
-        val pm = context.packageManager
-        val label = resolveInfo.loadLabel(pm).toString()
-        return AppInfo(
-            packageName = packageName,
-            label = label,
-            icon = try {
-                resolveInfo.loadIcon(pm)
-            } catch (_: Exception) {
-                null
-            },
-            category = inferCategory(packageName, label)
-        )
     }
 
     private fun inferCategory(packageName: String, label: String): String {
