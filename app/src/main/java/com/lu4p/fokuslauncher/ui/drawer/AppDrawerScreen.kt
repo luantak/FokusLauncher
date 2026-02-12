@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.data.model.AppInfo
+import com.lu4p.fokuslauncher.data.model.CategoryConstants
 import com.lu4p.fokuslauncher.ui.components.CategoryChips
 import com.lu4p.fokuslauncher.ui.components.SearchBar
 import kotlinx.coroutines.delay
@@ -106,7 +107,7 @@ fun AppDrawerScreen(
 
     // Category action sheet on long-press
     uiState.selectedCategoryForAction?.let { categoryName ->
-        val isSystemCategory = categoryName == "All apps" || categoryName == "Private"
+        val isSystemCategory = CategoryConstants.isSystemCategory(categoryName)
         CategoryActionSheet(
                 categoryName = categoryName,
                 onDismiss = viewModel::dismissCategoryActionSheet,

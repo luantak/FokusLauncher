@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.lu4p.fokuslauncher.data.model.CategoryConstants
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -169,8 +170,7 @@ fun ManageCategoriesScreen(
                                 trimmed.isEmpty() -> {
                                     errorMessage = "Category name cannot be empty"
                                 }
-                                trimmed.equals("All apps", ignoreCase = true) ||
-                                        trimmed.equals("Private", ignoreCase = true) -> {
+                                CategoryConstants.isSystemCategory(trimmed) -> {
                                     errorMessage = "This category name is reserved"
                                 }
                                 else -> {

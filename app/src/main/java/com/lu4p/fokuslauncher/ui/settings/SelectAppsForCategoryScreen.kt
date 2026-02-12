@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.data.model.AppInfo
+import com.lu4p.fokuslauncher.data.model.CategoryConstants
 import com.lu4p.fokuslauncher.utils.toBitmap
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -88,7 +89,7 @@ fun SelectAppsForCategoryScreen(
 
             val filteredApps = allApps.allApps.filter {
                 // Don't show private space apps
-                it.category != "Private"
+                it.category != CategoryConstants.PRIVATE
             }
 
             items(filteredApps) { app ->

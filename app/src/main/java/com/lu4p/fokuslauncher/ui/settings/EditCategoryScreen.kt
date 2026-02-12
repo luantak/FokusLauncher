@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.data.model.AppInfo
+import com.lu4p.fokuslauncher.data.model.CategoryConstants
 import com.lu4p.fokuslauncher.utils.toBitmap
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -178,8 +179,7 @@ fun EditCategoryScreen(
                                 trimmed.isEmpty() -> {
                                     errorMessage = "Category name cannot be empty"
                                 }
-                                trimmed.equals("All apps", ignoreCase = true) ||
-                                        trimmed.equals("Private", ignoreCase = true) -> {
+                                CategoryConstants.isSystemCategory(trimmed) -> {
                                     errorMessage = "This category name is reserved"
                                 }
                                 trimmed == categoryName -> {

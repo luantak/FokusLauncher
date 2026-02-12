@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.AppInfo
+import com.lu4p.fokuslauncher.data.model.CategoryConstants
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
@@ -26,8 +27,8 @@ data class AppDrawerUiState(
         val allApps: List<AppInfo> = emptyList(),
         val filteredApps: List<AppInfo> = emptyList(),
         val searchQuery: String = "",
-        val selectedCategory: String = "All apps",
-        val categories: List<String> = listOf("All apps"),
+        val selectedCategory: String = CategoryConstants.ALL_APPS,
+        val categories: List<String> = listOf(CategoryConstants.ALL_APPS),
         val selectedApp: AppInfo? = null,
         val selectedCategoryForAction: String? = null,
         val showMenu: Boolean = false,
@@ -349,7 +350,7 @@ constructor(
 
     fun resetSearchState() {
         _uiState.update { state ->
-            val defaultCategory = "All apps"
+            val defaultCategory = CategoryConstants.ALL_APPS
             state.copy(
                     searchQuery = "",
                     selectedCategory = defaultCategory,
@@ -367,12 +368,12 @@ constructor(
     // --- Filtering ---
 
     private fun applyFilters(query: String, category: String, apps: List<AppInfo>): List<AppInfo> {
-        if (category.equals("Private", ignoreCase = true)) return emptyList()
+        if (category.equals(CategoryConstants.PRIVATE, ignoreCase = true)) return emptyList()
         var result = apps
         if (query.isNotBlank()) {
             result = result.filter { it.label.contains(query, ignoreCase = true) }
         }
-        if (category.isNotBlank() && category != "All apps") {
+        if (category.isNotBlank() && category != CategoryConstants.ALL_APPS) {
             result = result.filter { it.category.equals(category, ignoreCase = true) }
         }
         return result
@@ -383,7 +384,7 @@ constructor(
             selectedCategory: String,
             privateApps: List<AppInfo>
     ): List<AppInfo> {
-        if (selectedCategory != "All apps" && selectedCategory != "Private") return emptyList()
+        if (selectedCategory != CategoryConstants.ALL_APPS && selectedCategory != CategoryConstants.PRIVATE) return emptyList()
         return if (query.isBlank()) {
             privateApps
         } else {
@@ -394,8 +395,8 @@ constructor(
     private fun deriveCategories(apps: List<AppInfo>, includePrivate: Boolean): List<String> {
         val dynamic = apps.map { it.category.trim() }.filter { it.isNotBlank() }.distinct().sorted()
         return buildList {
-            add("All apps")
-            if (includePrivate) add("Private")
+            add(CategoryConstants.ALL_APPS)
+            if (includePrivate) add(CategoryConstants.PRIVATE)
             addAll(dynamic)
         }
     }
