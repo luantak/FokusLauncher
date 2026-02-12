@@ -28,7 +28,7 @@ class PackageChangeReceiverTest {
     }
 
     @Test
-    fun `onReceive with PACKAGE_ADDED invalidates cache`() = runTest {
+    fun `onReceive with PACKAGE_ADDED calls onPackageAdded`() = runTest {
         val intent = Intent(Intent.ACTION_PACKAGE_ADDED).apply {
             data = android.net.Uri.parse("package:com.example.app")
         }
@@ -36,11 +36,11 @@ class PackageChangeReceiverTest {
         receiver.onReceive(context, intent)
         advanceUntilIdle()
 
-        coVerify { appRepository.invalidateCache() }
+        coVerify { appRepository.onPackageAdded("com.example.app") }
     }
 
     @Test
-    fun `onReceive with PACKAGE_REMOVED invalidates cache`() = runTest {
+    fun `onReceive with PACKAGE_REMOVED calls onPackageRemoved`() = runTest {
         val intent = Intent(Intent.ACTION_PACKAGE_REMOVED).apply {
             data = android.net.Uri.parse("package:com.example.app")
         }
@@ -48,11 +48,11 @@ class PackageChangeReceiverTest {
         receiver.onReceive(context, intent)
         advanceUntilIdle()
 
-        coVerify { appRepository.invalidateCache() }
+        coVerify { appRepository.onPackageRemoved("com.example.app") }
     }
 
     @Test
-    fun `onReceive with PACKAGE_CHANGED invalidates cache`() = runTest {
+    fun `onReceive with PACKAGE_CHANGED calls onPackageChanged`() = runTest {
         val intent = Intent(Intent.ACTION_PACKAGE_CHANGED).apply {
             data = android.net.Uri.parse("package:com.example.app")
         }
@@ -60,16 +60,28 @@ class PackageChangeReceiverTest {
         receiver.onReceive(context, intent)
         advanceUntilIdle()
 
-        coVerify { appRepository.invalidateCache() }
+        coVerify { appRepository.onPackageChanged("com.example.app") }
     }
 
     @Test
-    fun `onReceive with unrelated action does not invalidate cache`() = runTest {
+    fun `onReceive with unrelated action does not call repository`() = runTest {
         val intent = Intent("android.intent.action.SOME_OTHER_ACTION")
 
         receiver.onReceive(context, intent)
         advanceUntilIdle()
 
-        coVerify(exactly = 0) { appRepository.invalidateCache() }
+        coVerify(exactly = 0) { appRepository.onPackageAdded(any()) }
+        coVerify(exactly = 0) { appRepository.onPackageRemoved(any()) }
+        coVerify(exactly = 0) { appRepository.onPackageChanged(any()) }
+    }
+
+    @Test
+    fun `onReceive with null package name does nothing`() = runTest {
+        val intent = Intent(Intent.ACTION_PACKAGE_ADDED)
+
+        receiver.onReceive(context, intent)
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { appRepository.onPackageAdded(any()) }
     }
 }

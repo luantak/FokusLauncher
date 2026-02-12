@@ -43,7 +43,7 @@ class AppDrawerViewModelTest {
     private val renamedFlow = MutableStateFlow<List<RenamedAppEntity>>(emptyList())
     private val categoriesFlow = MutableStateFlow<List<AppCategoryEntity>>(emptyList())
     private val favoritesFlow = MutableStateFlow<List<FavoriteApp>>(emptyList())
-    private val packageChangesFlow = MutableSharedFlow<Unit>(replay = 0)
+    private val packageChangesFlow = MutableSharedFlow<com.lu4p.fokuslauncher.data.repository.PackageChange>(replay = 0)
 
     private val testApps =
             listOf(
@@ -353,11 +353,11 @@ class AppDrawerViewModelTest {
         verify(atLeast = 1) { appRepository.getInstalledApps() }
 
         // Emit a package change event
-        packageChangesFlow.emit(Unit)
+        packageChangesFlow.emit(com.lu4p.fokuslauncher.data.repository.PackageChange.Removed("com.lu4p.test"))
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Verify apps are reloaded
         verify(atLeast = 2) { appRepository.getInstalledApps() }
     }
-    }
+}
 }

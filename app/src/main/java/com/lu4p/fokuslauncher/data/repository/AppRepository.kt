@@ -23,6 +23,17 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 
 /**
+ * Represents a change to a package (added, removed, or changed).
+ */
+sealed interface PackageChange {
+    val packageName: String
+    
+    data class Added(override val packageName: String) : PackageChange
+    data class Removed(override val packageName: String) : PackageChange
+    data class Changed(override val packageName: String) : PackageChange
+}
+
+/**
  * Repository responsible for loading and caching installed apps from the system, and managing
  * hidden/renamed/categorized apps via Room.
  */
@@ -32,8 +43,8 @@ class AppRepository
 constructor(@ApplicationContext private val context: Context, private val appDao: AppDao) {
     private var cachedApps: List<AppInfo>? = null
     
-    private val _packageChanges = MutableSharedFlow<Unit>(replay = 0)
-    val packageChanges: SharedFlow<Unit> = _packageChanges.asSharedFlow()
+    private val _packageChanges = MutableSharedFlow<PackageChange>(replay = 0)
+    val packageChanges: SharedFlow<PackageChange> = _packageChanges.asSharedFlow()
 
     // --- App Loading ---
 
@@ -80,7 +91,82 @@ constructor(@ApplicationContext private val context: Context, private val appDao
     /** Clears the cached app list, forcing a reload on next access. */
     suspend fun invalidateCache() {
         cachedApps = null
-        _packageChanges.emit(Unit)
+    }
+
+    /**
+     * Handles a package being added by adding it to the cached list.
+     */
+    suspend fun onPackageAdded(packageName: String) {
+        val pm = context.packageManager
+        val mainIntent = Intent(Intent.ACTION_MAIN, null).apply { 
+            addCategory(Intent.CATEGORY_LAUNCHER)
+            `package` = packageName
+        }
+        
+        val resolveInfo = pm.queryIntentActivities(mainIntent, 0).firstOrNull()
+        if (resolveInfo != null && resolveInfo.activityInfo.packageName != context.packageName) {
+            val label = resolveInfo.loadLabel(pm).toString()
+            val newApp = AppInfo(
+                packageName = packageName,
+                label = label,
+                icon = try {
+                    resolveInfo.loadIcon(pm)
+                } catch (_: Exception) {
+                    null
+                },
+                category = inferCategory(packageName, label)
+            )
+            
+            cachedApps?.let { apps ->
+                cachedApps = (apps + newApp).sortedBy { it.label.lowercase() }
+            }
+            
+            _packageChanges.emit(PackageChange.Added(packageName))
+        }
+    }
+
+    /**
+     * Handles a package being removed by removing it from the cached list.
+     */
+    suspend fun onPackageRemoved(packageName: String) {
+        cachedApps?.let { apps ->
+            cachedApps = apps.filter { it.packageName != packageName }
+        }
+        _packageChanges.emit(PackageChange.Removed(packageName))
+    }
+
+    /**
+     * Handles a package being changed by updating it in the cached list.
+     */
+    suspend fun onPackageChanged(packageName: String) {
+        val pm = context.packageManager
+        val mainIntent = Intent(Intent.ACTION_MAIN, null).apply { 
+            addCategory(Intent.CATEGORY_LAUNCHER)
+            `package` = packageName
+        }
+        
+        val resolveInfo = pm.queryIntentActivities(mainIntent, 0).firstOrNull()
+        if (resolveInfo != null && resolveInfo.activityInfo.packageName != context.packageName) {
+            val label = resolveInfo.loadLabel(pm).toString()
+            val updatedApp = AppInfo(
+                packageName = packageName,
+                label = label,
+                icon = try {
+                    resolveInfo.loadIcon(pm)
+                } catch (_: Exception) {
+                    null
+                },
+                category = inferCategory(packageName, label)
+            )
+            
+            cachedApps?.let { apps ->
+                cachedApps = apps.map { app ->
+                    if (app.packageName == packageName) updatedApp else app
+                }.sortedBy { it.label.lowercase() }
+            }
+            
+            _packageChanges.emit(PackageChange.Changed(packageName))
+        }
     }
 
     /**

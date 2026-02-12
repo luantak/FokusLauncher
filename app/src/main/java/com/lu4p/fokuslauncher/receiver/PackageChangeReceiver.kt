@@ -22,20 +22,42 @@ class PackageChangeReceiver : BroadcastReceiver() {
     lateinit var appRepository: AppRepository
 
     override fun onReceive(context: Context, intent: Intent) {
+        val packageName = intent.data?.schemeSpecificPart
+        if (packageName.isNullOrBlank()) return
+        
         when (intent.action) {
-            Intent.ACTION_PACKAGE_ADDED,
-            Intent.ACTION_PACKAGE_REMOVED,
-            Intent.ACTION_PACKAGE_CHANGED -> {
-                // Use goAsync() to extend the receiver's lifetime beyond onReceive()
+            Intent.ACTION_PACKAGE_ADDED -> {
                 val pendingResult = goAsync()
                 val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
                 
                 scope.launch {
                     try {
-                        // Invalidate the app repository cache so the next load will get fresh data
-                        appRepository.invalidateCache()
+                        appRepository.onPackageAdded(packageName)
                     } finally {
-                        // Signal that the async work is complete
+                        pendingResult.finish()
+                    }
+                }
+            }
+            Intent.ACTION_PACKAGE_REMOVED -> {
+                val pendingResult = goAsync()
+                val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+                
+                scope.launch {
+                    try {
+                        appRepository.onPackageRemoved(packageName)
+                    } finally {
+                        pendingResult.finish()
+                    }
+                }
+            }
+            Intent.ACTION_PACKAGE_CHANGED -> {
+                val pendingResult = goAsync()
+                val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+                
+                scope.launch {
+                    try {
+                        appRepository.onPackageChanged(packageName)
+                    } finally {
                         pendingResult.finish()
                     }
                 }

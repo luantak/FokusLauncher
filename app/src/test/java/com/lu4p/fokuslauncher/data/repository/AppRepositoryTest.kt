@@ -276,17 +276,34 @@ class AppRepositoryTest {
     }
 
     @Test
-    fun `invalidateCache emits package change event`() = runTest {
-        val events = mutableListOf<Unit>()
+    fun `onPackageRemoved emits removal event`() = runTest {
+        val resolveInfos = listOf(
+            createResolveInfo("com.lu4p.app1", "App 1"),
+            createResolveInfo("com.lu4p.app2", "App 2")
+        )
+        every {
+            packageManager.queryIntentActivities(any<Intent>(), any<Int>())
+        } returns resolveInfos
+
+        repository.getInstalledApps()
+
+        val events = mutableListOf<com.lu4p.fokuslauncher.data.repository.PackageChange>()
         val job = kotlinx.coroutines.launch(kotlinx.coroutines.Dispatchers.Unconfined) {
             repository.packageChanges.collect {
                 events.add(it)
             }
         }
 
-        repository.invalidateCache()
+        repository.onPackageRemoved("com.lu4p.app1")
 
         assertEquals(1, events.size)
+        assertTrue(events[0] is com.lu4p.fokuslauncher.data.repository.PackageChange.Removed)
+        assertEquals("com.lu4p.app1", (events[0] as com.lu4p.fokuslauncher.data.repository.PackageChange.Removed).packageName)
+        
+        val apps = repository.getInstalledApps()
+        assertEquals(1, apps.size)
+        assertEquals("com.lu4p.app2", apps[0].packageName)
+        
         job.cancel()
     }
 
