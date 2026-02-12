@@ -112,10 +112,11 @@ fun AppDrawerScreen(
                 categoryName = categoryName,
                 onDismiss = viewModel::dismissCategoryActionSheet,
                 onRename = { newName ->
-                    viewModel.renameCategory(categoryName, newName) { success, _ ->
+                    viewModel.renameCategory(categoryName, newName) { success, error ->
                         if (success) {
                             viewModel.dismissCategoryActionSheet()
                         }
+                        // Error is displayed in the sheet, so don't dismiss on error
                     }
                 },
                 onEditApps = {

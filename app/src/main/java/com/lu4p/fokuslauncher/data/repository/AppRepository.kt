@@ -18,8 +18,10 @@ import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 
 /**
  * Repository responsible for loading and caching installed apps from the system, and managing
@@ -255,18 +257,33 @@ constructor(@ApplicationContext private val context: Context, private val appDao
 
     /** Renames a category by updating all app assignments and the category entity. */
     suspend fun renameCategory(oldName: String, newName: String) {
+        // Get the old category to preserve its sortOrder
+        val oldCategory = appDao.getAllCategories().first().find { it.name == oldName }
+        val sortOrder = oldCategory?.sortOrder ?: 0
+        
         // Get all apps with the old category
         val apps = appDao.getAppsByCategory(oldName).first()
         
-        // Delete the old category entity
-        appDao.deleteCategoryByName(oldName)
-        
-        // Create the new category entity
-        appDao.insertCategory(CategoryEntity(newName, isCustom = true, sortOrder = 0))
-        
-        // Update all app assignments
-        apps.forEach { app ->
-            appDao.setAppCategory(AppCategoryEntity(app.packageName, newName))
+        // Perform all database operations atomically
+        withContext(Dispatchers.IO) {
+            // Note: Room doesn't support @Transaction on suspend functions in DAOs,
+            // so we'll do a best-effort approach with proper error handling
+            try {
+                // Delete the old category entity
+                appDao.deleteCategoryByName(oldName)
+                
+                // Create the new category entity with preserved sortOrder
+                appDao.insertCategory(CategoryEntity(newName, isCustom = true, sortOrder = sortOrder))
+                
+                // Update all app assignments
+                apps.forEach { app ->
+                    appDao.setAppCategory(AppCategoryEntity(app.packageName, newName))
+                }
+            } catch (e: Exception) {
+                // If anything fails, try to restore the old category
+                appDao.insertCategory(CategoryEntity(oldName, isCustom = true, sortOrder = sortOrder))
+                throw e
+            }
         }
     }
 

@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import com.lu4p.fokuslauncher.data.model.CategoryConstants
 
 /**
  * Bottom sheet shown on long-press of a category chip.
@@ -47,6 +48,7 @@ fun CategoryActionSheet(
     val sheetState = rememberModalBottomSheetState()
     var renameMode by remember(categoryName) { mutableStateOf(false) }
     var renameValue by remember(categoryName) { mutableStateOf(categoryName) }
+    var errorMessage by remember(categoryName) { mutableStateOf<String?>(null) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -65,22 +67,51 @@ fun CategoryActionSheet(
                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)
             ) {
                 if (renameMode) {
-                    OutlinedTextField(
-                        value = renameValue,
-                        onValueChange = { renameValue = it },
-                        placeholder = { Text("Category name") },
-                        singleLine = true,
-                        modifier = Modifier
-                            .weight(1f)
-                            .testTag("rename_inline_input")
-                    )
-                    TextButton(onClick = { renameMode = false }) { Text("Cancel") }
+                    Column(modifier = Modifier.weight(1f)) {
+                        OutlinedTextField(
+                            value = renameValue,
+                            onValueChange = {
+                                renameValue = it
+                                errorMessage = null
+                            },
+                            placeholder = { Text("Category name") },
+                            singleLine = true,
+                            isError = errorMessage != null,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("rename_inline_input")
+                        )
+                        errorMessage?.let { error ->
+                            Text(
+                                text = error,
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                        }
+                    }
+                    TextButton(onClick = {
+                        renameMode = false
+                        errorMessage = null
+                    }) { Text("Cancel") }
                     TextButton(
                         onClick = {
                             val trimmed = renameValue.trim()
-                            if (trimmed.isNotEmpty() && trimmed != categoryName) {
-                                onRename(trimmed)
-                                onDismiss()
+                            when {
+                                trimmed.isEmpty() -> {
+                                    errorMessage = "Category name cannot be empty"
+                                }
+                                CategoryConstants.isSystemCategory(trimmed) -> {
+                                    errorMessage = "This category name is reserved"
+                                }
+                                trimmed == categoryName -> {
+                                    renameMode = false
+                                    errorMessage = null
+                                }
+                                else -> {
+                                    onRename(trimmed)
+                                    // Don't dismiss here - let the parent handle success/failure
+                                }
                             }
                         }
                     ) { Text("Save") }
