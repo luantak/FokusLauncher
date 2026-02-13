@@ -328,7 +328,13 @@ constructor(
             val supported = privateSpaceManager.isSupported
             val unlocked = privateSpaceManager.isPrivateSpaceUnlocked()
             val apps = if (unlocked) privateSpaceManager.getPrivateSpaceApps() else emptyList()
-            val customCategories = appRepository.getAllCategories().first().map { it.name }.toSet()
+            
+            // Fetch custom categories from database, with fallback to empty set on error
+            val customCategories = try {
+                appRepository.getAllCategories().first().map { it.name }.toSet()
+            } catch (e: Exception) {
+                emptySet()
+            }
             
             _uiState.update { state ->
                 val categories =
