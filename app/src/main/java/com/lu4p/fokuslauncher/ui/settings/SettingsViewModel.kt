@@ -21,6 +21,8 @@ import kotlinx.coroutines.launch
 data class SettingsUiState(
         val hiddenApps: List<HiddenAppInfo> = emptyList(),
         val renamedApps: List<RenamedAppEntity> = emptyList(),
+        val appCategories: Map<String, String> = emptyMap(),
+        val categoryDefinitions: List<String> = emptyList(),
         val favorites: List<FavoriteApp> = emptyList(),
         val rightSideShortcuts: List<HomeShortcut> = emptyList(),
         val swipeLeftTarget: ShortcutTarget? = null,
@@ -68,6 +70,17 @@ constructor(
                         swipeLeft = swipeLeft
                 )
             }
+                    .combine(appRepository.getAllAppCategories()) { leftState, appCategories ->
+                        leftState to appCategories.associate { it.packageName to it.category }
+                    }
+                    .combine(appRepository.getAllCategoryDefinitions()) { stateWithCategories, definitions ->
+                        val (leftState, appCategories) = stateWithCategories
+                        CategoryState(
+                                base = leftState,
+                                appCategories = appCategories,
+                                categoryDefinitions = definitions.map { it.name }
+                        )
+                    }
                     .combine(preferencesManager.swipeRightTargetFlow) { leftState, swipeRight ->
                         leftState to swipeRight
                     }
@@ -77,16 +90,18 @@ constructor(
                         val (leftState, swipeRight) = swipeState
                         val allApps = appRepository.getInstalledApps()
                         val hiddenInfos =
-                                leftState.hiddenNames.map { pkg ->
+                                leftState.base.hiddenNames.map { pkg ->
                                     val app = allApps.find { it.packageName == pkg }
                                     HiddenAppInfo(packageName = pkg, label = app?.label ?: pkg)
                                 }
                         SettingsUiState(
                                 hiddenApps = hiddenInfos,
-                                renamedApps = leftState.renamedApps,
-                                favorites = leftState.favorites,
-                                rightSideShortcuts = leftState.rightSideShortcuts,
-                                swipeLeftTarget = leftState.swipeLeft,
+                                renamedApps = leftState.base.renamedApps,
+                                appCategories = leftState.appCategories,
+                                categoryDefinitions = leftState.categoryDefinitions,
+                                favorites = leftState.base.favorites,
+                                rightSideShortcuts = leftState.base.rightSideShortcuts,
+                                swipeLeftTarget = leftState.base.swipeLeft,
                                 swipeRightTarget = swipeRight,
                                 preferredWeatherAppPackage = preferredWeatherApp,
                                 allApps = allApps
@@ -104,6 +119,12 @@ constructor(
             val swipeLeft: ShortcutTarget?
     )
 
+    private data class CategoryState(
+            val base: Quintuple,
+            val appCategories: Map<String, String>,
+            val categoryDefinitions: List<String>
+    )
+
     // --- Hidden Apps ---
 
     fun unhideApp(packageName: String) {
@@ -114,6 +135,26 @@ constructor(
 
     fun removeRename(packageName: String) {
         viewModelScope.launch { appRepository.removeRename(packageName) }
+    }
+
+    fun addCategoryDefinition(name: String) {
+        viewModelScope.launch { appRepository.addCategoryDefinition(name) }
+    }
+
+    fun deleteCategory(name: String) {
+        viewModelScope.launch { appRepository.deleteCategory(name) }
+    }
+
+    fun renameCategory(oldName: String, newName: String) {
+        viewModelScope.launch { appRepository.renameCategory(oldName, newName) }
+    }
+
+    fun setAppCategory(packageName: String, category: String) {
+        viewModelScope.launch { appRepository.setAppCategory(packageName, category) }
+    }
+
+    fun reorderCategories(categories: List<String>) {
+        viewModelScope.launch { appRepository.reorderCategoryDefinitions(categories) }
     }
 
     // --- Favorites ---

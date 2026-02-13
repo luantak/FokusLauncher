@@ -51,6 +51,8 @@ import com.lu4p.fokuslauncher.ui.drawer.AppDrawerScreen
 import com.lu4p.fokuslauncher.ui.home.HomeScreen
 import com.lu4p.fokuslauncher.ui.home.HomeViewModel
 import com.lu4p.fokuslauncher.ui.onboarding.OnboardingScreen
+import com.lu4p.fokuslauncher.ui.settings.CategoryAppsScreen
+import com.lu4p.fokuslauncher.ui.settings.CategorySettingsScreen
 import com.lu4p.fokuslauncher.ui.settings.SettingsScreen
 import kotlinx.coroutines.delay
 import kotlin.math.abs
@@ -58,6 +60,8 @@ import kotlin.math.abs
 object Routes {
     const val HOME = "home"
     const val SETTINGS = "settings"
+    const val SETTINGS_CATEGORIES = "settings_categories"
+    const val SETTINGS_CATEGORY_APPS = "settings_category_apps"
     const val ONBOARDING = "onboarding"
 }
 
@@ -268,7 +272,39 @@ fun FokusNavGraph(
                             ?.savedStateHandle
                             ?.set("openEditShortcutsOverlay", true)
                         navController.popBackStack()
+                    },
+                    onEditCategories = {
+                        navController.navigate(Routes.SETTINGS_CATEGORIES) { launchSingleTop = true }
                     }
+                )
+            }
+
+            composable(
+                Routes.SETTINGS_CATEGORIES,
+                enterTransition = { slideInHorizontally(tween(ANIM_DURATION)) { it } },
+                exitTransition = { slideOutHorizontally(tween(ANIM_DURATION)) { it } }
+            ) {
+                CategorySettingsScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onEditCategoryApps = { category ->
+                        navController.navigate(
+                            "${Routes.SETTINGS_CATEGORY_APPS}/${Uri.encode(category)}"
+                        ) {
+                            launchSingleTop = true
+                        }
+                    }
+                )
+            }
+
+            composable(
+                "${Routes.SETTINGS_CATEGORY_APPS}/{category}",
+                enterTransition = { slideInHorizontally(tween(ANIM_DURATION)) { it } },
+                exitTransition = { slideOutHorizontally(tween(ANIM_DURATION)) { it } }
+            ) { entry ->
+                val encodedCategory = entry.arguments?.getString("category").orEmpty()
+                CategoryAppsScreen(
+                    category = Uri.decode(encodedCategory),
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
         }
@@ -304,6 +340,14 @@ fun FokusNavGraph(
                     onSettingsClick = {
                         showDrawer = false
                         navController.navigate(Routes.SETTINGS) { launchSingleTop = true }
+                    },
+                    onEditCategoryApps = { category ->
+                        showDrawer = false
+                        navController.navigate(
+                            "${Routes.SETTINGS_CATEGORY_APPS}/${Uri.encode(category)}"
+                        ) {
+                            launchSingleTop = true
+                        }
                     },
                     onClose = { showDrawer = false }
                 )
