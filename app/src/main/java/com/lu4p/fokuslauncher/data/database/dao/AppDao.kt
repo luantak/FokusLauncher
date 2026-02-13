@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import com.lu4p.fokuslauncher.data.database.entity.AppCategoryDefinitionEntity
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryEntity
 import com.lu4p.fokuslauncher.data.database.entity.HiddenAppEntity
 import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
@@ -61,6 +62,21 @@ interface AppDao {
     @Query("SELECT * FROM app_categories WHERE category = :category")
     fun getAppsByCategory(category: String): Flow<List<AppCategoryEntity>>
 
+    @Query("SELECT * FROM app_category_definitions")
+    fun getAllCategoryDefinitions(): Flow<List<AppCategoryDefinitionEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun addCategoryDefinition(entity: AppCategoryDefinitionEntity)
+
+    @Query("DELETE FROM app_categories WHERE category = :category")
+    suspend fun removeCategoryAssignments(category: String)
+
+    @Query("UPDATE app_categories SET category = :newCategory WHERE category = :oldCategory")
+    suspend fun renameCategoryAssignments(oldCategory: String, newCategory: String)
+
+    @Query("DELETE FROM app_category_definitions WHERE name = :name")
+    suspend fun removeCategoryDefinition(name: String)
+
     // --- Reset / Clear All ---
 
     @Query("DELETE FROM hidden_apps")
@@ -71,4 +87,7 @@ interface AppDao {
 
     @Query("DELETE FROM app_categories")
     suspend fun clearAllAppCategories()
+
+    @Query("DELETE FROM app_category_definitions")
+    suspend fun clearAllCategoryDefinitions()
 }

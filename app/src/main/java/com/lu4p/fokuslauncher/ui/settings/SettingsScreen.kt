@@ -62,7 +62,8 @@ fun SettingsScreen(
         viewModel: SettingsViewModel = hiltViewModel(),
         onNavigateBack: () -> Unit = {},
         onEditHomeScreen: () -> Unit = {},
-        onEditRightShortcuts: () -> Unit = {}
+        onEditRightShortcuts: () -> Unit = {},
+        onEditCategories: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -213,6 +214,33 @@ fun SettingsScreen(
                         )
                         Text(
                                 text = "${uiState.rightSideShortcuts.size} shortcuts configured",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.secondary
+                        )
+                    }
+                }
+            }
+
+            item { SettingsDivider() }
+
+            // ========== APP CATEGORIES ==========
+            item { SectionHeader("App Categories") }
+            item {
+                Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier =
+                                Modifier.fillMaxWidth()
+                                        .clickable(onClick = onEditCategories)
+                                        .padding(horizontal = 24.dp, vertical = 14.dp)
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                                text = "Edit app categories",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Text(
+                                text = "${uiState.categoryDefinitions.size} custom categories",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.secondary
                         )
@@ -570,4 +598,3 @@ private fun formatShortcutTarget(target: ShortcutTarget?, allApps: List<AppInfo>
         }
     }
 }
-

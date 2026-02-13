@@ -2,6 +2,8 @@ package com.lu4p.fokuslauncher.di
 
 import android.content.Context
 import androidx.room.Room
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.lu4p.fokuslauncher.data.database.AppDatabase
 import com.lu4p.fokuslauncher.data.database.dao.AppDao
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
@@ -19,6 +21,14 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
+    private val MIGRATION_1_2 =
+        object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `app_category_definitions` (`name` TEXT NOT NULL, PRIMARY KEY(`name`))"
+                )
+            }
+        }
 
     @Provides
     @Singleton
@@ -28,7 +38,7 @@ object AppModule {
         context,
         AppDatabase::class.java,
         "fokus_launcher_db"
-    ).build()
+    ).addMigrations(MIGRATION_1_2).build()
 
     @Provides
     @Singleton
