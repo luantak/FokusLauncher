@@ -42,6 +42,7 @@ class AppDrawerViewModelTest {
     private val renamedFlow = MutableStateFlow<List<RenamedAppEntity>>(emptyList())
     private val categoriesFlow = MutableStateFlow<List<AppCategoryEntity>>(emptyList())
     private val favoritesFlow = MutableStateFlow<List<FavoriteApp>>(emptyList())
+    private var installedApps: List<AppInfo> = emptyList()
 
     private val testApps =
             listOf(
@@ -61,7 +62,8 @@ class AppDrawerViewModelTest {
         appRepository = mockk(relaxed = true)
         privateSpaceManager = mockk(relaxed = true)
         preferencesManager = mockk(relaxed = true)
-        every { appRepository.getInstalledApps() } returns testApps
+        installedApps = testApps
+        every { appRepository.getInstalledApps() } answers { installedApps }
         every { appRepository.getHiddenPackageNames() } returns hiddenFlow
         every { appRepository.getAllRenamedApps() } returns renamedFlow
         every { appRepository.getAllAppCategories() } returns categoriesFlow
@@ -204,6 +206,16 @@ class AppDrawerViewModelTest {
 
         verify { appRepository.invalidateCache() }
         verify(atLeast = 2) { appRepository.getInstalledApps() }
+    }
+
+    @Test
+    fun `refresh updates state with newly installed apps`() {
+        installedApps = testApps + AppInfo("com.lu4p.newapp", "New App", null)
+
+        viewModel.refresh()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.allApps.any { it.packageName == "com.lu4p.newapp" })
     }
 
     @Test
