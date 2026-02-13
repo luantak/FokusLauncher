@@ -19,15 +19,20 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -54,6 +59,7 @@ import kotlinx.coroutines.delay
 fun AppDrawerScreen(
         viewModel: AppDrawerViewModel = hiltViewModel(),
         onSettingsClick: () -> Unit = {},
+        onEditCategoryApps: (String) -> Unit = {},
         onClose: () -> Unit = {}
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -91,6 +97,7 @@ fun AppDrawerScreen(
             uiState = uiState,
             onSearchQueryChanged = viewModel::onSearchQueryChanged,
             onCategorySelected = viewModel::onCategorySelected,
+            onCategoryLongPress = viewModel::onCategoryLongPress,
             onAppClick = { target ->
                 viewModel.launchTarget(target)
                 closeAndReset()
@@ -120,6 +127,19 @@ fun AppDrawerScreen(
                 isOnHomeScreen = app.packageName in uiState.favoritePackageNames
         )
     }
+
+    uiState.selectedCategoryForActions?.let { category ->
+        CategoryActionSheet(
+                category = category,
+                onDismiss = viewModel::dismissCategoryActionSheet,
+                onRename = { newName -> viewModel.renameCategory(category, newName) },
+                onEditApps = {
+                    viewModel.dismissCategoryActionSheet()
+                    onEditCategoryApps(category)
+                },
+                onDelete = { viewModel.deleteCategory(category) }
+        )
+    }
 }
 
 @Composable
@@ -127,6 +147,7 @@ fun AppDrawerContent(
         uiState: AppDrawerUiState,
         onSearchQueryChanged: (String) -> Unit,
         onCategorySelected: (String) -> Unit,
+        onCategoryLongPress: (String) -> Unit = {},
         onAppClick: (LaunchTarget) -> Unit,
         onAppLongPress: (AppInfo) -> Unit = {},
         onMenuToggle: () -> Unit = {},
@@ -245,6 +266,7 @@ fun AppDrawerContent(
                 categories = uiState.categories,
                 selectedCategory = uiState.selectedCategory,
                 onCategorySelected = onCategorySelected,
+                onCategoryLongPress = onCategoryLongPress,
                 modifier = Modifier.testTag("category_chips")
         )
 
@@ -311,6 +333,51 @@ fun AppDrawerContent(
                     )
                 }
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CategoryActionSheet(
+        category: String,
+        onDismiss: () -> Unit,
+        onRename: (String) -> Unit,
+        onEditApps: () -> Unit,
+        onDelete: () -> Unit
+) {
+    var renameValue by remember(category) { mutableStateOf(category) }
+    val normalized = renameValue.trim()
+    val canRename =
+            normalized.isNotBlank() &&
+                    !normalized.equals("All apps", ignoreCase = true) &&
+                    !normalized.equals("Private", ignoreCase = true)
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        OutlinedTextField(
+                value = renameValue,
+                onValueChange = { renameValue = it },
+                singleLine = true,
+                label = { Text("Category name") },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)
+        )
+        TextButton(
+                enabled = canRename,
+                onClick = { onRename(renameValue) },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+        ) {
+            Text("Rename")
+        }
+        TextButton(
+                onClick = onEditApps,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+        ) {
+            Text("Edit apps in category")
+        }
+        TextButton(
+                onClick = onDelete,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
+        ) {
+            Text("Remove category", color = MaterialTheme.colorScheme.error)
         }
     }
 }

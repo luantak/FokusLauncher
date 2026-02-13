@@ -37,7 +37,8 @@ data class AppDrawerUiState(
         /** Private space apps filtered by the current search query – used for display. */
         val filteredPrivateSpaceApps: List<AppInfo> = emptyList(),
         /** Package names of apps already on the home screen. */
-        val favoritePackageNames: Set<String> = emptySet()
+        val favoritePackageNames: Set<String> = emptySet(),
+        val selectedCategoryForActions: String? = null
 )
 
 sealed interface DrawerEvent {
@@ -67,6 +68,10 @@ constructor(
 
     private val _events = MutableSharedFlow<DrawerEvent>()
     val events: SharedFlow<DrawerEvent> = _events.asSharedFlow()
+    private var latestHiddenSet: Set<String> = emptySet()
+    private var latestRenameMap: Map<String, String> = emptyMap()
+    private var latestCategoryMap: Map<String, String> = emptyMap()
+    private var latestDefinedCategories: List<String> = emptyList()
 
     init {
         loadApps()
@@ -94,8 +99,12 @@ constructor(
      */
     private fun loadApps() {
         viewModelScope.launch {
-            val apps = withContext(Dispatchers.IO) { appRepository.getInstalledApps() }
-            _uiState.update { it.copy(allApps = apps) }
+            rebuildVisibleApps(
+                    hiddenSet = latestHiddenSet,
+                    renameMap = latestRenameMap,
+                    categoryMap = latestCategoryMap,
+                    definedCategories = latestDefinedCategories
+            )
         }
     }
 
@@ -108,16 +117,27 @@ constructor(
             combine(
                             appRepository.getHiddenPackageNames(),
                             appRepository.getAllRenamedApps(),
-                            appRepository.getAllAppCategories()
-                    ) { hiddenNames, renamedApps, categories ->
-                Triple(
-                        hiddenNames.toSet(),
-                        renamedApps.associate { it.packageName to it.customName },
-                        categories.associate { it.packageName to it.category }
+                            appRepository.getAllAppCategories(),
+                            appRepository.getAllCategoryDefinitions()
+                    ) { hiddenNames, renamedApps, categories, categoryDefinitions ->
+                CombinedCategoryState(
+                        hiddenSet = hiddenNames.toSet(),
+                        renameMap = renamedApps.associate { it.packageName to it.customName },
+                        categoryMap = categories.associate { it.packageName to it.category },
+                        definedCategories = categoryDefinitions.map { it.name }
                 )
             }
-                    .collect { (hiddenSet, renameMap, categoryMap) ->
-                        rebuildVisibleApps(hiddenSet, renameMap, categoryMap)
+                    .collect { state ->
+                        latestHiddenSet = state.hiddenSet
+                        latestRenameMap = state.renameMap
+                        latestCategoryMap = state.categoryMap
+                        latestDefinedCategories = state.definedCategories
+                        rebuildVisibleApps(
+                                hiddenSet = state.hiddenSet,
+                                renameMap = state.renameMap,
+                                categoryMap = state.categoryMap,
+                                definedCategories = state.definedCategories
+                        )
                     }
         }
     }
@@ -129,7 +149,8 @@ constructor(
     private suspend fun rebuildVisibleApps(
             hiddenSet: Set<String>,
             renameMap: Map<String, String>,
-            categoryMap: Map<String, String>
+            categoryMap: Map<String, String>,
+            definedCategories: List<String>
     ) {
         val base = withContext(Dispatchers.IO) { appRepository.getInstalledApps() }
         val visible =
@@ -150,6 +171,7 @@ constructor(
             val categories =
                     deriveCategories(
                             apps = visible,
+                            definedCategories = definedCategories,
                             includePrivate =
                                     state.isPrivateSpaceUnlocked &&
                                             state.privateSpaceApps.isNotEmpty()
@@ -217,6 +239,33 @@ constructor(
                     filteredApps = filtered,
                     filteredPrivateSpaceApps = filteredPrivate
             )
+        }
+    }
+
+    fun onCategoryLongPress(category: String) {
+        if (category.equals("All apps", ignoreCase = true)) return
+        if (category.equals("Private", ignoreCase = true)) return
+        _uiState.update { it.copy(selectedCategoryForActions = category) }
+    }
+
+    fun dismissCategoryActionSheet() {
+        _uiState.update { it.copy(selectedCategoryForActions = null) }
+    }
+
+    fun renameCategory(oldName: String, newName: String) {
+        viewModelScope.launch {
+            appRepository.renameCategory(oldName, newName)
+            dismissCategoryActionSheet()
+        }
+    }
+
+    fun deleteCategory(name: String) {
+        viewModelScope.launch {
+            appRepository.deleteCategory(name)
+            if (_uiState.value.selectedCategory.equals(name, ignoreCase = true)) {
+                onCategorySelected("All apps")
+            }
+            dismissCategoryActionSheet()
         }
     }
 
@@ -305,6 +354,12 @@ constructor(
             val categories =
                     deriveCategories(
                             apps = state.allApps,
+                            definedCategories =
+                                    state.categories
+                                            .filterNot {
+                                                it.equals("All apps", ignoreCase = true) ||
+                                                        it.equals("Private", ignoreCase = true)
+                                            },
                             includePrivate = unlocked && apps.isNotEmpty()
                     )
             val filteredPrivate =
@@ -342,8 +397,14 @@ constructor(
 
     fun refresh() {
         appRepository.invalidateCache()
-        loadApps()
-        // observeHiddenAndRenamed will rebuild visible list automatically
+        viewModelScope.launch {
+            rebuildVisibleApps(
+                    hiddenSet = latestHiddenSet,
+                    renameMap = latestRenameMap,
+                    categoryMap = latestCategoryMap,
+                    definedCategories = latestDefinedCategories
+            )
+        }
     }
 
     fun resetSearchState() {
@@ -390,12 +451,19 @@ constructor(
         }
     }
 
-    private fun deriveCategories(apps: List<AppInfo>, includePrivate: Boolean): List<String> {
-        val dynamic = apps.map { it.category.trim() }.filter { it.isNotBlank() }.distinct().sorted()
+    private fun deriveCategories(
+            apps: List<AppInfo>,
+            definedCategories: List<String>,
+            includePrivate: Boolean
+    ): List<String> {
+        val dynamic = apps.map { it.category.trim() }.filter { it.isNotBlank() }.toSet()
+        val orderedDefined = definedCategories.distinct()
+        val extras = (dynamic - orderedDefined.toSet()).toList().sorted()
         return buildList {
             add("All apps")
             if (includePrivate) add("Private")
-            addAll(dynamic)
+            addAll(orderedDefined)
+            addAll(extras)
         }
     }
 
@@ -416,4 +484,11 @@ constructor(
         val mainTargets = mainApps.map { LaunchTarget.MainApp(it.packageName) }
         return privateTargets + mainTargets
     }
+
+    private data class CombinedCategoryState(
+            val hiddenSet: Set<String>,
+            val renameMap: Map<String, String>,
+            val categoryMap: Map<String, String>,
+            val definedCategories: List<String>
+    )
 }

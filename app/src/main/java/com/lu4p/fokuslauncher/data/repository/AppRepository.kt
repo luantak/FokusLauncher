@@ -8,6 +8,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Process
 import com.lu4p.fokuslauncher.data.database.dao.AppDao
+import com.lu4p.fokuslauncher.data.database.entity.AppCategoryDefinitionEntity
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryEntity
 import com.lu4p.fokuslauncher.data.database.entity.HiddenAppEntity
 import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
@@ -18,6 +19,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 
 /**
  * Repository responsible for loading and caching installed apps from the system, and managing
@@ -230,7 +232,88 @@ constructor(@ApplicationContext private val context: Context, private val appDao
 
     /** Assigns a category to an app. */
     suspend fun setAppCategory(packageName: String, category: String) {
-        appDao.setAppCategory(AppCategoryEntity(packageName, category))
+        appDao.setAppCategory(AppCategoryEntity(packageName, category.trim()))
+    }
+
+    /** Returns a Flow of user-defined category names. */
+    fun getAllCategoryDefinitions(): Flow<List<AppCategoryDefinitionEntity>> =
+            appDao.getAllCategoryDefinitions()
+
+    /** Adds a user-defined category. */
+    suspend fun addCategoryDefinition(name: String) {
+        val normalized = name.trim()
+        if (normalized.isBlank()) return
+        if (normalized.equals("All apps", ignoreCase = true)) return
+        if (normalized.equals("Private", ignoreCase = true)) return
+        val existing = appDao.getCategoryDefinitionPosition(normalized)
+        if (existing != null) return
+        val nextPosition = appDao.getMaxCategoryDefinitionPosition() + 1
+        appDao.upsertCategoryDefinition(
+                AppCategoryDefinitionEntity(name = normalized, position = nextPosition)
+        )
+    }
+
+    /** Renames a category across assignments and user-defined categories. */
+    suspend fun renameCategory(oldName: String, newName: String) {
+        val oldNormalized = oldName.trim()
+        val newNormalized = newName.trim()
+        if (oldNormalized.isBlank() || newNormalized.isBlank()) return
+        if (oldNormalized.equals("All apps", ignoreCase = true)) return
+        if (oldNormalized.equals("Private", ignoreCase = true)) return
+        if (newNormalized.equals("All apps", ignoreCase = true)) return
+        if (newNormalized.equals("Private", ignoreCase = true)) return
+
+        val installed = getInstalledApps()
+        val explicitMap = appDao.getAllAppCategories().first().associate { it.packageName to it.category }
+        installed.forEach { app ->
+            val explicit = explicitMap[app.packageName]
+            val effective = explicit ?: app.category
+            if (effective.equals(oldNormalized, ignoreCase = true)) {
+                appDao.setAppCategory(AppCategoryEntity(app.packageName, newNormalized))
+            }
+        }
+
+        appDao.renameCategoryAssignments(oldNormalized, newNormalized)
+        val previousPosition = appDao.getCategoryDefinitionPosition(oldNormalized)
+        appDao.removeCategoryDefinition(oldNormalized)
+        val newPosition = previousPosition ?: (appDao.getMaxCategoryDefinitionPosition() + 1)
+        appDao.upsertCategoryDefinition(
+                AppCategoryDefinitionEntity(name = newNormalized, position = newPosition)
+        )
+    }
+
+    /** Deletes a category and removes its app memberships. */
+    suspend fun deleteCategory(name: String) {
+        val normalized = name.trim()
+        if (normalized.isBlank()) return
+        if (normalized.equals("All apps", ignoreCase = true)) return
+        if (normalized.equals("Private", ignoreCase = true)) return
+
+        val installed = getInstalledApps()
+        val explicitMap = appDao.getAllAppCategories().first().associate { it.packageName to it.category }
+        installed.forEach { app ->
+            val explicit = explicitMap[app.packageName]
+            val effective = explicit ?: app.category
+            if (effective.equals(normalized, ignoreCase = true)) {
+                appDao.setAppCategory(AppCategoryEntity(app.packageName, ""))
+            }
+        }
+
+        appDao.removeCategoryAssignments(normalized)
+        appDao.removeCategoryDefinition(normalized)
+    }
+
+    suspend fun reorderCategoryDefinitions(categories: List<String>) {
+        val normalized =
+                categories.map { it.trim() }
+                        .filter { it.isNotBlank() }
+                        .filterNot { it.equals("All apps", ignoreCase = true) }
+                        .filterNot { it.equals("Private", ignoreCase = true) }
+                        .distinct()
+        val entities = normalized.mapIndexed { index, name ->
+            AppCategoryDefinitionEntity(name = name, position = index)
+        }
+        appDao.replaceCategoryDefinitions(entities)
     }
 
     /** Removes the category assignment for an app. */
@@ -246,6 +329,7 @@ constructor(@ApplicationContext private val context: Context, private val appDao
         appDao.clearAllHiddenApps()
         appDao.clearAllRenamedApps()
         appDao.clearAllAppCategories()
+        appDao.clearAllCategoryDefinitions()
     }
 
     private fun inferCategory(packageName: String, label: String): String {

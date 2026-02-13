@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.graphics.drawable.ColorDrawable
 import com.lu4p.fokuslauncher.data.database.dao.AppDao
+import com.lu4p.fokuslauncher.data.database.entity.AppCategoryDefinitionEntity
 import com.lu4p.fokuslauncher.data.database.entity.HiddenAppEntity
 import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
 import io.mockk.coEvery
@@ -273,6 +274,41 @@ class AppRepositoryTest {
         val result = repository.getAppCategory("com.lu4p.app1")
 
         assertEquals("Social", result)
+    }
+
+    @Test
+    fun `addCategoryDefinition ignores reserved category names`() = runTest {
+        repository.addCategoryDefinition("All apps")
+        repository.addCategoryDefinition("Private")
+        repository.addCategoryDefinition("   ")
+
+        coVerify(exactly = 0) { appDao.upsertCategoryDefinition(any()) }
+    }
+
+    @Test
+    fun `addCategoryDefinition stores normalized category name`() = runTest {
+        coEvery { appDao.getCategoryDefinitionPosition("My Category") } returns null
+        coEvery { appDao.getMaxCategoryDefinitionPosition() } returns 3
+
+        repository.addCategoryDefinition("  My Category  ")
+
+        coVerify { appDao.upsertCategoryDefinition(AppCategoryDefinitionEntity("My Category", 4)) }
+    }
+
+    @Test
+    fun `renameCategory ignores reserved category names`() = runTest {
+        repository.renameCategory("All apps", "Work")
+        repository.renameCategory("Work", "Private")
+
+        coVerify(exactly = 0) { appDao.renameCategoryAssignments(any(), any()) }
+    }
+
+    @Test
+    fun `deleteCategory ignores reserved category names`() = runTest {
+        repository.deleteCategory("All apps")
+        repository.deleteCategory("Private")
+
+        coVerify(exactly = 0) { appDao.removeCategoryAssignments(any()) }
     }
 
     // --- Helper ---
