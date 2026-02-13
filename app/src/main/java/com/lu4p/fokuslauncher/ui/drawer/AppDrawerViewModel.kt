@@ -116,7 +116,7 @@ constructor(
                         hiddenSet = hiddenNames.toSet(),
                         renameMap = renamedApps.associate { it.packageName to it.customName },
                         categoryMap = categories.associate { it.packageName to it.category },
-                        definedCategories = categoryDefinitions.map { it.name }.toSet()
+                        definedCategories = categoryDefinitions.map { it.name }
                 )
             }
                     .collect { state ->
@@ -138,7 +138,7 @@ constructor(
             hiddenSet: Set<String>,
             renameMap: Map<String, String>,
             categoryMap: Map<String, String>,
-            definedCategories: Set<String>
+            definedCategories: List<String>
     ) {
         val base = withContext(Dispatchers.IO) { appRepository.getInstalledApps() }
         val visible =
@@ -347,8 +347,7 @@ constructor(
                                             .filterNot {
                                                 it.equals("All apps", ignoreCase = true) ||
                                                         it.equals("Private", ignoreCase = true)
-                                            }
-                                            .toSet(),
+                                            },
                             includePrivate = unlocked && apps.isNotEmpty()
                     )
             val filteredPrivate =
@@ -436,15 +435,17 @@ constructor(
 
     private fun deriveCategories(
             apps: List<AppInfo>,
-            definedCategories: Set<String>,
+            definedCategories: List<String>,
             includePrivate: Boolean
     ): List<String> {
         val dynamic = apps.map { it.category.trim() }.filter { it.isNotBlank() }.toSet()
-        val editable = (dynamic + definedCategories).toList().sorted()
+        val orderedDefined = definedCategories.distinct()
+        val extras = (dynamic - orderedDefined.toSet()).toList().sorted()
         return buildList {
             add("All apps")
             if (includePrivate) add("Private")
-            addAll(editable)
+            addAll(orderedDefined)
+            addAll(extras)
         }
     }
 
@@ -470,6 +471,6 @@ constructor(
             val hiddenSet: Set<String>,
             val renameMap: Map<String, String>,
             val categoryMap: Map<String, String>,
-            val definedCategories: Set<String>
+            val definedCategories: List<String>
     )
 }

@@ -245,7 +245,12 @@ constructor(@ApplicationContext private val context: Context, private val appDao
         if (normalized.isBlank()) return
         if (normalized.equals("All apps", ignoreCase = true)) return
         if (normalized.equals("Private", ignoreCase = true)) return
-        appDao.addCategoryDefinition(AppCategoryDefinitionEntity(normalized))
+        val existing = appDao.getCategoryDefinitionPosition(normalized)
+        if (existing != null) return
+        val nextPosition = appDao.getMaxCategoryDefinitionPosition() + 1
+        appDao.upsertCategoryDefinition(
+                AppCategoryDefinitionEntity(name = normalized, position = nextPosition)
+        )
     }
 
     /** Renames a category across assignments and user-defined categories. */
@@ -269,8 +274,12 @@ constructor(@ApplicationContext private val context: Context, private val appDao
         }
 
         appDao.renameCategoryAssignments(oldNormalized, newNormalized)
+        val previousPosition = appDao.getCategoryDefinitionPosition(oldNormalized)
         appDao.removeCategoryDefinition(oldNormalized)
-        appDao.addCategoryDefinition(AppCategoryDefinitionEntity(newNormalized))
+        val newPosition = previousPosition ?: (appDao.getMaxCategoryDefinitionPosition() + 1)
+        appDao.upsertCategoryDefinition(
+                AppCategoryDefinitionEntity(name = newNormalized, position = newPosition)
+        )
     }
 
     /** Deletes a category and removes its app memberships. */
@@ -292,6 +301,19 @@ constructor(@ApplicationContext private val context: Context, private val appDao
 
         appDao.removeCategoryAssignments(normalized)
         appDao.removeCategoryDefinition(normalized)
+    }
+
+    suspend fun reorderCategoryDefinitions(categories: List<String>) {
+        val normalized =
+                categories.map { it.trim() }
+                        .filter { it.isNotBlank() }
+                        .filterNot { it.equals("All apps", ignoreCase = true) }
+                        .filterNot { it.equals("Private", ignoreCase = true) }
+                        .distinct()
+        val entities = normalized.mapIndexed { index, name ->
+            AppCategoryDefinitionEntity(name = name, position = index)
+        }
+        appDao.replaceCategoryDefinitions(entities)
     }
 
     /** Removes the category assignment for an app. */

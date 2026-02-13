@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryDefinitionEntity
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryEntity
 import com.lu4p.fokuslauncher.data.database.entity.HiddenAppEntity
@@ -62,11 +63,20 @@ interface AppDao {
     @Query("SELECT * FROM app_categories WHERE category = :category")
     fun getAppsByCategory(category: String): Flow<List<AppCategoryEntity>>
 
-    @Query("SELECT * FROM app_category_definitions")
+    @Query("SELECT * FROM app_category_definitions ORDER BY position ASC, name COLLATE NOCASE ASC")
     fun getAllCategoryDefinitions(): Flow<List<AppCategoryDefinitionEntity>>
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun addCategoryDefinition(entity: AppCategoryDefinitionEntity)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertCategoryDefinition(entity: AppCategoryDefinitionEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertCategoryDefinitions(entities: List<AppCategoryDefinitionEntity>)
+
+    @Query("SELECT position FROM app_category_definitions WHERE name = :name LIMIT 1")
+    suspend fun getCategoryDefinitionPosition(name: String): Int?
+
+    @Query("SELECT COALESCE(MAX(position), -1) FROM app_category_definitions")
+    suspend fun getMaxCategoryDefinitionPosition(): Int
 
     @Query("DELETE FROM app_categories WHERE category = :category")
     suspend fun removeCategoryAssignments(category: String)
@@ -76,6 +86,14 @@ interface AppDao {
 
     @Query("DELETE FROM app_category_definitions WHERE name = :name")
     suspend fun removeCategoryDefinition(name: String)
+
+    @Transaction
+    suspend fun replaceCategoryDefinitions(entities: List<AppCategoryDefinitionEntity>) {
+        clearAllCategoryDefinitions()
+        if (entities.isNotEmpty()) {
+            upsertCategoryDefinitions(entities)
+        }
+    }
 
     // --- Reset / Clear All ---
 

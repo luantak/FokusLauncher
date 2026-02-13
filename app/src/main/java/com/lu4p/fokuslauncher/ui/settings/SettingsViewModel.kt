@@ -153,6 +153,10 @@ constructor(
         viewModelScope.launch { appRepository.setAppCategory(packageName, category) }
     }
 
+    fun reorderCategories(categories: List<String>) {
+        viewModelScope.launch { appRepository.reorderCategoryDefinitions(categories) }
+    }
+
     // --- Favorites ---
 
     fun addFavorite(label: String, packageName: String, iconName: String) {

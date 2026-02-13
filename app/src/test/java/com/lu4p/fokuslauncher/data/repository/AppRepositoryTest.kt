@@ -282,14 +282,17 @@ class AppRepositoryTest {
         repository.addCategoryDefinition("Private")
         repository.addCategoryDefinition("   ")
 
-        coVerify(exactly = 0) { appDao.addCategoryDefinition(any()) }
+        coVerify(exactly = 0) { appDao.upsertCategoryDefinition(any()) }
     }
 
     @Test
     fun `addCategoryDefinition stores normalized category name`() = runTest {
+        coEvery { appDao.getCategoryDefinitionPosition("My Category") } returns null
+        coEvery { appDao.getMaxCategoryDefinitionPosition() } returns 3
+
         repository.addCategoryDefinition("  My Category  ")
 
-        coVerify { appDao.addCategoryDefinition(AppCategoryDefinitionEntity("My Category")) }
+        coVerify { appDao.upsertCategoryDefinition(AppCategoryDefinitionEntity("My Category", 4)) }
     }
 
     @Test

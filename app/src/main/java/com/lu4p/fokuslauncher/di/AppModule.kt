@@ -30,6 +30,15 @@ object AppModule {
             }
         }
 
+    private val MIGRATION_2_3 =
+        object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "ALTER TABLE `app_category_definitions` ADD COLUMN `position` INTEGER NOT NULL DEFAULT 0"
+                )
+            }
+        }
+
     @Provides
     @Singleton
     fun provideAppDatabase(
@@ -38,7 +47,7 @@ object AppModule {
         context,
         AppDatabase::class.java,
         "fokus_launcher_db"
-    ).addMigrations(MIGRATION_1_2).build()
+    ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).build()
 
     @Provides
     @Singleton
