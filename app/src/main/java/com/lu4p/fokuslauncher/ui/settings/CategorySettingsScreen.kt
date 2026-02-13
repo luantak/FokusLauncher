@@ -30,7 +30,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -63,9 +62,6 @@ fun CategorySettingsScreen(
         deriveEditableCategories(uiState)
     }
     var localCategories by remember(categories) { mutableStateOf(categories) }
-    LaunchedEffect(categories) {
-        if (localCategories != categories) localCategories = categories
-    }
     val appCounts = remember(uiState.allApps, uiState.appCategories) { buildCategoryCounts(uiState) }
 
     Column(modifier = Modifier.fillMaxSize()) {

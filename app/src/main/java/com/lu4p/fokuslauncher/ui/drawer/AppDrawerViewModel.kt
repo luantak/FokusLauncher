@@ -99,7 +99,6 @@ constructor(
      */
     private fun loadApps() {
         viewModelScope.launch {
-            withContext(Dispatchers.IO) { appRepository.getInstalledApps() }
             rebuildVisibleApps(
                     hiddenSet = latestHiddenSet,
                     renameMap = latestRenameMap,
