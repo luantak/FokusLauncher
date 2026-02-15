@@ -74,7 +74,6 @@ private const val HORIZONTAL_MAX_SLIDE_RATIO = 0.6f
 private const val HORIZONTAL_TRIGGER_RATIO = 0.6f
 private const val HORIZONTAL_DRAG_GAIN = 1.8f
 
-@Composable
 private fun snapBackAnimationSpec() = spring<Float>(
     dampingRatio = Spring.DampingRatioMediumBouncy,
     stiffness = Spring.StiffnessMedium
@@ -161,7 +160,7 @@ fun FokusNavGraph(
                     val density = LocalDensity.current
                     val maxSlidePx = with(density) { (maxWidth * HORIZONTAL_MAX_SLIDE_RATIO).toPx() }
                     val triggerPx = with(density) { (maxWidth * HORIZONTAL_TRIGGER_RATIO).toPx() }
-                    val horizontalOffsetPx = remember { Animatable(0f) }
+                    var horizontalOffsetPx by remember { mutableFloatStateOf(0f) }
                     val coroutineScope = rememberCoroutineScope()
                     val snapBackSpec = snapBackAnimationSpec()
                     var launchTriggered by remember { mutableStateOf(false) }
@@ -170,10 +169,12 @@ fun FokusNavGraph(
                         if (launchTriggered) {
                             // Keep the panel at the swiped position briefly so launch feels continuous.
                             delay(260)
-                            horizontalOffsetPx.animateTo(
+                            Animatable(horizontalOffsetPx).animateTo(
                                 targetValue = 0f,
                                 animationSpec = snapBackSpec
-                            )
+                            ) {
+                                horizontalOffsetPx = value
+                            }
                             launchTriggered = false
                         }
                     }
@@ -217,25 +218,20 @@ fun FokusNavGraph(
                                                     onDragStart = { launchTriggered = false },
                                                     onHorizontalDrag = { change, dragAmount ->
                                                         if (launchTriggered) return@detectHorizontalDragGestures
-                                                        if (horizontalOffsetPx.value == 0f) {
+                                                        if (horizontalOffsetPx == 0f) {
                                                             if (dragAmount > 0 && swipeRightTarget == null) return@detectHorizontalDragGestures
                                                             if (dragAmount < 0 && swipeLeftTarget == null) return@detectHorizontalDragGestures
                                                         }
                                                         change.consume()
-                                                        val newOffset = (horizontalOffsetPx.value + (dragAmount * HORIZONTAL_DRAG_GAIN))
-                                                            .coerceIn(minSlidePx, maxSlidePxVal)
-                                                        coroutineScope.launch {
-                                                            horizontalOffsetPx.snapTo(newOffset)
-                                                        }
-                                                        if (abs(horizontalOffsetPx.value) >= triggerPx) {
-                                                            val target = if (horizontalOffsetPx.value > 0f) swipeRightTarget else swipeLeftTarget
+                                                        horizontalOffsetPx =
+                                                            (horizontalOffsetPx + (dragAmount * HORIZONTAL_DRAG_GAIN))
+                                                                .coerceIn(minSlidePx, maxSlidePxVal)
+                                                        if (abs(horizontalOffsetPx) >= triggerPx) {
+                                                            val target = if (horizontalOffsetPx > 0f) swipeRightTarget else swipeLeftTarget
                                                             if (target != null) {
                                                                 launchTriggered = true
-                                                                coroutineScope.launch {
-                                                                    horizontalOffsetPx.snapTo(
-                                                                        if (horizontalOffsetPx.value > 0f) maxSlidePx else -maxSlidePx
-                                                                    )
-                                                                }
+                                                                horizontalOffsetPx =
+                                                                    if (horizontalOffsetPx > 0f) maxSlidePx else -maxSlidePx
                                                                 activity?.launchWithBottomReveal(target)
                                                             }
                                                         }
@@ -243,20 +239,24 @@ fun FokusNavGraph(
                                                     onDragEnd = {
                                                         if (!launchTriggered) {
                                                             coroutineScope.launch {
-                                                                horizontalOffsetPx.animateTo(
+                                                                Animatable(horizontalOffsetPx).animateTo(
                                                                     targetValue = 0f,
                                                                     animationSpec = snapBackSpec
-                                                                )
+                                                                ) {
+                                                                    horizontalOffsetPx = value
+                                                                }
                                                             }
                                                         }
                                                     },
                                                     onDragCancel = {
                                                         if (!launchTriggered) {
                                                             coroutineScope.launch {
-                                                                horizontalOffsetPx.animateTo(
+                                                                Animatable(horizontalOffsetPx).animateTo(
                                                                     targetValue = 0f,
                                                                     animationSpec = snapBackSpec
-                                                                )
+                                                                ) {
+                                                                    horizontalOffsetPx = value
+                                                                }
                                                             }
                                                         }
                                                     }
@@ -276,7 +276,7 @@ fun FokusNavGraph(
                             onEditOverlayClosed = { tempShowHomeForEdit = false },
                             modifier = Modifier
                                 .fillMaxSize()
-                                .graphicsLayer { translationX = horizontalOffsetPx.value }
+                                .graphicsLayer { translationX = horizontalOffsetPx }
                         )
                     }
                 }
