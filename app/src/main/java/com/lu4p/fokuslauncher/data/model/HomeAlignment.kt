@@ -15,9 +15,9 @@ enum class HomeAlignment {
 
     val displayName: String
         get() = when (this) {
-            LEFT -> "Left (default)"
+            LEFT -> "Left"
             CENTER -> "Center"
-            RIGHT -> "Right (swapped)"
+            RIGHT -> "Right"
         }
 
     companion object {
