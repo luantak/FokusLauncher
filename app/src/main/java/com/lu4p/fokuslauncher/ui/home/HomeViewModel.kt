@@ -27,7 +27,6 @@ import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.model.WeatherData
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.data.repository.WeatherRepository
-import com.lu4p.fokuslauncher.utils.WallpaperHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -61,8 +60,7 @@ class HomeViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val appRepository: AppRepository,
     private val preferencesManager: PreferencesManager,
-    private val weatherRepository: WeatherRepository,
-    val wallpaperHelper: WallpaperHelper
+    private val weatherRepository: WeatherRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -95,13 +93,7 @@ class HomeViewModel @Inject constructor(
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    // ── Dialog / overlay state ──────────────────────────────────────
-
-    private val _showEditOverlay = MutableStateFlow(false)
-    val showEditOverlay: StateFlow<Boolean> = _showEditOverlay.asStateFlow()
-
-    private val _showEditShortcutsOverlay = MutableStateFlow(false)
-    val showEditShortcutsOverlay: StateFlow<Boolean> = _showEditShortcutsOverlay.asStateFlow()
+    // ── Dialog state ────────────────────────────────────────────────
 
     private val _appMenuTarget = MutableStateFlow<FavoriteApp?>(null)
     val appMenuTarget: StateFlow<FavoriteApp?> = _appMenuTarget.asStateFlow()
@@ -112,7 +104,7 @@ class HomeViewModel @Inject constructor(
     private val _showWeatherAppPicker = MutableStateFlow(false)
     val showWeatherAppPicker: StateFlow<Boolean> = _showWeatherAppPicker.asStateFlow()
 
-    // ── Edit overlay state ──────────────────────────────────────────
+    // ── Edit screen state ───────────────────────────────────────────
 
     private val _allInstalledApps = MutableStateFlow<List<AppInfo>>(emptyList())
     val allInstalledApps: StateFlow<List<AppInfo>> = _allInstalledApps.asStateFlow()
@@ -205,9 +197,9 @@ class HomeViewModel @Inject constructor(
         _showHomeScreenMenu.value = false
     }
 
-    // ── Edit overlay ────────────────────────────────────────────────
+    // ── Edit flows ──────────────────────────────────────────────────
 
-    fun openEditOverlay() {
+    fun startEditingHomeApps() {
         _appMenuTarget.value = null
         _editFavorites.value = favorites.value
         viewModelScope.launch(Dispatchers.IO) {
@@ -215,24 +207,14 @@ class HomeViewModel @Inject constructor(
             _allInstalledApps.value = apps
             _appNameMap.value = apps.associate { it.packageName to it.label }
         }
-        _showEditOverlay.value = true
     }
 
-    fun closeEditOverlay() {
-        _showEditOverlay.value = false
-    }
-
-    fun openEditShortcutsOverlay() {
+    fun startEditingShortcuts() {
         _appMenuTarget.value = null
         _editRightShortcuts.value = rightSideShortcuts.value
         viewModelScope.launch(Dispatchers.IO) {
             _allShortcutActions.value = appRepository.getAllShortcutActions()
-            _showEditShortcutsOverlay.value = true
         }
-    }
-
-    fun closeEditShortcutsOverlay() {
-        _showEditShortcutsOverlay.value = false
     }
 
     fun toggleAppOnHomeScreen(app: AppInfo) {
@@ -266,7 +248,6 @@ class HomeViewModel @Inject constructor(
     fun saveEditedFavorites() {
         viewModelScope.launch {
             preferencesManager.setFavorites(_editFavorites.value)
-            _showEditOverlay.value = false
         }
     }
 
@@ -306,7 +287,6 @@ class HomeViewModel @Inject constructor(
     fun saveEditedRightShortcuts() {
         viewModelScope.launch {
             preferencesManager.setRightSideShortcuts(_editRightShortcuts.value)
-            _showEditShortcutsOverlay.value = false
         }
     }
 

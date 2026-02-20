@@ -15,4 +15,7 @@ class FokusNavGraphViewModel @Inject constructor(
 
     val hasCompletedOnboarding = preferencesManager.hasCompletedOnboardingFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    val showWallpaper = preferencesManager.showWallpaperFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 }

@@ -3,6 +3,7 @@ package com.lu4p.fokuslauncher.ui.drawer
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -45,7 +46,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -135,7 +136,7 @@ fun AppDrawerScreen(
         CategoryActionSheet(
                 category = category,
                 onDismiss = viewModel::dismissCategoryActionSheet,
-                onRename = { newName -> viewModel.renameCategory(category, newName) },
+                onRename = { newName: String -> viewModel.renameCategory(category, newName) },
                 onEditApps = {
                     viewModel.dismissCategoryActionSheet()
                     onEditCategoryApps(category)
@@ -198,14 +199,15 @@ fun AppDrawerContent(
         }
     }
 
-    Column(
-            modifier =
-                    modifier.fillMaxSize()
-                            .padding(top = 48.dp)
-                            .nestedScroll(nestedScrollConnection)
-                            .testTag("app_drawer_screen")
-    ) {
-        // Search bar + menu button row
+    Box(modifier = modifier.fillMaxSize()) {
+        Column(
+                modifier =
+                        Modifier.fillMaxSize()
+                                .padding(top = 48.dp)
+                                .nestedScroll(nestedScrollConnection)
+                                .testTag("app_drawer_screen")
+        ) {
+            // Search bar + menu button row
         Box(modifier = Modifier.fillMaxWidth().padding(end = 8.dp)) {
             SearchBar(
                     query = uiState.searchQuery,
@@ -224,7 +226,11 @@ fun AppDrawerContent(
                     )
                 }
 
-                DropdownMenu(expanded = uiState.showMenu, onDismissRequest = onMenuDismiss) {
+                DropdownMenu(
+                        expanded = uiState.showMenu,
+                        onDismissRequest = onMenuDismiss,
+                        modifier = Modifier.background(MaterialTheme.colorScheme.surfaceVariant)
+                ) {
                     if (uiState.isPrivateSpaceSupported) {
                         DropdownMenuItem(
                                 text = {
@@ -339,10 +345,11 @@ fun AppDrawerContent(
         }
     }
 }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CategoryActionSheet(
+fun CategoryActionSheet(
         category: String,
         onDismiss: () -> Unit,
         onRename: (String) -> Unit,
@@ -387,7 +394,7 @@ private fun CategoryActionSheet(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun AppListItem(
+fun AppListItem(
         app: AppInfo,
         onClick: () -> Unit,
         onLongClick: () -> Unit,

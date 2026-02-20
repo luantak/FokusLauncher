@@ -11,6 +11,10 @@ import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import android.content.Context
+import android.net.Uri
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -30,6 +34,7 @@ data class SettingsUiState(
         val swipeRightTarget: ShortcutTarget? = null,
         val preferredWeatherAppPackage: String = "",
         val homeAlignment: HomeAlignment = HomeAlignment.LEFT,
+        val showWallpaper: Boolean = false,
         val allApps: List<AppInfo> = emptyList()
 )
 
@@ -39,6 +44,7 @@ data class HiddenAppInfo(val packageName: String, val label: String)
 class SettingsViewModel
 @Inject
 constructor(
+        @ApplicationContext private val context: Context,
         private val appRepository: AppRepository,
         private val preferencesManager: PreferencesManager
 ) : ViewModel() {
@@ -86,15 +92,18 @@ constructor(
                     .combine(preferencesManager.swipeRightTargetFlow) { leftState, swipeRight ->
                         leftState to swipeRight
                     }
-                    .combine(preferencesManager.preferredWeatherAppFlow) {
-                            swipeState,
-                            preferredWeatherApp ->
+                    .combine(preferencesManager.preferredWeatherAppFlow) { swipeState, preferredWeatherApp ->
+                        Pair(swipeState, preferredWeatherApp)
+                    }
+                    .combine(preferencesManager.showWallpaperFlow) { previousState, showWallpaper ->
+                        val (swipeState, preferredWeatherApp) = previousState
                         val (leftState, swipeRight) = swipeState
-                        Triple(leftState, swipeRight, preferredWeatherApp)
+                        Pair(Triple(leftState, swipeRight, preferredWeatherApp), showWallpaper)
                     }
                     .combine(preferencesManager.homeAlignmentFlow) {
-                            weatherState,
+                            weatherStateAndWallpaper,
                             homeAlignment ->
+                        val (weatherState, showWallpaper) = weatherStateAndWallpaper
                         val (leftState, swipeRight, preferredWeatherApp) = weatherState
                         val allApps = appRepository.getInstalledApps()
                         val hiddenInfos =
@@ -113,6 +122,7 @@ constructor(
                                 swipeRightTarget = swipeRight,
                                 preferredWeatherAppPackage = preferredWeatherApp,
                                 homeAlignment = homeAlignment,
+                                showWallpaper = showWallpaper,
                                 allApps = allApps
                         )
                     }
@@ -286,6 +296,25 @@ constructor(
             preferencesManager.clearAll()
             appRepository.clearAllAppData()
             appRepository.invalidateCache()
+        }
+    }
+
+    fun setShowWallpaper(show: Boolean) {
+        viewModelScope.launch { preferencesManager.setShowWallpaper(show) }
+    }
+
+    fun setSystemWallpaper(uri: Uri) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val wallpaperManager = android.app.WallpaperManager.getInstance(context)
+                context.contentResolver.openInputStream(uri)?.use { stream ->
+                    wallpaperManager.setStream(stream)
+                }
+                // Optionally auto-enable the wallpaper toggle so the user sees their change
+                preferencesManager.setShowWallpaper(true)
+            } catch (e: Exception) {
+                // Ignore or handle error
+            }
         }
     }
 }

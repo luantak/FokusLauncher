@@ -1,11 +1,6 @@
 package com.lu4p.fokuslauncher.ui.home
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -48,11 +43,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -72,14 +66,12 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
     onSwipeUp: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
-    onEditOverlayClosed: () -> Unit = {},
+    onOpenEditHomeApps: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val favorites by viewModel.favorites.collectAsStateWithLifecycle()
-    val showEditOverlay by viewModel.showEditOverlay.collectAsStateWithLifecycle()
-    val showEditShortcutsOverlay by viewModel.showEditShortcutsOverlay.collectAsStateWithLifecycle()
     val rightSideShortcuts by viewModel.rightSideShortcuts.collectAsStateWithLifecycle()
     val allInstalledApps by viewModel.allInstalledApps.collectAsStateWithLifecycle()
     val showWeatherAppPicker by viewModel.showWeatherAppPicker.collectAsStateWithLifecycle()
@@ -100,20 +92,6 @@ fun HomeScreen(
         }
     }
 
-    val wallpaperBitmap = remember(uiState.showWallpaper) {
-        if (uiState.showWallpaper) viewModel.wallpaperHelper.getWallpaperBitmap() else null
-    }
-
-    var wasEditOverlayOpen by remember { mutableStateOf(false) }
-    LaunchedEffect(showEditOverlay) {
-        if (showEditOverlay) {
-            wasEditOverlayOpen = true
-        } else if (wasEditOverlayOpen) {
-            wasEditOverlayOpen = false
-            onEditOverlayClosed()
-        }
-    }
-
     Box(modifier = modifier.fillMaxSize()) {
         HomeScreenContent(
             uiState = uiState,
@@ -124,41 +102,11 @@ fun HomeScreen(
             onHomeScreenLongPress = { viewModel.onHomeScreenLongPress() },
             onIconClick = { target -> viewModel.launchShortcut(target) },
             onSwipeUp = onSwipeUp,
-            wallpaperBitmap = wallpaperBitmap,
             onSetDefaultLauncher = { viewModel.openDefaultLauncherSettings() },
             onClockClick = { viewModel.openClockApp() },
             onDateClick = { viewModel.openCalendarApp() },
             onWeatherClick = { viewModel.openWeatherAppPicker() }
         )
-
-        // Edit home screen overlay
-        AnimatedVisibility(
-            visible = showEditOverlay,
-            enter = slideInVertically(
-                animationSpec = tween(300),
-                initialOffsetY = { it }
-            ),
-            exit = slideOutVertically(
-                animationSpec = tween(250),
-                targetOffsetY = { it }
-            )
-        ) {
-            EditHomeScreenOverlay(viewModel = viewModel)
-        }
-
-        AnimatedVisibility(
-            visible = showEditShortcutsOverlay,
-            enter = slideInVertically(
-                animationSpec = tween(300),
-                initialOffsetY = { it }
-            ),
-            exit = slideOutVertically(
-                animationSpec = tween(250),
-                targetOffsetY = { it }
-            )
-        ) {
-            EditShortcutsOverlay(viewModel = viewModel)
-        }
     }
 
     // ── Dialogs & sheets (render as overlay windows) ────────────────
@@ -170,7 +118,10 @@ fun HomeScreen(
             onDismiss = { viewModel.dismissAppMenu() },
             onRename = { newName -> viewModel.renameApp(fav.packageName, newName) },
             onRemoveFromHome = { viewModel.removeFavorite(fav) },
-            onEditHomeScreen = { viewModel.openEditOverlay() },
+            onEditHomeScreen = {
+                viewModel.dismissAppMenu()
+                onOpenEditHomeApps()
+            },
             onAppInfo = { viewModel.openAppInfo(fav.packageName) },
             onHide = { viewModel.hideApp(fav.packageName) },
             onUninstall = { viewModel.uninstallApp(fav.packageName) }
@@ -182,7 +133,7 @@ fun HomeScreen(
             onDismiss = { viewModel.dismissHomeScreenMenu() },
             onEditHomeScreen = {
                 viewModel.dismissHomeScreenMenu()
-                viewModel.openEditOverlay()
+                onOpenEditHomeApps()
             },
             onOpenSettings = {
                 viewModel.dismissHomeScreenMenu()
@@ -211,7 +162,6 @@ fun HomeScreenContent(
     onHomeScreenLongPress: () -> Unit = {},
     onIconClick: (ShortcutTarget) -> Unit,
     onSwipeUp: () -> Unit,
-    wallpaperBitmap: android.graphics.Bitmap? = null,
     onSetDefaultLauncher: () -> Unit = {},
     onClockClick: () -> Unit = {},
     onDateClick: () -> Unit = {},
@@ -222,7 +172,7 @@ fun HomeScreenContent(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.Black)
+            .background(if (uiState.showWallpaper) Color.Transparent else Color.Black)
             .combinedClickable(
                 indication = null,
                 interactionSource = noIndication,
@@ -231,20 +181,6 @@ fun HomeScreenContent(
             )
             .testTag("home_screen")
     ) {
-        // Wallpaper background
-        if (uiState.showWallpaper && wallpaperBitmap != null) {
-            Image(
-                bitmap = wallpaperBitmap.asImageBitmap(),
-                contentDescription = "Wallpaper",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.5f))
-            )
-        }
 
         Column(
             modifier = Modifier

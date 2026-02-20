@@ -47,18 +47,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.background
 import com.lu4p.fokuslauncher.R
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
+import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,7 +70,8 @@ fun SettingsScreen(
         onNavigateBack: () -> Unit = {},
         onEditHomeScreen: () -> Unit = {},
         onEditRightShortcuts: () -> Unit = {},
-        onEditCategories: () -> Unit = {}
+        onEditCategories: () -> Unit = {},
+        backgroundScrim: Color = FokusBackdrop.ScrimColorWithoutBlur
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -75,7 +79,17 @@ fun SettingsScreen(
     var showAppPickerFor by remember { mutableStateOf<String?>(null) } // swipeLeft/swipeRight
     var showResetConfirm by remember { mutableStateOf(false) }
 
-    Column(modifier = Modifier.fillMaxSize().testTag("settings_screen")) {
+    val wallpaperPickerLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { viewModel.setSystemWallpaper(it) }
+    }
+
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .background(backgroundScrim)
+        .testTag("settings_screen")
+    ) {
         TopAppBar(
                 title = { Text("Settings", color = MaterialTheme.colorScheme.onBackground) },
                 navigationIcon = {
@@ -94,6 +108,48 @@ fun SettingsScreen(
         )
 
         LazyColumn(modifier = Modifier.fillMaxSize()) {
+
+            // ========== APPEARANCE ==========
+            item { SectionHeader("Appearance") }
+            
+            item {
+                Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp, vertical = 14.dp)
+                ) {
+                    Text(
+                            text = "Show system wallpaper on home screen",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            modifier = Modifier.weight(1f)
+                    )
+                    androidx.compose.material3.Switch(
+                            checked = uiState.showWallpaper,
+                            onCheckedChange = { viewModel.setShowWallpaper(it) }
+                    )
+                }
+            }
+            
+            item {
+                Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { wallpaperPickerLauncher.launch("image/*") }
+                                .padding(horizontal = 24.dp, vertical = 14.dp)
+                ) {
+                    Text(
+                            text = "Set background image",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            item { SettingsDivider() }
 
             // ========== HOME SCREEN APPS ==========
             item { SectionHeader("Home Screen Apps") }
@@ -443,9 +499,13 @@ private fun SectionHeader(title: String) {
 
 @Composable
 private fun SettingsDivider() {
-    Spacer(Modifier.height(16.dp))
-    HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
-    Spacer(Modifier.height(16.dp))
+    Spacer(Modifier.height(10.dp))
+    HorizontalDivider(
+            modifier = Modifier.padding(horizontal = 24.dp),
+            thickness = 0.75.dp,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.16f)
+    )
+    Spacer(Modifier.height(10.dp))
 }
 
 // --- Location for weather row (shown only when permission disabled) ---

@@ -14,5 +14,14 @@
         <item name="android:navigationBarColor">@color/black</item>
         <!-- Customize your theme here. -->
         <item name="android:windowBackground">@color/black</item>
+        <item name="android:colorBackground">@color/black</item>
+    </style>
+
+    <style name="Theme.FokusLauncher.Transparent" parent="Theme.FokusLauncher">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:colorBackground">@android:color/transparent</item>
+        <item name="android:windowShowWallpaper">true</item>
+        <item name="android:windowDisablePreview">true</item>
     </style>
 </resources>

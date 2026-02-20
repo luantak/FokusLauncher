@@ -10,7 +10,6 @@ import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.data.repository.WeatherRepository
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
-import com.lu4p.fokuslauncher.utils.WallpaperHelper
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -69,12 +68,6 @@ object AppModule {
     @Provides
     @Singleton
     fun provideWeatherRepository(): WeatherRepository = WeatherRepository()
-
-    @Provides
-    @Singleton
-    fun provideWallpaperHelper(
-        @ApplicationContext context: Context
-    ): WallpaperHelper = WallpaperHelper(context)
 
     @Provides
     @Singleton

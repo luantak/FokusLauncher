@@ -1,6 +1,7 @@
 package com.lu4p.fokuslauncher.ui.settings
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Column
@@ -37,19 +38,22 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CategorySettingsScreen(
         viewModel: SettingsViewModel = hiltViewModel(),
         onNavigateBack: () -> Unit,
-        onEditCategoryApps: (String) -> Unit
+        onEditCategoryApps: (String) -> Unit,
+        backgroundScrim: Color = FokusBackdrop.ScrimColorWithoutBlur
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var newCategory by remember { mutableStateOf("") }
@@ -64,7 +68,11 @@ fun CategorySettingsScreen(
     var localCategories by remember(categories) { mutableStateOf(categories) }
     val appCounts = remember(uiState.allApps, uiState.appCategories) { buildCategoryCounts(uiState) }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(
+            modifier = Modifier
+                    .fillMaxSize()
+                    .background(backgroundScrim)
+    ) {
         TopAppBar(
                 title = { Text("App Categories", color = MaterialTheme.colorScheme.onBackground) },
                 navigationIcon = {
@@ -216,7 +224,8 @@ private fun ReorderableCategoryList(
 fun CategoryAppsScreen(
         category: String,
         viewModel: SettingsViewModel = hiltViewModel(),
-        onNavigateBack: () -> Unit
+        onNavigateBack: () -> Unit,
+        backgroundScrim: Color = FokusBackdrop.ScrimColorWithoutBlur
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var searchQuery by remember { mutableStateOf("") }
@@ -240,7 +249,11 @@ fun CategoryAppsScreen(
 
     BackHandler { onNavigateBack() }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(
+            modifier = Modifier
+                    .fillMaxSize()
+                    .background(backgroundScrim)
+    ) {
         TopAppBar(
                 title = { Text(category, color = MaterialTheme.colorScheme.onBackground) },
                 navigationIcon = {
