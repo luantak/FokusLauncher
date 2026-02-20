@@ -20,7 +20,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 data class SettingsUiState(
@@ -44,7 +43,7 @@ data class HiddenAppInfo(val packageName: String, val label: String)
 class SettingsViewModel
 @Inject
 constructor(
-        @ApplicationContext private val context: Context,
+        @param:ApplicationContext private val context: Context,
         private val appRepository: AppRepository,
         private val preferencesManager: PreferencesManager
 ) : ViewModel() {
@@ -164,10 +163,6 @@ constructor(
         viewModelScope.launch { appRepository.deleteCategory(name) }
     }
 
-    fun renameCategory(oldName: String, newName: String) {
-        viewModelScope.launch { appRepository.renameCategory(oldName, newName) }
-    }
-
     fun setAppCategory(packageName: String, category: String) {
         viewModelScope.launch { appRepository.setAppCategory(packageName, category) }
     }
@@ -176,101 +171,7 @@ constructor(
         viewModelScope.launch { appRepository.reorderCategoryDefinitions(categories) }
     }
 
-    // --- Favorites ---
-
-    fun addFavorite(label: String, packageName: String, iconName: String) {
-        viewModelScope.launch {
-            val current = preferencesManager.favoritesFlow.first().toMutableList()
-            current.add(FavoriteApp(label = label, packageName = packageName, iconName = iconName))
-            preferencesManager.setFavorites(current)
-        }
-    }
-
-    fun removeFavorite(index: Int) {
-        viewModelScope.launch {
-            val current = preferencesManager.favoritesFlow.first().toMutableList()
-            if (index in current.indices) {
-                current.removeAt(index)
-                preferencesManager.setFavorites(current)
-            }
-        }
-    }
-
-    fun moveFavoriteUp(index: Int) {
-        viewModelScope.launch {
-            val current = preferencesManager.favoritesFlow.first().toMutableList()
-            if (index > 0 && index < current.size) {
-                val item = current.removeAt(index)
-                current.add(index - 1, item)
-                preferencesManager.setFavorites(current)
-            }
-        }
-    }
-
-    fun moveFavoriteDown(index: Int) {
-        viewModelScope.launch {
-            val current = preferencesManager.favoritesFlow.first().toMutableList()
-            if (index >= 0 && index < current.size - 1) {
-                val item = current.removeAt(index)
-                current.add(index + 1, item)
-                preferencesManager.setFavorites(current)
-            }
-        }
-    }
-
-    fun updateFavoriteLabel(index: Int, newLabel: String) {
-        viewModelScope.launch {
-            val current = preferencesManager.favoritesFlow.first().toMutableList()
-            if (index in current.indices) {
-                current[index] = current[index].copy(label = newLabel)
-                preferencesManager.setFavorites(current)
-            }
-        }
-    }
-
-    fun updateFavoriteApp(index: Int, packageName: String) {
-        viewModelScope.launch {
-            val current = preferencesManager.favoritesFlow.first().toMutableList()
-            if (index in current.indices) {
-                current[index] = current[index].copy(packageName = packageName)
-                preferencesManager.setFavorites(current)
-            }
-        }
-    }
-
-    fun updateFavoriteIcon(index: Int, iconName: String) {
-        viewModelScope.launch {
-            val current = preferencesManager.favoritesFlow.first().toMutableList()
-            if (index in current.indices) {
-                current[index] = current[index].copy(iconName = iconName)
-                preferencesManager.setFavorites(current)
-            }
-        }
-    }
-
-    fun updateFavoriteIconApp(index: Int, packageName: String) {
-        updateFavoriteIconTarget(index, ShortcutTarget.App(packageName))
-    }
-
-    fun updateFavoriteIconTarget(index: Int, target: ShortcutTarget?) {
-        viewModelScope.launch {
-            val current = preferencesManager.favoritesFlow.first().toMutableList()
-            if (index in current.indices) {
-                current[index] = current[index].copy(iconPackage = ShortcutTarget.encode(target))
-                preferencesManager.setFavorites(current)
-            }
-        }
-    }
-
     // --- Swipe gestures ---
-
-    fun setSwipeLeftApp(packageName: String) {
-        setSwipeLeftTarget(if (packageName.isBlank()) null else ShortcutTarget.App(packageName))
-    }
-
-    fun setSwipeRightApp(packageName: String) {
-        setSwipeRightTarget(if (packageName.isBlank()) null else ShortcutTarget.App(packageName))
-    }
 
     fun setSwipeLeftTarget(target: ShortcutTarget?) {
         viewModelScope.launch { preferencesManager.setSwipeLeftTarget(target) }

@@ -35,7 +35,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,7 +42,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -63,11 +61,10 @@ import com.lu4p.fokuslauncher.ui.components.WeatherWidget
 
 @Composable
 fun HomeScreen(
+    modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel(),
-    onSwipeUp: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
-    onOpenEditHomeApps: () -> Unit = {},
-    modifier: Modifier = Modifier
+    onOpenEditHomeApps: () -> Unit = {}
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -101,7 +98,6 @@ fun HomeScreen(
             onLabelLongPress = { fav -> viewModel.onFavoriteLongPress(fav) },
             onHomeScreenLongPress = { viewModel.onHomeScreenLongPress() },
             onIconClick = { target -> viewModel.launchShortcut(target) },
-            onSwipeUp = onSwipeUp,
             onSetDefaultLauncher = { viewModel.openDefaultLauncherSettings() },
             onClockClick = { viewModel.openClockApp() },
             onDateClick = { viewModel.openCalendarApp() },
@@ -158,15 +154,14 @@ fun HomeScreenContent(
     favorites: List<FavoriteApp>,
     rightSideShortcuts: List<HomeShortcut>,
     onLabelClick: (String) -> Unit,
+    onIconClick: (ShortcutTarget) -> Unit,
+    modifier: Modifier = Modifier,
     onLabelLongPress: (FavoriteApp) -> Unit = {},
     onHomeScreenLongPress: () -> Unit = {},
-    onIconClick: (ShortcutTarget) -> Unit,
-    onSwipeUp: () -> Unit,
     onSetDefaultLauncher: () -> Unit = {},
     onClockClick: () -> Unit = {},
     onDateClick: () -> Unit = {},
-    onWeatherClick: () -> Unit = {},
-    modifier: Modifier = Modifier
+    onWeatherClick: () -> Unit = {}
 ) {
     val noIndication = remember { MutableInteractionSource() }
     Box(

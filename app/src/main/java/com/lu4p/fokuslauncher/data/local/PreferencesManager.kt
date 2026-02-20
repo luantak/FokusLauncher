@@ -22,7 +22,7 @@ private val Context.dataStore: DataStore<Preferences> by
         preferencesDataStore(name = "fokus_launcher_prefs")
 
 @Singleton
-class PreferencesManager @Inject constructor(@ApplicationContext private val context: Context) {
+class PreferencesManager @Inject constructor(@param:ApplicationContext private val context: Context) {
     companion object {
         private val FAVORITES_KEY = stringPreferencesKey("favorite_apps")
         private val SWIPE_LEFT_KEY = stringPreferencesKey("swipe_left_app")
@@ -104,29 +104,6 @@ class PreferencesManager @Inject constructor(@ApplicationContext private val con
             context.dataStore.data.map { prefs ->
                 ShortcutTarget.decode(prefs[SWIPE_RIGHT_KEY] ?: "")
             }
-
-    // Backward-compatible app-only flows used by existing settings UI.
-    val swipeLeftAppFlow: Flow<String> =
-            context.dataStore.data.map { prefs ->
-                (ShortcutTarget.decode(prefs[SWIPE_LEFT_KEY] ?: "") as? ShortcutTarget.App)
-                        ?.packageName
-                        ?: ""
-            }
-
-    val swipeRightAppFlow: Flow<String> =
-            context.dataStore.data.map { prefs ->
-                (ShortcutTarget.decode(prefs[SWIPE_RIGHT_KEY] ?: "") as? ShortcutTarget.App)
-                        ?.packageName
-                        ?: ""
-            }
-
-    suspend fun setSwipeLeftApp(packageName: String) {
-        setSwipeLeftTarget(if (packageName.isBlank()) null else ShortcutTarget.App(packageName))
-    }
-
-    suspend fun setSwipeRightApp(packageName: String) {
-        setSwipeRightTarget(if (packageName.isBlank()) null else ShortcutTarget.App(packageName))
-    }
 
     suspend fun setSwipeLeftTarget(target: ShortcutTarget?) {
         context.dataStore.edit { prefs -> prefs[SWIPE_LEFT_KEY] = ShortcutTarget.encode(target) }

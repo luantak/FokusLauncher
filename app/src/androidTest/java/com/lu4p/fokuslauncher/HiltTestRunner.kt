@@ -8,6 +8,7 @@ import dagger.hilt.android.testing.HiltTestApplication
 /**
  * Custom test runner that uses HiltTestApplication for instrumented tests.
  */
+@Suppress("unused")
 class HiltTestRunner : AndroidJUnitRunner() {
     override fun newApplication(
         cl: ClassLoader?,

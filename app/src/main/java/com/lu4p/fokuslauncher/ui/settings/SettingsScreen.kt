@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.Settings
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -181,7 +182,7 @@ fun SettingsScreen(
 
             item {
                 val context = LocalContext.current
-                val activity = context as? android.app.Activity
+                val activity = LocalActivity.current
                 val hasLocationPermission =
                         ContextCompat.checkSelfPermission(
                                 context,
@@ -427,12 +428,12 @@ fun SettingsScreen(
     }
 
     // App picker dialog (used for swipe shortcuts)
-    if (showAppPickerFor != null) {
+    val pickerTarget = showAppPickerFor
+    if (pickerTarget != null) {
         AppPickerDialog(
                 allApps = uiState.allApps,
                 onSelect = { packageName ->
-                    val targetKey = showAppPickerFor ?: return@AppPickerDialog
-                    when (targetKey) {
+                    when (pickerTarget) {
                         "swipeLeft" -> viewModel.setSwipeLeftTarget(ShortcutTarget.App(packageName))
                         "swipeRight" ->
                                 viewModel.setSwipeRightTarget(ShortcutTarget.App(packageName))
@@ -684,11 +685,14 @@ private fun formatWeatherAppLabel(
     if (packageName.isNotBlank()) {
         return allApps.find { it.packageName == packageName }?.label ?: packageName
     }
-    val weatherIntent = Intent(Intent.ACTION_MAIN).apply {
-        addCategory(Intent.CATEGORY_APP_WEATHER)
+    val hasSystemWeatherApp = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+        val weatherIntent = Intent(Intent.ACTION_MAIN).apply {
+            addCategory(Intent.CATEGORY_APP_WEATHER)
+        }
+        weatherIntent.resolveActivity(context.packageManager) != null
+    } else {
+        false
     }
-    val hasSystemWeatherApp =
-            weatherIntent.resolveActivity(context.packageManager) != null
     return if (hasSystemWeatherApp) {
         context.getString(R.string.settings_weather_app_system_default)
     } else {

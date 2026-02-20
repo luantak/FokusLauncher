@@ -18,7 +18,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import com.lu4p.fokuslauncher.ui.theme.ChipBackground
 import com.lu4p.fokuslauncher.ui.theme.ChipSelectedBackground
-import java.util.Locale
 
 /**
  * Horizontal scrollable row of category filter chips.
@@ -28,8 +27,8 @@ fun CategoryChips(
     categories: List<String>,
     selectedCategory: String,
     onCategorySelected: (String) -> Unit,
-    onCategoryLongPress: (String) -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onCategoryLongPress: (String) -> Unit = {}
 ) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),

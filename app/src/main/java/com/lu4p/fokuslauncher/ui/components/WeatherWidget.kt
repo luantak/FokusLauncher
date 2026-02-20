@@ -23,8 +23,8 @@ import com.lu4p.fokuslauncher.data.model.WeatherData
 @Composable
 fun WeatherWidget(
     weather: WeatherData?,
-    onClick: () -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
 ) {
     val weatherEmoji = weather?.weatherEmoji ?: "☁️"
     val temperatureText = weather?.let { "${it.temperature}°C" } ?: "--°C"

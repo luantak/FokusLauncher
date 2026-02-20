@@ -157,11 +157,12 @@ fun EditShortcutsScreen(
         )
     }
 
-    if (iconPickerForIndex != null) {
+    val currentPickerIndex = iconPickerForIndex
+    if (currentPickerIndex != null) {
         EditShortcutIconPickerDialog(
-            currentIconName = editShortcuts.getOrNull(iconPickerForIndex!!)?.iconName ?: "circle",
+            currentIconName = editShortcuts.getOrNull(currentPickerIndex)?.iconName ?: "circle",
             onSelect = { name ->
-                viewModel.updateShortcutIcon(iconPickerForIndex!!, name)
+                viewModel.updateShortcutIcon(currentPickerIndex, name)
                 iconPickerForIndex = null
             },
             onDismiss = { iconPickerForIndex = null }
@@ -228,7 +229,6 @@ private fun ReorderableShortcutList(
                             detectVerticalDragGestures(
                                 onDragStart = {
                                     draggedIndex = index
-                                    dragOffset = 0f
                                 },
                                 onVerticalDrag = { change, amount ->
                                     change.consume()

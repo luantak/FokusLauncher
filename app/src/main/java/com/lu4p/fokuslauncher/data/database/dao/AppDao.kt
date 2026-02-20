@@ -17,9 +17,6 @@ interface AppDao {
 
     // --- Hidden Apps ---
 
-    @Query("SELECT * FROM hidden_apps")
-    fun getAllHiddenApps(): Flow<List<HiddenAppEntity>>
-
     @Query("SELECT packageName FROM hidden_apps")
     fun getHiddenPackageNames(): Flow<List<String>>
 

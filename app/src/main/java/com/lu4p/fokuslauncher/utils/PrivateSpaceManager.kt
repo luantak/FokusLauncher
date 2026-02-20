@@ -31,7 +31,7 @@ import javax.inject.Singleton
  */
 @Singleton
 class PrivateSpaceManager @Inject constructor(
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) {
     private val userManager: UserManager by lazy {
         context.getSystemService(Context.USER_SERVICE) as UserManager

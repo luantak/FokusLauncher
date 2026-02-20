@@ -45,7 +45,6 @@ import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material.icons.outlined.Send
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.ShoppingBag
@@ -57,6 +56,7 @@ import androidx.compose.material.icons.outlined.Translate
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material.icons.outlined.VolunteerActivism
 import androidx.compose.material.icons.outlined.Work
+import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.ui.graphics.vector.ImageVector
 
 /**
@@ -75,7 +75,7 @@ object MinimalIcons {
         // Communication
         "chat" to Icons.Outlined.Email,
         "mail" to Icons.Outlined.Mail,
-        "send" to Icons.Outlined.Send,
+        "send" to Icons.AutoMirrored.Outlined.Send,
         "call" to Icons.Outlined.Call,
         "phone" to Icons.Outlined.Phone,
         "contacts" to Icons.Outlined.Contacts,

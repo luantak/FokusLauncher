@@ -8,12 +8,10 @@ import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
-import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.data.repository.WeatherRepository
 import com.lu4p.fokuslauncher.utils.WallpaperHelper
-import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -68,15 +66,15 @@ class HomeViewModelTest {
         // Mock preferences
         every { preferencesManager.favoritesFlow } returns flowOf(testFavorites)
         every { preferencesManager.showWallpaperFlow } returns flowOf(false)
-        every { preferencesManager.swipeLeftTargetFlow } returns flowOf<ShortcutTarget?>(null)
-        every { preferencesManager.swipeRightTargetFlow } returns flowOf<ShortcutTarget?>(null)
-        every { preferencesManager.rightSideShortcutsFlow } returns flowOf(emptyList<HomeShortcut>())
+        every { preferencesManager.swipeLeftTargetFlow } returns flowOf(null as ShortcutTarget?)
+        every { preferencesManager.swipeRightTargetFlow } returns flowOf(null as ShortcutTarget?)
+        every { preferencesManager.rightSideShortcutsFlow } returns flowOf(emptyList())
         every { preferencesManager.homeAlignmentFlow } returns flowOf(HomeAlignment.LEFT)
         coEvery { preferencesManager.ensureRightSideShortcutsInitialized() } returns Unit
         coEvery { preferencesManager.setFavorites(any()) } returns Unit
 
         // Mock repository flows used by name resolution
-        every { appRepository.getAllRenamedApps() } returns flowOf(emptyList<RenamedAppEntity>())
+        every { appRepository.getAllRenamedApps() } returns flowOf(emptyList())
         every { appRepository.getInstalledApps() } returns emptyList()
         every { appRepository.getAllShortcutActions() } returns emptyList()
     }

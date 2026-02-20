@@ -16,6 +16,4 @@ data class AppInfo(
     val userHandle: UserHandle? = null,
     /** Non-null for Private Space apps; the activity to start. */
     val componentName: ComponentName? = null
-) {
-    val isPrivateSpace: Boolean get() = userHandle != null
-}
+)

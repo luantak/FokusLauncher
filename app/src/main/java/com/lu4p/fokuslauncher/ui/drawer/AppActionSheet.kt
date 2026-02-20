@@ -1,7 +1,6 @@
 package com.lu4p.fokuslauncher.ui.drawer
 
 import android.content.Intent
-import android.net.Uri
 import android.provider.Settings
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -36,6 +35,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import com.lu4p.fokuslauncher.data.model.AppInfo
 
 /**
@@ -131,7 +131,7 @@ fun AppActionSheet(
                 testTag = "action_app_info",
                 onClick = {
                     val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                        data = Uri.parse("package:${app.packageName}")
+                        data = "package:${app.packageName}".toUri()
                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     }
                     context.startActivity(intent)
@@ -155,7 +155,7 @@ fun AppActionSheet(
                 testTag = "action_uninstall",
                 onClick = {
                     val intent = Intent(Intent.ACTION_DELETE).apply {
-                        data = Uri.parse("package:${app.packageName}")
+                        data = "package:${app.packageName}".toUri()
                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     }
                     context.startActivity(intent)

@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -31,9 +32,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            window.setNavigationBarContrastEnforced(false)
+            window.isNavigationBarContrastEnforced = false
         }
-        window.decorView.overScrollMode = android.view.View.OVER_SCROLL_NEVER
+        window.decorView.overScrollMode = View.OVER_SCROLL_NEVER
         hideStatusBar()
         setContent {
             FokusLauncherTheme {
@@ -75,13 +76,10 @@ class MainActivity : ComponentActivity() {
          */
         fun expandStatusBar(context: Context) {
             try {
-                val statusBarManager = context.getSystemService(Context.STATUS_BAR_SERVICE)
+                val statusBarManager = context.getSystemService("statusbar")
                 val clazz = Class.forName("android.app.StatusBarManager")
-                val method = if (Build.VERSION.SDK_INT >= 17) {
-                    clazz.getMethod("expandNotificationsPanel")
-                } else {
-                    clazz.getMethod("expand")
-                }
+                val method = clazz.getMethod("expandNotificationsPanel")
+
                 method.invoke(statusBarManager)
                 return
             } catch (_: Exception) { }

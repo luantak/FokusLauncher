@@ -1,7 +1,7 @@
 package com.lu4p.fokuslauncher.ui.theme
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.LocalOverscrollConfiguration
+import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
@@ -32,7 +32,7 @@ private val FokusColorScheme = darkColorScheme(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FokusLauncherTheme(content: @Composable () -> Unit) {
-    CompositionLocalProvider(LocalOverscrollConfiguration provides null) {
+    CompositionLocalProvider(LocalOverscrollFactory provides null) {
         MaterialTheme(
             colorScheme = FokusColorScheme,
             typography = FokusTypography,

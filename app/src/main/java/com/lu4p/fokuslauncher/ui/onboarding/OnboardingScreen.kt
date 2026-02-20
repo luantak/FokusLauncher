@@ -402,12 +402,12 @@ private fun SwipeShortcutsStep(
         }
     }
 
-    if (showAppPickerFor != null) {
+    val pickerTarget = showAppPickerFor
+    if (pickerTarget != null) {
         OnboardingAppPickerDialog(
             allApps = swipeState.allApps,
             onSelect = { packageName ->
-                val key = showAppPickerFor ?: return@OnboardingAppPickerDialog
-                when (key) {
+                when (pickerTarget) {
                     "swipeLeft" -> onSetSwipeLeft(ShortcutTarget.App(packageName))
                     "swipeRight" -> onSetSwipeRight(ShortcutTarget.App(packageName))
                 }

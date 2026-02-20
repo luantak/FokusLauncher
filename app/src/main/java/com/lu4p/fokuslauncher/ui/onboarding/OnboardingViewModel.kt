@@ -16,7 +16,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -42,16 +41,14 @@ data class SwipeShortcutsState(
 
 @HiltViewModel
 class OnboardingViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val preferencesManager: PreferencesManager,
     private val appRepository: AppRepository
 ) : ViewModel() {
 
     private val _currentStepIndex = MutableStateFlow(0)
-    val currentStepIndex: StateFlow<Int> = _currentStepIndex.asStateFlow()
 
     private val _isDefaultLauncher = MutableStateFlow(true)
-    val isDefaultLauncher: StateFlow<Boolean> = _isDefaultLauncher.asStateFlow()
 
     /** Ordered list of steps to show. SET_DEFAULT_LAUNCHER is omitted when already default. */
     val steps: StateFlow<List<OnboardingStep>> = _isDefaultLauncher.map { isDefault ->

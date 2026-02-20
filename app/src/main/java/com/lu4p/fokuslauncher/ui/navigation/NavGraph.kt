@@ -14,7 +14,6 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -42,10 +41,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
+import androidx.activity.compose.LocalActivity
+import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
@@ -76,7 +74,6 @@ object Routes {
     const val SETTINGS_CATEGORY_APPS = "settings_category_apps"
     const val SETTINGS_EDIT_HOME_APPS = "settings_edit_home_apps"
     const val SETTINGS_EDIT_SHORTCUTS = "settings_edit_shortcuts"
-    const val ONBOARDING = "onboarding"
 }
 
 private const val SWIPE_THRESHOLD = 200f
@@ -85,7 +82,6 @@ private const val HORIZONTAL_MAX_SLIDE_RATIO = 0.6f
 private const val HORIZONTAL_TRIGGER_RATIO = 0.6f
 private const val HORIZONTAL_DRAG_GAIN = 1.8f
 
-@Composable
 private fun snapBackAnimationSpec() = spring<Float>(
     dampingRatio = Spring.DampingRatioMediumBouncy,
     stiffness = Spring.StiffnessMedium
@@ -115,12 +111,11 @@ fun FokusNavGraph(
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val isHome = navBackStackEntry?.destination?.route == Routes.HOME
-    val isSettingsRoute = navBackStackEntry?.destination?.route?.startsWith(Routes.SETTINGS) == true
     val shouldBlurAndDim = showDrawer || !isHome || horizontalSwipeActive
     // Never apply Android window-level blur/dim while on Home.
     val shouldApplyWindowEffects = shouldBlurAndDim && !isHome
 
-    val activity = LocalContext.current as? Activity
+    val activity = LocalActivity.current
     var crossWindowBlurEnabled by remember {
         mutableStateOf(
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -152,11 +147,11 @@ fun FokusNavGraph(
             if (window != null) {
                 if (shouldApplyWindowEffects) {
                     window.setBackgroundBlurRadius(
-                        if (crossWindowBlurEnabled) FokusBackdrop.WindowBackgroundBlurRadius else 0
+                        if (crossWindowBlurEnabled) FokusBackdrop.WINDOW_BACKGROUND_BLUR_RADIUS else 0
                     )
                     if (crossWindowBlurEnabled) {
                         window.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
-                        window.attributes.blurBehindRadius = FokusBackdrop.WindowBlurBehindRadius
+                        window.attributes.blurBehindRadius = FokusBackdrop.WINDOW_BLUR_BEHIND_RADIUS
                     } else {
                         window.clearFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
                         window.attributes.blurBehindRadius = 0
@@ -207,9 +202,7 @@ fun FokusNavGraph(
                 }
                 val swipeLeftTarget by homeViewModel.swipeLeftTarget.collectAsStateWithLifecycle()
                 val swipeRightTarget by homeViewModel.swipeRightTarget.collectAsStateWithLifecycle()
-                val activity = LocalContext.current as? Activity
-
-                var vertDrag by remember { mutableFloatStateOf(0f) }
+                val activity = LocalActivity.current
 
                 BoxWithConstraints(
                     modifier = Modifier
@@ -218,11 +211,11 @@ fun FokusNavGraph(
                     val density = LocalDensity.current
                     val maxSlidePx = with(density) { (maxWidth * HORIZONTAL_MAX_SLIDE_RATIO).toPx() }
                     val triggerPx = with(density) { (maxWidth * HORIZONTAL_TRIGGER_RATIO).toPx() }
-                    val horizontalOffsetPx = remember { Animatable(0f) }
+                    var horizontalOffsetPx by remember { mutableFloatStateOf(0f) }
                     val coroutineScope = rememberCoroutineScope()
                     val snapBackSpec = snapBackAnimationSpec()
                     var launchTriggered by remember { mutableStateOf(false) }
-                    val isHorizontalGestureActive = abs(horizontalOffsetPx.value) > 0.5f || launchTriggered
+                    val isHorizontalGestureActive = abs(horizontalOffsetPx) > 0.5f || launchTriggered
 
                     LaunchedEffect(isHorizontalGestureActive) {
                         horizontalSwipeActive = isHorizontalGestureActive
@@ -232,10 +225,12 @@ fun FokusNavGraph(
                         if (launchTriggered) {
                             // Keep the panel at the swiped position briefly so launch feels continuous.
                             delay(260)
-                            horizontalOffsetPx.animateTo(
+                            Animatable(horizontalOffsetPx).animateTo(
                                 targetValue = 0f,
                                 animationSpec = snapBackSpec
-                            )
+                            ) {
+                                horizontalOffsetPx = value
+                            }
                             launchTriggered = false
                         }
                     }
@@ -243,27 +238,25 @@ fun FokusNavGraph(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .then(
-                                if (!showEditOverlay) Modifier
-                                    .pointerInput(Unit) {
-                                        detectVerticalDragGestures(
-                                            onDragStart = { vertDrag = 0f },
-                                            onVerticalDrag = { change, dragAmount ->
-                                                change.consume()
-                                                vertDrag += dragAmount
-                                            },
-                                            onDragEnd = {
-                                                when {
-                                                    vertDrag < -SWIPE_THRESHOLD -> showDrawer = true
-                                                    vertDrag > SWIPE_THRESHOLD -> activity?.let {
-                                                        MainActivity.expandStatusBar(it)
-                                                    }
-                                                }
-                                                vertDrag = 0f
+                            .pointerInput(Unit) {
+                                var verticalDragOffset = 0f
+                                detectVerticalDragGestures(
+                                    onDragStart = { },
+                                    onVerticalDrag = { change, dragAmount ->
+                                        change.consume()
+                                        verticalDragOffset += dragAmount
+                                    },
+                                    onDragEnd = {
+                                        when {
+                                            verticalDragOffset < -SWIPE_THRESHOLD -> showDrawer = true
+                                            verticalDragOffset > SWIPE_THRESHOLD -> activity?.let {
+                                                MainActivity.expandStatusBar(it)
                                             }
-                                        )
+                                        }
                                     }
-                                    .then(
+                                )
+                            }
+                            .then(
                                         if (swipeLeftTarget != null || swipeRightTarget != null) {
                                             val minSlidePx = if (swipeLeftTarget != null) -maxSlidePx else 0f
                                             val maxSlidePxVal = if (swipeRightTarget != null) maxSlidePx else 0f
@@ -279,25 +272,20 @@ fun FokusNavGraph(
                                                     onDragStart = { launchTriggered = false },
                                                     onHorizontalDrag = { change, dragAmount ->
                                                         if (launchTriggered) return@detectHorizontalDragGestures
-                                                        if (horizontalOffsetPx.value == 0f) {
+                                                        if (horizontalOffsetPx == 0f) {
                                                             if (dragAmount > 0 && swipeRightTarget == null) return@detectHorizontalDragGestures
                                                             if (dragAmount < 0 && swipeLeftTarget == null) return@detectHorizontalDragGestures
                                                         }
                                                         change.consume()
-                                                        val newOffset = (horizontalOffsetPx.value + (dragAmount * HORIZONTAL_DRAG_GAIN))
-                                                            .coerceIn(minSlidePx, maxSlidePxVal)
-                                                        coroutineScope.launch {
-                                                            horizontalOffsetPx.snapTo(newOffset)
-                                                        }
-                                                        if (abs(horizontalOffsetPx.value) >= triggerPx) {
-                                                            val target = if (horizontalOffsetPx.value > 0f) swipeRightTarget else swipeLeftTarget
+                                                        horizontalOffsetPx =
+                                                            (horizontalOffsetPx + (dragAmount * HORIZONTAL_DRAG_GAIN))
+                                                                .coerceIn(minSlidePx, maxSlidePxVal)
+                                                        if (abs(horizontalOffsetPx) >= triggerPx) {
+                                                            val target = if (horizontalOffsetPx > 0f) swipeRightTarget else swipeLeftTarget
                                                             if (target != null) {
                                                                 launchTriggered = true
-                                                                coroutineScope.launch {
-                                                                    horizontalOffsetPx.snapTo(
-                                                                        if (horizontalOffsetPx.value > 0f) maxSlidePx else -maxSlidePx
-                                                                    )
-                                                                }
+                                                                horizontalOffsetPx =
+                                                                    if (horizontalOffsetPx > 0f) maxSlidePx else -maxSlidePx
                                                                 activity?.launchWithBottomReveal(target)
                                                             }
                                                         }
@@ -305,26 +293,24 @@ fun FokusNavGraph(
                                                     onDragEnd = {
                                                         if (!launchTriggered) {
                                                             coroutineScope.launch {
-                                                                horizontalOffsetPx.animateTo(
+                                                                Animatable(horizontalOffsetPx).animateTo(
                                                                     targetValue = 0f,
-                                                                    animationSpec = spring(
-                                                                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                                        stiffness = Spring.StiffnessMedium
-                                                                    )
-                                                                )
+                                                                    animationSpec = snapBackSpec
+                                                                ) {
+                                                                    horizontalOffsetPx = value
+                                                                }
                                                             }
                                                         }
                                                     },
                                                     onDragCancel = {
                                                         if (!launchTriggered) {
                                                             coroutineScope.launch {
-                                                                horizontalOffsetPx.animateTo(
+                                                                Animatable(horizontalOffsetPx).animateTo(
                                                                     targetValue = 0f,
-                                                                    animationSpec = spring(
-                                                                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                                        stiffness = Spring.StiffnessMedium
-                                                                    )
-                                                                )
+                                                                    animationSpec = snapBackSpec
+                                                                ) {
+                                                                    horizontalOffsetPx = value
+                                                                }
                                                             }
                                                         }
                                                     }
@@ -332,12 +318,10 @@ fun FokusNavGraph(
                                             }
                                         } else Modifier
                                     )
-                                else Modifier
-                            )
+                            
                     ) {
                         HomeScreen(
                             viewModel = homeViewModel,
-                            onSwipeUp = { showDrawer = true },
                             onOpenSettings = {
                                 navController.navigate(Routes.SETTINGS) { launchSingleTop = true }
                             },
@@ -347,7 +331,7 @@ fun FokusNavGraph(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .graphicsLayer {
-                                    translationX = horizontalOffsetPx.value
+                                    translationX = horizontalOffsetPx
                                     alpha = if (showDrawer) 0f else 1f
                                 }
                         )
@@ -468,7 +452,9 @@ fun FokusNavGraph(
                 popEnterTransition = { slideInHorizontally(tween(ANIM_DURATION)) { -it } },
                 popExitTransition = { slideOutHorizontally(tween(ANIM_DURATION)) { it } }
             ) {
-                val homeBackStackEntry = remember { navController.getBackStackEntry(Routes.HOME) }
+                val homeBackStackEntry = remember(navBackStackEntry) {
+                    navController.getBackStackEntry(Routes.HOME)
+                }
                 val homeViewModel: HomeViewModel = hiltViewModel(homeBackStackEntry)
                 EditHomeAppsScreen(
                     viewModel = homeViewModel,
@@ -484,7 +470,9 @@ fun FokusNavGraph(
                 popEnterTransition = { slideInHorizontally(tween(ANIM_DURATION)) { -it } },
                 popExitTransition = { slideOutHorizontally(tween(ANIM_DURATION)) { it } }
             ) {
-                val homeBackStackEntry = remember { navController.getBackStackEntry(Routes.HOME) }
+                val homeBackStackEntry = remember(navBackStackEntry) {
+                    navController.getBackStackEntry(Routes.HOME)
+                }
                 val homeViewModel: HomeViewModel = hiltViewModel(homeBackStackEntry)
                 EditShortcutsScreen(
                     viewModel = homeViewModel,
@@ -505,19 +493,17 @@ fun FokusNavGraph(
  */
 private fun Activity.launchWithBottomReveal(target: ShortcutTarget) {
     if (target is ShortcutTarget.LauncherShortcut) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1) {
-            try {
-                val launcherApps = getSystemService(LauncherApps::class.java)
-                launcherApps?.startShortcut(
-                    target.packageName,
-                    target.shortcutId,
-                    null,
-                    null,
-                    Process.myUserHandle()
-                )
-            } catch (_: Exception) {
-                // ignore launch failures
-            }
+        try {
+            val launcherApps = getSystemService(LauncherApps::class.java)
+            launcherApps?.startShortcut(
+                target.packageName,
+                target.shortcutId,
+                null,
+                null,
+                Process.myUserHandle()
+            )
+        } catch (_: Exception) {
+            // ignore launch failures
         }
         return
     }
@@ -543,7 +529,7 @@ private fun parseDeepLinkIntent(intentUri: String): Intent? {
         Intent.parseUri(intentUri, Intent.URI_INTENT_SCHEME)
     } catch (_: Exception) {
         try {
-            Intent(Intent.ACTION_VIEW, Uri.parse(intentUri))
+            Intent(Intent.ACTION_VIEW, intentUri.toUri())
         } catch (_: Exception) {
             null
         }

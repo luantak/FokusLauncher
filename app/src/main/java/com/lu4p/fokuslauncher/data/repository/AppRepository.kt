@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.LauncherApps
 import android.content.pm.ResolveInfo
-import android.os.Build
 import android.os.Bundle
 import android.os.Process
 import com.lu4p.fokuslauncher.data.database.dao.AppDao
@@ -28,7 +27,7 @@ import kotlinx.coroutines.flow.first
 @Singleton
 class AppRepository
 @Inject
-constructor(@ApplicationContext private val context: Context, private val appDao: AppDao) {
+constructor(@param:ApplicationContext private val context: Context, private val appDao: AppDao) {
     private var cachedApps: List<AppInfo>? = null
 
     // --- App Loading ---
@@ -50,6 +49,7 @@ constructor(@ApplicationContext private val context: Context, private val appDao
 
         val apps =
                 resolveInfos
+                        .asSequence()
                         .filter { it.activityInfo.packageName != context.packageName }
                         .map { resolveInfo ->
                             val packageName = resolveInfo.activityInfo.packageName
@@ -68,6 +68,7 @@ constructor(@ApplicationContext private val context: Context, private val appDao
                         }
                         .sortedBy { it.label.lowercase() }
                         .distinctBy { it.packageName }
+                        .toList()
 
         cachedApps = apps
         return apps
@@ -99,7 +100,6 @@ constructor(@ApplicationContext private val context: Context, private val appDao
      * Launches an Android launcher shortcut action (long-press shortcut).
      */
     fun launchLauncherShortcut(packageName: String, shortcutId: String): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N_MR1) return false
         return try {
             val launcherApps = context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as LauncherApps
             launcherApps.startShortcut(packageName, shortcutId, null, null, Process.myUserHandle())
@@ -134,7 +134,7 @@ constructor(@ApplicationContext private val context: Context, private val appDao
                 )
             )
 
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N_MR1 || launcherApps == null) return@forEach
+            if (launcherApps == null) return@forEach
 
             val shortcuts = try {
                 val query = LauncherApps.ShortcutQuery()
@@ -305,20 +305,17 @@ constructor(@ApplicationContext private val context: Context, private val appDao
 
     suspend fun reorderCategoryDefinitions(categories: List<String>) {
         val normalized =
-                categories.map { it.trim() }
+                categories.asSequence()
+                        .map { it.trim() }
                         .filter { it.isNotBlank() }
                         .filterNot { it.equals("All apps", ignoreCase = true) }
                         .filterNot { it.equals("Private", ignoreCase = true) }
                         .distinct()
+                        .toList()
         val entities = normalized.mapIndexed { index, name ->
             AppCategoryDefinitionEntity(name = name, position = index)
         }
         appDao.replaceCategoryDefinitions(entities)
-    }
-
-    /** Removes the category assignment for an app. */
-    suspend fun removeAppCategory(packageName: String) {
-        appDao.removeAppCategory(packageName)
     }
 
     /** Returns the assigned category for an app, or null. */

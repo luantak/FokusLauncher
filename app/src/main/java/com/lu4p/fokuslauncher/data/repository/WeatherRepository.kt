@@ -43,7 +43,7 @@ class WeatherRepository @Inject constructor() {
             try {
                 val url =
                         URL(
-                                "$OPEN_METEO_BASE_URL" +
+                                OPEN_METEO_BASE_URL +
                                         "?latitude=$lat" +
                                         "&longitude=$lon" +
                                         "&current=temperature_2m,weather_code" +

@@ -151,15 +151,15 @@ fun AppDrawerContent(
         uiState: AppDrawerUiState,
         onSearchQueryChanged: (String) -> Unit,
         onCategorySelected: (String) -> Unit,
-        onCategoryLongPress: (String) -> Unit = {},
         onAppClick: (LaunchTarget) -> Unit,
+        onSettingsClick: () -> Unit,
+        modifier: Modifier = Modifier,
+        onCategoryLongPress: (String) -> Unit = {},
         onAppLongPress: (AppInfo) -> Unit = {},
         onMenuToggle: () -> Unit = {},
         onMenuDismiss: () -> Unit = {},
-        onSettingsClick: () -> Unit,
         onPrivateSpaceToggle: () -> Unit = {},
-        onClose: () -> Unit = {},
-        modifier: Modifier = Modifier
+        onClose: () -> Unit = {}
 ) {
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
@@ -184,7 +184,7 @@ fun AppDrawerContent(
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
                 // When list is at top and user pulls down, accumulate
-                if (available.y > 0 && !listState.canScrollBackward) {
+                if (source == NestedScrollSource.UserInput && available.y > 0 && !listState.canScrollBackward) {
                     overscrollY += available.y
                     if (overscrollY > 300f) {
                         overscrollY = 0f

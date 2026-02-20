@@ -7,13 +7,12 @@ import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.location.LocationManager
-import android.net.Uri
 import android.os.BatteryManager
 import android.provider.AlarmClock
 import android.provider.CalendarContract
-import android.app.ActivityOptions
 import android.provider.Settings
 import android.widget.Toast
+import androidx.core.net.toUri
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -57,7 +56,7 @@ data class HomeUiState(
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val appRepository: AppRepository,
     private val preferencesManager: PreferencesManager,
     private val weatherRepository: WeatherRepository
@@ -355,7 +354,7 @@ class HomeViewModel @Inject constructor(
     fun openAppInfo(packageName: String) {
         try {
             val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                data = Uri.parse("package:$packageName")
+                data = "package:$packageName".toUri()
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             context.startActivity(intent)
@@ -366,7 +365,7 @@ class HomeViewModel @Inject constructor(
     fun uninstallApp(packageName: String) {
         try {
             val intent = Intent(Intent.ACTION_DELETE).apply {
-                data = Uri.parse("package:$packageName")
+                data = "package:$packageName".toUri()
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             context.startActivity(intent)
@@ -467,7 +466,7 @@ class HomeViewModel @Inject constructor(
                 val intent = try {
                     Intent.parseUri(target.intentUri, Intent.URI_INTENT_SCHEME)
                 } catch (_: Exception) {
-                    Intent(Intent.ACTION_VIEW, Uri.parse(target.intentUri))
+                    Intent(Intent.ACTION_VIEW, target.intentUri.toUri())
                 }
                 try {
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -505,28 +504,6 @@ class HomeViewModel @Inject constructor(
             value.contains("map") || value.contains("direction") -> "map"
             else -> "circle"
         }
-    }
-
-    /**
-     * Launches an app with a directional slide-in animation matching the swipe gesture.
-     * @param fromLeft true when the user swiped left-to-right (app slides in from the left),
-     *                 false when the user swiped right-to-left (app slides in from the right).
-     */
-    fun launchAppWithDirection(packageName: String, fromLeft: Boolean) {
-        val options = if (fromLeft) {
-            ActivityOptions.makeCustomAnimation(
-                context,
-                com.lu4p.fokuslauncher.R.anim.slide_in_left,
-                com.lu4p.fokuslauncher.R.anim.slide_out_right
-            )
-        } else {
-            ActivityOptions.makeCustomAnimation(
-                context,
-                com.lu4p.fokuslauncher.R.anim.slide_in_right,
-                com.lu4p.fokuslauncher.R.anim.slide_out_left
-            )
-        }
-        appRepository.launchApp(packageName, options.toBundle())
     }
 
     /**
@@ -599,43 +576,4 @@ class HomeViewModel @Inject constructor(
         } catch (_: Exception) { }
     }
 
-    /**
-     * Opens a weather app from the weather widget.
-     */
-    fun openWeatherApp() {
-        val preferredPackage = preferredWeatherAppPackage.value
-        if (preferredPackage.isNotBlank() && appRepository.launchApp(preferredPackage)) {
-            return
-        }
-        if (preferredPackage.isNotBlank()) {
-            Toast.makeText(
-                context,
-                "Selected weather app could not be launched",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
-
-        try {
-            val weatherIntent = Intent(Intent.ACTION_MAIN).apply {
-                addCategory(Intent.CATEGORY_APP_WEATHER)
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            val canOpenWeatherCategory = weatherIntent.resolveActivity(context.packageManager) != null
-            if (canOpenWeatherCategory) {
-                context.startActivity(weatherIntent)
-            } else {
-                Toast.makeText(
-                    context,
-                    "No weather app available",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        } catch (_: Exception) {
-            Toast.makeText(
-                context,
-                "No weather app available",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
-    }
 }

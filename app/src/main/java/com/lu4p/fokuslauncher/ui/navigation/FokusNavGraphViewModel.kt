@@ -10,7 +10,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class FokusNavGraphViewModel @Inject constructor(
-    private val preferencesManager: PreferencesManager
+    preferencesManager: PreferencesManager
 ) : ViewModel() {
 
     val hasCompletedOnboarding = preferencesManager.hasCompletedOnboardingFlow
