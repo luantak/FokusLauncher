@@ -1,7 +1,11 @@
 package com.lu4p.fokuslauncher.ui.home
 
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
+import android.content.pm.ActivityInfo
+import android.content.pm.PackageManager
+import android.content.pm.ResolveInfo
 import android.os.BatteryManager
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
@@ -30,8 +34,12 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@RunWith(RobolectricTestRunner::class)
 class HomeViewModelTest {
 
     private lateinit var context: Context
@@ -61,7 +69,8 @@ class HomeViewModelTest {
         every { batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1) } returns 100
         every { context.registerReceiver(null, any()) } returns batteryIntent
 
-        // Mock preferences
+        // Mock preferences using Fake
+        preferencesManager = mockk(relaxed = true)
         every { preferencesManager.favoritesFlow } returns flowOf(testFavorites)
         every { preferencesManager.showWallpaperFlow } returns flowOf(false)
         every { preferencesManager.swipeLeftTargetFlow } returns flowOf(null as ShortcutTarget?)
@@ -88,6 +97,10 @@ class HomeViewModelTest {
         context, appRepository, preferencesManager, weatherRepository
     )
 
+    private fun createViewModel(withContext: Context) = HomeViewModel(
+        withContext, appRepository, preferencesManager, weatherRepository
+    )
+
     @Test
     fun `initial state has battery percentage`() {
         val viewModel = createViewModel()
@@ -104,6 +117,28 @@ class HomeViewModelTest {
 
         val state = viewModel.uiState.value
         assertTrue(state.currentTime.isNotEmpty())
+    }
+
+    @Test
+    fun `refreshBattery handles invalid battery intent gracefully`() {
+        val batteryIntent = Intent(Intent.ACTION_BATTERY_CHANGED)
+        // Missing EXTRAS will cause getIntExtra to return default (-1)
+        every { context.registerReceiver(null, any()) } returns batteryIntent
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceTimeBy(100)
+
+        assertEquals(0, viewModel.uiState.value.batteryPercent)
+    }
+
+    @Test
+    fun `checkDefaultLauncher handles exception and sets to false`() {
+        every { context.packageManager } throws RuntimeException("Package manager crashed")
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceTimeBy(100)
+
+        assertFalse(viewModel.uiState.value.isDefaultLauncher)
     }
 
     @Test
@@ -168,6 +203,22 @@ class HomeViewModelTest {
     }
 
     @Test
+    fun `initial state reads battery from sticky system broadcast`() {
+        val realContext = RuntimeEnvironment.getApplication().applicationContext as Context
+        val batteryIntent = Intent(Intent.ACTION_BATTERY_CHANGED).apply {
+            putExtra(BatteryManager.EXTRA_LEVEL, 42)
+            putExtra(BatteryManager.EXTRA_SCALE, 100)
+        }
+        @Suppress("DEPRECATION")
+        realContext.sendStickyBroadcast(batteryIntent)
+
+        val viewModel = createViewModel(realContext)
+        testDispatcher.scheduler.advanceTimeBy(100)
+
+        assertEquals(42, viewModel.uiState.value.batteryPercent)
+    }
+
+    @Test
     fun `wallpaper setting is observed from preferences`() {
         every { preferencesManager.showWallpaperFlow } returns flowOf(true)
 
@@ -198,6 +249,30 @@ class HomeViewModelTest {
     }
 
     @Test
+    fun `isDefaultLauncher is true when package manager resolves home to app package`() {
+        val realContext = RuntimeEnvironment.getApplication().applicationContext as Context
+        val packageManager = mockk<PackageManager>(relaxed = true)
+        val wrappedContext = object : ContextWrapper(realContext) {
+            override fun getPackageManager(): PackageManager = packageManager
+            override fun getPackageName(): String = "io.github.luantak.fokuslauncher"
+        }
+        val resolveInfo = ResolveInfo().apply {
+            activityInfo = ActivityInfo().apply {
+                packageName = "io.github.luantak.fokuslauncher"
+                name = "io.github.luantak.fokuslauncher.MainActivity"
+            }
+        }
+        every {
+            packageManager.resolveActivity(any(), PackageManager.MATCH_DEFAULT_ONLY)
+        } returns resolveInfo
+
+        val viewModel = createViewModel(wrappedContext)
+        testDispatcher.scheduler.advanceTimeBy(100)
+
+        assertTrue(viewModel.uiState.value.isDefaultLauncher)
+    }
+
+    @Test
     fun `refreshInstalledApps removes uninstalled favorites`() {
         every { appRepository.getInstalledApps() } returns listOf(
             AppInfo(packageName = "com.lu4p.music", label = "Music", icon = null)
@@ -218,5 +293,22 @@ class HomeViewModelTest {
             )
         }
         collectJob.cancel()
+    }
+
+    @Test
+    fun `openClockApp launches clock safely`() {
+        val viewModel = createViewModel()
+        viewModel.openClockApp()
+        
+        // Either AlarmClock or DeskClock gets started. Since mock is relaxed, it doesn't crash.
+        verify(atLeast = 1) { context.startActivity(any()) }
+    }
+
+    @Test
+    fun `launchShortcut handles App target`() {
+        val viewModel = createViewModel()
+        viewModel.launchShortcut(ShortcutTarget.App("com.lu4p.music"))
+        
+        verify { appRepository.launchApp("com.lu4p.music") }
     }
 }

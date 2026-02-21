@@ -133,10 +133,12 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
 
     // Unit Testing
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.turbine)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.robolectric)
 
     // Android Testing
     androidTestImplementation(libs.androidx.junit)

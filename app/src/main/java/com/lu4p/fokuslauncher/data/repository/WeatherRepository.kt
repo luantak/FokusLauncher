@@ -17,7 +17,7 @@ import org.json.JSONObject
 class WeatherRepository @Inject constructor() {
 
     companion object {
-        private const val OPEN_METEO_BASE_URL = "https://api.open-meteo.com/v1/forecast"
+        var OPEN_METEO_BASE_URL = "https://api.open-meteo.com/v1/forecast"
         private const val CACHE_DURATION_MS = 30 * 60 * 1000L // 30 minutes
     }
 

@@ -20,6 +20,7 @@ espressoCore = "3.7.0"
 mockk = "1.14.9"
 turbine = "1.2.1"
 coroutinesTest = "1.10.2"
+robolectric = "4.16"
 
 [libraries]
 # Core
@@ -61,6 +62,7 @@ junit = { group = "junit", name = "junit", version.ref = "junit" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutinesTest" }
+robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 
 # Android Testing
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }

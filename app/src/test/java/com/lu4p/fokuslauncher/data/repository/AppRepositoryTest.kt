@@ -22,7 +22,11 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 
+@RunWith(RobolectricTestRunner::class)
 class AppRepositoryTest {
 
     private lateinit var context: Context
@@ -50,7 +54,6 @@ class AppRepositoryTest {
             createResolveInfo("com.lu4p.calculator", "Calculator"),
             createResolveInfo("com.lu4p.atom", "Atom")
         )
-
         every {
             packageManager.queryIntentActivities(any<Intent>(), any<Int>())
         } returns resolveInfos
@@ -149,9 +152,10 @@ class AppRepositoryTest {
 
     @Test
     fun `launchApp returns false when no intent found`() {
-        every { packageManager.getLaunchIntentForPackage("com.lu4p.nonexistent") } returns null
+        val realContext = RuntimeEnvironment.getApplication().applicationContext as Context
+        val realRepository = AppRepository(realContext, appDao)
 
-        val result = repository.launchApp("com.lu4p.nonexistent")
+        val result = realRepository.launchApp("com.lu4p.nonexistent")
 
         assertFalse(result)
     }
