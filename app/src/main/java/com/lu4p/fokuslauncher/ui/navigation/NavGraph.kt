@@ -37,6 +37,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -192,6 +195,7 @@ fun FokusNavGraph(
                 BackHandler(enabled = true) { /* launcher: no-op */ }
 
                 val homeViewModel: HomeViewModel = hiltViewModel()
+                val lifecycleOwner = LocalLifecycleOwner.current
 
                 // Open edit-home-apps screen after onboarding "Choose apps".
                 LaunchedEffect(pendingOpenEditHomeApps) {
@@ -221,17 +225,40 @@ fun FokusNavGraph(
                         horizontalSwipeActive = isHorizontalGestureActive
                     }
 
+                    // Track the current snap-back job so we can cancel it on resume
+                    var snapBackJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+
+                    // Reset horizontal offset when returning from launched app
+                    DisposableEffect(lifecycleOwner, coroutineScope) {
+                        val observer = LifecycleEventObserver { _, event ->
+                            if (event == Lifecycle.Event.ON_RESUME) {
+                                // Cancel any pending snap-back animation and reset immediately
+                                snapBackJob?.cancel()
+                                horizontalOffsetPx = 0f
+                                launchTriggered = false
+                            }
+                        }
+                        lifecycleOwner.lifecycle.addObserver(observer)
+                        onDispose {
+                            lifecycleOwner.lifecycle.removeObserver(observer)
+                        }
+                    }
+
                     LaunchedEffect(launchTriggered) {
                         if (launchTriggered) {
-                            // Keep the panel at the swiped position briefly so launch feels continuous.
-                            delay(260)
-                            Animatable(horizontalOffsetPx).animateTo(
-                                targetValue = 0f,
-                                animationSpec = snapBackSpec
-                            ) {
-                                horizontalOffsetPx = value
+                            // Launch in a separate job we can track and cancel
+                            snapBackJob = coroutineScope.launch {
+                                // Keep the panel at the swiped position briefly so launch feels continuous.
+                                delay(260)
+                                Animatable(horizontalOffsetPx).animateTo(
+                                    targetValue = 0f,
+                                    animationSpec = snapBackSpec
+                                ) {
+                                    horizontalOffsetPx = value
+                                }
+                                launchTriggered = false
+                                snapBackJob = null
                             }
-                            launchTriggered = false
                         }
                     }
 
