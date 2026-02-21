@@ -45,13 +45,13 @@ android {
     compileSdk { version = release(36) }
 
     defaultConfig {
-        applicationId = "com.lu4p.fokuslauncher"
+        applicationId = "io.github.luantak.fokuslauncher"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "com.lu4p.fokuslauncher.HiltTestRunner"
+        testInstrumentationRunner = "io.github.luantak.fokuslauncher.HiltTestRunner"
     }
 
     if (hasReleaseSigning) {
