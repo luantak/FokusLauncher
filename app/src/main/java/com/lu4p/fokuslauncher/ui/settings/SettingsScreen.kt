@@ -23,8 +23,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Restore
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material3.AlertDialog
@@ -372,6 +375,41 @@ fun SettingsScreen(
 
             item { SettingsDivider() }
 
+            // ========== CONNECT ==========
+            item { SectionHeader(stringResource(R.string.settings_connect_section)) }
+
+            item {
+                val context = LocalContext.current
+                ExternalLinkRow(
+                    icon = Icons.Filled.Star,
+                    title = stringResource(R.string.settings_github_title),
+                    subtitle = stringResource(R.string.settings_github_subtitle),
+                    onClick = {
+                        context.startActivity(
+                            Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/luantak/FokusLauncher"))
+                                .apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+                        )
+                    }
+                )
+            }
+
+            item {
+                val context = LocalContext.current
+                ExternalLinkRow(
+                    icon = Icons.Filled.ChatBubble,
+                    title = stringResource(R.string.settings_matrix_title),
+                    subtitle = stringResource(R.string.settings_matrix_subtitle),
+                    onClick = {
+                        context.startActivity(
+                            Intent(Intent.ACTION_VIEW, Uri.parse("https://matrix.to/#/#fokus:matrix.org"))
+                                .apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+                        )
+                    }
+                )
+            }
+
+            item { SettingsDivider() }
+
             // ========== RESET ==========
             item { SectionHeader("Data") }
             item {
@@ -636,6 +674,50 @@ private fun RenamedAppRow(packageName: String, customName: String, onRemoveRenam
         }
         Spacer(Modifier.width(8.dp))
         Icon(Icons.Default.Close, "Remove rename", tint = MaterialTheme.colorScheme.secondary)
+    }
+}
+
+// --- External link row for Connect section ---
+
+@Composable
+private fun ExternalLinkRow(
+        icon: androidx.compose.ui.graphics.vector.ImageVector,
+        title: String,
+        subtitle: String,
+        onClick: () -> Unit
+) {
+    Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier =
+                    Modifier.fillMaxWidth()
+                            .clickable(onClick = onClick)
+                            .padding(horizontal = 24.dp, vertical = 14.dp)
+    ) {
+        Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp)
+        )
+        Spacer(Modifier.width(16.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onBackground
+            )
+            Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.secondary
+            )
+        }
+        Icon(
+                imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                contentDescription = "Open link",
+                tint = MaterialTheme.colorScheme.secondary,
+                modifier = Modifier.size(18.dp)
+        )
     }
 }
 

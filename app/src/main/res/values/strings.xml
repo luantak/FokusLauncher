@@ -42,4 +42,11 @@
     <!-- Settings - Weather app -->
     <string name="settings_weather_app_system_default">System default</string>
     <string name="settings_weather_app_not_configured">Not configured</string>
+
+    <!-- Settings - Connect section -->
+    <string name="settings_connect_section">Connect</string>
+    <string name="settings_github_title">Star on GitHub</string>
+    <string name="settings_github_subtitle">View source and contribute</string>
+    <string name="settings_matrix_title">Join the discussion</string>
+    <string name="settings_matrix_subtitle">Get help and share feedback</string>
 </resources>
