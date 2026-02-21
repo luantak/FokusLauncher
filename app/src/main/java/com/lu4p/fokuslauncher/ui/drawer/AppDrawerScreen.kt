@@ -5,6 +5,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -229,7 +230,11 @@ fun AppDrawerContent(
                 DropdownMenu(
                         expanded = uiState.showMenu,
                         onDismissRequest = onMenuDismiss,
-                        modifier = Modifier.background(MaterialTheme.colorScheme.surfaceVariant)
+                        modifier = Modifier
+                                .background(
+                                        MaterialTheme.colorScheme.surfaceVariant,
+                                        shape = RoundedCornerShape(16.dp)
+                                )
                 ) {
                     if (uiState.isPrivateSpaceSupported) {
                         DropdownMenuItem(
