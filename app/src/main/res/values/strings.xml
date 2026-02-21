@@ -7,7 +7,7 @@
     <string name="onboarding_get_started">Get started</string>
     <string name="onboarding_background_title">Choose your background</string>
     <string name="onboarding_background_subtitle">A black background helps you focus and saves battery on OLED screens</string>
-    <string name="onboarding_background_black">Use black background (recommended)</string>
+    <string name="onboarding_background_black">I like black</string>
     <string name="onboarding_background_wallpaper">Keep my wallpaper</string>
     <string name="onboarding_location_title">Location for weather</string>
     <string name="onboarding_location_subtitle">We use your location to show the current weather on your home screen. If you skip, the weather widget will be hidden.</string>

@@ -1,5 +1,6 @@
 package com.lu4p.fokuslauncher.ui.onboarding
 
+import android.Manifest
 import android.app.WallpaperManager
 import android.content.Context
 import android.content.Intent
@@ -9,6 +10,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color as AndroidColor
 import android.provider.Settings
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
@@ -21,7 +23,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -55,27 +56,22 @@ class OnboardingViewModel @Inject constructor(
 
     private val _isDefaultLauncher = MutableStateFlow(true)
 
-    /** Ordered list of steps to show. SET_DEFAULT_LAUNCHER is omitted when already default. */
-    val steps: StateFlow<List<OnboardingStep>> = _isDefaultLauncher.map { isDefault ->
-        if (isDefault) {
-            listOf(
-                OnboardingStep.WELCOME,
-                OnboardingStep.BACKGROUND,
-                OnboardingStep.LOCATION,
-                OnboardingStep.CUSTOMIZE_HOME,
-                OnboardingStep.SWIPE_SHORTCUTS,
-                OnboardingStep.QUICK_TIPS
-            )
-        } else {
-            listOf(
-                OnboardingStep.WELCOME,
-                OnboardingStep.BACKGROUND,
-                OnboardingStep.LOCATION,
-                OnboardingStep.SET_DEFAULT_LAUNCHER,
-                OnboardingStep.CUSTOMIZE_HOME,
-                OnboardingStep.SWIPE_SHORTCUTS,
-                OnboardingStep.QUICK_TIPS
-            )
+    private val _hasLocationPermission = MutableStateFlow(false)
+
+    /** Ordered list of steps to show. SET_DEFAULT_LAUNCHER is omitted when already default, LOCATION is omitted when permission already granted. */
+    val steps: StateFlow<List<OnboardingStep>> = combine(_isDefaultLauncher, _hasLocationPermission) { isDefault, hasLocation ->
+        buildList {
+            add(OnboardingStep.WELCOME)
+            add(OnboardingStep.BACKGROUND)
+            if (!hasLocation) {
+                add(OnboardingStep.LOCATION)
+            }
+            if (!isDefault) {
+                add(OnboardingStep.SET_DEFAULT_LAUNCHER)
+            }
+            add(OnboardingStep.CUSTOMIZE_HOME)
+            add(OnboardingStep.SWIPE_SHORTCUTS)
+            add(OnboardingStep.QUICK_TIPS)
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
@@ -148,13 +144,15 @@ class OnboardingViewModel @Inject constructor(
 
     init {
         checkDefaultLauncher()
+        checkLocationPermission()
         viewModelScope.launch {
             if (_isDefaultLauncher.value) {
                 val reached = preferencesManager.getOnboardingReachedSetDefault()
                 if (reached) {
                     preferencesManager.setOnboardingReachedSetDefault(false)
-                    // Restore to CUSTOMIZE_HOME (index 3 in 6-step flow without SET_DEFAULT_LAUNCHER)
-                    _currentStepIndex.value = 3
+                    // Restore to CUSTOMIZE_HOME (index depends on whether LOCATION was shown)
+                    val locationShown = !_hasLocationPermission.value
+                    _currentStepIndex.value = if (locationShown) 3 else 2
                 }
             }
         }
@@ -169,6 +167,12 @@ class OnboardingViewModel @Inject constructor(
         )
         val isDefault = resolveInfo?.activityInfo?.packageName == context.packageName
         _isDefaultLauncher.value = isDefault
+    }
+
+    private fun checkLocationPermission() {
+        _hasLocationPermission.value = ContextCompat.checkSelfPermission(
+            context, Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
     }
 
     fun onNext() {

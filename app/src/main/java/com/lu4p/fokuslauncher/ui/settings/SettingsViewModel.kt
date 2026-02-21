@@ -196,12 +196,10 @@ constructor(
     }
 
     /** Clears all app state (preferences + database), equivalent to clearing storage. */
-    fun resetAllState() {
-        viewModelScope.launch {
-            preferencesManager.clearAll()
-            appRepository.clearAllAppData()
-            appRepository.invalidateCache()
-        }
+    suspend fun resetAllState() {
+        preferencesManager.clearAll()
+        appRepository.clearAllAppData()
+        appRepository.invalidateCache()
     }
 
     fun setShowWallpaper(show: Boolean) {

@@ -45,7 +45,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -432,11 +434,14 @@ fun SettingsScreen(
                     )
                 },
                 confirmButton = {
+                    val scope = rememberCoroutineScope()
                     TextButton(
                             onClick = {
-                                viewModel.resetAllState()
-                                showResetConfirm = false
-                                onNavigateBack()
+                                scope.launch {
+                                    viewModel.resetAllState()
+                                    showResetConfirm = false
+                                    onNavigateBack()
+                                }
                             }
                     ) {
                         Text("Reset", color = MaterialTheme.colorScheme.error)
