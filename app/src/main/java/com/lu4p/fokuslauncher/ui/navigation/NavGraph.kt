@@ -256,7 +256,9 @@ fun FokusNavGraph(
                             .pointerInput(Unit) {
                                 var verticalDragOffset = 0f
                                 detectVerticalDragGestures(
-                                    onDragStart = { },
+                                    onDragStart = {
+                                        verticalDragOffset = 0f
+                                    },
                                     onVerticalDrag = { change, dragAmount ->
                                         change.consume()
                                         verticalDragOffset += dragAmount
@@ -268,6 +270,10 @@ fun FokusNavGraph(
                                                 MainActivity.expandStatusBar(it)
                                             }
                                         }
+                                        verticalDragOffset = 0f
+                                    },
+                                    onDragCancel = {
+                                        verticalDragOffset = 0f
                                     }
                                 )
                             }
