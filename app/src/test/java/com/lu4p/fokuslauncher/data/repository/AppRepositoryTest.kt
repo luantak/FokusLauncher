@@ -3,6 +3,7 @@ package com.lu4p.fokuslauncher.data.repository
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
+import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import com.lu4p.fokuslauncher.data.database.dao.AppDao
@@ -192,6 +193,39 @@ class AppRepositoryTest {
         assertEquals(1, result.size)
     }
 
+    @Test
+    fun `getInstalledApps uses Android app category for games`() {
+        every {
+            packageManager.queryIntentActivities(any<Intent>(), any<Int>())
+        } returns listOf(
+            createResolveInfo(
+                packageName = "com.lu4p.runner",
+                label = "Runner",
+                category = ApplicationInfo.CATEGORY_GAME
+            )
+        )
+
+        val result = repository.getInstalledApps()
+
+        assertEquals("Games", result.single().category)
+    }
+
+    @Test
+    fun `getInstalledApps falls back to Utilities when no system category exists`() {
+        every {
+            packageManager.queryIntentActivities(any<Intent>(), any<Int>())
+        } returns listOf(
+            createResolveInfo(
+                packageName = "com.supercell.clashofclans",
+                label = "Clash of Clans"
+            )
+        )
+
+        val result = repository.getInstalledApps()
+
+        assertEquals("Utilities", result.single().category)
+    }
+
     // --- Hidden Apps Tests ---
 
     @Test
@@ -316,11 +350,21 @@ class AppRepositoryTest {
 
     // --- Helper ---
 
-    private fun createResolveInfo(packageName: String, label: String): ResolveInfo {
+    private fun createResolveInfo(
+        packageName: String,
+        label: String,
+        category: Int = ApplicationInfo.CATEGORY_UNDEFINED,
+        flags: Int = 0
+    ): ResolveInfo {
         return ResolveInfo().apply {
             activityInfo = ActivityInfo().apply {
                 this.packageName = packageName
                 this.name = "$packageName.MainActivity"
+                applicationInfo = ApplicationInfo().apply {
+                    this.packageName = packageName
+                    this.category = category
+                    this.flags = flags
+                }
             }
             nonLocalizedLabel = label
         }

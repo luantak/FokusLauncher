@@ -2,10 +2,14 @@ package com.lu4p.fokuslauncher.data.repository
 
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.content.pm.ApplicationInfo
 import android.content.pm.LauncherApps
+import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.os.Bundle
 import android.os.Process
+import androidx.core.content.ContextCompat
 import com.lu4p.fokuslauncher.data.database.dao.AppDao
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryDefinitionEntity
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryEntity
@@ -18,6 +22,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 
 /**
@@ -29,6 +35,26 @@ class AppRepository
 @Inject
 constructor(@param:ApplicationContext private val context: Context, private val appDao: AppDao) {
     private var cachedApps: List<AppInfo>? = null
+    private val installedAppsVersion = MutableStateFlow(0L)
+    private val packageChangeReceiver =
+            object : android.content.BroadcastReceiver() {
+                override fun onReceive(context: Context?, intent: Intent?) {
+                    val replacing = intent?.getBooleanExtra(Intent.EXTRA_REPLACING, false) == true
+                    when (intent?.action) {
+                        Intent.ACTION_PACKAGE_ADDED,
+                        Intent.ACTION_PACKAGE_CHANGED,
+                        Intent.ACTION_PACKAGE_REMOVED,
+                        Intent.ACTION_PACKAGE_REPLACED -> {
+                            if (intent.action == Intent.ACTION_PACKAGE_REMOVED && replacing) return
+                            invalidateCache()
+                        }
+                    }
+                }
+            }
+
+    init {
+        registerPackageChangeReceiver()
+    }
 
     // --- App Loading ---
 
@@ -81,7 +107,13 @@ constructor(@param:ApplicationContext private val context: Context, private val 
                                             } catch (_: Exception) {
                                                 null
                                             },
-                                    category = inferCategory(packageName, label)
+                                    category =
+                                            inferCategory(
+                                                    resolveInfo = resolveInfo,
+                                                    packageManager = pm,
+                                                    packageName = packageName,
+                                                    label = label
+                                            )
                             )
                         }
                         .sortedBy { it.label.lowercase() }
@@ -95,7 +127,10 @@ constructor(@param:ApplicationContext private val context: Context, private val 
     /** Clears the cached app list, forcing a reload on next access. */
     fun invalidateCache() {
         cachedApps = null
+        installedAppsVersion.value += 1
     }
+
+    fun getInstalledAppsVersion(): StateFlow<Long> = installedAppsVersion
 
     /**
      * Launches an app by its package name.
@@ -347,29 +382,57 @@ constructor(@param:ApplicationContext private val context: Context, private val 
         appDao.clearAllCategoryDefinitions()
     }
 
-    private fun inferCategory(packageName: String, label: String): String {
-        val value = "$packageName ${label.lowercase()}"
-        return when {
-            value.contains("mail") || value.contains("calendar") || value.contains("docs") ||
-                value.contains("office") || value.contains("task") || value.contains("slack") ->
-                "Productivity"
-            value.contains("bank") || value.contains("wallet") || value.contains("pay") ||
-                value.contains("finance") || value.contains("invest") || value.contains("crypto") ->
-                "Finance"
-            value.contains("chat") || value.contains("messag") || value.contains("whatsapp") ||
-                value.contains("telegram") || value.contains("social") || value.contains("instagram") ->
-                "Social"
-            value.contains("fit") || value.contains("health") || value.contains("med") ||
-                value.contains("workout") || value.contains("run") ->
-                "Health"
-            value.contains("music") || value.contains("video") || value.contains("photo") ||
-                value.contains("camera") || value.contains("gallery") || value.contains("tv") ->
-                "Media"
-            value.contains("game") || value.contains("play") || value.contains("puzzle") ||
-                value.contains("chess") || value.contains("sudoku") || value.contains("casino") ||
-                value.contains("slot") || value.contains("arcade") ->
-                "Games"
-            else -> "Utilities"
+    private fun registerPackageChangeReceiver() {
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_PACKAGE_ADDED)
+            addAction(Intent.ACTION_PACKAGE_CHANGED)
+            addAction(Intent.ACTION_PACKAGE_REMOVED)
+            addAction(Intent.ACTION_PACKAGE_REPLACED)
+            addDataScheme("package")
+        }
+        try {
+            ContextCompat.registerReceiver(
+                    context,
+                    packageChangeReceiver,
+                    filter,
+                    ContextCompat.RECEIVER_NOT_EXPORTED
+            )
+        } catch (_: Exception) {
+            // Unit tests may provide a mock Context that cannot register real receivers.
+        }
+    }
+
+    private fun inferCategory(
+            resolveInfo: ResolveInfo,
+            packageManager: PackageManager,
+            packageName: String,
+            label: String
+    ): String {
+        val applicationInfo =
+                resolveInfo.activityInfo.applicationInfo
+                        ?: try {
+                            packageManager.getApplicationInfo(packageName, 0)
+                        } catch (_: Exception) {
+                            null
+                        }
+
+        inferCategoryFromSystem(applicationInfo)?.let { return it }
+
+        return inferCategoryFromSystem(applicationInfo) ?: "Utilities"
+    }
+
+    private fun inferCategoryFromSystem(applicationInfo: ApplicationInfo?): String? {
+        if (applicationInfo == null) return null
+        if ((applicationInfo.flags and ApplicationInfo.FLAG_IS_GAME) != 0) return "Games"
+        return when (applicationInfo.category) {
+            ApplicationInfo.CATEGORY_GAME -> "Games"
+            ApplicationInfo.CATEGORY_PRODUCTIVITY -> "Productivity"
+            ApplicationInfo.CATEGORY_SOCIAL -> "Social"
+            ApplicationInfo.CATEGORY_AUDIO,
+            ApplicationInfo.CATEGORY_VIDEO,
+            ApplicationInfo.CATEGORY_IMAGE,
+            ApplicationInfo.CATEGORY_NEWS -> "Media"
+            else -> null
         }
     }
 }

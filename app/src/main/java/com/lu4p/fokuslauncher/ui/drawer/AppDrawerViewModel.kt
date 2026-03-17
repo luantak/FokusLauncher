@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -76,6 +77,7 @@ constructor(
     init {
         loadApps()
         observeHiddenAndRenamed()
+        observeInstalledApps()
         observeFavorites()
         refreshPrivateSpaceState()
         observePrivateSpaceChanges()
@@ -139,6 +141,19 @@ constructor(
                                 definedCategories = state.definedCategories
                         )
                     }
+        }
+    }
+
+    private fun observeInstalledApps() {
+        viewModelScope.launch {
+            appRepository.getInstalledAppsVersion().drop(1).collect {
+                rebuildVisibleApps(
+                        hiddenSet = latestHiddenSet,
+                        renameMap = latestRenameMap,
+                        categoryMap = latestCategoryMap,
+                        definedCategories = latestDefinedCategories
+                )
+            }
         }
     }
 

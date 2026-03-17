@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 
 data class SettingsUiState(
@@ -57,10 +58,19 @@ constructor(
     init {
         loadAllApps()
         observeState()
+        observeInstalledApps()
     }
 
     private fun loadAllApps() {
         _uiState.value = _uiState.value.copy(allApps = appRepository.getInstalledApps())
+    }
+
+    private fun observeInstalledApps() {
+        viewModelScope.launch {
+            appRepository.getInstalledAppsVersion().drop(1).collect {
+                loadAllApps()
+            }
+        }
     }
 
     private fun observeState() {

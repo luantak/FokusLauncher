@@ -35,6 +35,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -143,6 +144,7 @@ class HomeViewModel @Inject constructor(
         refreshInstalledApps()
         loadShortcutActions()
         observeRenames()
+        observeInstalledApps()
     }
 
     // ── Name resolution ─────────────────────────────────────────────
@@ -155,13 +157,24 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    private fun observeInstalledApps() {
+        viewModelScope.launch {
+            appRepository.getInstalledAppsVersion().drop(1).collect {
+                refreshInstalledApps(forceReload = false)
+                loadShortcutActions()
+            }
+        }
+    }
+
     /**
      * Pre-warms the app cache and builds the package-name → label map
      * used to resolve real app names for home-screen favorites.
      */
-    fun refreshInstalledApps() {
+    fun refreshInstalledApps(forceReload: Boolean = true) {
         viewModelScope.launch(Dispatchers.IO) {
-            appRepository.invalidateCache()
+            if (forceReload) {
+                appRepository.invalidateCache()
+            }
             val apps = appRepository.getInstalledApps()
             _appNameMap.value = apps.associate { it.packageName to it.label }
             _allInstalledApps.value = apps
