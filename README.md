@@ -12,9 +12,29 @@ with minimal visual noise.
 
 ## Screenshots
 
-| Home | App Drawer (Search) | Settings |
-| --- | --- | --- |
-| ![Home screen](screenshots/home.png) | ![App drawer search](screenshots/search.png) | ![Settings screen](screenshots/settings.png) |
+<p align="center">
+  <a href="fastlane/metadata/android/en-US/images/phoneScreenshots/screenshot-1.png">
+    <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/screenshot-1.png" alt="Screenshot 1" width="30%" />
+  </a>
+  <a href="fastlane/metadata/android/en-US/images/phoneScreenshots/screenshot-2.png">
+    <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/screenshot-2.png" alt="Screenshot 2" width="30%" />
+  </a>
+</p>
+
+<p align="center">
+  <a href="fastlane/metadata/android/en-US/images/phoneScreenshots/screenshot-3.png">
+    <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/screenshot-3.png" alt="Screenshot 3" width="30%" />
+  </a>
+  <a href="fastlane/metadata/android/en-US/images/phoneScreenshots/screenshot-4.png">
+    <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/screenshot-4.png" alt="Screenshot 4" width="30%" />
+  </a>
+</p>
+
+<p align="center">
+  <a href="fastlane/metadata/android/en-US/images/phoneScreenshots/screenshot-5.png">
+    <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/screenshot-5.png" alt="Screenshot 5" width="30%" />
+  </a>
+</p>
 
 ## Current Feature Set
 
@@ -51,7 +71,8 @@ project code is compiled with Java 11 compatibility).
 ### Development Environment
 
 - JDK 21 installed and available via `JAVA_HOME`
-- Android SDK with platform-tools, `platforms;android-36`, and `build-tools;36.0.0`
+- Android SDK with platform-tools, `platforms;android-36`, and
+  `build-tools;36.0.0`
 - Gradle wrapper (included in this repository)
 
 Android Studio is optional. The Gradle commands below are sufficient for builds
@@ -103,7 +124,8 @@ If you want to improve Fokus, open an issue or send a pull request with a clear
 problem statement and reproduction details when relevant. Focused changes,
 thoughtful UX decisions, and good test coverage are always appreciated.
 
-If you want to chat about Fokus feel free to join us on matrix [here](https://matrix.to/#/#fokus:matrix.org)
+If you want to chat about Fokus feel free to join us on matrix
+[here](https://matrix.to/#/#fokus:matrix.org)
 
 ## License
 
