@@ -1,0 +1,3 @@
+- Fixed status bar not being able to be pulled down
+- Added app icon to fastlane metadata
+- Improved screenshots in fastlane metadata
