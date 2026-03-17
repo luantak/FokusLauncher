@@ -1,0 +1,1 @@
+Improved app categorization with better category detection and refined category order in the app drawer.
