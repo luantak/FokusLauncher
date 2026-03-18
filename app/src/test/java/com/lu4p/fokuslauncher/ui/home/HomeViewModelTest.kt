@@ -275,6 +275,22 @@ class HomeViewModelTest {
     }
 
     @Test
+    fun `refreshInstalledApps does not clear favorites when launcher query is empty`() {
+        every { appRepository.getInstalledApps() } returns emptyList()
+        val viewModel = createViewModel()
+        val collectJob = CoroutineScope(testDispatcher).launch {
+            viewModel.favorites.collect { }
+        }
+        testDispatcher.scheduler.runCurrent()
+
+        viewModel.refreshInstalledApps()
+        testDispatcher.scheduler.runCurrent()
+
+        coVerify(exactly = 0) { preferencesManager.setFavorites(any()) }
+        collectJob.cancel()
+    }
+
+    @Test
     fun `openClockApp launches clock safely`() {
         val viewModel = createViewModel()
         viewModel.openClockApp()

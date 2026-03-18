@@ -78,7 +78,7 @@ fun HomeScreen(
     DisposableEffect(lifecycleOwner, viewModel) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                viewModel.refreshInstalledApps()
+                viewModel.refreshInstalledApps(forceReload = false)
                 viewModel.recheckDefaultLauncher()
                 viewModel.refreshWeather()
             }

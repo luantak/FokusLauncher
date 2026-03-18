@@ -176,6 +176,9 @@ class HomeViewModel @Inject constructor(
                 appRepository.invalidateCache()
             }
             val apps = appRepository.getInstalledApps()
+            if (apps.isEmpty() && (rawFavorites.value.isNotEmpty() || _allInstalledApps.value.isNotEmpty())) {
+                return@launch
+            }
             _appNameMap.value = apps.associate { it.packageName to it.label }
             _allInstalledApps.value = apps
             val installedPackages = apps.map { it.packageName }.toSet()
