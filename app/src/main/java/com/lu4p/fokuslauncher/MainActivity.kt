@@ -12,6 +12,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.ui.navigation.FokusNavGraph
@@ -32,6 +34,8 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var appRepository: AppRepository
 
+    private var shouldShowStatusBar: Boolean = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -46,6 +50,14 @@ class MainActivity : ComponentActivity() {
         }
         window.decorView.overScrollMode = View.OVER_SCROLL_NEVER
         hideStatusBar()
+        lifecycleScope.launch {
+            repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+                preferencesManager.showStatusBarFlow.collect { showStatusBar ->
+                    shouldShowStatusBar = showStatusBar
+                    updateStatusBarVisibility(showStatusBar)
+                }
+            }
+        }
         setContent {
             FokusLauncherTheme {
                 FokusNavGraph()
@@ -67,7 +79,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) hideStatusBar()
+        if (hasFocus) updateStatusBarVisibility(shouldShowStatusBar)
     }
 
     private fun hideStatusBar() {
@@ -77,6 +89,15 @@ class MainActivity : ComponentActivity() {
             systemBarsBehavior =
                 WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
+    }
+
+    private fun showStatusBar() {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        WindowInsetsControllerCompat(window, window.decorView).show(WindowInsetsCompat.Type.statusBars())
+    }
+
+    private fun updateStatusBarVisibility(showStatusBar: Boolean) {
+        if (showStatusBar) showStatusBar() else hideStatusBar()
     }
 
     companion object {

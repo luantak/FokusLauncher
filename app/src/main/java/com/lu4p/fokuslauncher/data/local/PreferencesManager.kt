@@ -29,6 +29,7 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         private val SWIPE_RIGHT_KEY = stringPreferencesKey("swipe_right_app")
         private val RIGHT_SIDE_SHORTCUTS_KEY = stringPreferencesKey("right_side_shortcuts")
         private val PREFERRED_WEATHER_APP_KEY = stringPreferencesKey("preferred_weather_app")
+        private val SHOW_STATUS_BAR_KEY = booleanPreferencesKey("show_status_bar")
         private val HAS_COMPLETED_ONBOARDING_KEY = booleanPreferencesKey("has_completed_onboarding")
         private val ONBOARDING_REACHED_SET_DEFAULT_KEY = booleanPreferencesKey("onboarding_reached_set_default")
         private val WEATHER_LOCATION_OPTED_OUT_KEY = booleanPreferencesKey("weather_location_opted_out")
@@ -119,6 +120,15 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
 
     suspend fun setPreferredWeatherApp(packageName: String) {
         context.dataStore.edit { prefs -> prefs[PREFERRED_WEATHER_APP_KEY] = packageName }
+    }
+
+    // --- System UI ---
+
+    val showStatusBarFlow: Flow<Boolean> =
+            context.dataStore.data.map { prefs -> prefs[SHOW_STATUS_BAR_KEY] ?: false }
+
+    suspend fun setShowStatusBar(show: Boolean) {
+        context.dataStore.edit { prefs -> prefs[SHOW_STATUS_BAR_KEY] = show }
     }
 
     // --- Onboarding ---

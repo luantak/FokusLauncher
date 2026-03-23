@@ -40,6 +40,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -121,6 +122,15 @@ fun SettingsScreen(
 
             // ========== APPEARANCE ==========
             item { SectionHeader("Appearance") }
+
+            item {
+                SettingsToggleRow(
+                        label = "Show status bar",
+                        subtitle = "Keep the system status icons visible at the top",
+                        checked = uiState.showStatusBar,
+                        onCheckedChange = { viewModel.setShowStatusBar(it) }
+                )
+            }
 
             item {
                 Row(
@@ -496,6 +506,38 @@ fun SettingsScreen(
 // =========================  SUB-COMPOSABLES  =========================
 
 @OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SettingsToggleRow(
+        label: String,
+        subtitle: String,
+        checked: Boolean,
+        onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier =
+                    Modifier.fillMaxWidth()
+                            .clickable { onCheckedChange(!checked) }
+                            .padding(horizontal = 24.dp, vertical = 12.dp)
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                    text = label,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onBackground
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.secondary
+            )
+        }
+        Spacer(Modifier.width(16.dp))
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
+    }
+}
+
 @Composable
 private fun HomeAlignmentRow(
         currentAlignment: HomeAlignment,

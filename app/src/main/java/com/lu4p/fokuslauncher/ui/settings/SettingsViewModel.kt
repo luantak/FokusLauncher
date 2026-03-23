@@ -37,6 +37,7 @@ data class SettingsUiState(
         val swipeLeftTarget: ShortcutTarget? = null,
         val swipeRightTarget: ShortcutTarget? = null,
         val preferredWeatherAppPackage: String = "",
+        val showStatusBar: Boolean = false,
         val homeAlignment: HomeAlignment = HomeAlignment.LEFT,
         val allApps: List<AppInfo> = emptyList()
 )
@@ -107,7 +108,11 @@ constructor(
                     .combine(preferencesManager.preferredWeatherAppFlow) { swipeState, preferredWeatherApp ->
                         Pair(swipeState, preferredWeatherApp)
                     }
-                    .combine(preferencesManager.homeAlignmentFlow) { weatherState, homeAlignment ->
+                    .combine(preferencesManager.showStatusBarFlow) { weatherState, showStatusBar ->
+                        weatherState to showStatusBar
+                    }
+                    .combine(preferencesManager.homeAlignmentFlow) { weatherWithStatusBar, homeAlignment ->
+                        val (weatherState, showStatusBar) = weatherWithStatusBar
                         val (swipeState, preferredWeatherApp) = weatherState
                         val (leftState, swipeRight) = swipeState
                         val allApps = appRepository.getInstalledApps()
@@ -126,6 +131,7 @@ constructor(
                                 swipeLeftTarget = leftState.base.swipeLeft,
                                 swipeRightTarget = swipeRight,
                                 preferredWeatherAppPackage = preferredWeatherApp,
+                                showStatusBar = showStatusBar,
                                 homeAlignment = homeAlignment,
                                 allApps = allApps
                         )
@@ -188,6 +194,10 @@ constructor(
 
     fun setPreferredWeatherApp(packageName: String) {
         viewModelScope.launch { preferencesManager.setPreferredWeatherApp(packageName) }
+    }
+
+    fun setShowStatusBar(show: Boolean) {
+        viewModelScope.launch { preferencesManager.setShowStatusBar(show) }
     }
 
     // --- Home alignment ---
