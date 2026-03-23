@@ -123,7 +123,7 @@
     <string name="settings_edit_app_categories">Edytuj kategorie aplikacji</string>
     <string name="settings_section_app_drawer">Szuflada aplikacji</string>
     <string name="settings_auto_open_keyboard">Automatycznie otwieraj klawiaturę w szufladzie</string>
-    <string name="settings_auto_open_keyboard_subtitle">Włacz wyszukiwarkę i pokaż klawiaturę po otwarciu szuflady</string>
+    <string name="settings_auto_open_keyboard_subtitle">Włącz wyszukiwarkę i pokaż klawiaturę po otwarciu szuflady</string>
     <string name="settings_hide_all_apps_section">Ukryj sekcję Wszystkie aplikacje</string>
     <string name="settings_hide_all_apps_section_subtitle">Skup szufladę na twoich kategoriach i wynikach wyszukiwania</string>
     <string name="settings_section_hidden_apps">Ukryte aplikacje</string>
