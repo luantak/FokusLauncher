@@ -139,12 +139,16 @@
 
     <plurals name="settings_shortcuts_configured">
         <item quantity="one">%d skonfigurowany skrót</item>
+        <item quantity="few">%d skonfigurowane skróty</item>
+        <item quantity="many">%d skonfigurowanych skrótów</item>
         <item quantity="other">%d skonfigurowanych skrótów</item>
     </plurals>
 
     <plurals name="settings_custom_categories_count">
         <item quantity="one">%d niestandardowa kategoria</item>
-        <item quantity="other">%d niestandardowe kategorie</item>
+        <item quantity="few">%d niestandardowe kategorie</item>
+        <item quantity="many">%d niestandardowych kategorii</item>
+        <item quantity="other">%d niestandardowych kategorii</item>
     </plurals>
 
     <!-- Onboarding -->
