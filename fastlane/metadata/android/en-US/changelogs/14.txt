@@ -1,0 +1,1 @@
+Custom font selection, support for work profile apps, and weather temperatures in freedom units. More reliable battery percentage, fixed app drawer category reordering, and strings prepared for future translations.
