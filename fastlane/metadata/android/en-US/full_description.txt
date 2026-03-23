@@ -10,11 +10,15 @@ The app drawer is optimized for quick launch. Search and category filters narrow
 
 <b>Customization</b>
 
-You can edit home apps, configure right-side shortcuts (including launcher shortcut actions, not just app opens), hide or rename any app, and manage all launcher data from the settings screen.
+You can edit home apps, configure right-side shortcuts (including launcher shortcut actions, not just app opens), hide or rename any app, choose a custom font for the launcher UI, and manage all launcher data from the settings screen.
 
 <b>Weather</b>
 
 Weather is powered by Open-Meteo — no account or API key required. Results are cached for 30 minutes. Location permission is optional and only used for local weather.
+
+<b>Work Profile</b>
+
+Work profile apps are shown alongside personal apps in the drawer when a work profile is active on the device.
 
 <b>Private Space (Android 15+)</b>
 

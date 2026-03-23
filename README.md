@@ -54,10 +54,12 @@ hide, and uninstall.
 
 Customization and organization are built in. You can edit home apps, edit
 right-side shortcuts (including launcher shortcut actions, not just app opens),
-hide or rename apps, and manage launcher data from settings. Weather uses
-Open-Meteo with no API key and caches results for 30 minutes. On Android 15+
-(API 35+), Fokus also supports Private Space with lock/unlock controls and a
-separate drawer section for private apps when unlocked.
+hide or rename apps, and manage launcher data from settings. A custom font can
+be selected to match your personal taste. Weather uses Open-Meteo with no API
+key and caches results for 30 minutes. On Android 15+ (API 35+), Fokus also
+supports Private Space with lock/unlock controls and a separate drawer section
+for private apps when unlocked. Work profile apps are shown alongside personal
+apps in the drawer when a work profile is active.
 
 ## First-Run Experience
 
@@ -127,8 +129,15 @@ If you want to improve Fokus, open an issue or send a pull request with a clear
 problem statement and reproduction details when relevant. Focused changes,
 thoughtful UX decisions, and good test coverage are always appreciated.
 
-If you want to chat about Fokus feel free to join us on matrix
-[here](https://matrix.to/#/#fokus:matrix.org)
+### Translations
+
+All UI strings can be translated in your language through
+[Weblate](https://hosted.weblate.org/engage/fokus-launcher/).
+
+### Community
+
+If you want to chat about Fokus feel free to join us on Matrix
+[here](https://matrix.to/#/#fokus:matrix.org).
 
 ## License
 
