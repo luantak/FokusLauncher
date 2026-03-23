@@ -35,6 +35,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -135,9 +136,12 @@ private fun ReorderableCategoryList(
     var draggedIndex by remember { mutableIntStateOf(-1) }
     var dragOffset by remember { mutableFloatStateOf(0f) }
     val itemHeightPx = with(LocalDensity.current) { 56.dp.toPx() }
+    val currentCategories by rememberUpdatedState(categories)
+    val currentOnReorder by rememberUpdatedState(onReorder)
+    val currentOnReorderFinished by rememberUpdatedState(onReorderFinished)
     val resetDragState = {
         if (draggedIndex != -1) {
-            onReorderFinished(categories)
+            currentOnReorderFinished(currentCategories)
         }
         draggedIndex = -1
         dragOffset = 0f
@@ -146,6 +150,7 @@ private fun ReorderableCategoryList(
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         items(count = categories.size, key = { categories[it] }) { index ->
             val category = categories[index]
+            val currentIndex by rememberUpdatedState(index)
             val offset = if (index == draggedIndex) dragOffset.coerceIn(-itemHeightPx, itemHeightPx) else 0f
             Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -165,24 +170,24 @@ private fun ReorderableCategoryList(
                                         .pointerInput(category, categories.size) {
                                             detectVerticalDragGestures(
                                                     onDragStart = {
-                                                        draggedIndex = index
+                                                        draggedIndex = currentIndex
                                                         dragOffset = 0f
                                                     },
                                                     onVerticalDrag = { change, amount ->
                                                         change.consume()
-                                                        if (draggedIndex in categories.indices) {
+                                                        if (draggedIndex in currentCategories.indices) {
                                                             dragOffset += amount
-                                                            while (dragOffset >= itemHeightPx && draggedIndex < categories.size - 1) {
+                                                            while (dragOffset >= itemHeightPx && draggedIndex < currentCategories.size - 1) {
                                                                 val from = draggedIndex
                                                                 val to = draggedIndex + 1
-                                                                onReorder(from, to)
+                                                                currentOnReorder(from, to)
                                                                 draggedIndex = to
                                                                 dragOffset -= itemHeightPx
                                                             }
                                                             while (dragOffset <= -itemHeightPx && draggedIndex > 0) {
                                                                 val from = draggedIndex
                                                                 val to = draggedIndex - 1
-                                                                onReorder(from, to)
+                                                                currentOnReorder(from, to)
                                                                 draggedIndex = to
                                                                 dragOffset += itemHeightPx
                                                             }
