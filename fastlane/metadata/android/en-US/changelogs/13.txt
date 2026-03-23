@@ -1,0 +1,1 @@
+Added new customization options: show/hide status bar, disable auto-opening keyboard in app drawer, hide home screen widgets, and hide "All apps" section. Settings screen reorganized for better usability.
