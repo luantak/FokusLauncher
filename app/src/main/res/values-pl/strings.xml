@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Fokus Launcher</string>
+
+    <!-- Special drawer categories: English keys live in ReservedCategoryNames.kt; translate these for UI. -->
+    <string name="drawer_filter_all_apps">Wszystkie aplikacje</string>
+    <string name="drawer_filter_private">Prywatne</string>
+    <string name="drawer_menu_launcher_settings">Ustawienia launchera</string>
+    <string name="drawer_private_space_lock">Zablokuj prywatną przestrzeń</string>
+    <string name="drawer_private_space_unlock">Odblokuj prywatną przestrzeń</string>
+
+    <!-- App drawer: one section per Android user profile -->
+    <string name="drawer_section_personal">Osobiste</string>
+    <string name="drawer_section_work_profile">Służbowe</string>
+    <string name="drawer_section_profile_numbered">Profil %1$d</string>
+    <string name="drawer_section_other_profile">Inny profil</string>
+    <string name="drawer_section_clone_profile">Sklonowane aplikacje</string>
+    <string name="drawer_section_private_space">Prywatna przestrzeń</string>
+
+    <!-- Search -->
+    <string name="search">Szukaj</string>
+    <string name="search_apps_hint">Wyszukaj aplikacje…</string>
+    <string name="search_apps">Wyszukaj aplikacje</string>
+    <string name="search_apps_and_actions">Wyszukaj aplikacje i akcje</string>
+
+    <!-- Common actions -->
+    <string name="action_back">Wstecz</string>
+    <string name="action_done">Gotowe</string>
+    <string name="action_cancel">Anuluj</string>
+    <string name="action_save">Zapisz</string>
+    <string name="action_add">Dodaj</string>
+    <string name="action_rename">Zmień nazwę</string>
+    <string name="action_change">Zmień</string>
+    <string name="action_clear">Wyczyść</string>
+    <string name="action_reset">Reset</string>
+    <string name="cd_drag_to_reorder">Przesuń aby zmienić kolejność</string>
+    <string name="cd_change_icon">Zmień ikonę</string>
+    <string name="cd_shortcut_icon">Ikona skrótu</string>
+    <string name="cd_edit_home_screen">Edytuj ekran główny</string>
+    <string name="cd_settings">Ustawienia</string>
+    <string name="cd_menu">Menu</string>
+    <string name="cd_open_link">Otwórz link</string>
+    <string name="cd_unhide_app">Przestań ukrywać aplikację</string>
+    <string name="cd_remove_rename">Usuń zmienioną nazwę rename</string>
+    <string name="cd_delete_category">Usuń kategorię</string>
+
+    <!-- Shortcut / target labels -->
+    <string name="shortcut_target_not_set">Nie ustawiony</string>
+    <string name="shortcut_target_deep_link">Link precyzyjny</string>
+    <string name="shortcut_target_app_with_label">%1$s - %2$s</string>
+    <string name="shortcut_open_app">Otwórz aplikację</string>
+    <string name="shortcut_generic_label">Skrót</string>
+    <string name="toast_weather_app_launch_failed">Wybrana aplikacja pogody nie mogła zostać uruchomiona</string>
+
+    <!-- App & category sheets -->
+    <string name="app_name_placeholder">Nazwa aplikacji</string>
+    <string name="action_add_to_home">Dodaj do ekranu głównego</string>
+    <string name="action_remove_from_home">Usuń z ekranu głównego</string>
+    <string name="action_app_info">O aplikacji</string>
+    <string name="action_hide">Ukryj</string>
+    <string name="action_uninstall">Odinstaluj</string>
+    <string name="category_name_label">Nazwa kategorii</string>
+    <string name="category_action_rename">Zmień nazwę</string>
+    <string name="category_action_edit_apps">Edytuj aplikacje w kategorii</string>
+    <string name="category_action_remove">Usuń kategorię</string>
+    <string name="category_apps_screen_section_in_category">Aplikacje w kategorii</string>
+    <string name="category_no_category">Brak kategorii</string>
+    <string name="category_settings_title">Kategorie aplikacji</string>
+    <string name="category_new_label">Nowa kategoria</string>
+    <string name="category_edit_apps">Edytuj aplikacje</string>
+
+    <plurals name="category_app_count">
+        <item quantity="one">%d aplikacja</item>
+        <item quantity="other">%d aplikacje</item>
+    </plurals>
+
+    <!-- Inferred app categories (system metadata) -->
+    <string name="inferred_category_utilities">Narzędzia</string>
+    <string name="inferred_category_games">Gry</string>
+    <string name="inferred_category_productivity">Produktywność</string>
+    <string name="inferred_category_social">Społecznościowe</string>
+    <string name="inferred_category_media">Media</string>
+
+    <!-- Home screen -->
+    <string name="home_set_default_launcher">Ustaw jako domyślny launcher</string>
+    <string name="home_weather_app_picker_title">Wybierz aplikację pogodową</string>
+
+    <!-- Home alignment -->
+    <string name="home_alignment_title">Ułożenie ekranu głównego</string>
+    <string name="home_alignment_subtitle">Pozycja nazw aplikacji i ikon skrótów</string>
+    <string name="home_alignment_left">Po lewej</string>
+    <string name="home_alignment_center">Na środku</string>
+    <string name="home_alignment_right">Po prawej</string>
+
+    <!-- Edit home / shortcuts screens -->
+    <string name="edit_home_title">Edytuj ekran główny</string>
+    <string name="edit_shortcuts_title">Edytuj skróty</string>
+    <string name="edit_shortcuts_section_selected">Wybrane skróty</string>
+    <string name="edit_shortcuts_section_all_actions">Wszystkie akcje aplikacji</string>
+    <string name="edit_home_section_on_home">Aplikacje na ekranie głównym</string>
+    <string name="edit_home_section_all_apps">@string/drawer_filter_all_apps</string>
+    <string name="edit_shortcuts_choose_icon">Wybierz ikonę</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Ustawienia</string>
+    <string name="settings_section_appearance">Wygląd</string>
+    <string name="settings_show_status_bar">Pokaż pasek stanu</string>
+    <string name="settings_show_status_bar_subtitle">Pozostaw widoczne ikony paska stanu na górze</string>
+    <string name="settings_set_background_image">Ustaw obraz tła</string>
+    <string name="settings_set_black_wallpaper">Ustaw czarną tapetę</string>
+    <string name="settings_section_home_screen">Ekran główny</string>
+    <string name="settings_hide_widgets">Ukryj widżety</string>
+    <string name="settings_hide_widgets_subtitle">Ukryj zegar, datę, naładowanie baterii i pogodę na ekranie głównym</string>
+    <string name="settings_edit_home_screen">Edytuj ekran główny</string>
+    <string name="settings_edit_shortcuts">Edytuj skróty</string>
+    <string name="settings_weather_app">Aplikacja pogodowa</string>
+    <string name="settings_section_swipe">Skróty po przesunięciu</string>
+    <string name="settings_swipe_left">Przesunięcie w lewo</string>
+    <string name="settings_swipe_right">Przesunięcie w prawo</string>
+    <string name="settings_section_app_categories">Kategorie aplikacji</string>
+    <string name="settings_edit_app_categories">Edytuj kategorie aplikacji</string>
+    <string name="settings_section_app_drawer">Szuflada aplikacji</string>
+    <string name="settings_auto_open_keyboard">Automatycznie otwieraj klawiaturę w szufladzie</string>
+    <string name="settings_auto_open_keyboard_subtitle">Włacz wyszukiwarkę i pokaż klawiaturę po otwarciu szuflady</string>
+    <string name="settings_hide_all_apps_section">Ukryj sekcję Wszystkie aplikacje</string>
+    <string name="settings_hide_all_apps_section_subtitle">Skup szufladę na twoich kategoriach i wynikach wyszukiwania</string>
+    <string name="settings_section_hidden_apps">Ukryte aplikacje</string>
+    <string name="settings_no_hidden_apps">Brak ukrytych aplikacji</string>
+    <string name="settings_section_renamed_apps">Aplikacje ze zmienioną nazwą</string>
+    <string name="settings_no_renamed_apps">Brak aplikacji ze zmienioną nazwą</string>
+    <string name="settings_section_data">Dane</string>
+    <string name="settings_reset_all_data">Zresetuj wszystkie dane</string>
+    <string name="settings_reset_confirm_title">Zresetować wszystkie dane?</string>
+    <string name="settings_reset_confirm_message">To wyczyści twoje ulubione, skróty, ukryte aplikacje, aplikacje ze zmienioną nazwą i wszystkie inne ustawienia. Aplikacja powróci do stanu początkowego.</string>
+    <string name="settings_app_picker_title">Wybierz aplikację</string>
+    <string name="settings_font_label">Czcionka</string>
+
+    <plurals name="settings_shortcuts_configured">
+        <item quantity="one">%d skonfigurowany skrót</item>
+        <item quantity="other">%d skonfigurowanych skrótów</item>
+    </plurals>
+
+    <plurals name="settings_custom_categories_count">
+        <item quantity="one">%d niestandardowa kategoria</item>
+        <item quantity="other">%d niestandardowe kategorie</item>
+    </plurals>
+
+    <!-- Onboarding -->
+    <string name="onboarding_welcome_title">Fokus Launcher</string>
+    <string name="onboarding_welcome_subtitle">Minimalistyczny ekran główny</string>
+    <string name="onboarding_get_started">Rozpocznij</string>
+    <string name="onboarding_background_title">Wybierz swoje tło</string>
+    <string name="onboarding_background_subtitle">Czarne tło pomaga się tobie skupić i oszczędza baterię na ekranach OLED</string>
+    <string name="onboarding_background_black">Lubię czerń</string>
+    <string name="onboarding_background_wallpaper">Zatrzymaj moją tapetę</string>
+    <string name="onboarding_location_title">Lokalizacja dla pogody</string>
+    <string name="onboarding_location_subtitle">Używamy twojej lokalizacji aby, pokazywać aktualną pogodę na ekranie głównym. Jeśli to pominiesz, widżet pogody zostanie ukryty.</string>
+    <string name="onboarding_location_allow">Zezwól</string>
+    <string name="onboarding_location_skip">Pomiń</string>
+    <string name="onboarding_set_default_title">Ustaw jako domyślny ekran główny</string>
+    <string name="onboarding_set_default_subtitle">Ustaw Fokus jako domyślny ekran główny, aby używać go za każdym razem gdy przechodzisz do ekranu głównego</string>
+    <string name="onboarding_set_default_button">Ustaw jako domyślny</string>
+    <string name="onboarding_customize_title">Dostosuj ekran główny</string>
+    <string name="onboarding_customize_subtitle">Wybierz aplikacje które pojawią się na ekranie głównym</string>
+    <string name="onboarding_choose_apps">Wybierz aplikacje</string>
+    <string name="onboarding_swipe_title">Skróty po przesunięciu</string>
+    <string name="onboarding_swipe_subtitle">Przesuń w lewo lub w prawo na ekranie głównym żeby uruchamiać swoje ulubione aplikacje</string>
+    <string name="onboarding_swipe_left">Przesunięcie w lewo</string>
+    <string name="onboarding_swipe_right">Przesunięcie w prawo</string>
+    <string name="onboarding_swipe_change">Zmień</string>
+    <string name="onboarding_swipe_not_set">Nie ustawione</string>
+    <string name="onboarding_swipe_pick_app">Wybierz aplikację</string>
+    <string name="onboarding_swipe_cancel">Anuluj</string>
+    <string name="onboarding_tips_title">Szybkie porady</string>
+    <string name="onboarding_tip_swipe">Przesuń w górę aby otworzyć szufladę aplikacji</string>
+    <string name="onboarding_tip_longpress">Przytrzymaj na ekranie głównym aby zmienić lub otworzyć ustawienia</string>
+    <string name="onboarding_done">Gotowe</string>
+    <string name="onboarding_skip">Pomiń</string>
+    <string name="onboarding_next">Dalej</string>
+
+    <!-- Settings - Weather location (shown only when disabled) -->
+    <string name="settings_weather_location_disabled">Włącz lokalizcję dla pogody</string>
+    <string name="settings_weather_location_disabled_subtitle">Dotknij aby pozwolić na dostęp do lokalizacji</string>
+    <string name="settings_weather_location_enable_button">Włącz</string>
+
+    <!-- Settings - Weather app -->
+    <string name="settings_weather_app_system_default">Domyślna systemu</string>
+    <string name="settings_weather_app_not_configured">Nie ustawiona</string>
+
+    <!-- Settings - Connect section -->
+    <string name="settings_connect_section">Nawiąż kontakt</string>
+    <string name="settings_github_title">Oznacz gwiazdką na GitHubie</string>
+    <string name="settings_github_subtitle">Wyświetl kod źródłowy i dołóż swój wkład</string>
+    <string name="settings_matrix_title">Dołącz do dyskusji</string>
+    <string name="settings_matrix_subtitle">Otrzymaj pomoc i podziel się opinią</string>
+</resources>
