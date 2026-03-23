@@ -18,7 +18,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.junit.After
@@ -37,7 +37,7 @@ class AppDrawerViewModelTest {
     private lateinit var privateSpaceManager: PrivateSpaceManager
     private lateinit var preferencesManager: PreferencesManager
     private lateinit var viewModel: AppDrawerViewModel
-    private val testDispatcher = StandardTestDispatcher()
+    private val testDispatcher = UnconfinedTestDispatcher()
 
     private val hiddenFlow = MutableStateFlow<List<String>>(emptyList())
     private val renamedFlow = MutableStateFlow<List<RenamedAppEntity>>(emptyList())
@@ -81,7 +81,6 @@ class AppDrawerViewModelTest {
         every { privateSpaceManager.launchApp(any(), any()) } returns true
         every { privateSpaceManager.profileStateChanged } returns privateProfileChanges
         viewModel = AppDrawerViewModel(appRepository, privateSpaceManager, preferencesManager)
-        testDispatcher.scheduler.advanceUntilIdle()
         awaitState("apps to load") { it.allApps.isNotEmpty() }
     }
 
@@ -96,7 +95,6 @@ class AppDrawerViewModelTest {
     ) {
         val timeoutAt = System.currentTimeMillis() + 1500
         while (System.currentTimeMillis() < timeoutAt) {
-            testDispatcher.scheduler.runCurrent()
             if (predicate(viewModel.uiState.value)) return
             Thread.sleep(10)
         }
@@ -309,7 +307,6 @@ class AppDrawerViewModelTest {
     fun `hideApp calls repository`() {
         val app = testApps[0]
         viewModel.hideApp(app)
-        testDispatcher.scheduler.runCurrent()
 
         coVerify { appRepository.hideApp(app.packageName) }
     }
@@ -346,7 +343,6 @@ class AppDrawerViewModelTest {
     @Test
     fun `renameApp calls repository`() {
         viewModel.renameApp("com.lu4p.atom", "My Atom")
-        testDispatcher.scheduler.runCurrent()
 
         coVerify { appRepository.renameApp("com.lu4p.atom", "My Atom") }
     }
