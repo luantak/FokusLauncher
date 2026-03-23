@@ -40,6 +40,7 @@ data class SettingsUiState(
         val showStatusBar: Boolean = false,
         val showHomeScreenWidgets: Boolean = true,
         val autoOpenDrawerKeyboard: Boolean = true,
+        val hideAllAppsSection: Boolean = false,
         val homeAlignment: HomeAlignment = HomeAlignment.LEFT,
         val allApps: List<AppInfo> = emptyList()
 )
@@ -121,7 +122,13 @@ constructor(
                         weatherWithWidgets, autoOpenDrawerKeyboard ->
                         weatherWithWidgets to autoOpenDrawerKeyboard
                     }
-                    .combine(preferencesManager.homeAlignmentFlow) { weatherWithSettingsState, homeAlignment ->
+                    .combine(preferencesManager.hideAllAppsSectionFlow) {
+                        weatherWithSettingsState, hideAllAppsSection ->
+                        weatherWithSettingsState to hideAllAppsSection
+                    }
+                    .combine(preferencesManager.homeAlignmentFlow) {
+                        weatherWithDrawerState, homeAlignment ->
+                        val (weatherWithSettingsState, hideAllAppsSection) = weatherWithDrawerState
                         val (weatherWithWidgets, autoOpenDrawerKeyboard) = weatherWithSettingsState
                         val (weatherWithStatusBar, showHomeScreenWidgets) = weatherWithWidgets
                         val (weatherState, showStatusBar) = weatherWithStatusBar
@@ -146,6 +153,7 @@ constructor(
                                 showStatusBar = showStatusBar,
                                 showHomeScreenWidgets = showHomeScreenWidgets,
                                 autoOpenDrawerKeyboard = autoOpenDrawerKeyboard,
+                                hideAllAppsSection = hideAllAppsSection,
                                 homeAlignment = homeAlignment,
                                 allApps = allApps
                         )
@@ -220,6 +228,10 @@ constructor(
 
     fun setAutoOpenDrawerKeyboard(enabled: Boolean) {
         viewModelScope.launch { preferencesManager.setAutoOpenDrawerKeyboard(enabled) }
+    }
+
+    fun setHideAllAppsSection(hide: Boolean) {
+        viewModelScope.launch { preferencesManager.setHideAllAppsSection(hide) }
     }
 
     // --- Home alignment ---

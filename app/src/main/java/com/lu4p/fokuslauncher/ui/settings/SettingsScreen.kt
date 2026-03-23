@@ -357,6 +357,15 @@ fun SettingsScreen(
                 )
             }
 
+            item {
+                SettingsToggleRow(
+                        label = "Hide All Apps section",
+                        subtitle = "Keep the drawer focused on your categories and search results",
+                        checked = uiState.hideAllAppsSection,
+                        onCheckedChange = { viewModel.setHideAllAppsSection(it) }
+                )
+            }
+
             item { SettingsDivider() }
 
             // ========== HIDDEN APPS ==========

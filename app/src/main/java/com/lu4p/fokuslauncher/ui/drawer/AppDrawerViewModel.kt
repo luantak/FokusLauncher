@@ -28,6 +28,7 @@ data class AppDrawerUiState(
         val filteredApps: List<AppInfo> = emptyList(),
         val searchQuery: String = "",
         val autoOpenKeyboard: Boolean = true,
+        val hideAllAppsSection: Boolean = false,
         val selectedCategory: String = "All apps",
         val categories: List<String> = listOf("All apps"),
         val selectedApp: AppInfo? = null,
@@ -81,6 +82,7 @@ constructor(
         observeInstalledApps()
         observeFavorites()
         observeDrawerKeyboardPreference()
+        observeHideAllAppsPreference()
         refreshPrivateSpaceState()
         observePrivateSpaceChanges()
     }
@@ -101,6 +103,47 @@ constructor(
         viewModelScope.launch {
             preferencesManager.autoOpenDrawerKeyboardFlow.collect { enabled ->
                 _uiState.update { state -> state.copy(autoOpenKeyboard = enabled) }
+            }
+        }
+    }
+
+    private fun observeHideAllAppsPreference() {
+        viewModelScope.launch {
+            preferencesManager.hideAllAppsSectionFlow.collect { hideAllAppsSection ->
+                _uiState.update { state ->
+                    val categories =
+                            deriveCategories(
+                                    apps = state.allApps,
+                                    definedCategories = latestDefinedCategories,
+                                    includePrivate =
+                                            state.isPrivateSpaceUnlocked &&
+                                                    state.privateSpaceApps.isNotEmpty(),
+                                    includeAllAppsSection = !hideAllAppsSection
+                            )
+                    val selectedCategory =
+                            resolveSelectedCategory(
+                                    currentCategory = state.selectedCategory,
+                                    categories = categories,
+                                    hideAllAppsSection = hideAllAppsSection
+                            )
+                    state.copy(
+                            hideAllAppsSection = hideAllAppsSection,
+                            selectedCategory = selectedCategory,
+                            categories = categories,
+                            filteredApps =
+                                    applyFilters(
+                                            query = state.searchQuery,
+                                            category = selectedCategory,
+                                            apps = state.allApps
+                                    ),
+                            filteredPrivateSpaceApps =
+                                    applyPrivateFilter(
+                                            query = state.searchQuery,
+                                            selectedCategory = selectedCategory,
+                                            privateApps = state.privateSpaceApps
+                                    )
+                    )
+                }
             }
         }
     }
@@ -192,22 +235,33 @@ constructor(
                         .sortedBy { it.label.lowercase() }
 
         _uiState.update { state ->
-            val filtered = applyFilters(state.searchQuery, state.selectedCategory, visible)
             val categories =
                     deriveCategories(
                             apps = visible,
                             definedCategories = definedCategories,
                             includePrivate =
                                     state.isPrivateSpaceUnlocked &&
-                                            state.privateSpaceApps.isNotEmpty()
+                                            state.privateSpaceApps.isNotEmpty(),
+                            includeAllAppsSection = !state.hideAllAppsSection
                     )
+            val selectedCategory =
+                    resolveSelectedCategory(
+                            currentCategory = state.selectedCategory,
+                            categories = categories,
+                            hideAllAppsSection = state.hideAllAppsSection
+                    )
+            val filtered = applyFilters(state.searchQuery, selectedCategory, visible)
             val filteredPrivate =
                     applyPrivateFilter(
                             query = state.searchQuery,
-                            selectedCategory = state.selectedCategory,
+                            selectedCategory = selectedCategory,
                             privateApps = state.privateSpaceApps
                     )
-            state.copy(allApps = visible, filteredApps = filtered)
+            state.copy(
+                    allApps = visible,
+                    selectedCategory = selectedCategory,
+                    filteredApps = filtered
+            )
                     .copy(categories = categories, filteredPrivateSpaceApps = filteredPrivate)
         }
     }
@@ -289,7 +343,14 @@ constructor(
         viewModelScope.launch {
             appRepository.deleteCategory(name)
             if (_uiState.value.selectedCategory.equals(name, ignoreCase = true)) {
-                onCategorySelected("All apps")
+                val categoriesAfterDelete =
+                        _uiState.value.categories.filterNot { it.equals(name, ignoreCase = true) }
+                onCategorySelected(
+                        defaultCategory(
+                                categories = categoriesAfterDelete,
+                                hideAllAppsSection = _uiState.value.hideAllAppsSection
+                        )
+                )
             }
             dismissCategoryActionSheet()
         }
@@ -386,18 +447,26 @@ constructor(
                                                 it.equals("All apps", ignoreCase = true) ||
                                                         it.equals("Private", ignoreCase = true)
                                             },
-                            includePrivate = unlocked && apps.isNotEmpty()
+                            includePrivate = unlocked && apps.isNotEmpty(),
+                            includeAllAppsSection = !state.hideAllAppsSection
+                    )
+            val selectedCategory =
+                    resolveSelectedCategory(
+                            currentCategory = state.selectedCategory,
+                            categories = categories,
+                            hideAllAppsSection = state.hideAllAppsSection
                     )
             val filteredPrivate =
                     applyPrivateFilter(
                             query = state.searchQuery,
-                            selectedCategory = state.selectedCategory,
+                            selectedCategory = selectedCategory,
                             privateApps = apps
                     )
             state.copy(
                     isPrivateSpaceSupported = supported,
                     isPrivateSpaceUnlocked = unlocked,
                     privateSpaceApps = apps,
+                    selectedCategory = selectedCategory,
                     filteredPrivateSpaceApps = filteredPrivate,
                     categories = categories
             )
@@ -435,7 +504,11 @@ constructor(
 
     fun resetSearchState() {
         _uiState.update { state ->
-            val defaultCategory = "All apps"
+            val defaultCategory =
+                    defaultCategory(
+                            categories = state.categories,
+                            hideAllAppsSection = state.hideAllAppsSection
+                    )
             state.copy(
                     searchQuery = "",
                     selectedCategory = defaultCategory,
@@ -477,16 +550,34 @@ constructor(
         }
     }
 
+    private fun resolveSelectedCategory(
+            currentCategory: String,
+            categories: List<String>,
+            hideAllAppsSection: Boolean
+    ): String {
+        return if (categories.any { it.equals(currentCategory, ignoreCase = true) }) {
+            currentCategory
+        } else {
+            defaultCategory(categories, hideAllAppsSection)
+        }
+    }
+
+    private fun defaultCategory(categories: List<String>, hideAllAppsSection: Boolean): String {
+        if (!hideAllAppsSection) return "All apps"
+        return categories.firstOrNull() ?: "All apps"
+    }
+
     private fun deriveCategories(
             apps: List<AppInfo>,
             definedCategories: List<String>,
-            includePrivate: Boolean
+            includePrivate: Boolean,
+            includeAllAppsSection: Boolean
     ): List<String> {
         val dynamic = apps.map { it.category.trim() }.filter { it.isNotBlank() }.toSet()
         val orderedDefined = definedCategories.distinct()
         val extras = (dynamic - orderedDefined.toSet()).toList().sorted()
         return buildList {
-            add("All apps")
+            if (includeAllAppsSection) add("All apps")
             if (includePrivate) add("Private")
             addAll(orderedDefined)
             addAll(extras)

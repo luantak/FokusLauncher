@@ -35,6 +35,8 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         private val SHOW_HOME_SCREEN_INFO_KEY = booleanPreferencesKey("show_home_screen_info")
         private val AUTO_OPEN_DRAWER_KEYBOARD_KEY =
                 booleanPreferencesKey("auto_open_drawer_keyboard")
+        private val HIDE_ALL_APPS_SECTION_KEY =
+                booleanPreferencesKey("hide_all_apps_section")
         private val HAS_COMPLETED_ONBOARDING_KEY = booleanPreferencesKey("has_completed_onboarding")
         private val ONBOARDING_REACHED_SET_DEFAULT_KEY = booleanPreferencesKey("onboarding_reached_set_default")
         private val WEATHER_LOCATION_OPTED_OUT_KEY = booleanPreferencesKey("weather_location_opted_out")
@@ -155,6 +157,13 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
 
     suspend fun setAutoOpenDrawerKeyboard(enabled: Boolean) {
         context.dataStore.edit { prefs -> prefs[AUTO_OPEN_DRAWER_KEYBOARD_KEY] = enabled }
+    }
+
+    val hideAllAppsSectionFlow: Flow<Boolean> =
+            context.dataStore.data.map { prefs -> prefs[HIDE_ALL_APPS_SECTION_KEY] ?: false }
+
+    suspend fun setHideAllAppsSection(hide: Boolean) {
+        context.dataStore.edit { prefs -> prefs[HIDE_ALL_APPS_SECTION_KEY] = hide }
     }
 
     // --- Onboarding ---

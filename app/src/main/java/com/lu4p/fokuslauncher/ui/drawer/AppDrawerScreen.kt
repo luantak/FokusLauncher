@@ -165,6 +165,10 @@ fun AppDrawerContent(
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
     val listState = rememberLazyListState()
+    val showMainAppsSection =
+            !uiState.hideAllAppsSection ||
+                    !uiState.selectedCategory.equals("All apps", ignoreCase = true) ||
+                    uiState.searchQuery.isNotBlank()
     val closeWithFocusReset: () -> Unit = {
         focusManager.clearFocus(force = true)
         onClose()
@@ -287,7 +291,7 @@ fun AppDrawerContent(
 
         // App list: normal apps first, then private space (deprioritized)
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize().testTag("app_list")) {
-            if (uiState.filteredApps.isNotEmpty()) {
+            if (showMainAppsSection && uiState.filteredApps.isNotEmpty()) {
                 item {
                     Text(
                             text = uiState.selectedCategory.uppercase(Locale.getDefault()),
@@ -297,18 +301,20 @@ fun AppDrawerContent(
                     )
                 }
             }
-            items(items = uiState.filteredApps, key = { it.packageName }) { app ->
-                AppListItem(
-                        app = app,
-                        onClick = {
-                            focusManager.clearFocus(force = true)
-                            onAppClick(LaunchTarget.MainApp(app.packageName))
-                        },
-                        onLongClick = { onAppLongPress(app) }
-                )
+            if (showMainAppsSection) {
+                items(items = uiState.filteredApps, key = { it.packageName }) { app ->
+                    AppListItem(
+                            app = app,
+                            onClick = {
+                                focusManager.clearFocus(force = true)
+                                onAppClick(LaunchTarget.MainApp(app.packageName))
+                            },
+                            onLongClick = { onAppLongPress(app) }
+                    )
+                }
             }
             if (uiState.isPrivateSpaceUnlocked && uiState.filteredPrivateSpaceApps.isNotEmpty()) {
-                if (uiState.filteredApps.isNotEmpty()) {
+                if (showMainAppsSection && uiState.filteredApps.isNotEmpty()) {
                     item {
                         HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
