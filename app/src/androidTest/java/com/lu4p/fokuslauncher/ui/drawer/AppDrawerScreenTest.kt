@@ -2,6 +2,7 @@ package com.lu4p.fokuslauncher.ui.drawer
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -57,6 +58,27 @@ class AppDrawerScreenTest {
                     uiState = AppDrawerUiState(
                         allApps = testApps,
                         filteredApps = testApps
+                    ),
+                    onSearchQueryChanged = {},
+                    onCategorySelected = {},
+                    onAppClick = {},
+                    onSettingsClick = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("search_bar").assertIsDisplayed()
+    }
+
+    @Test
+    fun appDrawer_keepsSearchBarVisibleWhenAutoOpenDisabled() {
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                AppDrawerContent(
+                    uiState = AppDrawerUiState(
+                        allApps = testApps,
+                        filteredApps = testApps,
+                        autoOpenKeyboard = false
                     ),
                     onSearchQueryChanged = {},
                     onCategorySelected = {},
@@ -135,8 +157,12 @@ class AppDrawerScreenTest {
 
         composeTestRule.onNodeWithText("Calculator").assertIsDisplayed()
         composeTestRule.onNodeWithText("Calendar").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Chrome").assertDoesNotExist()
-        composeTestRule.onNodeWithText("Atom").assertDoesNotExist()
+        composeTestRule.onAllNodesWithText("Chrome").fetchSemanticsNodes().also {
+            assertEquals(0, it.size)
+        }
+        composeTestRule.onAllNodesWithText("Atom").fetchSemanticsNodes().also {
+            assertEquals(0, it.size)
+        }
     }
 
     @Test
@@ -223,6 +249,8 @@ class AppDrawerScreenTest {
         }
 
         composeTestRule.onNodeWithTag("app_list").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Atom").assertDoesNotExist()
+        composeTestRule.onAllNodesWithText("Atom").fetchSemanticsNodes().also {
+            assertEquals(0, it.size)
+        }
     }
 }

@@ -38,6 +38,7 @@ data class SettingsUiState(
         val swipeRightTarget: ShortcutTarget? = null,
         val preferredWeatherAppPackage: String = "",
         val showStatusBar: Boolean = false,
+        val autoOpenDrawerKeyboard: Boolean = true,
         val homeAlignment: HomeAlignment = HomeAlignment.LEFT,
         val allApps: List<AppInfo> = emptyList()
 )
@@ -111,7 +112,12 @@ constructor(
                     .combine(preferencesManager.showStatusBarFlow) { weatherState, showStatusBar ->
                         weatherState to showStatusBar
                     }
-                    .combine(preferencesManager.homeAlignmentFlow) { weatherWithStatusBar, homeAlignment ->
+                    .combine(preferencesManager.autoOpenDrawerKeyboardFlow) {
+                        weatherWithStatusBar, autoOpenDrawerKeyboard ->
+                        weatherWithStatusBar to autoOpenDrawerKeyboard
+                    }
+                    .combine(preferencesManager.homeAlignmentFlow) { weatherWithSearchState, homeAlignment ->
+                        val (weatherWithStatusBar, autoOpenDrawerKeyboard) = weatherWithSearchState
                         val (weatherState, showStatusBar) = weatherWithStatusBar
                         val (swipeState, preferredWeatherApp) = weatherState
                         val (leftState, swipeRight) = swipeState
@@ -132,6 +138,7 @@ constructor(
                                 swipeRightTarget = swipeRight,
                                 preferredWeatherAppPackage = preferredWeatherApp,
                                 showStatusBar = showStatusBar,
+                                autoOpenDrawerKeyboard = autoOpenDrawerKeyboard,
                                 homeAlignment = homeAlignment,
                                 allApps = allApps
                         )
@@ -198,6 +205,10 @@ constructor(
 
     fun setShowStatusBar(show: Boolean) {
         viewModelScope.launch { preferencesManager.setShowStatusBar(show) }
+    }
+
+    fun setAutoOpenDrawerKeyboard(enabled: Boolean) {
+        viewModelScope.launch { preferencesManager.setAutoOpenDrawerKeyboard(enabled) }
     }
 
     // --- Home alignment ---

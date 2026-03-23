@@ -338,6 +338,20 @@ fun SettingsScreen(
 
             item { SettingsDivider() }
 
+            // ========== APP DRAWER ==========
+            item { SectionHeader("App Drawer") }
+
+            item {
+                SettingsToggleRow(
+                        label = "Auto-open keyboard in drawer",
+                        subtitle = "Focus the search field and show the keyboard when the drawer opens",
+                        checked = uiState.autoOpenDrawerKeyboard,
+                        onCheckedChange = { viewModel.setAutoOpenDrawerKeyboard(it) }
+                )
+            }
+
+            item { SettingsDivider() }
+
             // ========== HIDDEN APPS ==========
             item { SectionHeader("Hidden Apps") }
 

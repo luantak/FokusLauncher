@@ -27,6 +27,7 @@ data class AppDrawerUiState(
         val allApps: List<AppInfo> = emptyList(),
         val filteredApps: List<AppInfo> = emptyList(),
         val searchQuery: String = "",
+        val autoOpenKeyboard: Boolean = true,
         val selectedCategory: String = "All apps",
         val categories: List<String> = listOf("All apps"),
         val selectedApp: AppInfo? = null,
@@ -79,6 +80,7 @@ constructor(
         observeHiddenAndRenamed()
         observeInstalledApps()
         observeFavorites()
+        observeDrawerKeyboardPreference()
         refreshPrivateSpaceState()
         observePrivateSpaceChanges()
     }
@@ -91,6 +93,14 @@ constructor(
                         favoritePackageNames = favorites.map { it.packageName }.toSet()
                     )
                 }
+            }
+        }
+    }
+
+    private fun observeDrawerKeyboardPreference() {
+        viewModelScope.launch {
+            preferencesManager.autoOpenDrawerKeyboardFlow.collect { enabled ->
+                _uiState.update { state -> state.copy(autoOpenKeyboard = enabled) }
             }
         }
     }

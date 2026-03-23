@@ -174,7 +174,8 @@ fun AppDrawerContent(
     BackHandler { closeWithFocusReset() }
 
     // Auto-focus the search bar and show keyboard when the drawer opens
-    LaunchedEffect(Unit) {
+    LaunchedEffect(uiState.autoOpenKeyboard) {
+        if (!uiState.autoOpenKeyboard) return@LaunchedEffect
         delay(200)
         focusRequester.requestFocus()
     }
