@@ -8,6 +8,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -136,6 +137,65 @@ class WeatherRepositoryTest {
         val weather2 = repository.getWeather(52.52, 13.41)
         
         assertEquals(15, weather2?.temperature)
+        assertEquals(2, mockWebServer.requestCount)
+    }
+
+    @Test
+    fun `getWeather requests fahrenheit when useFahrenheit true`() = runTest {
+        val jsonResponse =
+                """
+            {
+              "current": {
+                "temperature_2m": 72.4,
+                "weather_code": 0
+              }
+            }
+        """
+                        .trimIndent()
+
+        mockWebServer.enqueue(MockResponse().setResponseCode(200).setBody(jsonResponse))
+
+        val weather = repository.getWeather(52.52, 13.41, useFahrenheit = true)
+
+        val request = mockWebServer.takeRequest()
+        assertNotNull(weather)
+        assertEquals(72, weather?.temperature)
+        assertTrue(
+                request.requestUrl!!.queryParameter("temperature_unit") == "fahrenheit"
+        )
+    }
+
+    @Test
+    fun `getWeather does not use cache when temperature unit changes`() = runTest {
+        val jsonCelsius =
+                """
+            {
+              "current": {
+                "temperature_2m": 22.0,
+                "weather_code": 3
+              }
+            }
+        """
+                        .trimIndent()
+        val jsonFahrenheit =
+                """
+            {
+              "current": {
+                "temperature_2m": 72.0,
+                "weather_code": 3
+              }
+            }
+        """
+                        .trimIndent()
+
+        mockWebServer.enqueue(MockResponse().setResponseCode(200).setBody(jsonCelsius))
+        mockWebServer.enqueue(MockResponse().setResponseCode(200).setBody(jsonFahrenheit))
+
+        val celsius = repository.getWeather(52.52, 13.41, useFahrenheit = false)
+        val fahrenheit = repository.getWeather(52.52, 13.41, useFahrenheit = true)
+
+        assertEquals(22, celsius?.temperature)
+        assertEquals(72, fahrenheit?.temperature)
         assertEquals(2, mockWebServer.requestCount)
     }
 

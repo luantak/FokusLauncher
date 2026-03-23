@@ -198,6 +198,7 @@ fun HomeScreenContent(
                     if (uiState.showWeatherWidget) {
                         WeatherWidget(
                             weather = uiState.weather,
+                            useFahrenheit = uiState.weatherUseFahrenheit,
                             onClick = onWeatherClick,
                             modifier = Modifier.padding(top = 16.dp)
                         )

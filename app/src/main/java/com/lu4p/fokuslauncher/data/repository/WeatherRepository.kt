@@ -22,22 +22,28 @@ class WeatherRepository @Inject constructor() {
     }
 
     private var cachedWeather: WeatherData? = null
+    private var cachedUseFahrenheit: Boolean? = null
 
     /**
      * Fetches weather data for the given coordinates. Returns cached data if less than 30 minutes
-     * old.
+     * old and the requested temperature unit matches the cache.
      *
      * @param lat Latitude
      * @param lon Longitude
+     * @param useFahrenheit When true, requests and parses values in Fahrenheit per Open-Meteo.
      * @return WeatherData or null if the fetch fails
      */
-    suspend fun getWeather(lat: Double, lon: Double): WeatherData? {
+    suspend fun getWeather(lat: Double, lon: Double, useFahrenheit: Boolean = false): WeatherData? {
         // Return cached data if still fresh
         cachedWeather?.let { cached ->
-            if (System.currentTimeMillis() - cached.lastUpdated < CACHE_DURATION_MS) {
+            if (cachedUseFahrenheit == useFahrenheit &&
+                            System.currentTimeMillis() - cached.lastUpdated < CACHE_DURATION_MS
+            ) {
                 return cached
             }
         }
+
+        val temperatureUnit = if (useFahrenheit) "fahrenheit" else "celsius"
 
         return withContext(Dispatchers.IO) {
             try {
@@ -47,7 +53,7 @@ class WeatherRepository @Inject constructor() {
                                         "?latitude=$lat" +
                                         "&longitude=$lon" +
                                         "&current=temperature_2m,weather_code" +
-                                        "&temperature_unit=celsius"
+                                        "&temperature_unit=$temperatureUnit"
                         )
                 val connection = url.openConnection() as HttpURLConnection
                 connection.requestMethod = "GET"
@@ -58,12 +64,13 @@ class WeatherRepository @Inject constructor() {
                     val response = connection.inputStream.bufferedReader().readText()
                     val weather = parseOpenMeteoResponse(response)
                     cachedWeather = weather
+                    cachedUseFahrenheit = useFahrenheit
                     weather
                 } else {
-                    cachedWeather
+                    cachedWeather?.takeIf { cachedUseFahrenheit == useFahrenheit }
                 }
             } catch (_: Exception) {
-                cachedWeather
+                cachedWeather?.takeIf { cachedUseFahrenheit == useFahrenheit }
             }
         }
     }
@@ -71,6 +78,7 @@ class WeatherRepository @Inject constructor() {
     /** Clears the weather cache. */
     fun invalidateCache() {
         cachedWeather = null
+        cachedUseFahrenheit = null
     }
 
     private fun parseOpenMeteoResponse(json: String): WeatherData {

@@ -28,6 +28,7 @@ import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.model.WeatherData
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.data.repository.WeatherRepository
+import com.lu4p.fokuslauncher.data.util.TemperatureUnitHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -52,6 +53,8 @@ data class HomeUiState(
     val batteryPercent: Int = 0,
     val showWidgets: Boolean = true,
     val weather: WeatherData? = null,
+    /** Matches system regional temperature unit; drives label and Open-Meteo request. */
+    val weatherUseFahrenheit: Boolean = false,
     val showWeatherWidget: Boolean = false,
     val isDefaultLauncher: Boolean = true,
     val homeAlignment: HomeAlignment = HomeAlignment.LEFT
@@ -626,7 +629,9 @@ class HomeViewModel @Inject constructor(
                 context, Manifest.permission.ACCESS_COARSE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
             val shouldShow = hasCoarsePermission && !optedOut
-            _uiState.value = _uiState.value.copy(showWeatherWidget = shouldShow)
+            val useFahrenheit = TemperatureUnitHelper.useFahrenheit(context)
+            _uiState.value =
+                    _uiState.value.copy(showWeatherWidget = shouldShow, weatherUseFahrenheit = useFahrenheit)
             if (!shouldShow) {
                 _uiState.value = _uiState.value.copy(weather = null)
                 return
@@ -637,7 +642,12 @@ class HomeViewModel @Inject constructor(
                 ?: locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
                 ?: locationManager.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER)
             if (location != null) {
-                val weather = weatherRepository.getWeather(location.latitude, location.longitude)
+                val weather =
+                        weatherRepository.getWeather(
+                                location.latitude,
+                                location.longitude,
+                                useFahrenheit = useFahrenheit
+                        )
                 _uiState.value = _uiState.value.copy(weather = weather)
             }
         } catch (_: Exception) { }

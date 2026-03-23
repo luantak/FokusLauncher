@@ -23,11 +23,13 @@ import com.lu4p.fokuslauncher.data.model.WeatherData
 @Composable
 fun WeatherWidget(
     weather: WeatherData?,
+    useFahrenheit: Boolean = false,
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {}
 ) {
+    val suffix = if (useFahrenheit) "°F" else "°C"
     val weatherEmoji = weather?.weatherEmoji ?: "☁️"
-    val temperatureText = weather?.let { "${it.temperature}°C" } ?: "--°C"
+    val temperatureText = weather?.let { "${it.temperature}$suffix" } ?: "--$suffix"
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier

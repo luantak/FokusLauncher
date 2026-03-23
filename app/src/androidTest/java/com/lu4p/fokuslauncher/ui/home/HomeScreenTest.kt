@@ -229,6 +229,34 @@ class HomeScreenTest {
     }
 
     @Test
+    fun homeScreen_weatherWidget_showsFahrenheitWhenRequested() {
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                HomeScreenContent(
+                    uiState =
+                            HomeUiState(
+                                    currentTime = "3:56",
+                                    currentDate = "Fri. 12 Jul.",
+                                    batteryPercent = 88,
+                                    weather = WeatherData(temperature = 72, iconCode = "01d"),
+                                    weatherUseFahrenheit = true,
+                                    showWeatherWidget = true
+                            ),
+                    favorites = testFavorites,
+                    rightSideShortcuts = testRightSideShortcuts,
+                    onLabelClick = {},
+                    onLabelLongPress = {},
+                    onIconClick = {},
+                    onWeatherClick = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("weather_widget").assertIsDisplayed()
+        composeTestRule.onNodeWithText("72°F").assertIsDisplayed()
+    }
+
+    @Test
     fun homeScreen_hidesWidgets_whenWidgetsDisabled() {
         composeTestRule.setContent {
             FokusLauncherTheme {
