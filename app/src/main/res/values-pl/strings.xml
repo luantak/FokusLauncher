@@ -181,8 +181,8 @@
     <string name="onboarding_next">Dalej</string>
 
     <!-- Settings - Weather location (shown only when disabled) -->
-    <string name="settings_weather_location_disabled">Włącz lokalizcję dla pogody</string>
-    <string name="settings_weather_location_disabled_subtitle">Dotknij aby pozwolić na dostęp do lokalizacji</string>
+    <string name="settings_weather_location_disabled">Włącz lokalizację dla pogody</string>
+    <string name="settings_weather_location_disabled_subtitle">Dotknij, aby pozwolić na dostęp do lokalizacji</string>
     <string name="settings_weather_location_enable_button">Włącz</string>
 
     <!-- Settings - Weather app -->
