@@ -1,6 +1,14 @@
 <resources>
     <string name="app_name">Fokus Launcher</string>
 
+    <!-- App drawer: one section per Android user profile -->
+    <string name="drawer_section_personal">Personal</string>
+    <string name="drawer_section_work_profile">Work profile</string>
+    <string name="drawer_section_profile_numbered">Profile %1$d</string>
+    <string name="drawer_section_other_profile">Other profile</string>
+    <string name="drawer_section_clone_profile">Parallel apps</string>
+    <string name="drawer_section_private_space">Private Space</string>
+
     <!-- Onboarding -->
     <string name="onboarding_welcome_title">Fokus Launcher</string>
     <string name="onboarding_welcome_subtitle">A minimal home screen</string>

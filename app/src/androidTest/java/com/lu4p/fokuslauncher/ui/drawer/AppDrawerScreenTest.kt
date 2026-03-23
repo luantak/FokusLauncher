@@ -28,15 +28,25 @@ class AppDrawerScreenTest {
         AppInfo("com.lu4p.maps", "Maps", null)
     )
 
+    private fun singleProfileState(
+        apps: List<AppInfo>,
+        searchQuery: String = "",
+        autoOpenKeyboard: Boolean = true
+    ) = AppDrawerUiState(
+        allApps = apps,
+        filteredProfileSections =
+            listOf(DrawerProfileSectionUi(id = "owner", title = "Personal", apps = apps)),
+        searchQuery = searchQuery,
+        autoOpenKeyboard = autoOpenKeyboard,
+        categories = listOf("All apps", "Productivity", "Social")
+    )
+
     @Test
     fun appDrawer_displaysAppList() {
         composeTestRule.setContent {
             FokusLauncherTheme {
                 AppDrawerContent(
-                    uiState = AppDrawerUiState(
-                        allApps = testApps,
-                        filteredApps = testApps
-                    ),
+                    uiState = singleProfileState(testApps),
                     onSearchQueryChanged = {},
                     onCategorySelected = {},
                     onAppClick = {},
@@ -55,10 +65,7 @@ class AppDrawerScreenTest {
         composeTestRule.setContent {
             FokusLauncherTheme {
                 AppDrawerContent(
-                    uiState = AppDrawerUiState(
-                        allApps = testApps,
-                        filteredApps = testApps
-                    ),
+                    uiState = singleProfileState(testApps),
                     onSearchQueryChanged = {},
                     onCategorySelected = {},
                     onAppClick = {},
@@ -75,11 +82,8 @@ class AppDrawerScreenTest {
         composeTestRule.setContent {
             FokusLauncherTheme {
                 AppDrawerContent(
-                    uiState = AppDrawerUiState(
-                        allApps = testApps,
-                        filteredApps = testApps,
-                        autoOpenKeyboard = false
-                    ),
+                    uiState =
+                        singleProfileState(testApps, autoOpenKeyboard = false),
                     onSearchQueryChanged = {},
                     onCategorySelected = {},
                     onAppClick = {},
@@ -96,10 +100,7 @@ class AppDrawerScreenTest {
         composeTestRule.setContent {
             FokusLauncherTheme {
                 AppDrawerContent(
-                    uiState = AppDrawerUiState(
-                        allApps = testApps,
-                        filteredApps = testApps
-                    ),
+                    uiState = singleProfileState(testApps),
                     onSearchQueryChanged = {},
                     onCategorySelected = {},
                     onAppClick = {},
@@ -119,10 +120,7 @@ class AppDrawerScreenTest {
         composeTestRule.setContent {
             FokusLauncherTheme {
                 AppDrawerContent(
-                    uiState = AppDrawerUiState(
-                        allApps = testApps,
-                        filteredApps = testApps
-                    ),
+                    uiState = singleProfileState(testApps),
                     onSearchQueryChanged = { capturedQuery = it },
                     onCategorySelected = {},
                     onAppClick = {},
@@ -142,11 +140,17 @@ class AppDrawerScreenTest {
         composeTestRule.setContent {
             FokusLauncherTheme {
                 AppDrawerContent(
-                    uiState = AppDrawerUiState(
-                        allApps = testApps,
-                        filteredApps = filteredApps,
-                        searchQuery = "cal"
-                    ),
+                    uiState =
+                        singleProfileState(testApps, searchQuery = "cal").copy(
+                            filteredProfileSections =
+                                listOf(
+                                    DrawerProfileSectionUi(
+                                        id = "owner",
+                                        title = "Personal",
+                                        apps = filteredApps
+                                    )
+                                )
+                        ),
                     onSearchQueryChanged = {},
                     onCategorySelected = {},
                     onAppClick = {},
@@ -172,10 +176,7 @@ class AppDrawerScreenTest {
         composeTestRule.setContent {
             FokusLauncherTheme {
                 AppDrawerContent(
-                    uiState = AppDrawerUiState(
-                        allApps = testApps,
-                        filteredApps = testApps
-                    ),
+                    uiState = singleProfileState(testApps),
                     onSearchQueryChanged = {},
                     onCategorySelected = { selectedCategory = it },
                     onAppClick = {},
@@ -195,10 +196,7 @@ class AppDrawerScreenTest {
         composeTestRule.setContent {
             FokusLauncherTheme {
                 AppDrawerContent(
-                    uiState = AppDrawerUiState(
-                        allApps = testApps,
-                        filteredApps = testApps
-                    ),
+                    uiState = singleProfileState(testApps),
                     onSearchQueryChanged = {},
                     onCategorySelected = {},
                     onAppClick = { clickedTarget = it },
@@ -216,10 +214,7 @@ class AppDrawerScreenTest {
         composeTestRule.setContent {
             FokusLauncherTheme {
                 AppDrawerContent(
-                    uiState = AppDrawerUiState(
-                        allApps = testApps,
-                        filteredApps = testApps
-                    ),
+                    uiState = singleProfileState(testApps),
                     onSearchQueryChanged = {},
                     onCategorySelected = {},
                     onAppClick = {},
@@ -236,10 +231,11 @@ class AppDrawerScreenTest {
         composeTestRule.setContent {
             FokusLauncherTheme {
                 AppDrawerContent(
-                    uiState = AppDrawerUiState(
-                        allApps = emptyList(),
-                        filteredApps = emptyList()
-                    ),
+                    uiState =
+                        AppDrawerUiState(
+                            allApps = emptyList(),
+                            filteredProfileSections = emptyList()
+                        ),
                     onSearchQueryChanged = {},
                     onCategorySelected = {},
                     onAppClick = {},

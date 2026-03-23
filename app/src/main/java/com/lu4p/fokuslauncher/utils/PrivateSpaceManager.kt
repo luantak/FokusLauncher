@@ -90,7 +90,7 @@ class PrivateSpaceManager @Inject constructor(
             val profiles = userManager.userProfiles
             profiles.firstOrNull { profile ->
                 profile != android.os.Process.myUserHandle() &&
-                    isPrivateProfile(profile)
+                    isPrivateSpaceProfile(profile)
             }
         } catch (_: Exception) {
             null
@@ -98,10 +98,10 @@ class PrivateSpaceManager @Inject constructor(
     }
 
     /**
-     * Checks if a profile is the Private Space profile by reading its
-     * userType from [LauncherApps.getLauncherUserInfo].
+     * True if [profile] is the Android 15+ Private Space user (not clones / work / etc.).
+     * Used to keep Private Space apps in the dedicated drawer section only.
      */
-    private fun isPrivateProfile(profile: UserHandle): Boolean {
+    fun isPrivateSpaceProfile(profile: UserHandle): Boolean {
         if (Build.VERSION.SDK_INT < 35) return false
         return try {
             val info = launcherApps.getLauncherUserInfo(profile)

@@ -1,13 +1,21 @@
 package com.lu4p.fokuslauncher.ui.drawer
 
+import android.content.Context
+import android.content.pm.LauncherApps
+import android.os.Build
+import android.os.UserHandle
+import android.os.UserManager
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
+import com.lu4p.fokuslauncher.utils.ProfileHeuristics
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -25,7 +33,8 @@ import kotlinx.coroutines.withContext
 
 data class AppDrawerUiState(
         val allApps: List<AppInfo> = emptyList(),
-        val filteredApps: List<AppInfo> = emptyList(),
+        /** One entry per Android user profile (personal, work, clone, …), after search/category. */
+        val filteredProfileSections: List<DrawerProfileSectionUi> = emptyList(),
         val searchQuery: String = "",
         val autoOpenKeyboard: Boolean = true,
         val hideAllAppsSection: Boolean = false,
@@ -61,6 +70,7 @@ sealed interface LaunchTarget {
 class AppDrawerViewModel
 @Inject
 constructor(
+        @param:ApplicationContext private val context: Context,
         private val appRepository: AppRepository,
         private val privateSpaceManager: PrivateSpaceManager,
         private val preferencesManager: PreferencesManager
@@ -126,16 +136,18 @@ constructor(
                                     categories = categories,
                                     hideAllAppsSection = hideAllAppsSection
                             )
+                    val sections = buildProfileSections(state.allApps)
+                    val filteredSections =
+                            filterProfileSections(
+                                    sections = sections,
+                                    query = state.searchQuery,
+                                    category = selectedCategory
+                            )
                     state.copy(
                             hideAllAppsSection = hideAllAppsSection,
                             selectedCategory = selectedCategory,
                             categories = categories,
-                            filteredApps =
-                                    applyFilters(
-                                            query = state.searchQuery,
-                                            category = selectedCategory,
-                                            apps = state.allApps
-                                    ),
+                            filteredProfileSections = filteredSections,
                             filteredPrivateSpaceApps =
                                     applyPrivateFilter(
                                             query = state.searchQuery,
@@ -211,8 +223,8 @@ constructor(
     }
 
     /**
-     * Applies hidden + renamed overlays and updates filteredApps. Runs the expensive PackageManager
-     * query off the main thread.
+     * Applies hidden + renamed overlays and updates profile sections. Runs the expensive
+     * PackageManager query off the main thread.
      */
     private suspend fun rebuildVisibleApps(
             hiddenSet: Set<String>,
@@ -232,7 +244,6 @@ constructor(
                                     category = customCategory ?: app.category
                             )
                         }
-                        .sortedBy { it.label.lowercase() }
 
         _uiState.update { state ->
             val categories =
@@ -250,7 +261,13 @@ constructor(
                             categories = categories,
                             hideAllAppsSection = state.hideAllAppsSection
                     )
-            val filtered = applyFilters(state.searchQuery, selectedCategory, visible)
+            val sections = buildProfileSections(visible)
+            val filteredSections =
+                    filterProfileSections(
+                            sections = sections,
+                            query = state.searchQuery,
+                            category = selectedCategory
+                    )
             val filteredPrivate =
                     applyPrivateFilter(
                             query = state.searchQuery,
@@ -260,7 +277,7 @@ constructor(
             state.copy(
                     allApps = visible,
                     selectedCategory = selectedCategory,
-                    filteredApps = filtered
+                    filteredProfileSections = filteredSections
             )
                     .copy(categories = categories, filteredPrivateSpaceApps = filteredPrivate)
         }
@@ -273,7 +290,13 @@ constructor(
         val trimmed = query.trimStart()
 
         _uiState.update { state ->
-            val filtered = applyFilters(trimmed, state.selectedCategory, state.allApps)
+            val sections = buildProfileSections(state.allApps)
+            val filteredSections =
+                    filterProfileSections(
+                            sections = sections,
+                            query = trimmed,
+                            category = state.selectedCategory
+                    )
             val filteredPrivate =
                     applyPrivateFilter(
                             query = trimmed,
@@ -282,7 +305,7 @@ constructor(
                     )
             state.copy(
                     searchQuery = query,
-                    filteredApps = filtered,
+                    filteredProfileSections = filteredSections,
                     filteredPrivateSpaceApps = filteredPrivate
             )
         }
@@ -291,10 +314,11 @@ constructor(
         // A leading space means "browse mode" – show the result but don't launch.
         val browseMode = query.startsWith(" ")
         val state = _uiState.value
+        val mainFlat = state.filteredProfileSections.flatMap { it.apps }
         val allMatches =
                 buildLaunchTargets(
                         privateApps = state.filteredPrivateSpaceApps,
-                        mainApps = state.filteredApps
+                        mainApps = mainFlat
                 )
         if (!browseMode && trimmed.isNotBlank() && allMatches.size == 1) {
             val target = allMatches[0]
@@ -307,7 +331,13 @@ constructor(
 
     fun onCategorySelected(category: String) {
         _uiState.update { state ->
-            val filtered = applyFilters(state.searchQuery, category, state.allApps)
+            val sections = buildProfileSections(state.allApps)
+            val filteredSections =
+                    filterProfileSections(
+                            sections = sections,
+                            query = state.searchQuery,
+                            category = category
+                    )
             val filteredPrivate =
                     applyPrivateFilter(
                             query = state.searchQuery,
@@ -316,7 +346,7 @@ constructor(
                     )
             state.copy(
                     selectedCategory = category,
-                    filteredApps = filtered,
+                    filteredProfileSections = filteredSections,
                     filteredPrivateSpaceApps = filteredPrivate
             )
         }
@@ -389,6 +419,7 @@ constructor(
 
     fun addToHomeScreen(app: AppInfo) {
         viewModelScope.launch {
+            if (app.userHandle != null) return@launch
             val current = preferencesManager.favoritesFlow.first().toMutableList()
             if (current.any { it.packageName == app.packageName }) return@launch
             current.add(
@@ -462,11 +493,19 @@ constructor(
                             selectedCategory = selectedCategory,
                             privateApps = apps
                     )
+            val sections = buildProfileSections(state.allApps)
+            val filteredSections =
+                    filterProfileSections(
+                            sections = sections,
+                            query = state.searchQuery,
+                            category = selectedCategory
+                    )
             state.copy(
                     isPrivateSpaceSupported = supported,
                     isPrivateSpaceUnlocked = unlocked,
                     privateSpaceApps = apps,
                     selectedCategory = selectedCategory,
+                    filteredProfileSections = filteredSections,
                     filteredPrivateSpaceApps = filteredPrivate,
                     categories = categories
             )
@@ -509,10 +548,17 @@ constructor(
                             categories = state.categories,
                             hideAllAppsSection = state.hideAllAppsSection
                     )
+            val sections = buildProfileSections(state.allApps)
+            val filteredSections =
+                    filterProfileSections(
+                            sections = sections,
+                            query = "",
+                            category = defaultCategory
+                    )
             state.copy(
                     searchQuery = "",
                     selectedCategory = defaultCategory,
-                    filteredApps = applyFilters("", defaultCategory, state.allApps),
+                    filteredProfileSections = filteredSections,
                     filteredPrivateSpaceApps =
                             applyPrivateFilter(
                                     query = "",
@@ -525,16 +571,151 @@ constructor(
 
     // --- Filtering ---
 
-    private fun applyFilters(query: String, category: String, apps: List<AppInfo>): List<AppInfo> {
-        if (category.equals("Private", ignoreCase = true)) return emptyList()
-        var result = apps
-        if (query.isNotBlank()) {
-            result = result.filter { it.label.contains(query, ignoreCase = true) }
+    private fun buildProfileSections(apps: List<AppInfo>): List<DrawerProfileSectionUi> {
+        val userManager =
+                try {
+                    context.getSystemService(Context.USER_SERVICE) as? UserManager
+                } catch (_: Exception) {
+                    null
+                }
+        if (userManager == null) {
+            val ownerApps = apps.filter { it.userHandle == null }.sortedBy { it.label.lowercase() }
+            val byUser = apps.filter { it.userHandle != null }.groupBy { it.userHandle!! }
+            return buildList {
+                if (ownerApps.isNotEmpty()) {
+                    add(
+                            DrawerProfileSectionUi(
+                                    id = "owner",
+                                    title = context.getString(R.string.drawer_section_personal),
+                                    apps = ownerApps
+                            )
+                    )
+                }
+                for (user in byUser.keys) {
+                    val list = byUser.getValue(user).sortedBy { it.label.lowercase() }
+                    val title =
+                            when {
+                                byUser.keys.size == 1 &&
+                                        !ProfileHeuristics.isLikelyCloneOrParallelProfile(
+                                                context,
+                                                user
+                                        ) ->
+                                        context.getString(R.string.drawer_section_work_profile)
+                                ProfileHeuristics.isLikelyCloneOrParallelProfile(context, user) ->
+                                        context.getString(R.string.drawer_section_clone_profile)
+                                else -> context.getString(R.string.drawer_section_other_profile)
+                            }
+                    add(
+                            DrawerProfileSectionUi(
+                                    id = "u_${user.hashCode()}",
+                                    title = title,
+                                    apps = list
+                            )
+                    )
+                }
+            }
         }
-        if (category.isNotBlank() && category != "All apps") {
-            result = result.filter { it.category.equals(category, ignoreCase = true) }
+
+        val ownerApps = apps.filter { it.userHandle == null }.sortedBy { it.label.lowercase() }
+        val byUser = apps.filter { it.userHandle != null }.groupBy { it.userHandle!! }
+        val orderedUsers =
+                byUser.keys.sortedBy { uh ->
+                    try {
+                        userManager.getSerialNumberForUser(uh)
+                    } catch (_: Exception) {
+                        Long.MAX_VALUE
+                    }
+                }
+
+        return buildList {
+            if (ownerApps.isNotEmpty()) {
+                add(
+                        DrawerProfileSectionUi(
+                                id = "owner",
+                                title = context.getString(R.string.drawer_section_personal),
+                                apps = ownerApps
+                        )
+                )
+            }
+            for (user in orderedUsers) {
+                val list = byUser.getValue(user).sortedBy { it.label.lowercase() }
+                add(
+                        DrawerProfileSectionUi(
+                                id = "u_${user.hashCode()}",
+                                title =
+                                        profileTitleForUser(
+                                                user = user,
+                                                userManager = userManager,
+                                                totalSecondaryProfiles = orderedUsers.size
+                                        ),
+                                apps = list
+                        )
+                )
+            }
         }
-        return result
+    }
+
+    private fun filterProfileSections(
+            sections: List<DrawerProfileSectionUi>,
+            query: String,
+            category: String
+    ): List<DrawerProfileSectionUi> {
+        if (category.equals("Private", ignoreCase = true)) {
+            return sections.map { it.copy(apps = emptyList()) }
+        }
+        return sections.map { section ->
+            var apps = section.apps
+            if (query.isNotBlank()) {
+                apps = apps.filter { it.label.contains(query, ignoreCase = true) }
+            }
+            if (category.isNotBlank() && !category.equals("All apps", ignoreCase = true)) {
+                apps = apps.filter { it.category.equals(category, ignoreCase = true) }
+            }
+            section.copy(apps = apps)
+        }
+    }
+
+    private fun profileTitleForUser(
+            user: UserHandle,
+            userManager: UserManager,
+            totalSecondaryProfiles: Int
+    ): String {
+        if (ProfileHeuristics.isManagedProfileForUser(userManager, user)) {
+            return context.getString(R.string.drawer_section_work_profile)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val launcherApps =
+                    try {
+                        context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as? LauncherApps
+                    } catch (_: Exception) {
+                        null
+                    }
+            if (launcherApps != null) {
+                try {
+                    when (launcherApps.getLauncherUserInfo(user)?.userType) {
+                        "android.os.usertype.profile.MANAGED" ->
+                                return context.getString(R.string.drawer_section_work_profile)
+                    }
+                } catch (_: Exception) {}
+            }
+        }
+        if (ProfileHeuristics.isLikelyCloneOrParallelProfile(context, user)) {
+            return context.getString(R.string.drawer_section_clone_profile)
+        }
+        if (totalSecondaryProfiles == 1) {
+            return context.getString(R.string.drawer_section_work_profile)
+        }
+        val serial =
+                try {
+                    userManager.getSerialNumberForUser(user)
+                } catch (_: Exception) {
+                    -1L
+                }
+        return if (serial >= 0L) {
+            context.getString(R.string.drawer_section_profile_numbered, serial)
+        } else {
+            context.getString(R.string.drawer_section_other_profile)
+        }
     }
 
     private fun applyPrivateFilter(
@@ -598,7 +779,20 @@ constructor(
                             userHandle = userHandle
                     )
                 }
-        val mainTargets = mainApps.map { LaunchTarget.MainApp(it.packageName) }
+        val mainTargets =
+                mainApps.map { app ->
+                    val uh = app.userHandle
+                    val cn = app.componentName
+                    if (uh != null && cn != null) {
+                        LaunchTarget.PrivateApp(
+                                packageName = app.packageName,
+                                componentName = cn,
+                                userHandle = uh
+                        )
+                    } else {
+                        LaunchTarget.MainApp(app.packageName)
+                    }
+                }
         return privateTargets + mainTargets
     }
 

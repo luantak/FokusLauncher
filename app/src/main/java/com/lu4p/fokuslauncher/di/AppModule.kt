@@ -7,7 +7,6 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.lu4p.fokuslauncher.data.database.AppDatabase
 import com.lu4p.fokuslauncher.data.database.dao.AppDao
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
-import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.data.repository.WeatherRepository
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
 import dagger.Module
@@ -51,13 +50,6 @@ object AppModule {
     @Provides
     @Singleton
     fun provideAppDao(database: AppDatabase): AppDao = database.appDao()
-
-    @Provides
-    @Singleton
-    fun provideAppRepository(
-        @ApplicationContext context: Context,
-        appDao: AppDao
-    ): AppRepository = AppRepository(context, appDao)
 
     @Provides
     @Singleton

@@ -12,8 +12,8 @@ data class AppInfo(
     val label: String,
     val icon: Drawable?,
     val category: String = "",
-    /** Non-null for Private Space apps; used to launch via [LauncherApps]. */
+    /** Non-null for apps in a secondary Android user (work, clone, …); used with [LauncherApps]. */
     val userHandle: UserHandle? = null,
-    /** Non-null for Private Space apps; the activity to start. */
+    /** Non-null when [userHandle] is set; the activity to start in that profile. */
     val componentName: ComponentName? = null
 )

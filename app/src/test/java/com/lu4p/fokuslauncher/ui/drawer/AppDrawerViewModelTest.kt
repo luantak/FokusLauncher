@@ -1,7 +1,9 @@
 package com.lu4p.fokuslauncher.ui.drawer
 
 import android.content.ComponentName
+import android.content.Context
 import android.os.UserHandle
+import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryDefinitionEntity
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryEntity
 import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
@@ -33,6 +35,7 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class AppDrawerViewModelTest {
 
+    private lateinit var context: Context
     private lateinit var appRepository: AppRepository
     private lateinit var privateSpaceManager: PrivateSpaceManager
     private lateinit var preferencesManager: PreferencesManager
@@ -64,6 +67,15 @@ class AppDrawerViewModelTest {
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
+        context = mockk(relaxed = true)
+        every { context.getSystemService(Context.USER_SERVICE) } returns null
+        every { context.getString(R.string.drawer_section_personal) } returns "Personal"
+        every { context.getString(R.string.drawer_section_other_profile) } returns "Other profile"
+        every { context.getString(R.string.drawer_section_work_profile) } returns "Work profile"
+        every { context.getString(R.string.drawer_section_clone_profile) } returns "Parallel apps"
+        every { context.getString(R.string.drawer_section_profile_numbered, any()) } answers {
+            "Profile ${invocation.args[1]}"
+        }
         appRepository = mockk(relaxed = true)
         privateSpaceManager = mockk(relaxed = true)
         preferencesManager = mockk(relaxed = true)
@@ -80,9 +92,13 @@ class AppDrawerViewModelTest {
         every { privateSpaceManager.isPrivateSpaceUnlocked() } returns false
         every { privateSpaceManager.launchApp(any(), any()) } returns true
         every { privateSpaceManager.profileStateChanged } returns privateProfileChanges
-        viewModel = AppDrawerViewModel(appRepository, privateSpaceManager, preferencesManager)
+        viewModel =
+                AppDrawerViewModel(context, appRepository, privateSpaceManager, preferencesManager)
         awaitState("apps to load") { it.allApps.isNotEmpty() }
     }
+
+    private fun flatFiltered(state: AppDrawerUiState): List<AppInfo> =
+            state.filteredProfileSections.flatMap { it.apps }
 
     @After
     fun tearDown() {
@@ -106,7 +122,7 @@ class AppDrawerViewModelTest {
         val state = viewModel.uiState.value
 
         assertEquals(testApps.size, state.allApps.size)
-        assertEquals(testApps.size, state.filteredApps.size)
+        assertEquals(testApps.size, flatFiltered(state).size)
         assertEquals("", state.searchQuery)
         assertEquals("All apps", state.selectedCategory)
     }
@@ -121,9 +137,9 @@ class AppDrawerViewModelTest {
         viewModel.onSearchQueryChanged("cal")
 
         val state = viewModel.uiState.value
-        assertEquals(2, state.filteredApps.size)
-        assertTrue(state.filteredApps.any { it.label == "Calculator" })
-        assertTrue(state.filteredApps.any { it.label == "Calendar" })
+        assertEquals(2, flatFiltered(state).size)
+        assertTrue(flatFiltered(state).any { it.label == "Calculator" })
+        assertTrue(flatFiltered(state).any { it.label == "Calendar" })
     }
 
     @Test
@@ -136,7 +152,7 @@ class AppDrawerViewModelTest {
         val state = viewModel.uiState.value
         assertFalse(state.autoOpenKeyboard)
         assertEquals("cal", state.searchQuery)
-        assertEquals(2, state.filteredApps.size)
+        assertEquals(2, flatFiltered(state).size)
     }
 
     @Test
@@ -172,7 +188,7 @@ class AppDrawerViewModelTest {
         viewModel.onSearchQueryChanged("")
 
         val state = viewModel.uiState.value
-        assertEquals(testApps.size, state.filteredApps.size)
+        assertEquals(testApps.size, flatFiltered(state).size)
     }
 
     @Test
@@ -189,7 +205,7 @@ class AppDrawerViewModelTest {
         viewModel.onCategorySelected("All apps")
 
         val state = viewModel.uiState.value
-        assertEquals(testApps.size, state.filteredApps.size)
+        assertEquals(testApps.size, flatFiltered(state).size)
     }
 
     @Test
@@ -201,7 +217,7 @@ class AppDrawerViewModelTest {
         val state = viewModel.uiState.value
         assertEquals("", state.searchQuery)
         assertEquals("All apps", state.selectedCategory)
-        assertEquals(testApps.size, state.filteredApps.size)
+        assertEquals(testApps.size, flatFiltered(state).size)
     }
 
     @Test
@@ -279,7 +295,7 @@ class AppDrawerViewModelTest {
         viewModel.onSearchQueryChanged("zzzznonexistent")
 
         val state = viewModel.uiState.value
-        assertTrue(state.filteredApps.isEmpty())
+        assertTrue(flatFiltered(state).isEmpty())
     }
 
     // --- Long-press / action sheet tests ---
@@ -317,12 +333,12 @@ class AppDrawerViewModelTest {
         hiddenFlow.value = listOf("com.lu4p.atom")
         awaitState("hidden app to be removed") { state ->
             state.allApps.none { it.packageName == "com.lu4p.atom" } &&
-                state.filteredApps.none { it.packageName == "com.lu4p.atom" }
+                flatFiltered(state).none { it.packageName == "com.lu4p.atom" }
         }
 
         val state = viewModel.uiState.value
         assertFalse(state.allApps.any { it.packageName == "com.lu4p.atom" })
-        assertFalse(state.filteredApps.any { it.packageName == "com.lu4p.atom" })
+        assertFalse(flatFiltered(state).any { it.packageName == "com.lu4p.atom" })
     }
 
     @Test

@@ -1,6 +1,8 @@
 package com.lu4p.fokuslauncher.data.repository
 
+import android.content.ComponentName
 import android.content.Context
+import android.graphics.drawable.Drawable
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ApplicationInfo
@@ -9,6 +11,8 @@ import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.os.Bundle
 import android.os.Process
+import android.os.UserHandle
+import android.os.UserManager
 import androidx.core.content.ContextCompat
 import com.lu4p.fokuslauncher.data.database.dao.AppDao
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryDefinitionEntity
@@ -18,6 +22,8 @@ import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.AppShortcutAction
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
+import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
+import com.lu4p.fokuslauncher.utils.ProfileHeuristics
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -33,7 +39,11 @@ import kotlinx.coroutines.flow.first
 @Singleton
 class AppRepository
 @Inject
-constructor(@param:ApplicationContext private val context: Context, private val appDao: AppDao) {
+constructor(
+        @param:ApplicationContext private val context: Context,
+        private val appDao: AppDao,
+        private val privateSpaceManager: PrivateSpaceManager
+) {
     private var cachedApps: List<AppInfo>? = null
     private val installedAppsVersion = MutableStateFlow(0L)
     private val packageChangeReceiver =
@@ -52,8 +62,19 @@ constructor(@param:ApplicationContext private val context: Context, private val 
                 }
             }
 
+    private val profileChangeReceiver =
+            object : android.content.BroadcastReceiver() {
+                override fun onReceive(context: Context?, intent: Intent?) {
+                    when (intent?.action) {
+                        Intent.ACTION_MANAGED_PROFILE_ADDED,
+                        Intent.ACTION_MANAGED_PROFILE_REMOVED -> invalidateCache()
+                    }
+                }
+            }
+
     init {
         registerPackageChangeReceiver()
+        registerProfileChangeReceiver()
     }
 
     // --- App Loading ---
@@ -67,12 +88,131 @@ constructor(@param:ApplicationContext private val context: Context, private val 
             return it
         }
 
+        val apps = loadInstalledAppsMergedAcrossProfiles()
+        cachedApps = apps
+        return apps
+    }
+
+    /**
+     * Loads launchable activities per [UserManager.userProfiles] via [LauncherApps.getActivityList],
+     * so cloned / parallel / work-profile installs (same package as the primary user) still
+     * appear. Private Space is skipped here; those apps stay in the dedicated Private drawer
+     * section.
+     */
+    private fun loadInstalledAppsMergedAcrossProfiles(): List<AppInfo> {
+        val launcherApps =
+                try {
+                    context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as? LauncherApps
+                } catch (_: Exception) {
+                    null
+                }
+        val userManager =
+                try {
+                    context.getSystemService(Context.USER_SERVICE) as? UserManager
+                } catch (_: Exception) {
+                    null
+                }
+
+        if (launcherApps == null || userManager == null) {
+            return loadInstalledAppsLegacyQuery()
+        }
+
+        val myUser = Process.myUserHandle()
+        val rawEntries = mutableListOf<RawLauncherEntry>()
+
+        for (user in userManager.userProfiles) {
+            if (privateSpaceManager.isPrivateSpaceProfile(user)) continue
+
+            val activities =
+                    try {
+                        launcherApps.getActivityList(null, user)
+                    } catch (_: Exception) {
+                        emptyList()
+                    }
+
+            for (info in activities) {
+                val packageName = info.applicationInfo.packageName
+                if (packageName == context.packageName) continue
+
+                val rawLabel =
+                        try {
+                            info.label.toString()
+                        } catch (_: Exception) {
+                            packageName
+                        }
+                val isPrimary = user == myUser
+                val icon =
+                        try {
+                            info.getBadgedIcon(0)
+                        } catch (_: Exception) {
+                            null
+                        }
+                rawEntries.add(
+                        RawLauncherEntry(
+                                packageName = packageName,
+                                rawLabel = rawLabel,
+                                user = user,
+                                isPrimary = isPrimary,
+                                icon = icon,
+                                category = inferCategoryFromApplicationInfo(info.applicationInfo),
+                                componentName = info.componentName
+                        )
+                )
+            }
+        }
+
+        val ownerLabels: Map<String, String> =
+                rawEntries
+                        .filter { it.isPrimary }
+                        .distinctBy { it.packageName }
+                        .associate { it.packageName to it.rawLabel.trim().ifEmpty { it.packageName } }
+
+        val collected =
+                rawEntries.map { e ->
+                    val finalLabel =
+                            if (e.isPrimary) {
+                                e.rawLabel.trim().ifEmpty { e.packageName }
+                            } else {
+                                ownerLabels[e.packageName]?.takeIf { it.isNotBlank() }
+                                        ?: ProfileHeuristics.stripLeadingWorkPrefix(e.rawLabel)
+                                        ?: e.rawLabel.trim().ifEmpty { e.packageName }
+                            }
+                    AppInfo(
+                            packageName = e.packageName,
+                            label = finalLabel,
+                            icon = e.icon,
+                            category = e.category,
+                            userHandle = if (e.isPrimary) null else e.user,
+                            componentName = if (e.isPrimary) null else e.componentName
+                    )
+                }
+
+        val primary = collected.filter { it.userHandle == null }.distinctBy { it.packageName }
+        val secondary =
+                collected.filter { it.userHandle != null }.distinctBy {
+                    "${it.packageName}|${it.componentName?.flattenToString()}"
+                }
+
+        return (primary + secondary).sortedBy { it.label.lowercase() }
+    }
+
+    private data class RawLauncherEntry(
+            val packageName: String,
+            val rawLabel: String,
+            val user: UserHandle,
+            val isPrimary: Boolean,
+            val icon: Drawable?,
+            val category: String,
+            val componentName: ComponentName
+    )
+
+    /** Fallback when [LauncherApps] / [UserManager] are unavailable (e.g. partial test doubles). */
+    private fun loadInstalledAppsLegacyQuery(): List<AppInfo> {
         val pm = context.packageManager
         val mainIntent =
                 try {
                     Intent(Intent.ACTION_MAIN, null).apply { addCategory(Intent.CATEGORY_LAUNCHER) }
                 } catch (_: Exception) {
-                    // Local JVM tests don't provide full Android framework implementations.
                     Intent()
                 }
 
@@ -83,45 +223,43 @@ constructor(@param:ApplicationContext private val context: Context, private val 
                     emptyList()
                 }
 
-        val apps =
-                resolveInfos
-                        .asSequence()
-                        .filter { it.activityInfo.packageName != context.packageName }
-                        .map { resolveInfo ->
-                            val packageName = resolveInfo.activityInfo.packageName
-                            val label =
-                                    resolveInfo.nonLocalizedLabel
-                                            ?.toString()
-                                            ?.takeIf { it.isNotBlank() }
-                                            ?: try {
-                                                resolveInfo.loadLabel(pm).toString()
-                                            } catch (_: Exception) {
-                                                packageName
-                                            }
-                            AppInfo(
-                                    packageName = packageName,
-                                    label = label,
-                                    icon =
-                                            try {
-                                                resolveInfo.loadIcon(pm)
-                                            } catch (_: Exception) {
-                                                null
-                                            },
-                                    category =
-                                            inferCategory(
-                                                    resolveInfo = resolveInfo,
-                                                    packageManager = pm,
-                                                    packageName = packageName,
-                                                    label = label
-                                            )
-                            )
-                        }
-                        .sortedBy { it.label.lowercase() }
-                        .distinctBy { it.packageName }
-                        .toList()
-
-        cachedApps = apps
-        return apps
+        return resolveInfos
+                .asSequence()
+                .filter { it.activityInfo.packageName != context.packageName }
+                .map { resolveInfo ->
+                    val packageName = resolveInfo.activityInfo.packageName
+                    val label =
+                            resolveInfo.nonLocalizedLabel
+                                    ?.toString()
+                                    ?.takeIf { it.isNotBlank() }
+                                    ?: try {
+                                        resolveInfo.loadLabel(pm).toString()
+                                    } catch (_: Exception) {
+                                        packageName
+                                    }
+                    AppInfo(
+                            packageName = packageName,
+                            label = label,
+                            icon =
+                                    try {
+                                        resolveInfo.loadIcon(pm)
+                                    } catch (_: Exception) {
+                                        null
+                                    },
+                            category =
+                                    inferCategoryFromApplicationInfo(
+                                            resolveInfo.activityInfo.applicationInfo
+                                                    ?: try {
+                                                        pm.getApplicationInfo(packageName, 0)
+                                                    } catch (_: Exception) {
+                                                        null
+                                                    }
+                                    )
+                    )
+                }
+                .distinctBy { it.packageName }
+                .sortedBy { it.label.lowercase() }
+                .toList()
     }
 
     /** Clears the cached app list, forcing a reload on next access. */
@@ -402,22 +540,24 @@ constructor(@param:ApplicationContext private val context: Context, private val 
         }
     }
 
-    private fun inferCategory(
-            resolveInfo: ResolveInfo,
-            packageManager: PackageManager,
-            packageName: String,
-            label: String
-    ): String {
-        val applicationInfo =
-                resolveInfo.activityInfo.applicationInfo
-                        ?: try {
-                            packageManager.getApplicationInfo(packageName, 0)
-                        } catch (_: Exception) {
-                            null
-                        }
+    private fun registerProfileChangeReceiver() {
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_MANAGED_PROFILE_ADDED)
+            addAction(Intent.ACTION_MANAGED_PROFILE_REMOVED)
+        }
+        try {
+            ContextCompat.registerReceiver(
+                    context,
+                    profileChangeReceiver,
+                    filter,
+                    ContextCompat.RECEIVER_NOT_EXPORTED
+            )
+        } catch (_: Exception) {
+            // Unit tests may provide a mock Context that cannot register real receivers.
+        }
+    }
 
-        inferCategoryFromSystem(applicationInfo)?.let { return it }
-
+    private fun inferCategoryFromApplicationInfo(applicationInfo: ApplicationInfo?): String {
         return inferCategoryFromSystem(applicationInfo) ?: "Utilities"
     }
 

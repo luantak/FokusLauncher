@@ -46,12 +46,14 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.ui.components.CategoryChips
 import com.lu4p.fokuslauncher.ui.components.SearchBar
@@ -165,10 +167,12 @@ fun AppDrawerContent(
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
     val listState = rememberLazyListState()
-    val showMainAppsSection =
+    val showProfileSections =
             !uiState.hideAllAppsSection ||
                     !uiState.selectedCategory.equals("All apps", ignoreCase = true) ||
                     uiState.searchQuery.isNotBlank()
+    val anyProfileAppsVisible =
+            uiState.filteredProfileSections.any { it.apps.isNotEmpty() }
     val closeWithFocusReset: () -> Unit = {
         focusManager.clearFocus(force = true)
         onClose()
@@ -289,32 +293,69 @@ fun AppDrawerContent(
                 modifier = Modifier.testTag("category_chips")
         )
 
-        // App list: normal apps first, then private space (deprioritized)
+        // App list: one section per Android profile, then Private Space (deprioritized)
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize().testTag("app_list")) {
-            if (showMainAppsSection && uiState.filteredApps.isNotEmpty()) {
-                item {
-                    Text(
-                            text = uiState.selectedCategory.uppercase(Locale.getDefault()),
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)
-                    )
-                }
-            }
-            if (showMainAppsSection) {
-                items(items = uiState.filteredApps, key = { it.packageName }) { app ->
-                    AppListItem(
-                            app = app,
-                            onClick = {
-                                focusManager.clearFocus(force = true)
-                                onAppClick(LaunchTarget.MainApp(app.packageName))
-                            },
-                            onLongClick = { onAppLongPress(app) }
-                    )
+            if (showProfileSections) {
+                var isFirstProfileSection = true
+                for (section in uiState.filteredProfileSections) {
+                    if (section.apps.isEmpty()) continue
+                    if (!isFirstProfileSection) {
+                        item(key = "div_profile_${section.id}") {
+                            HorizontalDivider(
+                                    modifier =
+                                            Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                                    color = MaterialTheme.colorScheme.outlineVariant
+                            )
+                        }
+                    }
+                    isFirstProfileSection = false
+                    item(key = "hdr_profile_${section.id}") {
+                        Text(
+                                text = section.title.uppercase(Locale.getDefault()),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)
+                        )
+                    }
+                    items(
+                            items = section.apps,
+                            key = { app ->
+                                val cn = app.componentName
+                                val uh = app.userHandle
+                                val appKey =
+                                        if (cn != null && uh != null) {
+                                            "${app.packageName}:${cn.flattenToString()}:${uh.hashCode()}"
+                                        } else {
+                                            app.packageName
+                                        }
+                                "${section.id}_$appKey"
+                            }
+                    ) { app ->
+                        AppListItem(
+                                app = app,
+                                onClick = {
+                                    focusManager.clearFocus(force = true)
+                                    val cn = app.componentName
+                                    val uh = app.userHandle
+                                    if (cn != null && uh != null) {
+                                        onAppClick(
+                                                LaunchTarget.PrivateApp(
+                                                        packageName = app.packageName,
+                                                        componentName = cn,
+                                                        userHandle = uh
+                                                )
+                                        )
+                                    } else {
+                                        onAppClick(LaunchTarget.MainApp(app.packageName))
+                                    }
+                                },
+                                onLongClick = { onAppLongPress(app) }
+                        )
+                    }
                 }
             }
             if (uiState.isPrivateSpaceUnlocked && uiState.filteredPrivateSpaceApps.isNotEmpty()) {
-                if (showMainAppsSection && uiState.filteredApps.isNotEmpty()) {
+                if (showProfileSections && anyProfileAppsVisible) {
                     item {
                         HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
@@ -324,7 +365,9 @@ fun AppDrawerContent(
                 }
                 item {
                     Text(
-                            text = "Private Space".uppercase(Locale.getDefault()),
+                            text =
+                                    stringResource(R.string.drawer_section_private_space)
+                                            .uppercase(Locale.getDefault()),
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)
