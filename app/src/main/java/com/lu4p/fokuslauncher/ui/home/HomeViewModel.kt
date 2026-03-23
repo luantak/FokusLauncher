@@ -1,6 +1,7 @@
 package com.lu4p.fokuslauncher.ui.home
 
 import android.Manifest
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -8,6 +9,7 @@ import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.location.LocationManager
 import android.os.BatteryManager
+import android.os.Build
 import android.provider.AlarmClock
 import android.provider.CalendarContract
 import android.provider.Settings
@@ -133,11 +135,19 @@ class HomeViewModel @Inject constructor(
         preferencesManager.preferredWeatherAppFlow
             .stateIn(viewModelScope, SharingStarted.Eagerly, "")
 
+    private val batteryChangedReceiver = object : BroadcastReceiver() {
+        override fun onReceive(ctx: Context?, intent: Intent?) {
+            if (intent?.action != Intent.ACTION_BATTERY_CHANGED) return
+            setBatteryPercentFromIntent(intent)
+        }
+    }
+
     init {
         viewModelScope.launch {
             preferencesManager.ensureRightSideShortcutsInitialized()
         }
         startClockTicker()
+        registerBatteryReceiver()
         updateBattery()
         startWeatherTicker()
         observeHomeAlignment()
@@ -147,6 +157,15 @@ class HomeViewModel @Inject constructor(
         loadShortcutActions()
         observeRenames()
         observeInstalledApps()
+    }
+
+    override fun onCleared() {
+        try {
+            context.unregisterReceiver(batteryChangedReceiver)
+        } catch (_: IllegalArgumentException) {
+            // Not registered
+        }
+        super.onCleared()
     }
 
     // ── Name resolution ─────────────────────────────────────────────
@@ -406,13 +425,37 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    private fun registerBatteryReceiver() {
+        val filter = IntentFilter(Intent.ACTION_BATTERY_CHANGED)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.registerReceiver(
+                    batteryChangedReceiver,
+                    filter,
+                    Context.RECEIVER_NOT_EXPORTED
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                context.registerReceiver(batteryChangedReceiver, filter)
+            }
+        } catch (_: Exception) { }
+    }
+
+    private fun setBatteryPercentFromIntent(intent: Intent) {
+        val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+        val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
+        val percent = if (level >= 0 && scale > 0) (level * 100) / scale else 0
+        _uiState.value = _uiState.value.copy(batteryPercent = percent)
+    }
+
     private fun updateBattery() {
         try {
             val batteryIntent = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
-            val level = batteryIntent?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
-            val scale = batteryIntent?.getIntExtra(BatteryManager.EXTRA_SCALE, -1) ?: -1
-            val percent = if (level >= 0 && scale > 0) (level * 100) / scale else 0
-            _uiState.value = _uiState.value.copy(batteryPercent = percent)
+            if (batteryIntent != null) {
+                setBatteryPercentFromIntent(batteryIntent)
+            } else {
+                _uiState.value = _uiState.value.copy(batteryPercent = 0)
+            }
         } catch (_: Exception) {
             _uiState.value = _uiState.value.copy(batteryPercent = 0)
         }
