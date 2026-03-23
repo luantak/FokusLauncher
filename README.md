@@ -1,6 +1,9 @@
 # Fokus Launcher
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+<a href="https://hosted.weblate.org/engage/fokus-launcher/">
+<img src="https://hosted.weblate.org/widget/fokus-launcher/fokus-launcher-app/svg-badge.svg" alt="Translation status" />
+</a>
 
 Fokus Launcher is an Android launcher for people who want a simpler, cleaner
 default experience. It focuses on fast access to time, weather, and core apps,
