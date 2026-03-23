@@ -71,7 +71,9 @@
 
     <plurals name="category_app_count">
         <item quantity="one">%d aplikacja</item>
-        <item quantity="other">%d aplikacje</item>
+        <item quantity="few">%d aplikacje</item>
+        <item quantity="many">%d aplikacji</item>
+        <item quantity="other">%d aplikacji</item>
     </plurals>
 
     <!-- Inferred app categories (system metadata) -->
