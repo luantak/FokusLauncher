@@ -16,9 +16,7 @@ import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
 import io.mockk.coEvery
 import io.mockk.coVerify
-import io.mockk.eq
 import io.mockk.every
-import io.mockk.firstArg
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.flow.flowOf
@@ -226,7 +224,6 @@ class AppRepositoryTest {
         val workUser = mockk<UserHandle>(relaxed = true)
         every { userManager.userProfiles } returns listOf(myUser, workUser)
         every { privateSpaceManager.isPrivateSpaceProfile(workUser) } returns false
-        every { userManager.isManagedProfile(workUser) } returns true
         every {
             launcherApps.getActivityList(null, myUser)
         } returns listOf(createMockLauncherActivity("com.lu4p.slack", "Slack"))
@@ -241,22 +238,20 @@ class AppRepositoryTest {
     }
 
     @Test
-    fun `getInstalledApps matches personal label for work OEM Work prefix`() {
+    fun `getInstalledApps strips leading Work prefix when primary has no label for package`() {
         val workUser = mockk<UserHandle>(relaxed = true)
-        every { userManager.userProfiles } returns listOf(myUser, workUser)
+        every { workUser.equals(any()) } answers { firstArg<Any?>() === workUser }
+        every { userManager.userProfiles } returns listOf(workUser)
         every { privateSpaceManager.isPrivateSpaceProfile(workUser) } returns false
-        every { userManager.isManagedProfile(workUser) } returns true
-        every {
-            launcherApps.getActivityList(null, myUser)
-        } returns listOf(createMockLauncherActivity("com.whatsapp", "WhatsApp"))
         every {
             launcherApps.getActivityList(null, workUser)
         } returns listOf(createMockLauncherActivity("com.whatsapp", "Work WhatsApp"))
 
         val result = repository.getInstalledApps()
 
-        assertEquals("WhatsApp", result.find { it.userHandle == null }?.label)
-        assertEquals("WhatsApp", result.find { it.userHandle == workUser }?.label)
+        assertEquals(1, result.size)
+        assertEquals("WhatsApp", result.single().label)
+        assertEquals(workUser, result.single().userHandle)
     }
 
     @Test
