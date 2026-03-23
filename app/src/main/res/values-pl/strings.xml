@@ -41,7 +41,7 @@
     <string name="cd_menu">Menu</string>
     <string name="cd_open_link">Otwórz link</string>
     <string name="cd_unhide_app">Przestań ukrywać aplikację</string>
-    <string name="cd_remove_rename">Usuń zmienioną nazwę rename</string>
+    <string name="cd_remove_rename">Usuń zmienioną nazwę</string>
     <string name="cd_delete_category">Usuń kategorię</string>
 
     <!-- Shortcut / target labels -->
