@@ -1,7 +1,10 @@
 package com.lu4p.fokuslauncher.ui.home
 
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -9,6 +12,7 @@ import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.WeatherData
 import com.lu4p.fokuslauncher.ui.theme.FokusLauncherTheme
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -43,8 +47,7 @@ class HomeScreenTest {
                     rightSideShortcuts = testRightSideShortcuts,
                     onLabelClick = {},
                     onLabelLongPress = {},
-                    onIconClick = {},
-                    onSwipeUp = {}
+                    onIconClick = {}
                 )
             }
         }
@@ -67,8 +70,7 @@ class HomeScreenTest {
                     rightSideShortcuts = testRightSideShortcuts,
                     onLabelClick = {},
                     onLabelLongPress = {},
-                    onIconClick = {},
-                    onSwipeUp = {}
+                    onIconClick = {}
                 )
             }
         }
@@ -92,8 +94,7 @@ class HomeScreenTest {
                     rightSideShortcuts = testRightSideShortcuts,
                     onLabelClick = {},
                     onLabelLongPress = {},
-                    onIconClick = {},
-                    onSwipeUp = {}
+                    onIconClick = {}
                 )
             }
         }
@@ -120,8 +121,7 @@ class HomeScreenTest {
                     rightSideShortcuts = emptyList(),
                     onLabelClick = {},
                     onLabelLongPress = {},
-                    onIconClick = {},
-                    onSwipeUp = {}
+                    onIconClick = {}
                 )
             }
         }
@@ -144,8 +144,7 @@ class HomeScreenTest {
                     rightSideShortcuts = emptyList(),
                     onLabelClick = {},
                     onLabelLongPress = {},
-                    onIconClick = {},
-                    onSwipeUp = {}
+                    onIconClick = {}
                 )
             }
         }
@@ -169,8 +168,7 @@ class HomeScreenTest {
                     rightSideShortcuts = testRightSideShortcuts,
                     onLabelClick = {},
                     onLabelLongPress = {},
-                    onIconClick = {},
-                    onSwipeUp = {}
+                    onIconClick = {}
                 )
             }
         }
@@ -194,13 +192,12 @@ class HomeScreenTest {
                     rightSideShortcuts = testRightSideShortcuts,
                     onLabelClick = {},
                     onLabelLongPress = {},
-                    onIconClick = {},
-                    onSwipeUp = {}
+                    onIconClick = {}
                 )
             }
         }
 
-        composeTestRule.onNodeWithTag("set_default_launcher_button").assertDoesNotExist()
+        composeTestRule.onAllNodesWithTag("set_default_launcher_button").assertCountEquals(0)
     }
 
     @Test
@@ -221,7 +218,6 @@ class HomeScreenTest {
                     onLabelClick = {},
                     onLabelLongPress = {},
                     onIconClick = {},
-                    onSwipeUp = {},
                     onWeatherClick = { weatherClicked = true }
                 )
             }
@@ -230,5 +226,35 @@ class HomeScreenTest {
         composeTestRule.onNodeWithTag("weather_widget").assertIsDisplayed().performClick()
         composeTestRule.onNodeWithText("22°C").assertIsDisplayed()
         assertTrue(weatherClicked)
+    }
+
+    @Test
+    fun homeScreen_hidesWidgets_whenWidgetsDisabled() {
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                HomeScreenContent(
+                    uiState = HomeUiState(
+                        currentTime = "3:56",
+                        currentDate = "Fri. 12 Jul.",
+                        batteryPercent = 88,
+                        showWidgets = false,
+                        weather = WeatherData(temperature = 22, iconCode = "01d"),
+                        showWeatherWidget = true
+                    ),
+                    favorites = testFavorites,
+                    rightSideShortcuts = testRightSideShortcuts,
+                    onLabelClick = {},
+                    onLabelLongPress = {},
+                    onIconClick = {}
+                )
+            }
+        }
+
+        composeTestRule.onAllNodesWithTag("clock_widget").assertCountEquals(0)
+        composeTestRule.onAllNodesWithTag("date_battery_row").assertCountEquals(0)
+        composeTestRule.onAllNodesWithTag("weather_widget").assertCountEquals(0)
+        composeTestRule.onAllNodesWithText("Fri. 12 Jul.").assertCountEquals(0)
+        composeTestRule.onAllNodesWithText("88%").assertCountEquals(0)
+        composeTestRule.onAllNodesWithText("22°C").assertCountEquals(0)
     }
 }

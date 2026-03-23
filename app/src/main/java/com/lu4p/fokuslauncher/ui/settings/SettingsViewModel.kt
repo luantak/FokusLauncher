@@ -38,6 +38,7 @@ data class SettingsUiState(
         val swipeRightTarget: ShortcutTarget? = null,
         val preferredWeatherAppPackage: String = "",
         val showStatusBar: Boolean = false,
+        val showHomeScreenWidgets: Boolean = true,
         val autoOpenDrawerKeyboard: Boolean = true,
         val homeAlignment: HomeAlignment = HomeAlignment.LEFT,
         val allApps: List<AppInfo> = emptyList()
@@ -112,12 +113,17 @@ constructor(
                     .combine(preferencesManager.showStatusBarFlow) { weatherState, showStatusBar ->
                         weatherState to showStatusBar
                     }
-                    .combine(preferencesManager.autoOpenDrawerKeyboardFlow) {
-                        weatherWithStatusBar, autoOpenDrawerKeyboard ->
-                        weatherWithStatusBar to autoOpenDrawerKeyboard
+                    .combine(preferencesManager.showHomeScreenWidgetsFlow) {
+                        weatherWithStatusBar, showHomeScreenWidgets ->
+                        weatherWithStatusBar to showHomeScreenWidgets
                     }
-                    .combine(preferencesManager.homeAlignmentFlow) { weatherWithSearchState, homeAlignment ->
-                        val (weatherWithStatusBar, autoOpenDrawerKeyboard) = weatherWithSearchState
+                    .combine(preferencesManager.autoOpenDrawerKeyboardFlow) {
+                        weatherWithWidgets, autoOpenDrawerKeyboard ->
+                        weatherWithWidgets to autoOpenDrawerKeyboard
+                    }
+                    .combine(preferencesManager.homeAlignmentFlow) { weatherWithSettingsState, homeAlignment ->
+                        val (weatherWithWidgets, autoOpenDrawerKeyboard) = weatherWithSettingsState
+                        val (weatherWithStatusBar, showHomeScreenWidgets) = weatherWithWidgets
                         val (weatherState, showStatusBar) = weatherWithStatusBar
                         val (swipeState, preferredWeatherApp) = weatherState
                         val (leftState, swipeRight) = swipeState
@@ -138,6 +144,7 @@ constructor(
                                 swipeRightTarget = swipeRight,
                                 preferredWeatherAppPackage = preferredWeatherApp,
                                 showStatusBar = showStatusBar,
+                                showHomeScreenWidgets = showHomeScreenWidgets,
                                 autoOpenDrawerKeyboard = autoOpenDrawerKeyboard,
                                 homeAlignment = homeAlignment,
                                 allApps = allApps
@@ -205,6 +212,10 @@ constructor(
 
     fun setShowStatusBar(show: Boolean) {
         viewModelScope.launch { preferencesManager.setShowStatusBar(show) }
+    }
+
+    fun setShowHomeScreenWidgets(show: Boolean) {
+        viewModelScope.launch { preferencesManager.setShowHomeScreenWidgets(show) }
     }
 
     fun setAutoOpenDrawerKeyboard(enabled: Boolean) {

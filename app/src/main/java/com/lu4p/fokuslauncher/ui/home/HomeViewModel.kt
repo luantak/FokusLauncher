@@ -48,6 +48,7 @@ data class HomeUiState(
     val currentTime: String = "",
     val currentDate: String = "",
     val batteryPercent: Int = 0,
+    val showWidgets: Boolean = true,
     val weather: WeatherData? = null,
     val showWeatherWidget: Boolean = false,
     val isDefaultLauncher: Boolean = true,
@@ -140,6 +141,7 @@ class HomeViewModel @Inject constructor(
         updateBattery()
         startWeatherTicker()
         observeHomeAlignment()
+        observeWidgetsVisibility()
         checkDefaultLauncher()
         refreshInstalledApps()
         loadShortcutActions()
@@ -429,6 +431,14 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             preferencesManager.homeAlignmentFlow.collect { alignment ->
                 _uiState.value = _uiState.value.copy(homeAlignment = alignment)
+            }
+        }
+    }
+
+    private fun observeWidgetsVisibility() {
+        viewModelScope.launch {
+            preferencesManager.showHomeScreenWidgetsFlow.collect { showWidgets ->
+                _uiState.value = _uiState.value.copy(showWidgets = showWidgets)
             }
         }
     }

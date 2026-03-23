@@ -30,6 +30,9 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         private val RIGHT_SIDE_SHORTCUTS_KEY = stringPreferencesKey("right_side_shortcuts")
         private val PREFERRED_WEATHER_APP_KEY = stringPreferencesKey("preferred_weather_app")
         private val SHOW_STATUS_BAR_KEY = booleanPreferencesKey("show_status_bar")
+        private val SHOW_HOME_SCREEN_WIDGETS_KEY =
+                booleanPreferencesKey("show_home_screen_widgets")
+        private val SHOW_HOME_SCREEN_INFO_KEY = booleanPreferencesKey("show_home_screen_info")
         private val AUTO_OPEN_DRAWER_KEYBOARD_KEY =
                 booleanPreferencesKey("auto_open_drawer_keyboard")
         private val HAS_COMPLETED_ONBOARDING_KEY = booleanPreferencesKey("has_completed_onboarding")
@@ -131,6 +134,20 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
 
     suspend fun setShowStatusBar(show: Boolean) {
         context.dataStore.edit { prefs -> prefs[SHOW_STATUS_BAR_KEY] = show }
+    }
+
+    val showHomeScreenWidgetsFlow: Flow<Boolean> =
+            context.dataStore.data.map { prefs ->
+                prefs[SHOW_HOME_SCREEN_WIDGETS_KEY]
+                        ?: prefs[SHOW_HOME_SCREEN_INFO_KEY]
+                        ?: true
+            }
+
+    suspend fun setShowHomeScreenWidgets(show: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[SHOW_HOME_SCREEN_WIDGETS_KEY] = show
+            prefs.remove(SHOW_HOME_SCREEN_INFO_KEY)
+        }
     }
 
     val autoOpenDrawerKeyboardFlow: Flow<Boolean> =

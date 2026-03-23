@@ -183,33 +183,37 @@ fun HomeScreenContent(
                 .padding(horizontal = 32.dp)
                 .padding(top = 80.dp, bottom = 48.dp)
         ) {
-            // Top row: Clock on left, Weather on right
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
-            ) {
-                ClockWidget(
-                    time = uiState.currentTime,
-                    onClick = onClockClick,
-                    modifier = Modifier.testTag("clock_widget")
-                )
-                if (uiState.showWeatherWidget) {
-                    WeatherWidget(
-                        weather = uiState.weather,
-                        onClick = onWeatherClick,
-                        modifier = Modifier.padding(top = 16.dp)
+            if (uiState.showWidgets) {
+                // Top row: Clock on left, Weather on right
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top
+                ) {
+                    ClockWidget(
+                        time = uiState.currentTime,
+                        onClick = onClockClick,
+                        modifier = Modifier.testTag("clock_widget")
                     )
+                    if (uiState.showWeatherWidget) {
+                        WeatherWidget(
+                            weather = uiState.weather,
+                            onClick = onWeatherClick,
+                            modifier = Modifier.padding(top = 16.dp)
+                        )
+                    }
                 }
             }
 
-            // Date + Battery (clickable -> calendar)
-            DateBatteryRow(
-                date = uiState.currentDate,
-                batteryPercent = uiState.batteryPercent,
-                onDateClick = onDateClick,
-                modifier = Modifier.testTag("date_battery_row")
-            )
+            if (uiState.showWidgets) {
+                // Date + Battery (clickable -> calendar)
+                DateBatteryRow(
+                    date = uiState.currentDate,
+                    batteryPercent = uiState.batteryPercent,
+                    onDateClick = onDateClick,
+                    modifier = Modifier.testTag("date_battery_row")
+                )
+            }
 
             // Push favorites to the bottom
             Spacer(modifier = Modifier.weight(1f))

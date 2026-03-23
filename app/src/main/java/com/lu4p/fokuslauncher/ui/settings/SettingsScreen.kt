@@ -133,6 +133,17 @@ fun SettingsScreen(
             }
 
             item {
+                SettingsToggleRow(
+                        label = "Hide widgets",
+                        subtitle = "Hide the clock, date, battery, and weather on the home screen",
+                        checked = !uiState.showHomeScreenWidgets,
+                        onCheckedChange = { hideWidgets ->
+                            viewModel.setShowHomeScreenWidgets(!hideWidgets)
+                        }
+                )
+            }
+
+            item {
                 Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
