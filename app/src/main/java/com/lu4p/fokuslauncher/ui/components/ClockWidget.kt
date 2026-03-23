@@ -8,7 +8,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
 
 /**
  * Large clock display showing current time in "H:mm" format.
@@ -22,10 +21,7 @@ fun ClockWidget(
 ) {
     Text(
         text = time,
-        style = MaterialTheme.typography.displayLarge.copy(
-            fontWeight = FontWeight.Light,
-            fontSize = 80.sp
-        ),
+        style = MaterialTheme.typography.displayLarge.copy(fontWeight = FontWeight.Light),
         color = MaterialTheme.colorScheme.onBackground,
         modifier = modifier.clickable(indication = null, interactionSource = remember { MutableInteractionSource() }, onClick = onClick)
     )

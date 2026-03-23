@@ -34,10 +34,7 @@ fun WeatherWidget(
             .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }, onClick = onClick)
             .testTag("weather_widget")
     ) {
-        Text(
-            text = weatherEmoji,
-            fontSize = 18.sp
-        )
+        Text(text = weatherEmoji, fontSize = 18.sp)
         Spacer(modifier = Modifier.width(4.dp))
         Text(
             text = temperatureText,

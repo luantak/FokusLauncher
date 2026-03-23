@@ -6,6 +6,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
+import androidx.compose.ui.text.font.FontFamily
 
 private val FokusColorScheme = darkColorScheme(
     primary = White,
@@ -31,12 +33,12 @@ private val FokusColorScheme = darkColorScheme(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun FokusLauncherTheme(content: @Composable () -> Unit) {
+fun FokusLauncherTheme(
+        fontFamily: FontFamily = FontFamily.Default,
+        content: @Composable () -> Unit
+) {
+    val typography = remember(fontFamily) { fokusTypographyForLauncher(fontFamily) }
     CompositionLocalProvider(LocalOverscrollFactory provides null) {
-        MaterialTheme(
-            colorScheme = FokusColorScheme,
-            typography = FokusTypography,
-            content = content
-        )
+        MaterialTheme(colorScheme = FokusColorScheme, typography = typography, content = content)
     }
 }

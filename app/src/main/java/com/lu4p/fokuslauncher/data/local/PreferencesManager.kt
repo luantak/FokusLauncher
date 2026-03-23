@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
+import com.lu4p.fokuslauncher.data.model.LauncherFontPreferences
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
@@ -41,6 +42,7 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         private val ONBOARDING_REACHED_SET_DEFAULT_KEY = booleanPreferencesKey("onboarding_reached_set_default")
         private val WEATHER_LOCATION_OPTED_OUT_KEY = booleanPreferencesKey("weather_location_opted_out")
         private val HOME_ALIGNMENT_KEY = stringPreferencesKey("home_alignment")
+        private val LAUNCHER_FONT_FAMILY_KEY = stringPreferencesKey("launcher_font_family")
 
         /**
          * Format: "label;packageName;iconName" entries separated by "|" Falls back to legacy
@@ -201,6 +203,23 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
 
     suspend fun setHomeAlignment(alignment: HomeAlignment) {
         context.dataStore.edit { prefs -> prefs[HOME_ALIGNMENT_KEY] = alignment.name }
+    }
+
+    // --- Launcher text (system fonts + scale) ---
+
+    val launcherFontFamilyFlow: Flow<String> =
+            context.dataStore.data.map { prefs ->
+                LauncherFontPreferences.normalizeFontFamilyFromStorage(
+                        prefs[LAUNCHER_FONT_FAMILY_KEY]
+                )
+            }
+
+    suspend fun setLauncherFontFamilyName(familyName: String) {
+        val trimmed = familyName.trim()
+        context.dataStore.edit { prefs ->
+            if (trimmed.isEmpty()) prefs.remove(LAUNCHER_FONT_FAMILY_KEY)
+            else prefs[LAUNCHER_FONT_FAMILY_KEY] = trimmed
+        }
     }
 
     // --- Weather location opt-out ---

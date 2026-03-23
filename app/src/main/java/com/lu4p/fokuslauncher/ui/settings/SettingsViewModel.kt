@@ -7,6 +7,7 @@ import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
+import com.lu4p.fokuslauncher.data.font.SystemFontFamiliesProvider
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.repository.AppRepository
@@ -42,6 +43,7 @@ data class SettingsUiState(
         val autoOpenDrawerKeyboard: Boolean = true,
         val hideAllAppsSection: Boolean = false,
         val homeAlignment: HomeAlignment = HomeAlignment.LEFT,
+        val launcherFontFamilyName: String = "",
         val allApps: List<AppInfo> = emptyList()
 )
 
@@ -59,10 +61,16 @@ constructor(
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
+    private val _installedFontFamilies = MutableStateFlow<List<String>>(emptyList())
+    val installedFontFamilies: StateFlow<List<String>> = _installedFontFamilies.asStateFlow()
+
     init {
         loadAllApps()
         observeState()
         observeInstalledApps()
+        viewModelScope.launch(Dispatchers.IO) {
+            _installedFontFamilies.value = SystemFontFamiliesProvider.loadSortedDistinct()
+        }
     }
 
     private fun loadAllApps() {
@@ -126,9 +134,11 @@ constructor(
                         weatherWithSettingsState, hideAllAppsSection ->
                         weatherWithSettingsState to hideAllAppsSection
                     }
-                    .combine(preferencesManager.homeAlignmentFlow) {
-                        weatherWithDrawerState, homeAlignment ->
-                        val (weatherWithSettingsState, hideAllAppsSection) = weatherWithDrawerState
+                    .combine(preferencesManager.launcherFontFamilyFlow) { wds, fontFamilyName ->
+                        Triple(wds.first, wds.second, fontFamilyName)
+                    }
+                    .combine(preferencesManager.homeAlignmentFlow) { triple, homeAlignment ->
+                        val (weatherWithSettingsState, hideAllAppsSection, fontFamilyName) = triple
                         val (weatherWithWidgets, autoOpenDrawerKeyboard) = weatherWithSettingsState
                         val (weatherWithStatusBar, showHomeScreenWidgets) = weatherWithWidgets
                         val (weatherState, showStatusBar) = weatherWithStatusBar
@@ -155,6 +165,7 @@ constructor(
                                 autoOpenDrawerKeyboard = autoOpenDrawerKeyboard,
                                 hideAllAppsSection = hideAllAppsSection,
                                 homeAlignment = homeAlignment,
+                                launcherFontFamilyName = fontFamilyName,
                                 allApps = allApps
                         )
                     }
@@ -238,6 +249,10 @@ constructor(
 
     fun setHomeAlignment(alignment: HomeAlignment) {
         viewModelScope.launch { preferencesManager.setHomeAlignment(alignment) }
+    }
+
+    fun setLauncherFontFamilyName(familyName: String) {
+        viewModelScope.launch { preferencesManager.setLauncherFontFamilyName(familyName) }
     }
 
     /** Clears all app state (preferences + database), equivalent to clearing storage. */

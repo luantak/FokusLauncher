@@ -9,7 +9,9 @@ import android.provider.Settings
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -31,12 +33,18 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -69,6 +77,7 @@ import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
+import com.lu4p.fokuslauncher.ui.theme.composeFontFamilyFromStoredName
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,6 +91,7 @@ fun SettingsScreen(
         backgroundScrim: Color = FokusBackdrop.ScrimColorWithoutBlur
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val installedFontFamilies by viewModel.installedFontFamilies.collectAsStateWithLifecycle()
 
     // Dialog states
     var showAppPickerFor by remember { mutableStateOf<String?>(null) } // swipeLeft/swipeRight
@@ -129,6 +139,14 @@ fun SettingsScreen(
                         subtitle = "Keep the system status icons visible at the top",
                         checked = uiState.showStatusBar,
                         onCheckedChange = { viewModel.setShowStatusBar(it) }
+                )
+            }
+
+            item {
+                LauncherFontFamilyDropdown(
+                        currentFamilyName = uiState.launcherFontFamilyName,
+                        installedFamilies = installedFontFamilies,
+                        onFamilySelected = { viewModel.setLauncherFontFamilyName(it) }
                 )
             }
 
@@ -565,6 +583,128 @@ private fun SettingsToggleRow(
         }
         Spacer(Modifier.width(16.dp))
         Switch(checked = checked, onCheckedChange = onCheckedChange)
+    }
+}
+
+private val SettingsPickerCorner = RoundedCornerShape(12.dp)
+
+@Composable
+private fun settingsPickerOutlinedFieldColors() =
+        OutlinedTextFieldDefaults.colors(
+                focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
+                disabledTextColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.55f),
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.38f),
+                disabledBorderColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.22f),
+                focusedTrailingIconColor = MaterialTheme.colorScheme.onBackground,
+                unfocusedTrailingIconColor = MaterialTheme.colorScheme.onBackground,
+                disabledTrailingIconColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f),
+                cursorColor = MaterialTheme.colorScheme.primary,
+        )
+
+@Composable
+private fun settingsPickerMenuItemColors() =
+        MenuDefaults.itemColors(
+                textColor = MaterialTheme.colorScheme.onBackground,
+                leadingIconColor = MaterialTheme.colorScheme.onBackground,
+                trailingIconColor = MaterialTheme.colorScheme.onBackground,
+        )
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun LauncherFontFamilyDropdown(
+        currentFamilyName: String,
+        installedFamilies: List<String>,
+        onFamilySelected: (String) -> Unit
+) {
+    val options =
+            remember(currentFamilyName, installedFamilies) {
+                buildList {
+                    add("" to "System default")
+                    val sorted = installedFamilies.sortedWith(String.CASE_INSENSITIVE_ORDER)
+                    sorted.forEach { add(it to it) }
+                    val cur = currentFamilyName.trim()
+                    if (cur.isNotEmpty() && sorted.none { it.equals(cur, ignoreCase = true) }) {
+                        add(cur to cur)
+                    }
+                }
+            }
+    var expanded by remember { mutableStateOf(false) }
+    val selectedLabel =
+            options.find { (value, _) -> value == currentFamilyName }?.second
+                    ?: currentFamilyName.ifBlank { "System default" }
+
+    Column(
+            modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 12.dp)
+    ) {
+        Text(
+                text = "Font",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onBackground
+        )
+        Spacer(Modifier.height(12.dp))
+        ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+            OutlinedTextField(
+                    modifier =
+                            Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
+                                    .fillMaxWidth(),
+                    value = selectedLabel,
+                    onValueChange = {},
+                    readOnly = true,
+                    singleLine = true,
+                    shape = SettingsPickerCorner,
+                    textStyle =
+                            MaterialTheme.typography.bodyLarge.copy(
+                                    fontFamily =
+                                            composeFontFamilyFromStoredName(currentFamilyName)
+                            ),
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                    colors = settingsPickerOutlinedFieldColors()
+            )
+            ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                    shape = SettingsPickerCorner,
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    tonalElevation = 0.dp,
+                    shadowElevation = 8.dp,
+                    border =
+                            BorderStroke(
+                                    width = 1.dp,
+                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.14f)
+                            ),
+            ) {
+                options.forEach { (storageValue, label) ->
+                    DropdownMenuItem(
+                            text = {
+                                Text(
+                                        text = label,
+                                        style =
+                                                MaterialTheme.typography.bodyLarge.copy(
+                                                        fontFamily =
+                                                                composeFontFamilyFromStoredName(
+                                                                        storageValue
+                                                                )
+                                                ),
+                                        color = MaterialTheme.colorScheme.onBackground,
+                                )
+                            },
+                            onClick = {
+                                onFamilySelected(storageValue)
+                                expanded = false
+                            },
+                            colors = settingsPickerMenuItemColors(),
+                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                    )
+                }
+            }
+        }
     }
 }
 

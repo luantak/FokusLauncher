@@ -9,6 +9,8 @@ import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -18,6 +20,7 @@ import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.ui.navigation.FokusNavGraph
 import com.lu4p.fokuslauncher.ui.theme.FokusLauncherTheme
+import com.lu4p.fokuslauncher.ui.theme.composeFontFamilyFromStoredName
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -59,7 +62,12 @@ class MainActivity : ComponentActivity() {
             }
         }
         setContent {
-            FokusLauncherTheme {
+            val launcherFontFamilyName by produceState("") {
+                preferencesManager.launcherFontFamilyFlow.collect { value = it }
+            }
+            FokusLauncherTheme(
+                    fontFamily = composeFontFamilyFromStoredName(launcherFontFamilyName)
+            ) {
                 FokusNavGraph()
             }
         }
