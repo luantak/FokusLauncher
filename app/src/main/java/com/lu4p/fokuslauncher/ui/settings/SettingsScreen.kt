@@ -133,17 +133,6 @@ fun SettingsScreen(
             }
 
             item {
-                SettingsToggleRow(
-                        label = "Hide widgets",
-                        subtitle = "Hide the clock, date, battery, and weather on the home screen",
-                        checked = !uiState.showHomeScreenWidgets,
-                        onCheckedChange = { hideWidgets ->
-                            viewModel.setShowHomeScreenWidgets(!hideWidgets)
-                        }
-                )
-            }
-
-            item {
                 Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
@@ -182,8 +171,19 @@ fun SettingsScreen(
 
             item { SettingsDivider() }
 
-            // ========== HOME SCREEN APPS ==========
-            item { SectionHeader("Home Screen Apps") }
+            // ========== HOME SCREEN ==========
+            item { SectionHeader("Home Screen") }
+
+            item {
+                SettingsToggleRow(
+                        label = "Hide widgets",
+                        subtitle = "Hide the clock, date, battery, and weather on the home screen",
+                        checked = !uiState.showHomeScreenWidgets,
+                        onCheckedChange = { hideWidgets ->
+                            viewModel.setShowHomeScreenWidgets(!hideWidgets)
+                        }
+                )
+            }
 
             item {
                 Row(
@@ -199,6 +199,29 @@ fun SettingsScreen(
                             color = MaterialTheme.colorScheme.onBackground,
                             modifier = Modifier.weight(1f)
                     )
+                }
+            }
+
+            item {
+                Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier =
+                                Modifier.fillMaxWidth()
+                                        .clickable(onClick = onEditRightShortcuts)
+                                        .padding(horizontal = 24.dp, vertical = 14.dp)
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                                text = "Edit shortcuts",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Text(
+                                text = "${uiState.rightSideShortcuts.size} shortcuts configured",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.secondary
+                        )
+                    }
                 }
             }
 
@@ -291,33 +314,6 @@ fun SettingsScreen(
                         onPickApp = { showAppPickerFor = "swipeRight" },
                         onClear = { viewModel.setSwipeRightTarget(null) }
                 )
-            }
-
-            item { SettingsDivider() }
-
-            // ========== RIGHT-SIDE ICON SHORTCUTS ==========
-            item { SectionHeader("Right-side icon shortcuts") }
-            item {
-                Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier =
-                                Modifier.fillMaxWidth()
-                                        .clickable(onClick = onEditRightShortcuts)
-                                        .padding(horizontal = 24.dp, vertical = 14.dp)
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                                text = "Edit right-side shortcuts",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onBackground
-                        )
-                        Text(
-                                text = "${uiState.rightSideShortcuts.size} shortcuts configured",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.secondary
-                        )
-                    }
-                }
             }
 
             item { SettingsDivider() }
