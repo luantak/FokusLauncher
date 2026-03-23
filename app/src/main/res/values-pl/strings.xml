@@ -154,7 +154,7 @@
     <string name="onboarding_background_black">Lubię czerń</string>
     <string name="onboarding_background_wallpaper">Zatrzymaj moją tapetę</string>
     <string name="onboarding_location_title">Lokalizacja dla pogody</string>
-    <string name="onboarding_location_subtitle">Używamy twojej lokalizacji aby, pokazywać aktualną pogodę na ekranie głównym. Jeśli to pominiesz, widżet pogody zostanie ukryty.</string>
+    <string name="onboarding_location_subtitle">Używamy twojej lokalizacji, aby pokazywać aktualną pogodę na ekranie głównym. Jeśli to pominiesz, widżet pogody zostanie ukryty.</string>
     <string name="onboarding_location_allow">Zezwól</string>
     <string name="onboarding_location_skip">Pomiń</string>
     <string name="onboarding_set_default_title">Ustaw jako domyślny ekran główny</string>
