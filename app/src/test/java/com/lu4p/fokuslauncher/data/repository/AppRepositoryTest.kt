@@ -9,6 +9,7 @@ import android.content.pm.PackageManager
 import android.os.Process
 import android.os.UserHandle
 import android.os.UserManager
+import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.database.dao.AppDao
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryDefinitionEntity
 import com.lu4p.fokuslauncher.data.database.entity.HiddenAppEntity
@@ -62,6 +63,13 @@ class AppRepositoryTest {
         every { context.getSystemService(Context.USER_SERVICE) } returns userManager
         every { userManager.userProfiles } returns listOf(myUser)
         every { launcherApps.getActivityList(null, myUser) } returns emptyList()
+
+        every { context.getString(R.string.inferred_category_utilities) } returns "Utilities"
+        every { context.getString(R.string.inferred_category_games) } returns "Games"
+        every { context.getString(R.string.inferred_category_productivity) } returns "Productivity"
+        every { context.getString(R.string.inferred_category_social) } returns "Social"
+        every { context.getString(R.string.inferred_category_media) } returns "Media"
+        every { context.getString(R.string.shortcut_generic_label) } returns "Shortcut"
 
         repository = AppRepository(context, appDao, privateSpaceManager)
     }

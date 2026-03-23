@@ -1,5 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Fokus Launcher</string>
+
+    <!-- Special drawer categories: English keys live in ReservedCategoryNames.kt; translate these for UI. -->
+    <string name="drawer_filter_all_apps">All apps</string>
+    <string name="drawer_filter_private">Private</string>
+    <string name="drawer_menu_launcher_settings">Launcher settings</string>
+    <string name="drawer_private_space_lock">Lock Private Space</string>
+    <string name="drawer_private_space_unlock">Unlock Private Space</string>
 
     <!-- App drawer: one section per Android user profile -->
     <string name="drawer_section_personal">Personal</string>
@@ -8,6 +16,134 @@
     <string name="drawer_section_other_profile">Other profile</string>
     <string name="drawer_section_clone_profile">Parallel apps</string>
     <string name="drawer_section_private_space">Private Space</string>
+
+    <!-- Search -->
+    <string name="search">Search</string>
+    <string name="search_apps_hint">Search apps…</string>
+    <string name="search_apps">Search apps</string>
+    <string name="search_apps_and_actions">Search apps and actions</string>
+
+    <!-- Common actions -->
+    <string name="action_back">Back</string>
+    <string name="action_done">Done</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_save">Save</string>
+    <string name="action_add">Add</string>
+    <string name="action_rename">Rename</string>
+    <string name="action_change">Change</string>
+    <string name="action_clear">Clear</string>
+    <string name="action_reset">Reset</string>
+    <string name="cd_drag_to_reorder">Drag to reorder</string>
+    <string name="cd_change_icon">Change icon</string>
+    <string name="cd_shortcut_icon">Shortcut icon</string>
+    <string name="cd_edit_home_screen">Edit home screen</string>
+    <string name="cd_settings">Settings</string>
+    <string name="cd_menu">Menu</string>
+    <string name="cd_open_link">Open link</string>
+    <string name="cd_unhide_app">Unhide app</string>
+    <string name="cd_remove_rename">Remove rename</string>
+    <string name="cd_delete_category">Delete category</string>
+
+    <!-- Shortcut / target labels -->
+    <string name="shortcut_target_not_set">Not set</string>
+    <string name="shortcut_target_deep_link">Deep link</string>
+    <string name="shortcut_target_app_with_label">%1$s - %2$s</string>
+    <string name="shortcut_open_app">Open app</string>
+    <string name="shortcut_generic_label">Shortcut</string>
+    <string name="toast_weather_app_launch_failed">Selected weather app could not be launched</string>
+
+    <!-- App & category sheets -->
+    <string name="app_name_placeholder">App name</string>
+    <string name="action_add_to_home">Add to home screen</string>
+    <string name="action_remove_from_home">Remove from home screen</string>
+    <string name="action_app_info">App info</string>
+    <string name="action_hide">Hide</string>
+    <string name="action_uninstall">Uninstall</string>
+    <string name="category_name_label">Category name</string>
+    <string name="category_action_rename">Rename</string>
+    <string name="category_action_edit_apps">Edit apps in category</string>
+    <string name="category_action_remove">Remove category</string>
+    <string name="category_apps_screen_section_in_category">Apps in category</string>
+    <string name="category_no_category">No category</string>
+    <string name="category_settings_title">App categories</string>
+    <string name="category_new_label">New category</string>
+    <string name="category_edit_apps">Edit apps</string>
+
+    <plurals name="category_app_count">
+        <item quantity="one">%d app</item>
+        <item quantity="other">%d apps</item>
+    </plurals>
+
+    <!-- Inferred app categories (system metadata) -->
+    <string name="inferred_category_utilities">Utilities</string>
+    <string name="inferred_category_games">Games</string>
+    <string name="inferred_category_productivity">Productivity</string>
+    <string name="inferred_category_social">Social</string>
+    <string name="inferred_category_media">Media</string>
+
+    <!-- Home screen -->
+    <string name="home_set_default_launcher">Set as default launcher</string>
+    <string name="home_weather_app_picker_title">Select weather app</string>
+
+    <!-- Home alignment -->
+    <string name="home_alignment_title">Home screen alignment</string>
+    <string name="home_alignment_subtitle">Position of app labels and shortcut icons</string>
+    <string name="home_alignment_left">Left</string>
+    <string name="home_alignment_center">Center</string>
+    <string name="home_alignment_right">Right</string>
+
+    <!-- Edit home / shortcuts screens -->
+    <string name="edit_home_title">Edit home screen</string>
+    <string name="edit_shortcuts_title">Edit shortcuts</string>
+    <string name="edit_shortcuts_section_selected">Selected shortcuts</string>
+    <string name="edit_shortcuts_section_all_actions">All app actions</string>
+    <string name="edit_home_section_on_home">Home screen apps</string>
+    <string name="edit_home_section_all_apps">@string/drawer_filter_all_apps</string>
+    <string name="edit_shortcuts_choose_icon">Choose icon</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_appearance">Appearance</string>
+    <string name="settings_show_status_bar">Show status bar</string>
+    <string name="settings_show_status_bar_subtitle">Keep the system status icons visible at the top</string>
+    <string name="settings_set_background_image">Set background image</string>
+    <string name="settings_set_black_wallpaper">Set black wallpaper</string>
+    <string name="settings_section_home_screen">Home screen</string>
+    <string name="settings_hide_widgets">Hide widgets</string>
+    <string name="settings_hide_widgets_subtitle">Hide the clock, date, battery, and weather on the home screen</string>
+    <string name="settings_edit_home_screen">Edit home screen</string>
+    <string name="settings_edit_shortcuts">Edit shortcuts</string>
+    <string name="settings_weather_app">Weather app</string>
+    <string name="settings_section_swipe">Swipe shortcuts</string>
+    <string name="settings_swipe_left">Swipe left</string>
+    <string name="settings_swipe_right">Swipe right</string>
+    <string name="settings_section_app_categories">App categories</string>
+    <string name="settings_edit_app_categories">Edit app categories</string>
+    <string name="settings_section_app_drawer">App drawer</string>
+    <string name="settings_auto_open_keyboard">Auto-open keyboard in drawer</string>
+    <string name="settings_auto_open_keyboard_subtitle">Focus the search field and show the keyboard when the drawer opens</string>
+    <string name="settings_hide_all_apps_section">Hide All Apps section</string>
+    <string name="settings_hide_all_apps_section_subtitle">Keep the drawer focused on your categories and search results</string>
+    <string name="settings_section_hidden_apps">Hidden apps</string>
+    <string name="settings_no_hidden_apps">No hidden apps</string>
+    <string name="settings_section_renamed_apps">Renamed apps</string>
+    <string name="settings_no_renamed_apps">No renamed apps</string>
+    <string name="settings_section_data">Data</string>
+    <string name="settings_reset_all_data">Reset all data</string>
+    <string name="settings_reset_confirm_title">Reset all data?</string>
+    <string name="settings_reset_confirm_message">This will clear favorites, shortcuts, hidden apps, renamed apps, and all other settings. The app will return to its initial state.</string>
+    <string name="settings_app_picker_title">Select app</string>
+    <string name="settings_font_label">Font</string>
+
+    <plurals name="settings_shortcuts_configured">
+        <item quantity="one">%d shortcut configured</item>
+        <item quantity="other">%d shortcuts configured</item>
+    </plurals>
+
+    <plurals name="settings_custom_categories_count">
+        <item quantity="one">%d custom category</item>
+        <item quantity="other">%d custom categories</item>
+    </plurals>
 
     <!-- Onboarding -->
     <string name="onboarding_welcome_title">Fokus Launcher</string>

@@ -111,6 +111,7 @@ class WeatherRepository @Inject constructor() {
         }
     }
 
+    /** Not shown in the launcher UI; kept for [WeatherData] completeness / debugging. */
     private fun mapOpenMeteoCodeToDescription(code: Int): String {
         return when (code) {
             0 -> "Clear sky"

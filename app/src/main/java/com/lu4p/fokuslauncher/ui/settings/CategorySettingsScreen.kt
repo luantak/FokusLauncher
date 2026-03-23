@@ -42,9 +42,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.lu4p.fokuslauncher.R
+import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
 
@@ -61,8 +65,8 @@ fun CategorySettingsScreen(
     val normalizedNewCategory = newCategory.trim()
     val canAddCategory =
             normalizedNewCategory.isNotBlank() &&
-                    !normalizedNewCategory.equals("All apps", ignoreCase = true) &&
-                    !normalizedNewCategory.equals("Private", ignoreCase = true)
+                    !normalizedNewCategory.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true) &&
+                    !normalizedNewCategory.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true)
     val categories = remember(uiState.allApps, uiState.appCategories, uiState.categoryDefinitions) {
         deriveEditableCategories(uiState)
     }
@@ -75,12 +79,14 @@ fun CategorySettingsScreen(
                     .background(backgroundScrim)
     ) {
         TopAppBar(
-                title = { Text("App Categories", color = MaterialTheme.colorScheme.onBackground) },
+                title = {
+                    Text(stringResource(R.string.category_settings_title), color = MaterialTheme.colorScheme.onBackground)
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back",
+                                contentDescription = stringResource(R.string.action_back),
                                 tint = MaterialTheme.colorScheme.onBackground
                         )
                     }
@@ -94,7 +100,7 @@ fun CategorySettingsScreen(
                     value = newCategory,
                     onValueChange = { newCategory = it },
                     singleLine = true,
-                    label = { Text("New category") },
+                    label = { Text(stringResource(R.string.category_new_label)) },
                     modifier = Modifier.weight(1f)
             )
             TextButton(
@@ -104,7 +110,7 @@ fun CategorySettingsScreen(
                         newCategory = ""
                     }
             ) {
-                Text("Add")
+                Text(stringResource(R.string.action_add))
             }
         }
 
@@ -133,6 +139,7 @@ private fun ReorderableCategoryList(
         onEditCategoryApps: (String) -> Unit,
         onDelete: (String) -> Unit
 ) {
+    val context = LocalContext.current
     var draggedIndex by remember { mutableIntStateOf(-1) }
     var dragOffset by remember { mutableFloatStateOf(0f) }
     val itemHeightPx = with(LocalDensity.current) { 56.dp.toPx() }
@@ -163,7 +170,7 @@ private fun ReorderableCategoryList(
             ) {
                 Icon(
                         imageVector = Icons.Default.DragHandle,
-                        contentDescription = "Drag to reorder",
+                        contentDescription = stringResource(R.string.cd_drag_to_reorder),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier =
                                 Modifier.size(24.dp)
@@ -206,16 +213,23 @@ private fun ReorderableCategoryList(
                             color = MaterialTheme.colorScheme.onBackground
                     )
                     Text(
-                            text = "${counts[category] ?: 0} apps",
+                            text =
+                                    context.resources.getQuantityString(
+                                            R.plurals.category_app_count,
+                                            counts[category] ?: 0,
+                                            counts[category] ?: 0
+                                    ),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.secondary
                     )
                 }
-                TextButton(onClick = { onEditCategoryApps(category) }) { Text("Edit apps") }
+                TextButton(onClick = { onEditCategoryApps(category) }) {
+                    Text(stringResource(R.string.category_edit_apps))
+                }
                 IconButton(onClick = { onDelete(category) }) {
                     Icon(
                             imageVector = Icons.Default.Delete,
-                            contentDescription = "Delete category",
+                            contentDescription = stringResource(R.string.cd_delete_category),
                             tint = MaterialTheme.colorScheme.error
                     )
                 }
@@ -265,7 +279,7 @@ fun CategoryAppsScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back",
+                                contentDescription = stringResource(R.string.action_back),
                                 tint = MaterialTheme.colorScheme.onBackground
                         )
                     }
@@ -274,7 +288,7 @@ fun CategoryAppsScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                                 imageVector = Icons.Default.Check,
-                                contentDescription = "Done",
+                                contentDescription = stringResource(R.string.action_done),
                                 tint = MaterialTheme.colorScheme.onBackground
                         )
                     }
@@ -283,7 +297,7 @@ fun CategoryAppsScreen(
         OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                placeholder = { Text("Search apps") },
+                placeholder = { Text(stringResource(R.string.search_apps)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
         )
@@ -291,7 +305,7 @@ fun CategoryAppsScreen(
             if (checkedApps.isNotEmpty()) {
                 item {
                     Text(
-                            text = "Apps in category",
+                            text = stringResource(R.string.category_apps_screen_section_in_category),
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
@@ -308,14 +322,17 @@ fun CategoryAppsScreen(
             }
             item {
                 Text(
-                        text = "All apps",
+                        text = stringResource(R.string.edit_home_section_all_apps),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                 )
             }
             items(uncheckedApps, key = { "unchecked_${it.packageName}" }) { app ->
-                val currentCategory = (uiState.appCategories[app.packageName] ?: app.category).ifBlank { "No category" }
+                val currentCategory =
+                        (uiState.appCategories[app.packageName] ?: app.category).ifBlank {
+                            stringResource(R.string.category_no_category)
+                        }
                 CategoryAppRow(
                         label = app.label,
                         checked = false,

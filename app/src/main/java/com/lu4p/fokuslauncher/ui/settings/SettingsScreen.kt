@@ -65,6 +65,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.background
@@ -78,6 +79,7 @@ import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
 import com.lu4p.fokuslauncher.ui.theme.composeFontFamilyFromStoredName
+import com.lu4p.fokuslauncher.ui.util.formatShortcutTargetDisplay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -92,6 +94,7 @@ fun SettingsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val installedFontFamilies by viewModel.installedFontFamilies.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     // Dialog states
     var showAppPickerFor by remember { mutableStateOf<String?>(null) } // swipeLeft/swipeRight
@@ -112,12 +115,14 @@ fun SettingsScreen(
         .testTag("settings_screen")
     ) {
         TopAppBar(
-                title = { Text("Settings", color = MaterialTheme.colorScheme.onBackground) },
+                title = {
+                    Text(stringResource(R.string.settings_title), color = MaterialTheme.colorScheme.onBackground)
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back",
+                                contentDescription = stringResource(R.string.action_back),
                                 tint = MaterialTheme.colorScheme.onBackground
                         )
                     }
@@ -131,12 +136,12 @@ fun SettingsScreen(
         LazyColumn(modifier = Modifier.fillMaxSize()) {
 
             // ========== APPEARANCE ==========
-            item { SectionHeader("Appearance") }
+            item { SectionHeader(stringResource(R.string.settings_section_appearance)) }
 
             item {
                 SettingsToggleRow(
-                        label = "Show status bar",
-                        subtitle = "Keep the system status icons visible at the top",
+                        label = stringResource(R.string.settings_show_status_bar),
+                        subtitle = stringResource(R.string.settings_show_status_bar_subtitle),
                         checked = uiState.showStatusBar,
                         onCheckedChange = { viewModel.setShowStatusBar(it) }
                 )
@@ -159,7 +164,7 @@ fun SettingsScreen(
                                 .padding(horizontal = 24.dp, vertical = 14.dp)
                 ) {
                     Text(
-                            text = "Set background image",
+                            text = stringResource(R.string.settings_set_background_image),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onBackground,
                             modifier = Modifier.weight(1f)
@@ -179,7 +184,7 @@ fun SettingsScreen(
                                 .padding(horizontal = 24.dp, vertical = 14.dp)
                 ) {
                     Text(
-                            text = "Set black wallpaper",
+                            text = stringResource(R.string.settings_set_black_wallpaper),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onBackground,
                             modifier = Modifier.weight(1f)
@@ -190,12 +195,12 @@ fun SettingsScreen(
             item { SettingsDivider() }
 
             // ========== HOME SCREEN ==========
-            item { SectionHeader("Home Screen") }
+            item { SectionHeader(stringResource(R.string.settings_section_home_screen)) }
 
             item {
                 SettingsToggleRow(
-                        label = "Hide widgets",
-                        subtitle = "Hide the clock, date, battery, and weather on the home screen",
+                        label = stringResource(R.string.settings_hide_widgets),
+                        subtitle = stringResource(R.string.settings_hide_widgets_subtitle),
                         checked = !uiState.showHomeScreenWidgets,
                         onCheckedChange = { hideWidgets ->
                             viewModel.setShowHomeScreenWidgets(!hideWidgets)
@@ -212,7 +217,7 @@ fun SettingsScreen(
                                         .padding(horizontal = 24.dp, vertical = 14.dp)
                 ) {
                     Text(
-                            text = "Edit home screen",
+                            text = stringResource(R.string.settings_edit_home_screen),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onBackground,
                             modifier = Modifier.weight(1f)
@@ -230,12 +235,17 @@ fun SettingsScreen(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                                text = "Edit shortcuts",
+                                text = stringResource(R.string.settings_edit_shortcuts),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onBackground
                         )
                         Text(
-                                text = "${uiState.rightSideShortcuts.size} shortcuts configured",
+                                text =
+                                        pluralStringResource(
+                                                R.plurals.settings_shortcuts_configured,
+                                                uiState.rightSideShortcuts.size,
+                                                uiState.rightSideShortcuts.size
+                                        ),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.secondary
                         )
@@ -252,7 +262,6 @@ fun SettingsScreen(
             }
 
             item {
-                val context = LocalContext.current
                 val activity = LocalActivity.current
                 val hasLocationPermission =
                         ContextCompat.checkSelfPermission(
@@ -300,7 +309,7 @@ fun SettingsScreen(
                                         uiState.allApps
                                 )
                         ShortcutTargetRow(
-                                label = "Weather app",
+                                label = stringResource(R.string.settings_weather_app),
                                 currentTarget = weatherAppLabel,
                                 onPickApp = { showAppPickerFor = "weather" },
                                 onClear = { viewModel.setPreferredWeatherApp("") }
@@ -312,13 +321,13 @@ fun SettingsScreen(
             item { SettingsDivider() }
 
             // ========== SWIPE SHORTCUTS ==========
-            item { SectionHeader("Swipe Shortcuts") }
+            item { SectionHeader(stringResource(R.string.settings_section_swipe)) }
 
             item {
                 ShortcutTargetRow(
-                        label = "Swipe left",
+                        label = stringResource(R.string.settings_swipe_left),
                         currentTarget =
-                                formatShortcutTarget(uiState.swipeLeftTarget, uiState.allApps),
+                                formatShortcutTarget(context, uiState.swipeLeftTarget, uiState.allApps),
                         onPickApp = { showAppPickerFor = "swipeLeft" },
                         onClear = { viewModel.setSwipeLeftTarget(null) }
                 )
@@ -326,9 +335,9 @@ fun SettingsScreen(
 
             item {
                 ShortcutTargetRow(
-                        label = "Swipe right",
+                        label = stringResource(R.string.settings_swipe_right),
                         currentTarget =
-                                formatShortcutTarget(uiState.swipeRightTarget, uiState.allApps),
+                                formatShortcutTarget(context, uiState.swipeRightTarget, uiState.allApps),
                         onPickApp = { showAppPickerFor = "swipeRight" },
                         onClear = { viewModel.setSwipeRightTarget(null) }
                 )
@@ -337,7 +346,7 @@ fun SettingsScreen(
             item { SettingsDivider() }
 
             // ========== APP CATEGORIES ==========
-            item { SectionHeader("App Categories") }
+            item { SectionHeader(stringResource(R.string.settings_section_app_categories)) }
             item {
                 Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -348,12 +357,17 @@ fun SettingsScreen(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                                text = "Edit app categories",
+                                text = stringResource(R.string.settings_edit_app_categories),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onBackground
                         )
                         Text(
-                                text = "${uiState.categoryDefinitions.size} custom categories",
+                                text =
+                                        pluralStringResource(
+                                                R.plurals.settings_custom_categories_count,
+                                                uiState.categoryDefinitions.size,
+                                                uiState.categoryDefinitions.size
+                                        ),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.secondary
                         )
@@ -364,12 +378,12 @@ fun SettingsScreen(
             item { SettingsDivider() }
 
             // ========== APP DRAWER ==========
-            item { SectionHeader("App Drawer") }
+            item { SectionHeader(stringResource(R.string.settings_section_app_drawer)) }
 
             item {
                 SettingsToggleRow(
-                        label = "Auto-open keyboard in drawer",
-                        subtitle = "Focus the search field and show the keyboard when the drawer opens",
+                        label = stringResource(R.string.settings_auto_open_keyboard),
+                        subtitle = stringResource(R.string.settings_auto_open_keyboard_subtitle),
                         checked = uiState.autoOpenDrawerKeyboard,
                         onCheckedChange = { viewModel.setAutoOpenDrawerKeyboard(it) }
                 )
@@ -377,8 +391,8 @@ fun SettingsScreen(
 
             item {
                 SettingsToggleRow(
-                        label = "Hide All Apps section",
-                        subtitle = "Keep the drawer focused on your categories and search results",
+                        label = stringResource(R.string.settings_hide_all_apps_section),
+                        subtitle = stringResource(R.string.settings_hide_all_apps_section_subtitle),
                         checked = uiState.hideAllAppsSection,
                         onCheckedChange = { viewModel.setHideAllAppsSection(it) }
                 )
@@ -387,12 +401,12 @@ fun SettingsScreen(
             item { SettingsDivider() }
 
             // ========== HIDDEN APPS ==========
-            item { SectionHeader("Hidden Apps") }
+            item { SectionHeader(stringResource(R.string.settings_section_hidden_apps)) }
 
             if (uiState.hiddenApps.isEmpty()) {
                 item {
                     Text(
-                            text = "No hidden apps",
+                            text = stringResource(R.string.settings_no_hidden_apps),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.secondary,
                             modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
@@ -410,12 +424,12 @@ fun SettingsScreen(
             item { SettingsDivider() }
 
             // ========== RENAMED APPS ==========
-            item { SectionHeader("Renamed Apps") }
+            item { SectionHeader(stringResource(R.string.settings_section_renamed_apps)) }
 
             if (uiState.renamedApps.isEmpty()) {
                 item {
                     Text(
-                            text = "No renamed apps",
+                            text = stringResource(R.string.settings_no_renamed_apps),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.secondary,
                             modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
@@ -437,7 +451,6 @@ fun SettingsScreen(
             item { SectionHeader(stringResource(R.string.settings_connect_section)) }
 
             item {
-                val context = LocalContext.current
                 ExternalLinkRow(
                     icon = Icons.Filled.Star,
                     title = stringResource(R.string.settings_github_title),
@@ -452,7 +465,6 @@ fun SettingsScreen(
             }
 
             item {
-                val context = LocalContext.current
                 ExternalLinkRow(
                     icon = Icons.Filled.ChatBubble,
                     title = stringResource(R.string.settings_matrix_title),
@@ -469,7 +481,7 @@ fun SettingsScreen(
             item { SettingsDivider() }
 
             // ========== RESET ==========
-            item { SectionHeader("Data") }
+            item { SectionHeader(stringResource(R.string.settings_section_data)) }
             item {
                 Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -486,7 +498,7 @@ fun SettingsScreen(
                     )
                     Spacer(Modifier.width(16.dp))
                     Text(
-                            text = "Reset all data",
+                            text = stringResource(R.string.settings_reset_all_data),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.error
                     )
@@ -502,10 +514,12 @@ fun SettingsScreen(
     if (showResetConfirm) {
         AlertDialog(
                 onDismissRequest = { showResetConfirm = false },
-                title = { Text("Reset all data?", color = MaterialTheme.colorScheme.onBackground) },
+                title = {
+                    Text(stringResource(R.string.settings_reset_confirm_title), color = MaterialTheme.colorScheme.onBackground)
+                },
                 text = {
                     Text(
-                            "This will clear favorites, shortcuts, hidden apps, renamed apps, and all other settings. The app will return to its initial state.",
+                            stringResource(R.string.settings_reset_confirm_message),
                             color = MaterialTheme.colorScheme.onBackground
                     )
                 },
@@ -520,12 +534,12 @@ fun SettingsScreen(
                                 }
                             }
                     ) {
-                        Text("Reset", color = MaterialTheme.colorScheme.error)
+                        Text(stringResource(R.string.action_reset), color = MaterialTheme.colorScheme.error)
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showResetConfirm = false }) {
-                        Text("Cancel", color = MaterialTheme.colorScheme.primary)
+                        Text(stringResource(R.string.action_cancel), color = MaterialTheme.colorScheme.primary)
                     }
                 },
                 containerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -621,10 +635,11 @@ private fun LauncherFontFamilyDropdown(
         installedFamilies: List<String>,
         onFamilySelected: (String) -> Unit
 ) {
+    val systemDefault = stringResource(R.string.settings_weather_app_system_default)
     val options =
-            remember(currentFamilyName, installedFamilies) {
+            remember(currentFamilyName, installedFamilies, systemDefault) {
                 buildList {
-                    add("" to "System default")
+                    add("" to systemDefault)
                     val sorted = installedFamilies.sortedWith(String.CASE_INSENSITIVE_ORDER)
                     sorted.forEach { add(it to it) }
                     val cur = currentFamilyName.trim()
@@ -636,7 +651,7 @@ private fun LauncherFontFamilyDropdown(
     var expanded by remember { mutableStateOf(false) }
     val selectedLabel =
             options.find { (value, _) -> value == currentFamilyName }?.second
-                    ?: currentFamilyName.ifBlank { "System default" }
+                    ?: currentFamilyName.ifBlank { systemDefault }
 
     Column(
             modifier = Modifier
@@ -644,7 +659,7 @@ private fun LauncherFontFamilyDropdown(
                     .padding(horizontal = 24.dp, vertical = 12.dp)
     ) {
         Text(
-                text = "Font",
+                text = stringResource(R.string.settings_font_label),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onBackground
         )
@@ -719,13 +734,13 @@ private fun HomeAlignmentRow(
                     .padding(horizontal = 24.dp, vertical = 12.dp)
     ) {
         Text(
-                text = "Home screen alignment",
+                text = stringResource(R.string.home_alignment_title),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(Modifier.height(4.dp))
         Text(
-                text = "Position of app labels and shortcut icons",
+                text = stringResource(R.string.home_alignment_subtitle),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.secondary
         )
@@ -740,7 +755,15 @@ private fun HomeAlignmentRow(
                                 count = HomeAlignment.entries.size
                         )
                 ) {
-                    Text(alignment.displayName)
+                    Text(
+                            stringResource(
+                                    when (alignment) {
+                                        HomeAlignment.LEFT -> R.string.home_alignment_left
+                                        HomeAlignment.CENTER -> R.string.home_alignment_center
+                                        HomeAlignment.RIGHT -> R.string.home_alignment_right
+                                    }
+                            )
+                    )
                 }
             }
         }
@@ -829,11 +852,11 @@ private fun ShortcutTargetRow(
                     color = MaterialTheme.colorScheme.secondary
             )
         }
-        TextButton(onClick = onPickApp) { Text("Change") }
+        TextButton(onClick = onPickApp) { Text(stringResource(R.string.action_change)) }
         IconButton(onClick = onClear, modifier = Modifier.size(36.dp)) {
             Icon(
                     Icons.Default.Close,
-                    "Clear",
+                    stringResource(R.string.action_clear),
                     tint = MaterialTheme.colorScheme.error,
                     modifier = Modifier.size(18.dp)
             )
@@ -859,7 +882,11 @@ private fun HiddenAppRow(app: HiddenAppInfo, onUnhide: () -> Unit) {
                 modifier = Modifier.weight(1f)
         )
         Spacer(Modifier.width(8.dp))
-        Icon(Icons.Default.Visibility, "Unhide", tint = MaterialTheme.colorScheme.secondary)
+        Icon(
+                Icons.Default.Visibility,
+                stringResource(R.string.cd_unhide_app),
+                tint = MaterialTheme.colorScheme.secondary
+        )
     }
 }
 
@@ -885,7 +912,11 @@ private fun RenamedAppRow(packageName: String, customName: String, onRemoveRenam
             )
         }
         Spacer(Modifier.width(8.dp))
-        Icon(Icons.Default.Close, "Remove rename", tint = MaterialTheme.colorScheme.secondary)
+        Icon(
+                Icons.Default.Close,
+                stringResource(R.string.cd_remove_rename),
+                tint = MaterialTheme.colorScheme.secondary
+        )
     }
 }
 
@@ -926,7 +957,7 @@ private fun ExternalLinkRow(
         }
         Icon(
                 imageVector = Icons.AutoMirrored.Filled.OpenInNew,
-                contentDescription = "Open link",
+                contentDescription = stringResource(R.string.cd_open_link),
                 tint = MaterialTheme.colorScheme.secondary,
                 modifier = Modifier.size(18.dp)
         )
@@ -945,13 +976,15 @@ private fun AppPickerDialog(
 
     AlertDialog(
             onDismissRequest = onDismiss,
-            title = { Text("Select App", color = MaterialTheme.colorScheme.onBackground) },
+            title = {
+                Text(stringResource(R.string.settings_app_picker_title), color = MaterialTheme.colorScheme.onBackground)
+            },
             text = {
                 Column {
                     OutlinedTextField(
                             value = filter,
                             onValueChange = { filter = it },
-                            label = { Text("Search") },
+                            label = { Text(stringResource(R.string.search)) },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
                     )
@@ -975,7 +1008,9 @@ private fun AppPickerDialog(
                 }
             },
             confirmButton = {},
-            dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+            dismissButton = {
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+            },
             containerColor = MaterialTheme.colorScheme.surfaceVariant
     )
 }
@@ -1003,17 +1038,16 @@ private fun formatWeatherAppLabel(
     }
 }
 
-private fun formatShortcutTarget(target: ShortcutTarget?, allApps: List<AppInfo>): String {
-    return when (target) {
-        null -> "Not set"
-        is ShortcutTarget.App -> allApps.find { it.packageName == target.packageName }?.label
-                        ?: target.packageName
-        is ShortcutTarget.DeepLink -> "Deep link"
-        is ShortcutTarget.LauncherShortcut -> {
-            val appLabel =
-                    allApps.find { it.packageName == target.packageName }?.label
-                            ?: target.packageName
-            "$appLabel - Shortcut"
-        }
-    }
+private fun formatShortcutTarget(
+        context: Context,
+        target: ShortcutTarget?,
+        allApps: List<AppInfo>
+): String {
+    return formatShortcutTargetDisplay(
+            context = context,
+            target = target,
+            allApps = allApps,
+            notSetLabel = context.getString(R.string.shortcut_target_not_set),
+            resolvedLauncherActionLabel = null
+    )
 }

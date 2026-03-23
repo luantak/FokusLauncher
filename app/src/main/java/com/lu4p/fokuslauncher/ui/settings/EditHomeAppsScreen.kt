@@ -40,8 +40,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.ui.home.HomeViewModel
@@ -85,7 +87,9 @@ fun EditHomeAppsScreen(
             .background(backgroundScrim)
     ) {
         TopAppBar(
-            title = { Text("Edit home screen", color = MaterialTheme.colorScheme.onBackground) },
+            title = {
+                Text(stringResource(R.string.edit_home_title), color = MaterialTheme.colorScheme.onBackground)
+            },
             navigationIcon = {
                 IconButton(onClick = {
                     viewModel.saveEditedFavorites()
@@ -93,7 +97,7 @@ fun EditHomeAppsScreen(
                 }) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
+                        contentDescription = stringResource(R.string.action_back),
                         tint = MaterialTheme.colorScheme.onBackground
                     )
                 }
@@ -105,7 +109,7 @@ fun EditHomeAppsScreen(
                 }) {
                     Icon(
                         imageVector = Icons.Default.Check,
-                        contentDescription = "Done",
+                        contentDescription = stringResource(R.string.action_done),
                         tint = MaterialTheme.colorScheme.onBackground
                     )
                 }
@@ -115,7 +119,7 @@ fun EditHomeAppsScreen(
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
-            placeholder = { Text("Search apps") },
+            placeholder = { Text(stringResource(R.string.search_apps)) },
             singleLine = true,
             modifier = Modifier
                 .fillMaxWidth()
@@ -152,7 +156,7 @@ private fun ReorderableEditHomeAppsList(
         if (editFavorites.isNotEmpty()) {
             item(key = "header_checked") {
                 Text(
-                    text = "Home screen apps",
+                    text = stringResource(R.string.edit_home_section_on_home),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
@@ -181,7 +185,7 @@ private fun ReorderableEditHomeAppsList(
             ) {
                 Icon(
                     imageVector = Icons.Default.DragHandle,
-                    contentDescription = "Drag to reorder",
+                    contentDescription = stringResource(R.string.cd_drag_to_reorder),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier
                         .size(24.dp)
@@ -238,7 +242,7 @@ private fun ReorderableEditHomeAppsList(
 
         item(key = "header_unchecked") {
             Text(
-                text = "All apps",
+                text = stringResource(R.string.edit_home_section_all_apps),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)

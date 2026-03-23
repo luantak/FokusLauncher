@@ -34,7 +34,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.lu4p.fokuslauncher.R
 import androidx.core.net.toUri
 import com.lu4p.fokuslauncher.data.model.AppInfo
 
@@ -77,13 +79,15 @@ fun AppActionSheet(
                     OutlinedTextField(
                         value = renameValue,
                         onValueChange = { renameValue = it },
-                        placeholder = { Text("App name") },
+                        placeholder = { Text(stringResource(R.string.app_name_placeholder)) },
                         singleLine = true,
                         modifier = Modifier
                             .weight(1f)
                             .testTag("rename_inline_input")
                     )
-                    TextButton(onClick = { renameMode = false }) { Text("Cancel") }
+                    TextButton(onClick = { renameMode = false }) {
+                        Text(stringResource(R.string.action_cancel))
+                    }
                     TextButton(
                         onClick = {
                             val trimmed = renameValue.trim()
@@ -92,7 +96,7 @@ fun AppActionSheet(
                                 onDismiss()
                             }
                         }
-                    ) { Text("Save") }
+                    ) { Text(stringResource(R.string.action_save)) }
                 } else {
                     Text(
                         text = app.label,
@@ -106,7 +110,7 @@ fun AppActionSheet(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Edit,
-                            contentDescription = "Rename",
+                            contentDescription = stringResource(R.string.action_rename),
                             tint = MaterialTheme.colorScheme.onBackground
                         )
                     }
@@ -116,7 +120,7 @@ fun AppActionSheet(
             if (!isOnHomeScreen) {
                 ActionRow(
                     icon = Icons.Default.Home,
-                    label = "Add to home screen",
+                    label = stringResource(R.string.action_add_to_home),
                     testTag = "action_add_to_home",
                     onClick = {
                         onAddToHome(app)
@@ -127,7 +131,7 @@ fun AppActionSheet(
 
             ActionRow(
                 icon = Icons.Default.Info,
-                label = "App info",
+                label = stringResource(R.string.action_app_info),
                 testTag = "action_app_info",
                 onClick = {
                     val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
@@ -141,7 +145,7 @@ fun AppActionSheet(
 
             ActionRow(
                 icon = Icons.Default.VisibilityOff,
-                label = "Hide",
+                label = stringResource(R.string.action_hide),
                 testTag = "action_hide",
                 onClick = {
                     onHide(app)
@@ -151,7 +155,7 @@ fun AppActionSheet(
 
             ActionRow(
                 icon = Icons.Default.Delete,
-                label = "Uninstall",
+                label = stringResource(R.string.action_uninstall),
                 testTag = "action_uninstall",
                 onClick = {
                     val intent = Intent(Intent.ACTION_DELETE).apply {

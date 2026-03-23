@@ -31,7 +31,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 
 /**
@@ -81,11 +83,13 @@ fun HomeAppMenuSheet(
                     OutlinedTextField(
                         value = renameValue,
                         onValueChange = { renameValue = it },
-                        placeholder = { Text("App name") },
+                        placeholder = { Text(stringResource(R.string.app_name_placeholder)) },
                         singleLine = true,
                         modifier = Modifier.weight(1f)
                     )
-                    TextButton(onClick = { renameMode = false }) { Text("Cancel") }
+                    TextButton(onClick = { renameMode = false }) {
+                        Text(stringResource(R.string.action_cancel))
+                    }
                     TextButton(
                         onClick = {
                             val trimmed = renameValue.trim()
@@ -94,7 +98,7 @@ fun HomeAppMenuSheet(
                                 onDismiss()
                             }
                         }
-                    ) { Text("Save") }
+                    ) { Text(stringResource(R.string.action_save)) }
                 } else {
                     Text(
                         text = fav.label,
@@ -105,7 +109,7 @@ fun HomeAppMenuSheet(
                     IconButton(onClick = { renameMode = true }) {
                         Icon(
                             imageVector = Icons.Default.Edit,
-                            contentDescription = "Rename",
+                            contentDescription = stringResource(R.string.action_rename),
                             tint = MaterialTheme.colorScheme.onBackground
                         )
                     }
@@ -115,7 +119,7 @@ fun HomeAppMenuSheet(
             // ── Action rows ────────────────────────────────────────
             MenuActionRow(
                 icon = Icons.Default.Close,
-                label = "Remove from home screen",
+                label = stringResource(R.string.action_remove_from_home),
                 onClick = {
                     onRemoveFromHome()
                     onDismiss()
@@ -124,7 +128,7 @@ fun HomeAppMenuSheet(
 
             MenuActionRow(
                 icon = Icons.Default.Home,
-                label = "Edit home screen",
+                label = stringResource(R.string.settings_edit_home_screen),
                 onClick = {
                     onEditHomeScreen()
                     onDismiss()
@@ -133,7 +137,7 @@ fun HomeAppMenuSheet(
 
             MenuActionRow(
                 icon = Icons.Default.Info,
-                label = "App info",
+                label = stringResource(R.string.action_app_info),
                 onClick = {
                     onAppInfo()
                     onDismiss()
@@ -142,7 +146,7 @@ fun HomeAppMenuSheet(
 
             MenuActionRow(
                 icon = Icons.Default.VisibilityOff,
-                label = "Hide",
+                label = stringResource(R.string.action_hide),
                 onClick = {
                     onHide()
                     onDismiss()
@@ -151,7 +155,7 @@ fun HomeAppMenuSheet(
 
             MenuActionRow(
                 icon = Icons.Default.Delete,
-                label = "Uninstall",
+                label = stringResource(R.string.action_uninstall),
                 onClick = {
                     onUninstall()
                     onDismiss()

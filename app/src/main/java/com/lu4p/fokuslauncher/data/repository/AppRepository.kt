@@ -14,12 +14,14 @@ import android.os.Process
 import android.os.UserHandle
 import android.os.UserManager
 import androidx.core.content.ContextCompat
+import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.database.dao.AppDao
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryDefinitionEntity
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryEntity
 import com.lu4p.fokuslauncher.data.database.entity.HiddenAppEntity
 import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
 import com.lu4p.fokuslauncher.data.model.AppInfo
+import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import com.lu4p.fokuslauncher.data.model.AppShortcutAction
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
@@ -348,7 +350,7 @@ constructor(
                     val shortcutLabel =
                         info.shortLabel?.toString()?.trim().takeUnless { it.isNullOrEmpty() }
                             ?: info.longLabel?.toString()?.trim().takeUnless { it.isNullOrEmpty() }
-                            ?: "Shortcut"
+                            ?: context.getString(R.string.shortcut_generic_label)
                     actions.add(
                         AppShortcutAction(
                             appLabel = app.label,
@@ -376,7 +378,9 @@ constructor(
 
     /** Filters apps by category. Returns all apps if category is blank or "All apps". */
     fun filterByCategory(category: String): List<AppInfo> {
-        if (category.isBlank() || category == "All apps") return getInstalledApps()
+        if (category.isBlank() || category.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true)) {
+            return getInstalledApps()
+        }
         return getInstalledApps().filter { it.category.equals(category, ignoreCase = true) }
     }
 
@@ -434,8 +438,8 @@ constructor(
     suspend fun addCategoryDefinition(name: String) {
         val normalized = name.trim()
         if (normalized.isBlank()) return
-        if (normalized.equals("All apps", ignoreCase = true)) return
-        if (normalized.equals("Private", ignoreCase = true)) return
+        if (normalized.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true)) return
+        if (normalized.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true)) return
         val existing = appDao.getCategoryDefinitionPosition(normalized)
         if (existing != null) return
         val nextPosition = appDao.getMaxCategoryDefinitionPosition() + 1
@@ -449,10 +453,10 @@ constructor(
         val oldNormalized = oldName.trim()
         val newNormalized = newName.trim()
         if (oldNormalized.isBlank() || newNormalized.isBlank()) return
-        if (oldNormalized.equals("All apps", ignoreCase = true)) return
-        if (oldNormalized.equals("Private", ignoreCase = true)) return
-        if (newNormalized.equals("All apps", ignoreCase = true)) return
-        if (newNormalized.equals("Private", ignoreCase = true)) return
+        if (oldNormalized.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true)) return
+        if (oldNormalized.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true)) return
+        if (newNormalized.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true)) return
+        if (newNormalized.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true)) return
 
         val installed = getInstalledApps()
         val explicitMap = appDao.getAllAppCategories().first().associate { it.packageName to it.category }
@@ -477,8 +481,8 @@ constructor(
     suspend fun deleteCategory(name: String) {
         val normalized = name.trim()
         if (normalized.isBlank()) return
-        if (normalized.equals("All apps", ignoreCase = true)) return
-        if (normalized.equals("Private", ignoreCase = true)) return
+        if (normalized.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true)) return
+        if (normalized.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true)) return
 
         val installed = getInstalledApps()
         val explicitMap = appDao.getAllAppCategories().first().associate { it.packageName to it.category }
@@ -499,8 +503,8 @@ constructor(
                 categories.asSequence()
                         .map { it.trim() }
                         .filter { it.isNotBlank() }
-                        .filterNot { it.equals("All apps", ignoreCase = true) }
-                        .filterNot { it.equals("Private", ignoreCase = true) }
+                        .filterNot { it.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true) }
+                        .filterNot { it.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true) }
                         .distinct()
                         .toList()
         val entities = normalized.mapIndexed { index, name ->
@@ -558,20 +562,24 @@ constructor(
     }
 
     private fun inferCategoryFromApplicationInfo(applicationInfo: ApplicationInfo?): String {
-        return inferCategoryFromSystem(applicationInfo) ?: "Utilities"
+        return inferCategoryFromSystem(applicationInfo)
+                ?: context.getString(R.string.inferred_category_utilities)
     }
 
     private fun inferCategoryFromSystem(applicationInfo: ApplicationInfo?): String? {
         if (applicationInfo == null) return null
-        if ((applicationInfo.flags and ApplicationInfo.FLAG_IS_GAME) != 0) return "Games"
+        if ((applicationInfo.flags and ApplicationInfo.FLAG_IS_GAME) != 0) {
+            return context.getString(R.string.inferred_category_games)
+        }
         return when (applicationInfo.category) {
-            ApplicationInfo.CATEGORY_GAME -> "Games"
-            ApplicationInfo.CATEGORY_PRODUCTIVITY -> "Productivity"
-            ApplicationInfo.CATEGORY_SOCIAL -> "Social"
+            ApplicationInfo.CATEGORY_GAME -> context.getString(R.string.inferred_category_games)
+            ApplicationInfo.CATEGORY_PRODUCTIVITY ->
+                    context.getString(R.string.inferred_category_productivity)
+            ApplicationInfo.CATEGORY_SOCIAL -> context.getString(R.string.inferred_category_social)
             ApplicationInfo.CATEGORY_AUDIO,
             ApplicationInfo.CATEGORY_VIDEO,
             ApplicationInfo.CATEGORY_IMAGE,
-            ApplicationInfo.CATEGORY_NEWS -> "Media"
+            ApplicationInfo.CATEGORY_NEWS -> context.getString(R.string.inferred_category_media)
             else -> null
         }
     }

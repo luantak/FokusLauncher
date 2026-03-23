@@ -43,7 +43,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.lu4p.fokuslauncher.R
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -254,7 +256,7 @@ fun HomeScreenContent(
                                 rightSideShortcuts.reversed().forEachIndexed { index, shortcut ->
                                     Icon(
                                         imageVector = MinimalIcons.iconFor(shortcut.iconName),
-                                        contentDescription = "Shortcut icon",
+                                        contentDescription = stringResource(R.string.cd_shortcut_icon),
                                         tint = MaterialTheme.colorScheme.onBackground,
                                         modifier = Modifier
                                             .size(24.dp)
@@ -284,7 +286,7 @@ fun HomeScreenContent(
                             rightSideShortcuts.reversed().forEachIndexed { index, shortcut ->
                                 Icon(
                                     imageVector = MinimalIcons.iconFor(shortcut.iconName),
-                                    contentDescription = "Shortcut icon",
+                                    contentDescription = stringResource(R.string.cd_shortcut_icon),
                                     tint = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier
                                         .size(24.dp)
@@ -363,7 +365,7 @@ fun HomeScreenContent(
                             rightSideShortcuts.reversed().forEachIndexed { index, shortcut ->
                                 Icon(
                                     imageVector = MinimalIcons.iconFor(shortcut.iconName),
-                                    contentDescription = "Shortcut icon",
+                                    contentDescription = stringResource(R.string.cd_shortcut_icon),
                                     tint = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier
                                         .size(24.dp)
@@ -393,7 +395,7 @@ fun HomeScreenContent(
                     .testTag("set_default_launcher_button")
             ) {
                 Text(
-                    text = "Set as default launcher",
+                    text = stringResource(R.string.home_set_default_launcher),
                     style = MaterialTheme.typography.labelMedium
                 )
             }
@@ -430,12 +432,12 @@ private fun HomeScreenLongPressSheet(
             ) {
                 Icon(
                     imageVector = Icons.Default.Home,
-                    contentDescription = "Edit home screen",
+                    contentDescription = stringResource(R.string.cd_edit_home_screen),
                     tint = MaterialTheme.colorScheme.onBackground
                 )
                 Spacer(modifier = Modifier.width(16.dp))
                 Text(
-                    text = "Edit home screen",
+                    text = stringResource(R.string.settings_edit_home_screen),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onBackground
                 )
@@ -451,12 +453,12 @@ private fun HomeScreenLongPressSheet(
             ) {
                 Icon(
                     imageVector = Icons.Default.Settings,
-                    contentDescription = "Settings",
+                    contentDescription = stringResource(R.string.cd_settings),
                     tint = MaterialTheme.colorScheme.onBackground
                 )
                 Spacer(modifier = Modifier.width(16.dp))
                 Text(
-                    text = "Settings",
+                    text = stringResource(R.string.settings_title),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onBackground
                 )
@@ -475,13 +477,15 @@ private fun WeatherAppPickerDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Select Weather App", color = MaterialTheme.colorScheme.onBackground) },
+        title = {
+            Text(stringResource(R.string.home_weather_app_picker_title), color = MaterialTheme.colorScheme.onBackground)
+        },
         text = {
             Column {
                 OutlinedTextField(
                     value = filter,
                     onValueChange = { filter = it },
-                    label = { Text("Search") },
+                    label = { Text(stringResource(R.string.search)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -504,7 +508,7 @@ private fun WeatherAppPickerDialog(
         },
         confirmButton = {},
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
         },
         containerColor = MaterialTheme.colorScheme.surfaceVariant
     )

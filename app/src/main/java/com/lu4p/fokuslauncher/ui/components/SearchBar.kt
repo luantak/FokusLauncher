@@ -19,9 +19,9 @@ import androidx.compose.ui.unit.dp
 fun SearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
+    placeholder: String,
     modifier: Modifier = Modifier,
     focusRequester: FocusRequester? = null,
-    placeholder: String = "Search apps…"
 ) {
     BasicTextField(
         value = query,

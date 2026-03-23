@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.AppInfo
+import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
@@ -38,8 +39,8 @@ data class AppDrawerUiState(
         val searchQuery: String = "",
         val autoOpenKeyboard: Boolean = true,
         val hideAllAppsSection: Boolean = false,
-        val selectedCategory: String = "All apps",
-        val categories: List<String> = listOf("All apps"),
+        val selectedCategory: String = ReservedCategoryNames.ALL_APPS,
+        val categories: List<String> = listOf(ReservedCategoryNames.ALL_APPS),
         val selectedApp: AppInfo? = null,
         val showMenu: Boolean = false,
         val isPrivateSpaceSupported: Boolean = false,
@@ -353,8 +354,8 @@ constructor(
     }
 
     fun onCategoryLongPress(category: String) {
-        if (category.equals("All apps", ignoreCase = true)) return
-        if (category.equals("Private", ignoreCase = true)) return
+        if (category.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true)) return
+        if (category.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true)) return
         _uiState.update { it.copy(selectedCategoryForActions = category) }
     }
 
@@ -475,8 +476,8 @@ constructor(
                             definedCategories =
                                     state.categories
                                             .filterNot {
-                                                it.equals("All apps", ignoreCase = true) ||
-                                                        it.equals("Private", ignoreCase = true)
+                                                it.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true) ||
+                                                        it.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true)
                                             },
                             includePrivate = unlocked && apps.isNotEmpty(),
                             includeAllAppsSection = !state.hideAllAppsSection
@@ -660,7 +661,7 @@ constructor(
             query: String,
             category: String
     ): List<DrawerProfileSectionUi> {
-        if (category.equals("Private", ignoreCase = true)) {
+        if (category.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true)) {
             return sections.map { it.copy(apps = emptyList()) }
         }
         return sections.map { section ->
@@ -668,7 +669,7 @@ constructor(
             if (query.isNotBlank()) {
                 apps = apps.filter { it.label.contains(query, ignoreCase = true) }
             }
-            if (category.isNotBlank() && !category.equals("All apps", ignoreCase = true)) {
+            if (category.isNotBlank() && !category.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true)) {
                 apps = apps.filter { it.category.equals(category, ignoreCase = true) }
             }
             section.copy(apps = apps)
@@ -723,7 +724,11 @@ constructor(
             selectedCategory: String,
             privateApps: List<AppInfo>
     ): List<AppInfo> {
-        if (selectedCategory != "All apps" && selectedCategory != "Private") return emptyList()
+        if (selectedCategory != ReservedCategoryNames.ALL_APPS &&
+                        selectedCategory != ReservedCategoryNames.PRIVATE
+        ) {
+            return emptyList()
+        }
         return if (query.isBlank()) {
             privateApps
         } else {
@@ -744,8 +749,8 @@ constructor(
     }
 
     private fun defaultCategory(categories: List<String>, hideAllAppsSection: Boolean): String {
-        if (!hideAllAppsSection) return "All apps"
-        return categories.firstOrNull() ?: "All apps"
+        if (!hideAllAppsSection) return ReservedCategoryNames.ALL_APPS
+        return categories.firstOrNull() ?: ReservedCategoryNames.ALL_APPS
     }
 
     private fun deriveCategories(
@@ -758,8 +763,8 @@ constructor(
         val orderedDefined = definedCategories.distinct()
         val extras = (dynamic - orderedDefined.toSet()).toList().sorted()
         return buildList {
-            if (includeAllAppsSection) add("All apps")
-            if (includePrivate) add("Private")
+            if (includeAllAppsSection) add(ReservedCategoryNames.ALL_APPS)
+            if (includePrivate) add(ReservedCategoryNames.PRIVATE)
             addAll(orderedDefined)
             addAll(extras)
         }

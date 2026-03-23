@@ -13,13 +13,6 @@ enum class HomeAlignment {
     CENTER,
     RIGHT;
 
-    val displayName: String
-        get() = when (this) {
-            LEFT -> "Left"
-            CENTER -> "Center"
-            RIGHT -> "Right"
-        }
-
     companion object {
         fun fromString(value: String): HomeAlignment =
             entries.firstOrNull { it.name.equals(value, ignoreCase = true) } ?: LEFT

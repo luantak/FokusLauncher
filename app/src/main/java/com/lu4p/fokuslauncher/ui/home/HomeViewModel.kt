@@ -26,8 +26,10 @@ import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.model.WeatherData
+import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.data.repository.WeatherRepository
+import com.lu4p.fokuslauncher.ui.util.formatShortcutTargetDisplay
 import com.lu4p.fokuslauncher.data.util.TemperatureUnitHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -353,7 +355,7 @@ class HomeViewModel @Inject constructor(
         if (!launched) {
             Toast.makeText(
                 context,
-                "Selected weather app could not be launched",
+                context.getString(R.string.toast_weather_app_launch_failed),
                 Toast.LENGTH_SHORT
             ).show()
             _showWeatherAppPicker.value = true
@@ -549,16 +551,20 @@ class HomeViewModel @Inject constructor(
     }
 
     fun formatShortcutTarget(target: ShortcutTarget): String {
-        return when (target) {
-            is ShortcutTarget.App -> _appNameMap.value[target.packageName] ?: target.packageName
-            is ShortcutTarget.DeepLink -> "Deep link"
-            is ShortcutTarget.LauncherShortcut -> {
-                val appName = _appNameMap.value[target.packageName] ?: target.packageName
-                val shortcut = _allShortcutActions.value.firstOrNull { it.target == target }
-                val actionLabel = shortcut?.actionLabel ?: "Shortcut"
-                "$appName - $actionLabel"
-            }
-        }
+        val apps = _allInstalledApps.value
+        val resolvedLabel =
+                if (target is ShortcutTarget.LauncherShortcut) {
+                    _allShortcutActions.value.firstOrNull { it.target == target }?.actionLabel
+                } else {
+                    null
+                }
+        return formatShortcutTargetDisplay(
+                context = context,
+                target = target,
+                allApps = apps,
+                notSetLabel = context.getString(R.string.shortcut_target_not_set),
+                resolvedLauncherActionLabel = resolvedLabel
+        )
     }
 
     private fun inferIconNameForAction(action: AppShortcutAction): String {

@@ -44,6 +44,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -55,6 +56,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.R
+import com.lu4p.fokuslauncher.ui.util.formatShortcutTargetDisplay
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.ui.home.HomeViewModel
@@ -429,6 +431,8 @@ private fun SwipeShortcutsStep(
     onSkip: () -> Unit
 ) {
     var showAppPickerFor by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
+    val notSetSwipe = stringResource(R.string.onboarding_swipe_not_set)
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -462,7 +466,13 @@ private fun SwipeShortcutsStep(
                     color = MaterialTheme.colorScheme.onBackground
                 )
                 Text(
-                    text = formatShortcutTarget(swipeState.swipeLeftTarget, swipeState.allApps, stringResource(R.string.onboarding_swipe_not_set)),
+                    text =
+                            formatShortcutTargetDisplay(
+                                    context = context,
+                                    target = swipeState.swipeLeftTarget,
+                                    allApps = swipeState.allApps,
+                                    notSetLabel = notSetSwipe
+                            ),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.secondary
                 )
@@ -473,7 +483,7 @@ private fun SwipeShortcutsStep(
             IconButton(onClick = { onSetSwipeLeft(null) }, modifier = Modifier.size(36.dp)) {
                 Icon(
                     Icons.Default.Close,
-                    contentDescription = "Clear",
+                    contentDescription = stringResource(R.string.action_clear),
                     tint = MaterialTheme.colorScheme.error,
                     modifier = Modifier.size(18.dp)
                 )
@@ -494,7 +504,13 @@ private fun SwipeShortcutsStep(
                     color = MaterialTheme.colorScheme.onBackground
                 )
                 Text(
-                    text = formatShortcutTarget(swipeState.swipeRightTarget, swipeState.allApps, stringResource(R.string.onboarding_swipe_not_set)),
+                    text =
+                            formatShortcutTargetDisplay(
+                                    context = context,
+                                    target = swipeState.swipeRightTarget,
+                                    allApps = swipeState.allApps,
+                                    notSetLabel = notSetSwipe
+                            ),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.secondary
                 )
@@ -505,7 +521,7 @@ private fun SwipeShortcutsStep(
             IconButton(onClick = { onSetSwipeRight(null) }, modifier = Modifier.size(36.dp)) {
                 Icon(
                     Icons.Default.Close,
-                    contentDescription = "Clear",
+                    contentDescription = stringResource(R.string.action_clear),
                     tint = MaterialTheme.colorScheme.error,
                     modifier = Modifier.size(18.dp)
                 )
@@ -553,7 +569,7 @@ private fun OnboardingAppPickerDialog(
                 OutlinedTextField(
                     value = filter,
                     onValueChange = { filter = it },
-                    label = { Text("Search") },
+                    label = { Text(stringResource(R.string.search)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -579,22 +595,6 @@ private fun OnboardingAppPickerDialog(
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.onboarding_swipe_cancel)) } },
         containerColor = Color.Black
     )
-}
-
-private fun formatShortcutTarget(
-    target: ShortcutTarget?,
-    allApps: List<AppInfo>,
-    notSetLabel: String
-): String {
-    return when (target) {
-        null -> notSetLabel
-        is ShortcutTarget.App -> allApps.find { it.packageName == target.packageName }?.label ?: target.packageName
-        is ShortcutTarget.DeepLink -> "Deep link"
-        is ShortcutTarget.LauncherShortcut -> {
-            val appLabel = allApps.find { it.packageName == target.packageName }?.label ?: target.packageName
-            "$appLabel - Shortcut"
-        }
-    }
 }
 
 @Composable

@@ -47,8 +47,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.model.AppShortcutAction
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
@@ -101,7 +103,9 @@ fun EditShortcutsScreen(
             .background(backgroundScrim)
     ) {
         TopAppBar(
-            title = { Text("Edit shortcuts", color = MaterialTheme.colorScheme.onBackground) },
+            title = {
+                Text(stringResource(R.string.edit_shortcuts_title), color = MaterialTheme.colorScheme.onBackground)
+            },
             navigationIcon = {
                 IconButton(onClick = {
                     viewModel.saveEditedRightShortcuts()
@@ -109,7 +113,7 @@ fun EditShortcutsScreen(
                 }) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
+                        contentDescription = stringResource(R.string.action_back),
                         tint = MaterialTheme.colorScheme.onBackground
                     )
                 }
@@ -121,7 +125,7 @@ fun EditShortcutsScreen(
                 }) {
                     Icon(
                         imageVector = Icons.Default.Check,
-                        contentDescription = "Done",
+                        contentDescription = stringResource(R.string.action_done),
                         tint = MaterialTheme.colorScheme.onBackground
                     )
                 }
@@ -131,7 +135,7 @@ fun EditShortcutsScreen(
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
-            placeholder = { Text("Search apps and actions") },
+            placeholder = { Text(stringResource(R.string.search_apps_and_actions)) },
             singleLine = true,
             modifier = Modifier
                 .fillMaxWidth()
@@ -183,6 +187,7 @@ private fun ReorderableShortcutList(
     var draggedIndex by remember { mutableIntStateOf(-1) }
     var dragOffset by remember { mutableFloatStateOf(0f) }
     val itemHeightPx = with(LocalDensity.current) { 56.dp.toPx() }
+    val openAppLabel = stringResource(R.string.shortcut_open_app)
     val resetDragState = {
         draggedIndex = -1
         dragOffset = 0f
@@ -192,7 +197,7 @@ private fun ReorderableShortcutList(
         if (editShortcuts.isNotEmpty()) {
             item(key = "header_checked_shortcuts") {
                 Text(
-                    text = "Selected shortcuts",
+                    text = stringResource(R.string.edit_shortcuts_section_selected),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
@@ -221,7 +226,7 @@ private fun ReorderableShortcutList(
             ) {
                 Icon(
                     imageVector = Icons.Default.DragHandle,
-                    contentDescription = "Drag to reorder",
+                    contentDescription = stringResource(R.string.cd_drag_to_reorder),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier
                         .size(24.dp)
@@ -267,7 +272,7 @@ private fun ReorderableShortcutList(
 
                 Icon(
                     imageVector = MinimalIcons.iconFor(shortcut.iconName),
-                    contentDescription = "Change icon",
+                    contentDescription = stringResource(R.string.cd_change_icon),
                     tint = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier
                         .size(40.dp)
@@ -287,7 +292,7 @@ private fun ReorderableShortcutList(
 
         item(key = "header_unchecked_shortcuts") {
             Text(
-                text = "All app actions",
+                text = stringResource(R.string.edit_shortcuts_section_all_actions),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
@@ -323,7 +328,7 @@ private fun ReorderableShortcutList(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = if (action.actionLabel == AppShortcutAction.OPEN_APP_LABEL) {
-                            "Open app"
+                            openAppLabel
                         } else {
                             action.actionLabel
                         },
@@ -345,7 +350,7 @@ private fun EditShortcutIconPickerDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text("Choose icon", color = MaterialTheme.colorScheme.onBackground)
+            Text(stringResource(R.string.edit_shortcuts_choose_icon), color = MaterialTheme.colorScheme.onBackground)
         },
         text = {
             LazyVerticalGrid(
@@ -373,7 +378,7 @@ private fun EditShortcutIconPickerDialog(
         confirmButton = {},
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", color = MaterialTheme.colorScheme.onBackground)
+                Text(stringResource(R.string.action_cancel), color = MaterialTheme.colorScheme.onBackground)
             }
         },
         containerColor = MaterialTheme.colorScheme.surface

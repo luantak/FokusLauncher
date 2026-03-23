@@ -15,7 +15,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.lu4p.fokuslauncher.ui.util.categoryChipDisplayLabel
 import com.lu4p.fokuslauncher.ui.theme.ChipBackground
 import com.lu4p.fokuslauncher.ui.theme.ChipSelectedBackground
 
@@ -30,6 +32,7 @@ fun CategoryChips(
     modifier: Modifier = Modifier,
     onCategoryLongPress: (String) -> Unit = {}
 ) {
+    val context = LocalContext.current
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier
@@ -48,7 +51,7 @@ fun CategoryChips(
                     onClick = { onCategorySelected(category) },
                     label = {
                         Text(
-                            text = category,
+                            text = categoryChipDisplayLabel(context, category),
                             style = MaterialTheme.typography.labelMedium
                         )
                     },

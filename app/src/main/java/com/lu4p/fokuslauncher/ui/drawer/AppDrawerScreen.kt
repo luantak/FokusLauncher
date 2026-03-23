@@ -55,6 +55,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.model.AppInfo
+import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import com.lu4p.fokuslauncher.ui.components.CategoryChips
 import com.lu4p.fokuslauncher.ui.components.SearchBar
 import java.util.Locale
@@ -169,7 +170,7 @@ fun AppDrawerContent(
     val listState = rememberLazyListState()
     val showProfileSections =
             !uiState.hideAllAppsSection ||
-                    !uiState.selectedCategory.equals("All apps", ignoreCase = true) ||
+                    !uiState.selectedCategory.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true) ||
                     uiState.searchQuery.isNotBlank()
     val anyProfileAppsVisible =
             uiState.filteredProfileSections.any { it.apps.isNotEmpty() }
@@ -222,16 +223,17 @@ fun AppDrawerContent(
             SearchBar(
                     query = uiState.searchQuery,
                     onQueryChange = onSearchQueryChanged,
+                    placeholder = stringResource(R.string.search_apps_hint),
                     focusRequester = focusRequester,
                     modifier = Modifier.fillMaxWidth().padding(end = 40.dp).testTag("search_bar")
             )
 
             // 3-dot menu with dropdown
             Box(modifier = Modifier.align(Alignment.CenterEnd)) {
-                IconButton(onClick = onMenuToggle, modifier = Modifier.testTag("settings_button")) {
+                    IconButton(onClick = onMenuToggle, modifier = Modifier.testTag("settings_button")) {
                     Icon(
                             imageVector = Icons.Default.MoreVert,
-                            contentDescription = "Menu",
+                            contentDescription = stringResource(R.string.cd_menu),
                             tint = MaterialTheme.colorScheme.onBackground
                     )
                 }
@@ -251,8 +253,8 @@ fun AppDrawerContent(
                                     Text(
                                             text =
                                                     if (uiState.isPrivateSpaceUnlocked)
-                                                            "Lock Private Space"
-                                                    else "Unlock Private Space"
+                                                            stringResource(R.string.drawer_private_space_lock)
+                                                    else stringResource(R.string.drawer_private_space_unlock)
                                     )
                                 },
                                 onClick = onPrivateSpaceToggle,
@@ -270,7 +272,7 @@ fun AppDrawerContent(
                     }
 
                     DropdownMenuItem(
-                            text = { Text("Launcher Settings") },
+                            text = { Text(stringResource(R.string.drawer_menu_launcher_settings)) },
                             onClick = onSettingsClick,
                             leadingIcon = {
                                 Icon(
@@ -415,14 +417,14 @@ fun CategoryActionSheet(
     val normalized = renameValue.trim()
     val canRename =
             normalized.isNotBlank() &&
-                    !normalized.equals("All apps", ignoreCase = true) &&
-                    !normalized.equals("Private", ignoreCase = true)
+                    !normalized.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true) &&
+                    !normalized.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true)
     ModalBottomSheet(onDismissRequest = onDismiss) {
         OutlinedTextField(
                 value = renameValue,
                 onValueChange = { renameValue = it },
                 singleLine = true,
-                label = { Text("Category name") },
+                label = { Text(stringResource(R.string.category_name_label)) },
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)
         )
         TextButton(
@@ -430,19 +432,19 @@ fun CategoryActionSheet(
                 onClick = { onRename(renameValue) },
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
         ) {
-            Text("Rename")
+            Text(stringResource(R.string.category_action_rename))
         }
         TextButton(
                 onClick = onEditApps,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
         ) {
-            Text("Edit apps in category")
+            Text(stringResource(R.string.category_action_edit_apps))
         }
         TextButton(
                 onClick = onDelete,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            Text("Remove category", color = MaterialTheme.colorScheme.error)
+            Text(stringResource(R.string.category_action_remove), color = MaterialTheme.colorScheme.error)
         }
     }
 }
