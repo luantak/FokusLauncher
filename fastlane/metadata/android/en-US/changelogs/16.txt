@@ -1,0 +1,1 @@
+German translation, language and locale fixes.
