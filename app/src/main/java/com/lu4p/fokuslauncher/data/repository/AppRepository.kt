@@ -24,6 +24,7 @@ import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import com.lu4p.fokuslauncher.data.model.AppShortcutAction
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
+import com.lu4p.fokuslauncher.data.model.SystemCategoryKeys
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
 import com.lu4p.fokuslauncher.utils.ProfileHeuristics
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -33,6 +34,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 
 /**
  * Repository responsible for loading and caching installed apps from the system, and managing
@@ -378,10 +380,11 @@ constructor(
 
     /** Filters apps by category. Returns all apps if category is blank or "All apps". */
     fun filterByCategory(category: String): List<AppInfo> {
-        if (category.isBlank() || category.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true)) {
+        val normalized = normalizeCategory(category)
+        if (normalized.isBlank() || normalized.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true)) {
             return getInstalledApps()
         }
-        return getInstalledApps().filter { it.category.equals(category, ignoreCase = true) }
+        return getInstalledApps().filter { it.category.equals(normalized, ignoreCase = true) }
     }
 
     // --- Hidden Apps (Room) ---
@@ -423,25 +426,39 @@ constructor(
     // --- App Categories (Room) ---
 
     /** Returns a Flow of all app category assignments. */
-    fun getAllAppCategories(): Flow<List<AppCategoryEntity>> = appDao.getAllAppCategories()
+    fun getAllAppCategories(): Flow<List<AppCategoryEntity>> =
+            appDao.getAllAppCategories().map { categories ->
+                categories.map { entity ->
+                    entity.copy(category = normalizeCategory(entity.category))
+                }
+            }
 
     /** Assigns a category to an app. */
     suspend fun setAppCategory(packageName: String, category: String) {
-        appDao.setAppCategory(AppCategoryEntity(packageName, category.trim()))
+        appDao.setAppCategory(
+                AppCategoryEntity(packageName, normalizeCategory(category))
+        )
     }
 
     /** Returns a Flow of user-defined category names. */
     fun getAllCategoryDefinitions(): Flow<List<AppCategoryDefinitionEntity>> =
-            appDao.getAllCategoryDefinitions()
+            appDao.getAllCategoryDefinitions().map { definitions ->
+                definitions.map { entity ->
+                    entity.copy(name = normalizeCategory(entity.name))
+                }.distinctBy { it.name.lowercase() }
+            }
 
     /** Adds a user-defined category. */
     suspend fun addCategoryDefinition(name: String) {
-        val normalized = name.trim()
+        val normalized = normalizeCategory(name)
         if (normalized.isBlank()) return
         if (normalized.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true)) return
         if (normalized.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true)) return
-        val existing = appDao.getCategoryDefinitionPosition(normalized)
-        if (existing != null) return
+        val existing =
+                appDao.getAllCategoryDefinitions().first().any { entity ->
+                    normalizeCategory(entity.name).equals(normalized, ignoreCase = true)
+                }
+        if (existing) return
         val nextPosition = appDao.getMaxCategoryDefinitionPosition() + 1
         appDao.upsertCategoryDefinition(
                 AppCategoryDefinitionEntity(name = normalized, position = nextPosition)
@@ -450,26 +467,26 @@ constructor(
 
     /** Renames a category across assignments and user-defined categories. */
     suspend fun renameCategory(oldName: String, newName: String) {
-        val oldNormalized = oldName.trim()
-        val newNormalized = newName.trim()
+        val oldNormalized = normalizeCategory(oldName)
+        val newNormalized = normalizeCategory(newName)
         if (oldNormalized.isBlank() || newNormalized.isBlank()) return
         if (oldNormalized.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true)) return
         if (oldNormalized.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true)) return
         if (newNormalized.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true)) return
         if (newNormalized.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true)) return
 
-        val installed = getInstalledApps()
-        val explicitMap = appDao.getAllAppCategories().first().associate { it.packageName to it.category }
-        installed.forEach { app ->
-            val explicit = explicitMap[app.packageName]
-            val effective = explicit ?: app.category
-            if (effective.equals(oldNormalized, ignoreCase = true)) {
-                appDao.setAppCategory(AppCategoryEntity(app.packageName, newNormalized))
+        val rawAssignments = appDao.getAllAppCategories().first()
+        rawAssignments.forEach { assignment ->
+            if (normalizeCategory(assignment.category).equals(oldNormalized, ignoreCase = true)) {
+                appDao.setAppCategory(AppCategoryEntity(assignment.packageName, newNormalized))
             }
         }
 
         appDao.renameCategoryAssignments(oldNormalized, newNormalized)
-        val previousPosition = appDao.getCategoryDefinitionPosition(oldNormalized)
+        val previousPosition =
+                appDao.getAllCategoryDefinitions().first().firstOrNull { entity ->
+                    normalizeCategory(entity.name).equals(oldNormalized, ignoreCase = true)
+                }?.position
         appDao.removeCategoryDefinition(oldNormalized)
         val newPosition = previousPosition ?: (appDao.getMaxCategoryDefinitionPosition() + 1)
         appDao.upsertCategoryDefinition(
@@ -479,18 +496,15 @@ constructor(
 
     /** Deletes a category and removes its app memberships. */
     suspend fun deleteCategory(name: String) {
-        val normalized = name.trim()
+        val normalized = normalizeCategory(name)
         if (normalized.isBlank()) return
         if (normalized.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true)) return
         if (normalized.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true)) return
 
-        val installed = getInstalledApps()
-        val explicitMap = appDao.getAllAppCategories().first().associate { it.packageName to it.category }
-        installed.forEach { app ->
-            val explicit = explicitMap[app.packageName]
-            val effective = explicit ?: app.category
-            if (effective.equals(normalized, ignoreCase = true)) {
-                appDao.setAppCategory(AppCategoryEntity(app.packageName, ""))
+        val rawAssignments = appDao.getAllAppCategories().first()
+        rawAssignments.forEach { assignment ->
+            if (normalizeCategory(assignment.category).equals(normalized, ignoreCase = true)) {
+                appDao.setAppCategory(AppCategoryEntity(assignment.packageName, ""))
             }
         }
 
@@ -501,7 +515,7 @@ constructor(
     suspend fun reorderCategoryDefinitions(categories: List<String>) {
         val normalized =
                 categories.asSequence()
-                        .map { it.trim() }
+                        .map(::normalizeCategory)
                         .filter { it.isNotBlank() }
                         .filterNot { it.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true) }
                         .filterNot { it.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true) }
@@ -514,7 +528,8 @@ constructor(
     }
 
     /** Returns the assigned category for an app, or null. */
-    suspend fun getAppCategory(packageName: String): String? = appDao.getAppCategory(packageName)
+    suspend fun getAppCategory(packageName: String): String? =
+            appDao.getAppCategory(packageName)?.let(::normalizeCategory)
 
     /** Clears all app-specific data (hidden apps, renamed apps, categories). */
     suspend fun clearAllAppData() {
@@ -563,21 +578,23 @@ constructor(
 
     private fun inferCategoryFromApplicationInfo(applicationInfo: ApplicationInfo?): String {
         return inferCategoryFromSystem(applicationInfo)
-                ?: context.getString(R.string.inferred_category_utilities)
+                ?: SystemCategoryKeys.UTILITIES
     }
 
     private fun inferCategoryFromSystem(applicationInfo: ApplicationInfo?): String? {
         if (applicationInfo == null) return null
         return when (applicationInfo.category) {
-            ApplicationInfo.CATEGORY_GAME -> context.getString(R.string.inferred_category_games)
-            ApplicationInfo.CATEGORY_PRODUCTIVITY ->
-                    context.getString(R.string.inferred_category_productivity)
-            ApplicationInfo.CATEGORY_SOCIAL -> context.getString(R.string.inferred_category_social)
+            ApplicationInfo.CATEGORY_GAME -> SystemCategoryKeys.GAMES
+            ApplicationInfo.CATEGORY_PRODUCTIVITY -> SystemCategoryKeys.PRODUCTIVITY
+            ApplicationInfo.CATEGORY_SOCIAL -> SystemCategoryKeys.SOCIAL
             ApplicationInfo.CATEGORY_AUDIO,
             ApplicationInfo.CATEGORY_VIDEO,
             ApplicationInfo.CATEGORY_IMAGE,
-            ApplicationInfo.CATEGORY_NEWS -> context.getString(R.string.inferred_category_media)
+            ApplicationInfo.CATEGORY_NEWS -> SystemCategoryKeys.MEDIA
             else -> null
         }
     }
+
+    private fun normalizeCategory(category: String): String =
+            SystemCategoryKeys.normalize(context, category)
 }

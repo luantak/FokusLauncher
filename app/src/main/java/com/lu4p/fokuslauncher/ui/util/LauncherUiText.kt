@@ -6,6 +6,7 @@ import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.AppShortcutAction
 import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
+import com.lu4p.fokuslauncher.data.model.SystemCategoryKeys
 
 /** Localized label for drawer category chips ([ReservedCategoryNames] keys stay English for storage). */
 fun categoryChipDisplayLabel(context: Context, category: String): String {
@@ -14,7 +15,7 @@ fun categoryChipDisplayLabel(context: Context, category: String): String {
             context.getString(R.string.drawer_filter_all_apps)
         category.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true) ->
             context.getString(R.string.drawer_filter_private)
-        else -> category
+        else -> SystemCategoryKeys.displayLabel(context, category)
     }
 }
 

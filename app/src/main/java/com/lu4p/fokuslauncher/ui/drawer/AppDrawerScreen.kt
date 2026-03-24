@@ -58,6 +58,7 @@ import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import com.lu4p.fokuslauncher.ui.components.CategoryChips
 import com.lu4p.fokuslauncher.ui.components.SearchBar
+import com.lu4p.fokuslauncher.ui.util.categoryChipDisplayLabel
 import java.util.Locale
 import kotlinx.coroutines.delay
 
@@ -416,7 +417,8 @@ fun CategoryActionSheet(
         onEditApps: () -> Unit,
         onDelete: () -> Unit
 ) {
-    var renameValue by remember(category) { mutableStateOf(category) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var renameValue by remember(category) { mutableStateOf(categoryChipDisplayLabel(context, category)) }
     val normalized = renameValue.trim()
     val canRename =
             normalized.isNotBlank() &&

@@ -267,6 +267,7 @@ constructor(
         viewModelScope.launch {
             preferencesManager.setAppLocaleTag(tag)
             AppLocaleHelper.applyLocaleTag(tag)
+            appRepository.invalidateCache()
         }
     }
 

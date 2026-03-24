@@ -105,7 +105,6 @@
     <string name="settings_title">Settings</string>
     <string name="settings_section_appearance">Appearance</string>
     <string name="settings_show_status_bar">Show status bar</string>
-    <string name="settings_show_status_bar_subtitle">Keep the system status icons visible at the top</string>
     <string name="settings_language_label">Language</string>
     <string name="settings_language_system_default">System default</string>
     <string name="settings_set_background_image">Set background image</string>

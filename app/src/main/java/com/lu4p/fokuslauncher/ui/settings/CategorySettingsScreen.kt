@@ -51,6 +51,7 @@ import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
+import com.lu4p.fokuslauncher.ui.util.categoryChipDisplayLabel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -208,7 +209,7 @@ private fun ReorderableCategoryList(
                 Spacer(modifier = Modifier.width(8.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                            text = category,
+                            text = categoryChipDisplayLabel(context, category),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onBackground
                     )
@@ -274,7 +275,12 @@ fun CategoryAppsScreen(
                     .background(backgroundScrim)
     ) {
         TopAppBar(
-                title = { Text(category, color = MaterialTheme.colorScheme.onBackground) },
+                title = {
+                    Text(
+                            categoryChipDisplayLabel(LocalContext.current, category),
+                            color = MaterialTheme.colorScheme.onBackground
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
@@ -316,7 +322,7 @@ fun CategoryAppsScreen(
                 CategoryAppRow(
                         label = app.label,
                         checked = true,
-                        secondary = category,
+                        secondary = categoryChipDisplayLabel(LocalContext.current, category),
                         onToggle = { viewModel.setAppCategory(app.packageName, "") }
                 )
             }
@@ -329,14 +335,14 @@ fun CategoryAppsScreen(
                 )
             }
             items(uncheckedApps, key = { "unchecked_${it.packageName}" }) { app ->
-                val currentCategory =
-                        (uiState.appCategories[app.packageName] ?: app.category).ifBlank {
-                            stringResource(R.string.category_no_category)
-                        }
+                val currentCategory = (uiState.appCategories[app.packageName] ?: app.category)
                 CategoryAppRow(
                         label = app.label,
                         checked = false,
-                        secondary = currentCategory,
+                        secondary =
+                                currentCategory.ifBlank {
+                                    stringResource(R.string.category_no_category)
+                                }.let { categoryChipDisplayLabel(LocalContext.current, it) },
                         onToggle = { viewModel.setAppCategory(app.packageName, category) }
                 )
             }

@@ -13,6 +13,7 @@ import android.os.Build
 import android.provider.AlarmClock
 import android.provider.CalendarContract
 import android.provider.Settings
+import android.text.format.DateFormat
 import android.widget.Toast
 import androidx.core.net.toUri
 import androidx.core.content.ContextCompat
@@ -419,11 +420,11 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             while (true) {
                 val now = Date()
-                val timeFormat = SimpleDateFormat("H:mm", Locale.getDefault())
-                val dateFormat = SimpleDateFormat("EEE. d MMM.", Locale.getDefault())
+                val locale = Locale.getDefault()
+                val timeFormat = SimpleDateFormat("H:mm", locale)
                 _uiState.value = _uiState.value.copy(
                     currentTime = timeFormat.format(now),
-                    currentDate = dateFormat.format(now)
+                    currentDate = formatCompactDate(now, locale)
                 )
                 delay(1_000)
             }
@@ -659,4 +660,13 @@ class HomeViewModel @Inject constructor(
         } catch (_: Exception) { }
     }
 
+}
+
+internal fun formatCompactDate(date: Date, locale: Locale): String {
+    val pattern = DateFormat.getBestDateTimePattern(locale, "EEE d MMM")
+    return SimpleDateFormat(pattern, locale)
+        .format(date)
+        .replace(",", "")
+        .replace(Regex("\\s+"), " ")
+        .trim()
 }

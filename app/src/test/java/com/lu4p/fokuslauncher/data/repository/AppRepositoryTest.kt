@@ -12,6 +12,7 @@ import android.os.UserManager
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.database.dao.AppDao
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryDefinitionEntity
+import com.lu4p.fokuslauncher.data.database.entity.AppCategoryEntity
 import com.lu4p.fokuslauncher.data.database.entity.HiddenAppEntity
 import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
@@ -20,6 +21,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -417,12 +419,41 @@ class AppRepositoryTest {
     }
 
     @Test
+    fun `setAppCategory normalizes localized inferred category names`() = runTest {
+        val realContext = RuntimeEnvironment.getApplication().applicationContext as Context
+        val realRepository = AppRepository(realContext, appDao, PrivateSpaceManager(realContext))
+
+        realRepository.setAppCategory("com.lu4p.app1", "Produktivität")
+
+        coVerify {
+            appDao.setAppCategory(
+                    AppCategoryEntity(
+                            "com.lu4p.app1",
+                            "Productivity"
+                    )
+            )
+        }
+    }
+
+    @Test
     fun `getAppCategory returns category from DAO`() = runTest {
         coEvery { appDao.getAppCategory("com.lu4p.app1") } returns "Social"
 
         val result = repository.getAppCategory("com.lu4p.app1")
 
         assertEquals("Social", result)
+    }
+
+    @Test
+    fun `getAllAppCategories normalizes legacy localized inferred categories`() = runTest {
+        val realContext = RuntimeEnvironment.getApplication().applicationContext as Context
+        every { appDao.getAllAppCategories() } returns
+                flowOf(listOf(AppCategoryEntity("com.lu4p.app1", "Spiele")))
+        val realRepository = AppRepository(realContext, appDao, PrivateSpaceManager(realContext))
+
+        val result = realRepository.getAllAppCategories().first()
+
+        assertEquals("Games", result.single().category)
     }
 
     @Test
@@ -436,7 +467,7 @@ class AppRepositoryTest {
 
     @Test
     fun `addCategoryDefinition stores normalized category name`() = runTest {
-        coEvery { appDao.getCategoryDefinitionPosition("My Category") } returns null
+        every { appDao.getAllCategoryDefinitions() } returns flowOf(emptyList())
         coEvery { appDao.getMaxCategoryDefinitionPosition() } returns 3
 
         repository.addCategoryDefinition("  My Category  ")

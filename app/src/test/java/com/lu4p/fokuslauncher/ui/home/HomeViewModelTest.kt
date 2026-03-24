@@ -7,6 +7,7 @@ import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.os.BatteryManager
+import android.text.format.DateFormat
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.model.AppInfo
@@ -37,6 +38,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -47,6 +51,7 @@ class HomeViewModelTest {
     private lateinit var preferencesManager: PreferencesManager
     private lateinit var weatherRepository: WeatherRepository
     private val testDispatcher = StandardTestDispatcher()
+    private var originalLocale: Locale = Locale.getDefault()
 
     private val testFavorites = listOf(
         FavoriteApp(label = "Music", packageName = "com.lu4p.music", iconName = "music"),
@@ -57,6 +62,7 @@ class HomeViewModelTest {
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
+        originalLocale = Locale.getDefault()
 
         context = mockk(relaxed = true)
         appRepository = mockk(relaxed = true)
@@ -90,6 +96,7 @@ class HomeViewModelTest {
 
     @After
     fun tearDown() {
+        Locale.setDefault(originalLocale)
         Dispatchers.resetMain()
     }
 
@@ -148,6 +155,48 @@ class HomeViewModelTest {
 
         val state = viewModel.uiState.value
         assertTrue(state.currentDate.isNotEmpty())
+    }
+
+    @Test
+    fun `formatted date does not duplicate dots in German`() {
+        val date = Date()
+        val pattern = DateFormat.getBestDateTimePattern(Locale.GERMAN, "EEE d MMM")
+        val expected = SimpleDateFormat(pattern, Locale.GERMAN).format(date).replace(",", "").replace(Regex("\\s+"), " ").trim()
+
+        val formatted = formatCompactDate(date, Locale.GERMAN)
+
+        assertEquals(expected, formatted)
+    }
+
+    @Test
+    fun `formatted date uses locale best pattern in Polish`() {
+        val polish = Locale.forLanguageTag("pl")
+        val date = Date()
+        val pattern = DateFormat.getBestDateTimePattern(polish, "EEE d MMM")
+        val expected = SimpleDateFormat(pattern, polish).format(date).replace(",", "").replace(Regex("\\s+"), " ").trim()
+
+        val formatted = formatCompactDate(date, polish)
+
+        assertEquals(expected, formatted)
+    }
+
+    @Test
+    fun `formatted date uses locale best pattern in English`() {
+        val english = Locale.ENGLISH
+        val date = Date()
+        val pattern = DateFormat.getBestDateTimePattern(english, "EEE d MMM")
+        val expected = SimpleDateFormat(pattern, english).format(date).replace(",", "").replace(Regex("\\s+"), " ").trim()
+
+        val formatted = formatCompactDate(date, english)
+
+        assertEquals(expected, formatted)
+    }
+
+    @Test
+    fun `formatted date does not contain commas`() {
+        val formatted = formatCompactDate(Date(), Locale.ENGLISH)
+
+        assertFalse(formatted.contains(","))
     }
 
     @Test

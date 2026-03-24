@@ -142,7 +142,6 @@ fun SettingsScreen(
             item {
                 SettingsToggleRow(
                         label = stringResource(R.string.settings_show_status_bar),
-                        subtitle = stringResource(R.string.settings_show_status_bar_subtitle),
                         checked = uiState.showStatusBar,
                         onCheckedChange = { viewModel.setShowStatusBar(it) }
                 )
@@ -325,11 +324,6 @@ fun SettingsScreen(
                     }
                 }
             }
-
-            item { SettingsDivider() }
-
-            // ========== SWIPE SHORTCUTS ==========
-            item { SectionHeader(stringResource(R.string.settings_section_swipe)) }
 
             item {
                 ShortcutTargetRow(
@@ -579,9 +573,9 @@ fun SettingsScreen(
 @Composable
 private fun SettingsToggleRow(
         label: String,
-        subtitle: String,
         checked: Boolean,
-        onCheckedChange: (Boolean) -> Unit
+        onCheckedChange: (Boolean) -> Unit,
+        subtitle: String? = null
 ) {
     Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -596,12 +590,14 @@ private fun SettingsToggleRow(
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onBackground
             )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.secondary
-            )
+            if (!subtitle.isNullOrEmpty()) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.secondary
+                )
+            }
         }
         Spacer(Modifier.width(16.dp))
         Switch(checked = checked, onCheckedChange = onCheckedChange)
@@ -656,7 +652,7 @@ private fun AppLanguageDropdown(
         onTagSelected: (String) -> Unit
 ) {
     val systemDefaultLabel = stringResource(R.string.settings_language_system_default)
-    val supportedLocaleTags = remember { listOf("en", "pl") }
+    val supportedLocaleTags = remember { listOf("en", "de", "pl") }
     val options =
             remember(systemDefaultLabel) {
                 buildList {
