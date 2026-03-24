@@ -10,8 +10,6 @@ on:
   release:
     types:
       - published
-      - released
-      - prereleased
 
 jobs:
   build:
