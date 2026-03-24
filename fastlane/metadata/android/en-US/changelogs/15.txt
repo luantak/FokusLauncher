@@ -1,0 +1,1 @@
+Polish translation, add in-app language switcher in settings, and hide the default profile label.
