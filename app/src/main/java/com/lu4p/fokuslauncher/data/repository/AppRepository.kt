@@ -568,9 +568,6 @@ constructor(
 
     private fun inferCategoryFromSystem(applicationInfo: ApplicationInfo?): String? {
         if (applicationInfo == null) return null
-        if ((applicationInfo.flags and ApplicationInfo.FLAG_IS_GAME) != 0) {
-            return context.getString(R.string.inferred_category_games)
-        }
         return when (applicationInfo.category) {
             ApplicationInfo.CATEGORY_GAME -> context.getString(R.string.inferred_category_games)
             ApplicationInfo.CATEGORY_PRODUCTIVITY ->
