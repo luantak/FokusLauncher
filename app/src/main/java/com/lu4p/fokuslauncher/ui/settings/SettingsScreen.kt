@@ -70,6 +70,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.background
 import com.lu4p.fokuslauncher.R
+import java.util.Locale
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -144,6 +145,13 @@ fun SettingsScreen(
                         subtitle = stringResource(R.string.settings_show_status_bar_subtitle),
                         checked = uiState.showStatusBar,
                         onCheckedChange = { viewModel.setShowStatusBar(it) }
+                )
+            }
+
+            item {
+                AppLanguageDropdown(
+                        currentTag = uiState.appLocaleTag,
+                        onTagSelected = { tag -> viewModel.setAppLocaleTag(tag) }
                 )
             }
 
@@ -627,6 +635,99 @@ private fun settingsPickerMenuItemColors() =
                 leadingIconColor = MaterialTheme.colorScheme.onBackground,
                 trailingIconColor = MaterialTheme.colorScheme.onBackground,
         )
+
+/**
+ * Endonym: name of the language written in that language (e.g. English, Polski), independent of
+ * app UI locale.
+ */
+private fun languageAutonym(localeTag: String): String {
+    val locale = Locale.forLanguageTag(localeTag)
+    val raw = locale.getDisplayLanguage(locale).trim()
+    if (raw.isBlank()) return localeTag
+    return raw.replaceFirstChar { ch ->
+        if (ch.isLowerCase()) ch.titlecase(locale) else ch.toString()
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AppLanguageDropdown(
+        currentTag: String,
+        onTagSelected: (String) -> Unit
+) {
+    val systemDefaultLabel = stringResource(R.string.settings_language_system_default)
+    val supportedLocaleTags = remember { listOf("en", "pl") }
+    val options =
+            remember(systemDefaultLabel) {
+                buildList {
+                    add("" to systemDefaultLabel)
+                    supportedLocaleTags.forEach { tag -> add(tag to languageAutonym(tag)) }
+                }
+            }
+    var expanded by remember { mutableStateOf(false) }
+    val selectedDisplayText =
+            options.find { (tag, _) -> tag == currentTag }?.second
+                    ?: if (currentTag.isBlank()) systemDefaultLabel else languageAutonym(currentTag)
+
+    Column(
+            modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 12.dp)
+    ) {
+        Text(
+                text = stringResource(R.string.settings_language_label),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onBackground
+        )
+        Spacer(Modifier.height(12.dp))
+        ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+            OutlinedTextField(
+                    modifier =
+                            Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
+                                    .fillMaxWidth(),
+                    value = selectedDisplayText,
+                    onValueChange = {},
+                    readOnly = true,
+                    singleLine = true,
+                    shape = SettingsPickerCorner,
+                    textStyle = MaterialTheme.typography.bodyLarge,
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                    colors = settingsPickerOutlinedFieldColors()
+            )
+            ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                    shape = SettingsPickerCorner,
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    tonalElevation = 0.dp,
+                    shadowElevation = 8.dp,
+                    border =
+                            BorderStroke(
+                                    width = 1.dp,
+                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.14f)
+                            ),
+            ) {
+                options.forEach { (storageTag, label) ->
+                    DropdownMenuItem(
+                            text = {
+                                Text(
+                                        text = label,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onBackground,
+                                )
+                            },
+                            onClick = {
+                                onTagSelected(storageTag)
+                                expanded = false
+                            },
+                            colors = settingsPickerMenuItemColors(),
+                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                    )
+                }
+            }
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -11,6 +11,7 @@ import com.lu4p.fokuslauncher.data.font.SystemFontFamiliesProvider
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.repository.AppRepository
+import com.lu4p.fokuslauncher.data.util.AppLocaleHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import android.app.WallpaperManager
 import android.content.Context
@@ -44,6 +45,8 @@ data class SettingsUiState(
         val hideAllAppsSection: Boolean = false,
         val homeAlignment: HomeAlignment = HomeAlignment.LEFT,
         val launcherFontFamilyName: String = "",
+        /** BCP-47 tag; empty = system default. */
+        val appLocaleTag: String = "",
         val allApps: List<AppInfo> = emptyList()
 )
 
@@ -137,7 +140,11 @@ constructor(
                     .combine(preferencesManager.launcherFontFamilyFlow) { wds, fontFamilyName ->
                         Triple(wds.first, wds.second, fontFamilyName)
                     }
-                    .combine(preferencesManager.homeAlignmentFlow) { triple, homeAlignment ->
+                    .combine(preferencesManager.appLocaleTagFlow) { triple, appLocaleTag ->
+                        triple to appLocaleTag
+                    }
+                    .combine(preferencesManager.homeAlignmentFlow) { pair, homeAlignment ->
+                        val (triple, appLocaleTag) = pair
                         val (weatherWithSettingsState, hideAllAppsSection, fontFamilyName) = triple
                         val (weatherWithWidgets, autoOpenDrawerKeyboard) = weatherWithSettingsState
                         val (weatherWithStatusBar, showHomeScreenWidgets) = weatherWithWidgets
@@ -166,6 +173,7 @@ constructor(
                                 hideAllAppsSection = hideAllAppsSection,
                                 homeAlignment = homeAlignment,
                                 launcherFontFamilyName = fontFamilyName,
+                                appLocaleTag = appLocaleTag,
                                 allApps = allApps
                         )
                     }
@@ -253,6 +261,13 @@ constructor(
 
     fun setLauncherFontFamilyName(familyName: String) {
         viewModelScope.launch { preferencesManager.setLauncherFontFamilyName(familyName) }
+    }
+
+    fun setAppLocaleTag(tag: String) {
+        viewModelScope.launch {
+            preferencesManager.setAppLocaleTag(tag)
+            AppLocaleHelper.applyLocaleTag(tag)
+        }
     }
 
     /** Clears all app state (preferences + database), equivalent to clearing storage. */

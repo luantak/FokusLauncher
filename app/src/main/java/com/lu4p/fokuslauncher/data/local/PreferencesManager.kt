@@ -1,12 +1,10 @@
 package com.lu4p.fokuslauncher.data.local
 
 import android.content.Context
-import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.model.LauncherFontPreferences
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
@@ -18,9 +16,6 @@ import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-
-private val Context.dataStore: DataStore<Preferences> by
-        preferencesDataStore(name = "fokus_launcher_prefs")
 
 @Singleton
 class PreferencesManager @Inject constructor(@param:ApplicationContext private val context: Context) {
@@ -43,6 +38,8 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         private val WEATHER_LOCATION_OPTED_OUT_KEY = booleanPreferencesKey("weather_location_opted_out")
         private val HOME_ALIGNMENT_KEY = stringPreferencesKey("home_alignment")
         private val LAUNCHER_FONT_FAMILY_KEY = stringPreferencesKey("launcher_font_family")
+        /** BCP-47 tag (e.g. en, pl). Empty = follow system. Sync with AppLocaleHelper. */
+        private val APP_LOCALE_TAG_KEY = stringPreferencesKey("app_locale_tag")
 
         /**
          * Format: "label;packageName;iconName" entries separated by "|" Falls back to legacy
@@ -60,13 +57,13 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
     // --- Favorites ---
 
     val favoritesFlow: Flow<List<FavoriteApp>> =
-            context.dataStore.data.map { prefs ->
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
                 val raw = prefs[FAVORITES_KEY] ?: DEFAULT_FAVORITES
                 parseFavorites(raw)
             }
 
     suspend fun setFavorites(favorites: List<FavoriteApp>) {
-        context.dataStore.edit { prefs ->
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
             prefs[FAVORITES_KEY] =
                     favorites.joinToString("|") {
                         "${it.label};${it.packageName};${it.iconName};${it.iconPackage}"
@@ -77,12 +74,12 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
     // --- Right-side shortcuts ---
 
     val rightSideShortcutsFlow: Flow<List<HomeShortcut>> =
-            context.dataStore.data.map { prefs ->
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
                 parseRightSideShortcuts(prefs[RIGHT_SIDE_SHORTCUTS_KEY] ?: "")
             }
 
     suspend fun ensureRightSideShortcutsInitialized() {
-        context.dataStore.edit { prefs ->
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
             if (!prefs.contains(RIGHT_SIDE_SHORTCUTS_KEY)) {
                 val defaultShortcuts =
                         listOf(
@@ -97,7 +94,7 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
     }
 
     suspend fun setRightSideShortcuts(shortcuts: List<HomeShortcut>) {
-        context.dataStore.edit { prefs ->
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
             prefs[RIGHT_SIDE_SHORTCUTS_KEY] = serializeRightSideShortcuts(shortcuts)
         }
     }
@@ -105,91 +102,91 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
     // --- Swipe gestures ---
 
     val swipeLeftTargetFlow: Flow<ShortcutTarget?> =
-            context.dataStore.data.map { prefs ->
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
                 ShortcutTarget.decode(prefs[SWIPE_LEFT_KEY] ?: "")
             }
 
     val swipeRightTargetFlow: Flow<ShortcutTarget?> =
-            context.dataStore.data.map { prefs ->
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
                 ShortcutTarget.decode(prefs[SWIPE_RIGHT_KEY] ?: "")
             }
 
     suspend fun setSwipeLeftTarget(target: ShortcutTarget?) {
-        context.dataStore.edit { prefs -> prefs[SWIPE_LEFT_KEY] = ShortcutTarget.encode(target) }
+        context.fokusLauncherPreferencesDataStore.edit { prefs -> prefs[SWIPE_LEFT_KEY] = ShortcutTarget.encode(target) }
     }
 
     suspend fun setSwipeRightTarget(target: ShortcutTarget?) {
-        context.dataStore.edit { prefs -> prefs[SWIPE_RIGHT_KEY] = ShortcutTarget.encode(target) }
+        context.fokusLauncherPreferencesDataStore.edit { prefs -> prefs[SWIPE_RIGHT_KEY] = ShortcutTarget.encode(target) }
     }
 
     // --- Preferred weather app ---
 
     val preferredWeatherAppFlow: Flow<String> =
-            context.dataStore.data.map { prefs -> prefs[PREFERRED_WEATHER_APP_KEY] ?: "" }
+            context.fokusLauncherPreferencesDataStore.data.map { prefs -> prefs[PREFERRED_WEATHER_APP_KEY] ?: "" }
 
     suspend fun setPreferredWeatherApp(packageName: String) {
-        context.dataStore.edit { prefs -> prefs[PREFERRED_WEATHER_APP_KEY] = packageName }
+        context.fokusLauncherPreferencesDataStore.edit { prefs -> prefs[PREFERRED_WEATHER_APP_KEY] = packageName }
     }
 
     // --- System UI ---
 
     val showStatusBarFlow: Flow<Boolean> =
-            context.dataStore.data.map { prefs -> prefs[SHOW_STATUS_BAR_KEY] ?: false }
+            context.fokusLauncherPreferencesDataStore.data.map { prefs -> prefs[SHOW_STATUS_BAR_KEY] ?: false }
 
     suspend fun setShowStatusBar(show: Boolean) {
-        context.dataStore.edit { prefs -> prefs[SHOW_STATUS_BAR_KEY] = show }
+        context.fokusLauncherPreferencesDataStore.edit { prefs -> prefs[SHOW_STATUS_BAR_KEY] = show }
     }
 
     val showHomeScreenWidgetsFlow: Flow<Boolean> =
-            context.dataStore.data.map { prefs ->
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
                 prefs[SHOW_HOME_SCREEN_WIDGETS_KEY]
                         ?: prefs[SHOW_HOME_SCREEN_INFO_KEY]
                         ?: true
             }
 
     suspend fun setShowHomeScreenWidgets(show: Boolean) {
-        context.dataStore.edit { prefs ->
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
             prefs[SHOW_HOME_SCREEN_WIDGETS_KEY] = show
             prefs.remove(SHOW_HOME_SCREEN_INFO_KEY)
         }
     }
 
     val autoOpenDrawerKeyboardFlow: Flow<Boolean> =
-            context.dataStore.data.map { prefs -> prefs[AUTO_OPEN_DRAWER_KEYBOARD_KEY] ?: true }
+            context.fokusLauncherPreferencesDataStore.data.map { prefs -> prefs[AUTO_OPEN_DRAWER_KEYBOARD_KEY] ?: true }
 
     suspend fun setAutoOpenDrawerKeyboard(enabled: Boolean) {
-        context.dataStore.edit { prefs -> prefs[AUTO_OPEN_DRAWER_KEYBOARD_KEY] = enabled }
+        context.fokusLauncherPreferencesDataStore.edit { prefs -> prefs[AUTO_OPEN_DRAWER_KEYBOARD_KEY] = enabled }
     }
 
     val hideAllAppsSectionFlow: Flow<Boolean> =
-            context.dataStore.data.map { prefs -> prefs[HIDE_ALL_APPS_SECTION_KEY] ?: false }
+            context.fokusLauncherPreferencesDataStore.data.map { prefs -> prefs[HIDE_ALL_APPS_SECTION_KEY] ?: false }
 
     suspend fun setHideAllAppsSection(hide: Boolean) {
-        context.dataStore.edit { prefs -> prefs[HIDE_ALL_APPS_SECTION_KEY] = hide }
+        context.fokusLauncherPreferencesDataStore.edit { prefs -> prefs[HIDE_ALL_APPS_SECTION_KEY] = hide }
     }
 
     // --- Onboarding ---
 
     val hasCompletedOnboardingFlow: Flow<Boolean> =
-            context.dataStore.data.map { prefs ->
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
                 prefs[HAS_COMPLETED_ONBOARDING_KEY] ?: false
             }
 
     suspend fun setHasCompletedOnboarding(completed: Boolean) {
-        context.dataStore.edit { prefs ->
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
             prefs[HAS_COMPLETED_ONBOARDING_KEY] = completed
             if (completed) prefs.remove(ONBOARDING_REACHED_SET_DEFAULT_KEY)
         }
     }
 
     suspend fun setOnboardingReachedSetDefault(reached: Boolean) {
-        context.dataStore.edit { prefs ->
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
             prefs[ONBOARDING_REACHED_SET_DEFAULT_KEY] = reached
         }
     }
 
     suspend fun getOnboardingReachedSetDefault(): Boolean {
-        return context.dataStore.data.map { prefs ->
+        return context.fokusLauncherPreferencesDataStore.data.map { prefs ->
             prefs[ONBOARDING_REACHED_SET_DEFAULT_KEY] ?: false
         }.first()
     }
@@ -197,18 +194,18 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
     // --- Home alignment ---
 
     val homeAlignmentFlow: Flow<HomeAlignment> =
-            context.dataStore.data.map { prefs ->
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
                 HomeAlignment.fromString(prefs[HOME_ALIGNMENT_KEY] ?: HomeAlignment.LEFT.name)
             }
 
     suspend fun setHomeAlignment(alignment: HomeAlignment) {
-        context.dataStore.edit { prefs -> prefs[HOME_ALIGNMENT_KEY] = alignment.name }
+        context.fokusLauncherPreferencesDataStore.edit { prefs -> prefs[HOME_ALIGNMENT_KEY] = alignment.name }
     }
 
     // --- Launcher text (system fonts + scale) ---
 
     val launcherFontFamilyFlow: Flow<String> =
-            context.dataStore.data.map { prefs ->
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
                 LauncherFontPreferences.normalizeFontFamilyFromStorage(
                         prefs[LAUNCHER_FONT_FAMILY_KEY]
                 )
@@ -216,28 +213,41 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
 
     suspend fun setLauncherFontFamilyName(familyName: String) {
         val trimmed = familyName.trim()
-        context.dataStore.edit { prefs ->
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
             if (trimmed.isEmpty()) prefs.remove(LAUNCHER_FONT_FAMILY_KEY)
             else prefs[LAUNCHER_FONT_FAMILY_KEY] = trimmed
+        }
+    }
+
+    // --- App language (per-app locale) ---
+
+    val appLocaleTagFlow: Flow<String> =
+            context.fokusLauncherPreferencesDataStore.data.map { prefs -> prefs[APP_LOCALE_TAG_KEY] ?: "" }
+
+    suspend fun setAppLocaleTag(tag: String) {
+        val trimmed = tag.trim()
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            if (trimmed.isEmpty()) prefs.remove(APP_LOCALE_TAG_KEY)
+            else prefs[APP_LOCALE_TAG_KEY] = trimmed
         }
     }
 
     // --- Weather location opt-out ---
 
     val weatherLocationOptedOutFlow: Flow<Boolean> =
-            context.dataStore.data.map { prefs ->
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
                 prefs[WEATHER_LOCATION_OPTED_OUT_KEY] ?: false
             }
 
     suspend fun setWeatherLocationOptedOut(optedOut: Boolean) {
-        context.dataStore.edit { prefs ->
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
             prefs[WEATHER_LOCATION_OPTED_OUT_KEY] = optedOut
         }
     }
 
     /** Clears all preferences, equivalent to clearing app storage. */
     suspend fun clearAll() {
-        context.dataStore.edit { prefs -> prefs.clear() }
+        context.fokusLauncherPreferencesDataStore.edit { prefs -> prefs.clear() }
     }
 
     // --- Parsing ---

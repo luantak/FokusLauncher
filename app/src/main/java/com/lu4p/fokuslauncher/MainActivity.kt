@@ -6,8 +6,8 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.view.View
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
@@ -20,6 +20,7 @@ import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.ui.navigation.FokusNavGraph
 import com.lu4p.fokuslauncher.ui.theme.FokusLauncherTheme
+import com.lu4p.fokuslauncher.ui.util.ProvideAppLocale
 import com.lu4p.fokuslauncher.ui.theme.composeFontFamilyFromStoredName
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -29,7 +30,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var preferencesManager: PreferencesManager
@@ -65,10 +66,15 @@ class MainActivity : ComponentActivity() {
             val launcherFontFamilyName by produceState("") {
                 preferencesManager.launcherFontFamilyFlow.collect { value = it }
             }
-            FokusLauncherTheme(
-                    fontFamily = composeFontFamilyFromStoredName(launcherFontFamilyName)
-            ) {
-                FokusNavGraph()
+            val appLocaleTag by produceState("") {
+                preferencesManager.appLocaleTagFlow.collect { value = it }
+            }
+            ProvideAppLocale(localeTag = appLocaleTag) {
+                FokusLauncherTheme(
+                        fontFamily = composeFontFamilyFromStoredName(launcherFontFamilyName)
+                ) {
+                    FokusNavGraph()
+                }
             }
         }
     }
