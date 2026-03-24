@@ -298,27 +298,30 @@ fun AppDrawerContent(
         // App list: one section per Android profile, then Private Space (deprioritized)
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize().testTag("app_list")) {
             if (showProfileSections) {
-                var isFirstProfileSection = true
+                var hasEmittedProfileListContent = false
                 for (section in uiState.filteredProfileSections) {
                     if (section.apps.isEmpty()) continue
-                    if (!isFirstProfileSection) {
-                        item(key = "div_profile_${section.id}") {
-                            HorizontalDivider(
-                                    modifier =
-                                            Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
-                                    color = MaterialTheme.colorScheme.outlineVariant
+                    val showSectionLabel = section.id != "owner"
+                    if (showSectionLabel) {
+                        if (hasEmittedProfileListContent) {
+                            item(key = "div_profile_${section.id}") {
+                                HorizontalDivider(
+                                        modifier =
+                                                Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                                        color = MaterialTheme.colorScheme.outlineVariant
+                                )
+                            }
+                        }
+                        item(key = "hdr_profile_${section.id}") {
+                            Text(
+                                    text = section.title.uppercase(Locale.getDefault()),
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)
                             )
                         }
                     }
-                    isFirstProfileSection = false
-                    item(key = "hdr_profile_${section.id}") {
-                        Text(
-                                text = section.title.uppercase(Locale.getDefault()),
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)
-                        )
-                    }
+                    hasEmittedProfileListContent = true
                     items(
                             items = section.apps,
                             key = { app ->

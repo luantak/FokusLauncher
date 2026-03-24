@@ -249,4 +249,63 @@ class AppDrawerScreenTest {
             assertEquals(0, it.size)
         }
     }
+
+    @Test
+    fun appDrawer_hidesProfileHeader_whenOnlyPersonalSectionHasApps() {
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                AppDrawerContent(
+                    uiState = singleProfileState(testApps),
+                    onSearchQueryChanged = {},
+                    onCategorySelected = {},
+                    onAppClick = {},
+                    onSettingsClick = {}
+                )
+            }
+        }
+
+        composeTestRule.onAllNodesWithText("PERSONAL").fetchSemanticsNodes().also {
+            assertEquals(0, it.size)
+        }
+    }
+
+    @Test
+    fun appDrawer_showsNonOwnerProfileLabel_whenPersonalAndWorkSectionsHaveApps() {
+        val personalApps = listOf(AppInfo("com.lu4p.atom", "Atom", null))
+        val workApps = listOf(AppInfo("com.work.slack", "Slack", null))
+
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                AppDrawerContent(
+                    uiState =
+                        AppDrawerUiState(
+                            allApps = personalApps + workApps,
+                            filteredProfileSections =
+                                listOf(
+                                    DrawerProfileSectionUi(
+                                        id = "owner",
+                                        title = "Personal",
+                                        apps = personalApps
+                                    ),
+                                    DrawerProfileSectionUi(
+                                        id = "u_1",
+                                        title = "Work profile",
+                                        apps = workApps
+                                    )
+                                ),
+                            categories = listOf("All apps", "Productivity", "Social")
+                        ),
+                    onSearchQueryChanged = {},
+                    onCategorySelected = {},
+                    onAppClick = {},
+                    onSettingsClick = {}
+                )
+            }
+        }
+
+        composeTestRule.onAllNodesWithText("PERSONAL").fetchSemanticsNodes().also {
+            assertEquals(0, it.size)
+        }
+        composeTestRule.onNodeWithText("WORK PROFILE").assertIsDisplayed()
+    }
 }
