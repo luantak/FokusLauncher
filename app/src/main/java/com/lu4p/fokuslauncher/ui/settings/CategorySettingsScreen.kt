@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -158,6 +159,7 @@ private fun ReorderableCategoryList(
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         items(count = categories.size, key = { categories[it] }) { index ->
             val category = categories[index]
+            val count = counts[category] ?: 0
             val currentIndex by rememberUpdatedState(index)
             val offset = if (index == draggedIndex) dragOffset.coerceIn(-itemHeightPx, itemHeightPx) else 0f
             Row(
@@ -214,12 +216,7 @@ private fun ReorderableCategoryList(
                             color = MaterialTheme.colorScheme.onBackground
                     )
                     Text(
-                            text =
-                                    context.resources.getQuantityString(
-                                            R.plurals.category_app_count,
-                                            counts[category] ?: 0,
-                                            counts[category] ?: 0
-                                    ),
+                            text = pluralStringResource(R.plurals.category_app_count, count, count),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.secondary
                     )
@@ -248,6 +245,7 @@ fun CategoryAppsScreen(
         backgroundScrim: Color = FokusBackdrop.ScrimColorWithoutBlur
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     var searchQuery by remember { mutableStateOf("") }
     val checkedPackages = remember(uiState.allApps, uiState.appCategories, category) {
         uiState.allApps.filter { app ->
@@ -277,7 +275,7 @@ fun CategoryAppsScreen(
         TopAppBar(
                 title = {
                     Text(
-                            categoryChipDisplayLabel(LocalContext.current, category),
+                            categoryChipDisplayLabel(context, category),
                             color = MaterialTheme.colorScheme.onBackground
                     )
                 },
@@ -322,7 +320,7 @@ fun CategoryAppsScreen(
                 CategoryAppRow(
                         label = app.label,
                         checked = true,
-                        secondary = categoryChipDisplayLabel(LocalContext.current, category),
+                        secondary = categoryChipDisplayLabel(context, category),
                         onToggle = { viewModel.setAppCategory(app.packageName, "") }
                 )
             }
@@ -342,7 +340,7 @@ fun CategoryAppsScreen(
                         secondary =
                                 currentCategory.ifBlank {
                                     stringResource(R.string.category_no_category)
-                                }.let { categoryChipDisplayLabel(LocalContext.current, it) },
+                                }.let { categoryChipDisplayLabel(context, it) },
                         onToggle = { viewModel.setAppCategory(app.packageName, category) }
                 )
             }

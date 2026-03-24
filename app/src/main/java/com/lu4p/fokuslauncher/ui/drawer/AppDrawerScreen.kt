@@ -183,7 +183,7 @@ fun AppDrawerContent(
     // Back button closes the drawer through onClose (which also clears search)
     BackHandler { closeWithFocusReset() }
 
-    // Auto-focus the search bar and show keyboard when the drawer opens
+    // Autofocus the search bar and show keyboard when the drawer opens
     LaunchedEffect(uiState.autoOpenKeyboard) {
         if (!uiState.autoOpenKeyboard) return@LaunchedEffect
         delay(200)

@@ -68,7 +68,7 @@ fun EditShortcutsScreen(
     val editShortcuts by viewModel.editRightShortcuts.collectAsStateWithLifecycle()
     val allActions by viewModel.allShortcutActions.collectAsStateWithLifecycle()
     var searchQuery by remember { mutableStateOf("") }
-    var iconPickerForIndex by remember { mutableStateOf<Int?>(null) }
+    val iconPickerForIndex = remember { mutableStateOf<Int?>(null) }
 
     val selectedIds = remember(editShortcuts) {
         editShortcuts.map { ShortcutTarget.encode(it.target) }.toSet()
@@ -156,20 +156,19 @@ fun EditShortcutsScreen(
             },
             onToggleUnchecked = { action -> viewModel.toggleRightShortcut(action) },
             onReorder = { from, to -> viewModel.reorderRightShortcut(from, to) },
-            onOpenIconPicker = { index -> iconPickerForIndex = index },
+            onOpenIconPicker = { index -> iconPickerForIndex.value = index },
             formatCheckedLabel = { target -> viewModel.formatShortcutTarget(target) }
         )
     }
 
-    val currentPickerIndex = iconPickerForIndex
-    if (currentPickerIndex != null) {
+    iconPickerForIndex.value?.let { pickerIndex ->
         EditShortcutIconPickerDialog(
-            currentIconName = editShortcuts.getOrNull(currentPickerIndex)?.iconName ?: "circle",
+            currentIconName = editShortcuts.getOrNull(pickerIndex)?.iconName ?: "circle",
             onSelect = { name ->
-                viewModel.updateShortcutIcon(currentPickerIndex, name)
-                iconPickerForIndex = null
+                viewModel.updateShortcutIcon(pickerIndex, name)
+                iconPickerForIndex.value = null
             },
-            onDismiss = { iconPickerForIndex = null }
+            onDismiss = { iconPickerForIndex.value = null }
         )
     }
 }
@@ -266,7 +265,7 @@ private fun ReorderableShortcutList(
                 Spacer(modifier = Modifier.width(8.dp))
                 Checkbox(
                     checked = true,
-                    onCheckedChange = { onToggleChecked(shortcut.target) }
+                    onCheckedChange = { _ -> onToggleChecked(shortcut.target) }
                 )
                 Spacer(modifier = Modifier.width(8.dp))
 
@@ -323,7 +322,7 @@ private fun ReorderableShortcutList(
                     Spacer(modifier = Modifier.width(8.dp))
                     Checkbox(
                         checked = false,
-                        onCheckedChange = { onToggleUnchecked(action) }
+                        onCheckedChange = { _ -> onToggleUnchecked(action) }
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(

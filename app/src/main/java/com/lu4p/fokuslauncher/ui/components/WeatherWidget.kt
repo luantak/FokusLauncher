@@ -23,8 +23,8 @@ import com.lu4p.fokuslauncher.data.model.WeatherData
 @Composable
 fun WeatherWidget(
     weather: WeatherData?,
-    useFahrenheit: Boolean = false,
     modifier: Modifier = Modifier,
+    useFahrenheit: Boolean = false,
     onClick: () -> Unit = {}
 ) {
     val suffix = if (useFahrenheit) "°F" else "°C"

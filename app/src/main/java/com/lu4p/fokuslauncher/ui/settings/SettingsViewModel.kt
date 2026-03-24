@@ -17,6 +17,7 @@ import android.app.WallpaperManager
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import androidx.core.graphics.createBitmap
 import android.graphics.Color as AndroidColor
 import android.net.Uri
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -297,7 +298,7 @@ constructor(
                 // Create a full-screen black bitmap
                 val width = context.resources.displayMetrics.widthPixels
                 val height = context.resources.displayMetrics.heightPixels
-                val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                val bitmap = createBitmap(width, height, Bitmap.Config.ARGB_8888)
                 val canvas = Canvas(bitmap)
                 canvas.drawColor(AndroidColor.BLACK)
 

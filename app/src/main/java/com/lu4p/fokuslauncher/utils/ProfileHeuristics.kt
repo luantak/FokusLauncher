@@ -24,7 +24,7 @@ object ProfileHeuristics {
      * When unknown, returns false so a lone secondary user can be treated as work (see drawer).
      */
     fun isLikelyCloneOrParallelProfile(context: Context, user: UserHandle): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return false
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) return false
         val launcherApps =
                 try {
                     context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as? LauncherApps

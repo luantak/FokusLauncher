@@ -34,21 +34,24 @@ private class LocaleResourcesContextWrapper(
 @Composable
 fun ProvideAppLocale(localeTag: String, content: @Composable () -> Unit) {
     val activityContext = LocalContext.current
-    val fontScale = LocalConfiguration.current.fontScale
+    val baseConfiguration = LocalConfiguration.current
+    val fontScale = baseConfiguration.fontScale
     if (localeTag.isBlank()) {
         content()
     } else {
         val wrappedContext =
-                remember(localeTag, fontScale) {
+                remember(localeTag, fontScale, baseConfiguration) {
                     val locale = Locale.forLanguageTag(localeTag)
-                    val config = Configuration(activityContext.resources.configuration)
+                    val config = Configuration(baseConfiguration)
                     config.setLocale(locale)
                     val localized = activityContext.createConfigurationContext(config)
                     LocaleResourcesContextWrapper(activityContext, localized)
                 }
         val localizedConfiguration =
-                remember(wrappedContext) {
-                    Configuration(wrappedContext.resources.configuration)
+                remember(localeTag, fontScale, baseConfiguration) {
+                    Configuration(baseConfiguration).apply {
+                        setLocale(Locale.forLanguageTag(localeTag))
+                    }
                 }
         CompositionLocalProvider(
                 LocalContext provides wrappedContext,

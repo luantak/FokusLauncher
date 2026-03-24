@@ -117,7 +117,6 @@
     <string name="settings_edit_home_screen">Edytuj ekran główny</string>
     <string name="settings_edit_shortcuts">Edytuj skróty</string>
     <string name="settings_weather_app">Aplikacja pogodowa</string>
-    <string name="settings_section_swipe">Skróty po przesunięciu</string>
     <string name="settings_swipe_left">Przesunięcie w lewo</string>
     <string name="settings_swipe_right">Przesunięcie w prawo</string>
     <string name="settings_section_app_categories">Kategorie aplikacji</string>

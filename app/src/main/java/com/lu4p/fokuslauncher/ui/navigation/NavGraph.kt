@@ -105,11 +105,11 @@ fun FokusNavGraph(
 
     val navController = rememberNavController()
     var showDrawer by remember { mutableStateOf(false) }
-    var horizontalSwipeActive by remember { mutableStateOf(false) }
+    val horizontalSwipeActive = remember { mutableStateOf(false) }
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val isHome = navBackStackEntry?.destination?.route == Routes.HOME
-    val shouldBlurAndDim = showDrawer || !isHome || horizontalSwipeActive
+    val shouldBlurAndDim = showDrawer || !isHome || horizontalSwipeActive.value
     // Never apply Android window-level blur/dim while on Home.
     val shouldApplyWindowEffects = shouldBlurAndDim && !isHome
 
@@ -194,7 +194,6 @@ fun FokusNavGraph(
 
                 val swipeLeftTarget by homeViewModel.swipeLeftTarget.collectAsStateWithLifecycle()
                 val swipeRightTarget by homeViewModel.swipeRightTarget.collectAsStateWithLifecycle()
-                val activity = LocalActivity.current
 
                 BoxWithConstraints(
                     modifier = Modifier
@@ -210,7 +209,7 @@ fun FokusNavGraph(
                     val isHorizontalGestureActive = abs(horizontalOffsetPx) > 0.5f || launchTriggered
 
                     LaunchedEffect(isHorizontalGestureActive) {
-                        horizontalSwipeActive = isHorizontalGestureActive
+                        horizontalSwipeActive.value = isHorizontalGestureActive
                     }
 
                     // Track the current snap-back job so we can cancel it on resume
@@ -462,9 +461,8 @@ fun FokusNavGraph(
                 popEnterTransition = { slideInHorizontally(tween(ANIM_DURATION)) { -it } },
                 popExitTransition = { slideOutHorizontally(tween(ANIM_DURATION)) { it } }
             ) { entry ->
-                val encodedCategory = entry.arguments?.getString("category").orEmpty()
                 CategoryAppsScreen(
-                    category = Uri.decode(encodedCategory),
+                    category = Uri.decode(entry.arguments?.getString("category").orEmpty()),
                     onNavigateBack = { navController.popBackStack() },
                     backgroundScrim = Color.Black
                 )

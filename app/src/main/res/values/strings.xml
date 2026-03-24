@@ -115,7 +115,6 @@
     <string name="settings_edit_home_screen">Edit home screen</string>
     <string name="settings_edit_shortcuts">Edit shortcuts</string>
     <string name="settings_weather_app">Weather app</string>
-    <string name="settings_section_swipe">Swipe shortcuts</string>
     <string name="settings_swipe_left">Swipe left</string>
     <string name="settings_swipe_right">Swipe right</string>
     <string name="settings_section_app_categories">App categories</string>

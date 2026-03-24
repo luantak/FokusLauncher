@@ -1,5 +1,6 @@
 package com.lu4p.fokuslauncher.ui.drawer
 
+import android.content.ComponentName
 import android.content.Context
 import android.content.pm.LauncherApps
 import android.os.Build
@@ -62,8 +63,8 @@ sealed interface LaunchTarget {
     data class MainApp(val packageName: String) : LaunchTarget
     data class PrivateApp(
             val packageName: String,
-            val componentName: android.content.ComponentName,
-            val userHandle: android.os.UserHandle
+            val componentName: ComponentName,
+            val userHandle: UserHandle
     ) : LaunchTarget
 }
 
@@ -691,7 +692,9 @@ constructor(
                     } catch (_: Exception) {
                         null
                     }
-            if (launcherApps != null) {
+            if (launcherApps != null &&
+                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM
+            ) {
                 try {
                     when (launcherApps.getLauncherUserInfo(user)?.userType) {
                         "android.os.usertype.profile.MANAGED" ->

@@ -52,6 +52,7 @@ object SystemFontFamiliesProvider {
     }
 
     private fun addFamiliesFromSystemFonts(out: MutableSet<String>) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
         val fonts: Set<Font> = SystemFonts.getAvailableFonts()
         for (font in fonts) {
             extractFamilyName(font)?.trim()?.takeIf { it.isNotEmpty() }?.let { out.add(it) }

@@ -248,6 +248,7 @@ class AppRepositoryTest {
     }
 
     @Test
+    @Suppress("ReplaceCallWithBinaryOperator")
     fun `getInstalledApps strips leading Work prefix when primary has no label for package`() {
         val workUser = mockk<UserHandle>(relaxed = true)
         every { workUser.equals(any()) } answers { firstArg<Any?>() === workUser }
@@ -410,7 +411,7 @@ class AppRepositoryTest {
 
         coVerify {
             appDao.setAppCategory(
-                    com.lu4p.fokuslauncher.data.database.entity.AppCategoryEntity(
+                    AppCategoryEntity(
                             "com.lu4p.app1",
                             "Productivity"
                     )

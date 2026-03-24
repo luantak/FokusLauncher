@@ -98,7 +98,9 @@ fun OnboardingScreen(
 
             val locationPermissionLauncher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.RequestPermission()
-            ) { /* Granted or denied, we proceed to next step */ viewModel.onNext() }
+            ) { _ ->
+                viewModel.onNext()
+            }
 
             when (currentStep) {
                 OnboardingStep.WELCOME -> WelcomeStep(
@@ -430,7 +432,7 @@ private fun SwipeShortcutsStep(
     onSetSwipeRight: (ShortcutTarget?) -> Unit,
     onSkip: () -> Unit
 ) {
-    var showAppPickerFor by remember { mutableStateOf<String?>(null) }
+    val showAppPickerFor = remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
     val notSetSwipe = stringResource(R.string.onboarding_swipe_not_set)
 
@@ -477,7 +479,7 @@ private fun SwipeShortcutsStep(
                     color = MaterialTheme.colorScheme.secondary
                 )
             }
-            TextButton(onClick = { showAppPickerFor = "swipeLeft" }) {
+            TextButton(onClick = { showAppPickerFor.value = "swipeLeft" }) {
                 Text(stringResource(R.string.onboarding_swipe_change))
             }
             IconButton(onClick = { onSetSwipeLeft(null) }, modifier = Modifier.size(36.dp)) {
@@ -515,7 +517,7 @@ private fun SwipeShortcutsStep(
                     color = MaterialTheme.colorScheme.secondary
                 )
             }
-            TextButton(onClick = { showAppPickerFor = "swipeRight" }) {
+            TextButton(onClick = { showAppPickerFor.value = "swipeRight" }) {
                 Text(stringResource(R.string.onboarding_swipe_change))
             }
             IconButton(onClick = { onSetSwipeRight(null) }, modifier = Modifier.size(36.dp)) {
@@ -537,8 +539,7 @@ private fun SwipeShortcutsStep(
         }
     }
 
-    val pickerTarget = showAppPickerFor
-    if (pickerTarget != null) {
+    showAppPickerFor.value?.let { pickerTarget ->
         OnboardingAppPickerDialog(
             allApps = swipeState.allApps,
             onSelect = { packageName ->
@@ -546,9 +547,9 @@ private fun SwipeShortcutsStep(
                     "swipeLeft" -> onSetSwipeLeft(ShortcutTarget.App(packageName))
                     "swipeRight" -> onSetSwipeRight(ShortcutTarget.App(packageName))
                 }
-                showAppPickerFor = null
+                showAppPickerFor.value = null
             },
-            onDismiss = { showAppPickerFor = null }
+            onDismiss = { showAppPickerFor.value = null }
         )
     }
 }
@@ -574,10 +575,11 @@ private fun OnboardingAppPickerDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                val filtered = if (filter.isBlank()) allApps
-                else allApps.filter { it.label.contains(filter, ignoreCase = true) }
                 LazyColumn(modifier = Modifier.height(300.dp)) {
-                    items(filtered) { app ->
+                    items(
+                        if (filter.isBlank()) allApps
+                        else allApps.filter { it.label.contains(filter, ignoreCase = true) }
+                    ) { app ->
                         Text(
                             text = app.label,
                             style = MaterialTheme.typography.bodyLarge,

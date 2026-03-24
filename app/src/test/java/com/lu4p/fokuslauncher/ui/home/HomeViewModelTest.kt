@@ -12,7 +12,6 @@ import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
-import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.data.repository.WeatherRepository
@@ -78,9 +77,9 @@ class HomeViewModelTest {
         // Mock preferences using Fake
         preferencesManager = mockk(relaxed = true)
         every { preferencesManager.favoritesFlow } returns flowOf(testFavorites)
-        every { preferencesManager.swipeLeftTargetFlow } returns flowOf(null as ShortcutTarget?)
-        every { preferencesManager.swipeRightTargetFlow } returns flowOf(null as ShortcutTarget?)
-        every { preferencesManager.rightSideShortcutsFlow } returns flowOf(emptyList<HomeShortcut>())
+        every { preferencesManager.swipeLeftTargetFlow } returns flowOf(null)
+        every { preferencesManager.swipeRightTargetFlow } returns flowOf(null)
+        every { preferencesManager.rightSideShortcutsFlow } returns flowOf(emptyList())
         every { preferencesManager.preferredWeatherAppFlow } returns flowOf("")
         every { preferencesManager.weatherLocationOptedOutFlow } returns flowOf(false)
         every { preferencesManager.homeAlignmentFlow } returns flowOf(HomeAlignment.LEFT)

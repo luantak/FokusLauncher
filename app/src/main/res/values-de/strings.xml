@@ -19,7 +19,7 @@
 
     <!-- Search -->
     <string name="search">Suchen</string>
-    <string name="search_apps_hint">Apps suchen...</string>
+    <string name="search_apps_hint">Apps suchen…</string>
     <string name="search_apps">Apps suchen</string>
     <string name="search_apps_and_actions">Apps und Aktionen suchen</string>
 
@@ -115,7 +115,6 @@
     <string name="settings_edit_home_screen">Startbildschirm bearbeiten</string>
     <string name="settings_edit_shortcuts">Schnellzugriffe bearbeiten</string>
     <string name="settings_weather_app">Wetter-App</string>
-    <string name="settings_section_swipe">Wisch-Schnellzugriffe</string>
     <string name="settings_swipe_left">Nach links wischen</string>
     <string name="settings_swipe_right">Nach rechts wischen</string>
     <string name="settings_section_app_categories">App-Kategorien</string>

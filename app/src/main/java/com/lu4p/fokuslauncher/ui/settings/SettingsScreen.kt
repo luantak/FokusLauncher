@@ -73,6 +73,7 @@ import com.lu4p.fokuslauncher.R
 import java.util.Locale
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.data.model.AppInfo
@@ -98,8 +99,8 @@ fun SettingsScreen(
     val context = LocalContext.current
 
     // Dialog states
-    var showAppPickerFor by remember { mutableStateOf<String?>(null) } // swipeLeft/swipeRight
-    var showResetConfirm by remember { mutableStateOf(false) }
+    val showAppPickerFor = remember { mutableStateOf<String?>(null) } // swipeLeft/swipeRight
+    val showResetConfirm = remember { mutableStateOf(false) }
 
     val wallpaperPickerLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.GetContent()
@@ -318,7 +319,7 @@ fun SettingsScreen(
                         ShortcutTargetRow(
                                 label = stringResource(R.string.settings_weather_app),
                                 currentTarget = weatherAppLabel,
-                                onPickApp = { showAppPickerFor = "weather" },
+                                onPickApp = { showAppPickerFor.value = "weather" },
                                 onClear = { viewModel.setPreferredWeatherApp("") }
                         )
                     }
@@ -330,7 +331,7 @@ fun SettingsScreen(
                         label = stringResource(R.string.settings_swipe_left),
                         currentTarget =
                                 formatShortcutTarget(context, uiState.swipeLeftTarget, uiState.allApps),
-                        onPickApp = { showAppPickerFor = "swipeLeft" },
+                        onPickApp = { showAppPickerFor.value = "swipeLeft" },
                         onClear = { viewModel.setSwipeLeftTarget(null) }
                 )
             }
@@ -340,7 +341,7 @@ fun SettingsScreen(
                         label = stringResource(R.string.settings_swipe_right),
                         currentTarget =
                                 formatShortcutTarget(context, uiState.swipeRightTarget, uiState.allApps),
-                        onPickApp = { showAppPickerFor = "swipeRight" },
+                        onPickApp = { showAppPickerFor.value = "swipeRight" },
                         onClear = { viewModel.setSwipeRightTarget(null) }
                 )
             }
@@ -459,7 +460,7 @@ fun SettingsScreen(
                     subtitle = stringResource(R.string.settings_github_subtitle),
                     onClick = {
                         context.startActivity(
-                            Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/luantak/FokusLauncher"))
+                            Intent(Intent.ACTION_VIEW, "https://github.com/luantak/FokusLauncher".toUri())
                                 .apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
                         )
                     }
@@ -473,7 +474,7 @@ fun SettingsScreen(
                     subtitle = stringResource(R.string.settings_matrix_subtitle),
                     onClick = {
                         context.startActivity(
-                            Intent(Intent.ACTION_VIEW, Uri.parse("https://matrix.to/#/#fokus:matrix.org"))
+                            Intent(Intent.ACTION_VIEW, "https://matrix.to/#/#fokus:matrix.org".toUri())
                                 .apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
                         )
                     }
@@ -489,7 +490,7 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier =
                                 Modifier.fillMaxWidth()
-                                        .clickable(onClick = { showResetConfirm = true })
+                                        .clickable(onClick = { showResetConfirm.value = true })
                                         .padding(horizontal = 24.dp, vertical = 14.dp)
                 ) {
                     Icon(
@@ -513,9 +514,9 @@ fun SettingsScreen(
 
     // --- Dialogs ---
 
-    if (showResetConfirm) {
+    if (showResetConfirm.value) {
         AlertDialog(
-                onDismissRequest = { showResetConfirm = false },
+                onDismissRequest = { showResetConfirm.value = false },
                 title = {
                     Text(stringResource(R.string.settings_reset_confirm_title), color = MaterialTheme.colorScheme.onBackground)
                 },
@@ -531,7 +532,7 @@ fun SettingsScreen(
                             onClick = {
                                 scope.launch {
                                     viewModel.resetAllState()
-                                    showResetConfirm = false
+                                    showResetConfirm.value = false
                                     onNavigateBack()
                                 }
                             }
@@ -540,7 +541,7 @@ fun SettingsScreen(
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showResetConfirm = false }) {
+                    TextButton(onClick = { showResetConfirm.value = false }) {
                         Text(stringResource(R.string.action_cancel), color = MaterialTheme.colorScheme.primary)
                     }
                 },
@@ -549,8 +550,7 @@ fun SettingsScreen(
     }
 
     // App picker dialog (used for swipe shortcuts)
-    val pickerTarget = showAppPickerFor
-    if (pickerTarget != null) {
+    showAppPickerFor.value?.let { pickerTarget ->
         AppPickerDialog(
                 allApps = uiState.allApps,
                 onSelect = { packageName ->
@@ -560,9 +560,9 @@ fun SettingsScreen(
                                 viewModel.setSwipeRightTarget(ShortcutTarget.App(packageName))
                         "weather" -> viewModel.setPreferredWeatherApp(packageName)
                     }
-                    showAppPickerFor = null
+                    showAppPickerFor.value = null
                 },
-                onDismiss = { showAppPickerFor = null }
+                onDismiss = { showAppPickerFor.value = null }
         )
     }
 }
@@ -682,7 +682,7 @@ private fun AppLanguageDropdown(
                             Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
                                     .fillMaxWidth(),
                     value = selectedDisplayText,
-                    onValueChange = {},
+                    onValueChange = { _ -> },
                     readOnly = true,
                     singleLine = true,
                     shape = SettingsPickerCorner,
@@ -767,7 +767,7 @@ private fun LauncherFontFamilyDropdown(
                             Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
                                     .fillMaxWidth(),
                     value = selectedLabel,
-                    onValueChange = {},
+                    onValueChange = { _ -> },
                     readOnly = true,
                     singleLine = true,
                     shape = SettingsPickerCorner,
@@ -1086,11 +1086,11 @@ private fun AppPickerDialog(
                             modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(Modifier.height(8.dp))
-                    val filtered =
-                            if (filter.isBlank()) allApps
-                            else allApps.filter { it.label.contains(filter, true) }
                     LazyColumn(modifier = Modifier.height(300.dp)) {
-                        items(filtered) { app ->
+                        items(
+                                if (filter.isBlank()) allApps
+                                else allApps.filter { it.label.contains(filter, true) }
+                        ) { app ->
                             Text(
                                     text = app.label,
                                     style = MaterialTheme.typography.bodyLarge,
