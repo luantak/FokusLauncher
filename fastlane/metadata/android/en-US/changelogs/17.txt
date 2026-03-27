@@ -1,0 +1,3 @@
+Swipe left/right to switch between app categories in the app drawer.
+New setting to sort apps by most opened.
+You can now press enter when searching to launch the first app.
