@@ -124,6 +124,10 @@
     <string name="settings_auto_open_keyboard_subtitle">Suchfeld fokussieren und Tastatur anzeigen, wenn der Drawer geöffnet wird</string>
     <string name="settings_hide_all_apps_section">Bereich "Alle Apps" ausblenden</string>
     <string name="settings_hide_all_apps_section_subtitle">Den Drawer auf deine Kategorien und Suchergebnisse fokussieren</string>
+    <string name="settings_drawer_app_sort">App-Sortierung</string>
+    <string name="settings_drawer_app_sort_subtitle">„Meist geöffnet“ zählt Starts aus dem App-Drawer dieses Launchers. Ohne erfasste Öffnungen bleibt die Liste alphabetisch.</string>
+    <string name="settings_drawer_app_sort_alphabetical">A–Z</string>
+    <string name="settings_drawer_app_sort_most_opened">Meist geöffnet</string>
     <string name="settings_section_hidden_apps">Ausgeblendete Apps</string>
     <string name="settings_no_hidden_apps">Keine ausgeblendeten Apps</string>
     <string name="settings_section_renamed_apps">Umbenannte Apps</string>

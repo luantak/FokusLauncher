@@ -11,8 +11,10 @@ import androidx.lifecycle.viewModelScope
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.AppInfo
+import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
 import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
+import com.lu4p.fokuslauncher.data.model.drawerOpenCountKey
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
 import com.lu4p.fokuslauncher.utils.ProfileHeuristics
@@ -87,6 +89,32 @@ constructor(
     private var latestRenameMap: Map<String, String> = emptyMap()
     private var latestCategoryMap: Map<String, String> = emptyMap()
     private var latestDefinedCategories: List<String> = emptyList()
+    private var latestDrawerSortMode: DrawerAppSortMode = DrawerAppSortMode.ALPHABETICAL
+    private var latestOpenCounts: Map<String, Int> = emptyMap()
+
+    /** Cached [UserManager] for drawer section layout; safe to hold for process lifetime. */
+    private val drawerUserManager: UserManager? =
+            try {
+                context.getSystemService(Context.USER_SERVICE) as? UserManager
+            } catch (_: Exception) {
+                null
+            }
+
+    /** Case-insensitive label order without per-comparison [String.lowercase] allocations. */
+    private val alphabeticalAppComparator =
+            compareBy<AppInfo, String>(String.CASE_INSENSITIVE_ORDER) { it.label }
+
+    // --- Profile sections cache (invalidates when apps list identity or sort inputs change) ---
+    private var profileSectionsCache: List<DrawerProfileSectionUi>? = null
+    private var profileSectionsCacheApps: List<AppInfo>? = null
+    private var profileSectionsCacheSortMode: DrawerAppSortMode? = null
+    private var profileSectionsCacheCounts: Map<String, Int>? = null
+
+    // --- Private space list cache (sorted order; raw list often new instance, same contents) ---
+    private var privateSortCacheFingerprint: Int = 0
+    private var privateSortCacheSortMode: DrawerAppSortMode? = null
+    private var privateSortCacheCounts: Map<String, Int>? = null
+    private var privateSortCacheResult: List<AppInfo>? = null
 
     init {
         loadApps()
@@ -95,6 +123,7 @@ constructor(
         observeFavorites()
         observeDrawerKeyboardPreference()
         observeHideAllAppsPreference()
+        observeDrawerSortAndOpenCounts()
         refreshPrivateSpaceState()
         observePrivateSpaceChanges()
     }
@@ -116,6 +145,46 @@ constructor(
             preferencesManager.autoOpenDrawerKeyboardFlow.collect { enabled ->
                 _uiState.update { state -> state.copy(autoOpenKeyboard = enabled) }
             }
+        }
+    }
+
+    private fun observeDrawerSortAndOpenCounts() {
+        viewModelScope.launch {
+            combine(
+                            preferencesManager.drawerAppSortModeFlow,
+                            preferencesManager.drawerAppOpenCountsFlow
+                    ) { mode, counts -> mode to counts }
+                    .collect { (mode, counts) ->
+                        latestDrawerSortMode = mode
+                        latestOpenCounts = counts
+                        _uiState.update { state ->
+                            val sections = buildProfileSections(state.allApps)
+                            val trimmed = state.searchQuery.trimStart()
+                            val filteredSections =
+                                    filterProfileSections(
+                                            sections = sections,
+                                            query = trimmed,
+                                            category = state.selectedCategory
+                                    )
+                            val reorderedPrivate =
+                                    if (state.privateSpaceApps.isEmpty()) {
+                                        state.privateSpaceApps
+                                    } else {
+                                        sortPrivateSpaceAppsCached(state.privateSpaceApps)
+                                    }
+                            val filteredPrivate =
+                                    applyPrivateFilter(
+                                            query = trimmed,
+                                            selectedCategory = state.selectedCategory,
+                                            privateApps = reorderedPrivate
+                                    )
+                            state.copy(
+                                    privateSpaceApps = reorderedPrivate,
+                                    filteredProfileSections = filteredSections,
+                                    filteredPrivateSpaceApps = filteredPrivate
+                            )
+                        }
+                    }
         }
     }
 
@@ -437,11 +506,26 @@ constructor(
     }
 
     fun launchTarget(target: LaunchTarget): Boolean {
-        return when (target) {
-            is LaunchTarget.MainApp -> appRepository.launchApp(target.packageName)
-            is LaunchTarget.PrivateApp ->
-                    privateSpaceManager.launchApp(target.componentName, target.userHandle)
+        val ok =
+                when (target) {
+                    is LaunchTarget.MainApp -> appRepository.launchApp(target.packageName)
+                    is LaunchTarget.PrivateApp ->
+                            privateSpaceManager.launchApp(target.componentName, target.userHandle)
+                }
+        if (ok) {
+            viewModelScope.launch {
+                when (target) {
+                    is LaunchTarget.MainApp ->
+                            preferencesManager.recordDrawerAppOpen(target.packageName, null)
+                    is LaunchTarget.PrivateApp ->
+                            preferencesManager.recordDrawerAppOpen(
+                                    target.packageName,
+                                    target.userHandle
+                            )
+                }
+            }
         }
+        return ok
     }
 
     // --- Long-press actions ---
@@ -511,7 +595,9 @@ constructor(
     fun refreshPrivateSpaceState() {
         val supported = privateSpaceManager.isSupported
         val unlocked = privateSpaceManager.isPrivateSpaceUnlocked()
-        val apps = if (unlocked) privateSpaceManager.getPrivateSpaceApps() else emptyList()
+        val apps =
+                if (unlocked) sortPrivateSpaceAppsCached(privateSpaceManager.getPrivateSpaceApps())
+                else emptyList()
         _uiState.update { state ->
             val categories =
                     deriveCategories(
@@ -615,15 +701,71 @@ constructor(
 
     // --- Filtering ---
 
+    private fun sortDrawerApps(apps: List<AppInfo>): List<AppInfo> {
+        if (latestDrawerSortMode != DrawerAppSortMode.MOST_OPENED) {
+            return apps.sortedWith(alphabeticalAppComparator)
+        }
+        if (latestOpenCounts.values.none { it > 0 }) {
+            return apps.sortedWith(alphabeticalAppComparator)
+        }
+        return apps.sortedWith(
+                compareByDescending<AppInfo> { app ->
+                    latestOpenCounts[drawerOpenCountKey(app.packageName, app.userHandle)] ?: 0
+                }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.label }
+        )
+    }
+
+    private fun fingerprintPrivateApps(apps: List<AppInfo>): Int {
+        var h = apps.size
+        for (a in apps) {
+            h = 31 * h + a.packageName.hashCode()
+            h = 31 * h + (a.userHandle?.hashCode() ?: 0)
+        }
+        return h
+    }
+
+    /**
+     * Sorts private-space apps with the same rules as the main drawer, reusing the result when the
+     * underlying app set and sort inputs are unchanged (the platform often returns a fresh list
+     * instance with identical contents).
+     */
+    private fun sortPrivateSpaceAppsCached(raw: List<AppInfo>): List<AppInfo> {
+        val fp = fingerprintPrivateApps(raw)
+        if (privateSortCacheResult != null &&
+                        fp == privateSortCacheFingerprint &&
+                        privateSortCacheSortMode == latestDrawerSortMode &&
+                        privateSortCacheCounts === latestOpenCounts
+        ) {
+            return privateSortCacheResult!!
+        }
+        val sorted = sortDrawerApps(raw)
+        privateSortCacheFingerprint = fp
+        privateSortCacheSortMode = latestDrawerSortMode
+        privateSortCacheCounts = latestOpenCounts
+        privateSortCacheResult = sorted
+        return sorted
+    }
+
     private fun buildProfileSections(apps: List<AppInfo>): List<DrawerProfileSectionUi> {
-        val userManager =
-                try {
-                    context.getSystemService(Context.USER_SERVICE) as? UserManager
-                } catch (_: Exception) {
-                    null
-                }
+        if (profileSectionsCache != null &&
+                        profileSectionsCacheApps === apps &&
+                        profileSectionsCacheSortMode == latestDrawerSortMode &&
+                        profileSectionsCacheCounts === latestOpenCounts
+        ) {
+            return profileSectionsCache!!
+        }
+        val built = buildProfileSectionsInner(apps)
+        profileSectionsCache = built
+        profileSectionsCacheApps = apps
+        profileSectionsCacheSortMode = latestDrawerSortMode
+        profileSectionsCacheCounts = latestOpenCounts
+        return built
+    }
+
+    private fun buildProfileSectionsInner(apps: List<AppInfo>): List<DrawerProfileSectionUi> {
+        val userManager = drawerUserManager
         if (userManager == null) {
-            val ownerApps = apps.filter { it.userHandle == null }.sortedBy { it.label.lowercase() }
+            val ownerApps = sortDrawerApps(apps.filter { it.userHandle == null })
             val byUser = apps.filter { it.userHandle != null }.groupBy { it.userHandle!! }
             return buildList {
                 if (ownerApps.isNotEmpty()) {
@@ -636,7 +778,7 @@ constructor(
                     )
                 }
                 for (user in byUser.keys) {
-                    val list = byUser.getValue(user).sortedBy { it.label.lowercase() }
+                    val list = sortDrawerApps(byUser.getValue(user))
                     val title =
                             when {
                                 byUser.keys.size == 1 &&
@@ -660,7 +802,7 @@ constructor(
             }
         }
 
-        val ownerApps = apps.filter { it.userHandle == null }.sortedBy { it.label.lowercase() }
+        val ownerApps = sortDrawerApps(apps.filter { it.userHandle == null })
         val byUser = apps.filter { it.userHandle != null }.groupBy { it.userHandle!! }
         val orderedUsers =
                 byUser.keys.sortedBy { uh ->
@@ -682,7 +824,7 @@ constructor(
                 )
             }
             for (user in orderedUsers) {
-                val list = byUser.getValue(user).sortedBy { it.label.lowercase() }
+                val list = sortDrawerApps(byUser.getValue(user))
                 add(
                         DrawerProfileSectionUi(
                                 id = "u_${user.hashCode()}",

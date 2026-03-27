@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.AppInfo
+import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.font.SystemFontFamiliesProvider
@@ -44,6 +45,7 @@ data class SettingsUiState(
         val showHomeScreenWidgets: Boolean = true,
         val autoOpenDrawerKeyboard: Boolean = true,
         val hideAllAppsSection: Boolean = false,
+        val drawerAppSortMode: DrawerAppSortMode = DrawerAppSortMode.ALPHABETICAL,
         val homeAlignment: HomeAlignment = HomeAlignment.LEFT,
         val launcherFontFamilyName: String = "",
         /** BCP-47 tag; empty = system default. */
@@ -138,15 +140,23 @@ constructor(
                         weatherWithSettingsState, hideAllAppsSection ->
                         weatherWithSettingsState to hideAllAppsSection
                     }
-                    .combine(preferencesManager.launcherFontFamilyFlow) { wds, fontFamilyName ->
-                        Triple(wds.first, wds.second, fontFamilyName)
+                    .combine(preferencesManager.drawerAppSortModeFlow) { hidePair, drawerAppSortMode ->
+                        Triple(hidePair.first, hidePair.second, drawerAppSortMode)
                     }
-                    .combine(preferencesManager.appLocaleTagFlow) { triple, appLocaleTag ->
-                        triple to appLocaleTag
+                    .combine(preferencesManager.launcherFontFamilyFlow) { triple, fontFamilyName ->
+                        Pair(
+                                Triple(triple.first, triple.second, triple.third),
+                                fontFamilyName
+                        )
                     }
-                    .combine(preferencesManager.homeAlignmentFlow) { pair, homeAlignment ->
-                        val (triple, appLocaleTag) = pair
-                        val (weatherWithSettingsState, hideAllAppsSection, fontFamilyName) = triple
+                    .combine(preferencesManager.appLocaleTagFlow) { pair, appLocaleTag ->
+                        Pair(pair.first, Pair(pair.second, appLocaleTag))
+                    }
+                    .combine(preferencesManager.homeAlignmentFlow) { nested, homeAlignment ->
+                        val (sortTriple, fontAndLocale) = nested
+                        val (fontFamilyName, appLocaleTag) = fontAndLocale
+                        val (weatherWithSettingsState, hideAllAppsSection, drawerAppSortMode) =
+                                sortTriple
                         val (weatherWithWidgets, autoOpenDrawerKeyboard) = weatherWithSettingsState
                         val (weatherWithStatusBar, showHomeScreenWidgets) = weatherWithWidgets
                         val (weatherState, showStatusBar) = weatherWithStatusBar
@@ -172,6 +182,7 @@ constructor(
                                 showHomeScreenWidgets = showHomeScreenWidgets,
                                 autoOpenDrawerKeyboard = autoOpenDrawerKeyboard,
                                 hideAllAppsSection = hideAllAppsSection,
+                                drawerAppSortMode = drawerAppSortMode,
                                 homeAlignment = homeAlignment,
                                 launcherFontFamilyName = fontFamilyName,
                                 appLocaleTag = appLocaleTag,
@@ -252,6 +263,10 @@ constructor(
 
     fun setHideAllAppsSection(hide: Boolean) {
         viewModelScope.launch { preferencesManager.setHideAllAppsSection(hide) }
+    }
+
+    fun setDrawerAppSortMode(mode: DrawerAppSortMode) {
+        viewModelScope.launch { preferencesManager.setDrawerAppSortMode(mode) }
     }
 
     // --- Home alignment ---

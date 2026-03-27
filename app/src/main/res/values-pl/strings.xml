@@ -126,6 +126,10 @@
     <string name="settings_auto_open_keyboard_subtitle">Włącz wyszukiwarkę i pokaż klawiaturę po otwarciu szuflady</string>
     <string name="settings_hide_all_apps_section">Ukryj sekcję Wszystkie aplikacje</string>
     <string name="settings_hide_all_apps_section_subtitle">Skup szufladę na twoich kategoriach i wynikach wyszukiwania</string>
+    <string name="settings_drawer_app_sort">Kolejność aplikacji</string>
+    <string name="settings_drawer_app_sort_subtitle">Najczęściej otwierane liczy uruchomienia z szuflady tego launchera. Bez zapisanych otwarć lista pozostaje alfabetyczna.</string>
+    <string name="settings_drawer_app_sort_alphabetical">A–Z</string>
+    <string name="settings_drawer_app_sort_most_opened">Najczęściej otwierane</string>
     <string name="settings_section_hidden_apps">Ukryte aplikacje</string>
     <string name="settings_no_hidden_apps">Brak ukrytych aplikacji</string>
     <string name="settings_section_renamed_apps">Aplikacje ze zmienioną nazwą</string>

@@ -9,6 +9,7 @@ import com.lu4p.fokuslauncher.data.database.entity.AppCategoryEntity
 import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.AppInfo
+import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
@@ -48,6 +49,8 @@ class AppDrawerViewModelTest {
     private val categoryDefinitionsFlow = MutableStateFlow<List<AppCategoryDefinitionEntity>>(emptyList())
     private val favoritesFlow = MutableStateFlow<List<FavoriteApp>>(emptyList())
     private val autoOpenDrawerKeyboardFlow = MutableStateFlow(true)
+    private val drawerAppSortModeFlow = MutableStateFlow(DrawerAppSortMode.ALPHABETICAL)
+    private val drawerAppOpenCountsFlow = MutableStateFlow<Map<String, Int>>(emptyMap())
     private val privateProfileChanges = MutableSharedFlow<Unit>()
     private var installedApps: List<AppInfo> = emptyList()
 
@@ -88,6 +91,8 @@ class AppDrawerViewModelTest {
         every { appRepository.launchApp(any()) } returns true
         every { preferencesManager.favoritesFlow } returns favoritesFlow
         every { preferencesManager.autoOpenDrawerKeyboardFlow } returns autoOpenDrawerKeyboardFlow
+        every { preferencesManager.drawerAppSortModeFlow } returns drawerAppSortModeFlow
+        every { preferencesManager.drawerAppOpenCountsFlow } returns drawerAppOpenCountsFlow
         every { privateSpaceManager.isSupported } returns false
         every { privateSpaceManager.isPrivateSpaceUnlocked() } returns false
         every { privateSpaceManager.launchApp(any(), any()) } returns true

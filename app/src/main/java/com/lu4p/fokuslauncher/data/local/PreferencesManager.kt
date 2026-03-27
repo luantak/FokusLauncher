@@ -1,10 +1,13 @@
 package com.lu4p.fokuslauncher.data.local
 
 import android.content.Context
+import android.os.UserHandle
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
+import com.lu4p.fokuslauncher.data.model.drawerOpenCountKey
 import com.lu4p.fokuslauncher.data.model.LauncherFontPreferences
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
@@ -32,6 +35,8 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
                 booleanPreferencesKey("auto_open_drawer_keyboard")
         private val HIDE_ALL_APPS_SECTION_KEY =
                 booleanPreferencesKey("hide_all_apps_section")
+        private val DRAWER_APP_SORT_MODE_KEY = stringPreferencesKey("drawer_app_sort_mode")
+        private val DRAWER_APP_OPEN_COUNTS_KEY = stringPreferencesKey("drawer_app_open_counts")
         private val HAS_COMPLETED_ONBOARDING_KEY = booleanPreferencesKey("has_completed_onboarding")
         private val ONBOARDING_REACHED_SET_DEFAULT_KEY = booleanPreferencesKey("onboarding_reached_set_default")
         private val WEATHER_LOCATION_OPTED_OUT_KEY = booleanPreferencesKey("weather_location_opted_out")
@@ -164,6 +169,34 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         context.fokusLauncherPreferencesDataStore.edit { prefs -> prefs[HIDE_ALL_APPS_SECTION_KEY] = hide }
     }
 
+    // --- App drawer sort & launch counts (drawer opens only) ---
+
+    val drawerAppSortModeFlow: Flow<DrawerAppSortMode> =
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
+                DrawerAppSortMode.fromStorage(prefs[DRAWER_APP_SORT_MODE_KEY])
+            }
+
+    suspend fun setDrawerAppSortMode(mode: DrawerAppSortMode) {
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            prefs[DRAWER_APP_SORT_MODE_KEY] = mode.name
+        }
+    }
+
+    val drawerAppOpenCountsFlow: Flow<Map<String, Int>> =
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
+                parseDrawerOpenCounts(prefs[DRAWER_APP_OPEN_COUNTS_KEY] ?: "")
+            }
+
+    suspend fun recordDrawerAppOpen(packageName: String, userHandle: UserHandle?) {
+        val key = drawerOpenCountKey(packageName, userHandle)
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            val raw = prefs[DRAWER_APP_OPEN_COUNTS_KEY] ?: ""
+            val map = parseDrawerOpenCounts(raw).toMutableMap()
+            map[key] = (map[key] ?: 0) + 1
+            prefs[DRAWER_APP_OPEN_COUNTS_KEY] = serializeDrawerOpenCounts(map)
+        }
+    }
+
     // --- Onboarding ---
 
     val hasCompletedOnboardingFlow: Flow<Boolean> =
@@ -291,6 +324,24 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
     private fun serializeRightSideShortcuts(shortcuts: List<HomeShortcut>): String {
         return shortcuts.joinToString("|") { shortcut ->
             "${shortcut.iconName};${ShortcutTarget.encode(shortcut.target)}"
+        }
+    }
+
+    private fun parseDrawerOpenCounts(raw: String): Map<String, Int> {
+        if (raw.isBlank()) return emptyMap()
+        return raw.split(";").mapNotNull { entry ->
+            val parts = entry.split("|")
+            if (parts.size != 3) return@mapNotNull null
+            val count = parts[2].toIntOrNull() ?: return@mapNotNull null
+            "${parts[0]}|${parts[1]}" to count
+        }.toMap()
+    }
+
+    private fun serializeDrawerOpenCounts(map: Map<String, Int>): String {
+        if (map.isEmpty()) return ""
+        return map.entries.joinToString(";") { (key, count) ->
+            val parts = key.split("|")
+            "${parts[0]}|${parts[1]}|$count"
         }
     }
 }

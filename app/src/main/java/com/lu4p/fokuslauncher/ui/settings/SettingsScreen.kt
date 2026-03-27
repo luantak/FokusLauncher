@@ -77,6 +77,7 @@ import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.data.model.AppInfo
+import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
@@ -398,6 +399,13 @@ fun SettingsScreen(
                         subtitle = stringResource(R.string.settings_hide_all_apps_section_subtitle),
                         checked = uiState.hideAllAppsSection,
                         onCheckedChange = { viewModel.setHideAllAppsSection(it) }
+                )
+            }
+
+            item {
+                DrawerAppSortRow(
+                        currentMode = uiState.drawerAppSortMode,
+                        onModeChanged = { viewModel.setDrawerAppSortMode(it) }
                 )
             }
 
@@ -813,6 +821,55 @@ private fun LauncherFontFamilyDropdown(
                             },
                             colors = settingsPickerMenuItemColors(),
                             contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DrawerAppSortRow(
+        currentMode: DrawerAppSortMode,
+        onModeChanged: (DrawerAppSortMode) -> Unit
+) {
+    Column(
+            modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 12.dp)
+    ) {
+        Text(
+                text = stringResource(R.string.settings_drawer_app_sort),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onBackground
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+                text = stringResource(R.string.settings_drawer_app_sort_subtitle),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.secondary
+        )
+        Spacer(Modifier.height(12.dp))
+        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+            DrawerAppSortMode.entries.forEachIndexed { index, mode ->
+                SegmentedButton(
+                        selected = currentMode == mode,
+                        onClick = { onModeChanged(mode) },
+                        shape =
+                                SegmentedButtonDefaults.itemShape(
+                                        index = index,
+                                        count = DrawerAppSortMode.entries.size
+                                )
+                ) {
+                    Text(
+                            stringResource(
+                                    when (mode) {
+                                        DrawerAppSortMode.ALPHABETICAL ->
+                                                R.string.settings_drawer_app_sort_alphabetical
+                                        DrawerAppSortMode.MOST_OPENED ->
+                                                R.string.settings_drawer_app_sort_most_opened
+                                    }
+                            )
                     )
                 }
             }
