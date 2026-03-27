@@ -1,11 +1,11 @@
 package com.lu4p.fokuslauncher.ui.components
 
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.material3.FilterChip
@@ -13,16 +13,19 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.lu4p.fokuslauncher.ui.util.categoryChipDisplayLabel
 import com.lu4p.fokuslauncher.ui.theme.ChipBackground
-import com.lu4p.fokuslauncher.ui.theme.ChipSelectedBackground
 
 /**
- * Horizontal scrollable row of category filter chips.
+ * Horizontal scrollable row of category filter chips. The selected chip uses the theme primary
+ * colors so it reads clearly against unselected chips. When [selectedCategory] changes, the row
+ * scrolls so that chip is on screen.
  */
 @Composable
 fun CategoryChips(
@@ -33,14 +36,23 @@ fun CategoryChips(
     onCategoryLongPress: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
-    Row(
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(selectedCategory, categories.size) {
+        val index = categories.indexOfFirst { it.equals(selectedCategory, ignoreCase = true) }
+        if (index >= 0) {
+            listState.animateScrollToItem(index)
+        }
+    }
+
+    LazyRow(
+        state = listState,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp),
         modifier = modifier
-            .horizontalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp, vertical = 8.dp)
     ) {
-        categories.forEach { category ->
-            val isSelected = category == selectedCategory
+        items(items = categories, key = { it }) { category ->
+            val isSelected = category.equals(selectedCategory, ignoreCase = true)
             Box(
                 modifier = Modifier.pointerInput(category) {
                     detectTapGestures(onLongPress = { onCategoryLongPress(category) })
@@ -52,22 +64,30 @@ fun CategoryChips(
                     label = {
                         Text(
                             text = categoryChipDisplayLabel(context, category),
-                            style = MaterialTheme.typography.labelMedium
+                            style =
+                                if (isSelected) MaterialTheme.typography.labelLarge
+                                else MaterialTheme.typography.labelMedium,
+                            fontWeight =
+                                if (isSelected) FontWeight.SemiBold else FontWeight.Normal
                         )
                     },
                     shape = RoundedCornerShape(20.dp),
-                    colors = FilterChipDefaults.filterChipColors(
-                        containerColor = ChipBackground,
-                        selectedContainerColor = ChipSelectedBackground,
-                        labelColor = MaterialTheme.colorScheme.onSurface,
-                        selectedLabelColor = MaterialTheme.colorScheme.onSurface
-                    ),
-                    border = FilterChipDefaults.filterChipBorder(
-                        borderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                        selectedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                        enabled = true,
-                        selected = isSelected
-                    )
+                    colors =
+                        FilterChipDefaults.filterChipColors(
+                            containerColor = ChipBackground,
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            labelColor = MaterialTheme.colorScheme.onSurface,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                            iconColor = MaterialTheme.colorScheme.onSurface,
+                            selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary
+                        ),
+                    border =
+                        FilterChipDefaults.filterChipBorder(
+                            borderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.28f),
+                            selectedBorderColor = MaterialTheme.colorScheme.primary,
+                            enabled = true,
+                            selected = isSelected
+                        )
                 )
             }
         }

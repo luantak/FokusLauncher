@@ -3,6 +3,7 @@ package com.lu4p.fokuslauncher.ui.drawer
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -36,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,6 +46,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -61,6 +64,9 @@ import com.lu4p.fokuslauncher.ui.components.SearchBar
 import com.lu4p.fokuslauncher.ui.util.categoryChipDisplayLabel
 import java.util.Locale
 import kotlinx.coroutines.delay
+
+/** Horizontal swipe distance (px) to move to the next/previous category in the app list. */
+private const val DRAWER_CATEGORY_SWIPE_THRESHOLD_PX = 120f
 
 @Composable
 fun AppDrawerScreen(
@@ -169,6 +175,12 @@ fun AppDrawerContent(
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
     val listState = rememberLazyListState()
+    val latestCategories = rememberUpdatedState(uiState.categories)
+    val latestSelectedCategory = rememberUpdatedState(uiState.selectedCategory)
+    val latestOnCategorySelected = rememberUpdatedState(onCategorySelected)
+
+    LaunchedEffect(uiState.selectedCategory) { listState.scrollToItem(0) }
+
     val showProfileSections =
             !uiState.hideAllAppsSection ||
                     !uiState.selectedCategory.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true) ||
@@ -297,7 +309,56 @@ fun AppDrawerContent(
         )
 
         // App list: one section per Android profile, then Private Space (deprioritized)
-        LazyColumn(state = listState, modifier = Modifier.fillMaxSize().testTag("app_list")) {
+        LazyColumn(
+                state = listState,
+                modifier =
+                        Modifier.fillMaxSize()
+                                .then(
+                                        if (uiState.categories.size > 1) {
+                                            Modifier.pointerInput(Unit) {
+                                                var accumulated = 0f
+                                                detectHorizontalDragGestures(
+                                                        onDragStart = { accumulated = 0f },
+                                                        onHorizontalDrag = { change, dragAmount ->
+                                                            accumulated += dragAmount
+                                                            change.consume()
+                                                        },
+                                                        onDragEnd = {
+                                                            val categories = latestCategories.value
+                                                            if (categories.size <= 1) return@detectHorizontalDragGestures
+                                                            val selected = latestSelectedCategory.value
+                                                            val idx =
+                                                                    categories.indexOfFirst {
+                                                                        it.equals(
+                                                                                selected,
+                                                                                ignoreCase = true
+                                                                        )
+                                                                    }
+                                                            if (idx < 0) return@detectHorizontalDragGestures
+                                                            when {
+                                                                accumulated <=
+                                                                        -DRAWER_CATEGORY_SWIPE_THRESHOLD_PX &&
+                                                                        idx < categories.lastIndex ->
+                                                                        latestOnCategorySelected.value(
+                                                                                categories[idx + 1]
+                                                                        )
+                                                                accumulated >=
+                                                                        DRAWER_CATEGORY_SWIPE_THRESHOLD_PX &&
+                                                                        idx > 0 ->
+                                                                        latestOnCategorySelected.value(
+                                                                                categories[idx - 1]
+                                                                        )
+                                                            }
+                                                        },
+                                                        onDragCancel = { accumulated = 0f }
+                                                )
+                                            }
+                                        } else {
+                                            Modifier
+                                        }
+                                )
+                                .testTag("app_list")
+        ) {
             if (showProfileSections) {
                 var hasEmittedProfileListContent = false
                 for (section in uiState.filteredProfileSections) {
