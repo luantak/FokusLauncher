@@ -298,6 +298,37 @@ class AppDrawerViewModelTest {
         assertTrue(flatFiltered(state).isEmpty())
     }
 
+    @Test
+    fun `tryLaunchFirstSearchResult launches first visible match when several match`() {
+        viewModel.onSearchQueryChanged("cal")
+
+        assertEquals(2, flatFiltered(viewModel.uiState.value).size)
+        assertTrue(viewModel.tryLaunchFirstSearchResult())
+        verify { appRepository.launchApp("com.lu4p.calculator") }
+    }
+
+    @Test
+    fun `tryLaunchFirstSearchResult is no-op in browse mode`() {
+        viewModel.onSearchQueryChanged(" cal")
+        assertTrue(flatFiltered(viewModel.uiState.value).isNotEmpty())
+        assertFalse(viewModel.tryLaunchFirstSearchResult())
+        verify(exactly = 0) { appRepository.launchApp(any()) }
+    }
+
+    @Test
+    fun `tryLaunchFirstSearchResult is no-op with blank query`() {
+        assertFalse(viewModel.tryLaunchFirstSearchResult())
+        verify(exactly = 0) { appRepository.launchApp(any()) }
+    }
+
+    @Test
+    fun `tryLaunchFirstSearchResult returns false when launch fails`() {
+        viewModel.onSearchQueryChanged("cal")
+        every { appRepository.launchApp(any()) } returns false
+        assertFalse(viewModel.tryLaunchFirstSearchResult())
+        every { appRepository.launchApp(any()) } returns true
+    }
+
     // --- Long-press / action sheet tests ---
 
     @Test

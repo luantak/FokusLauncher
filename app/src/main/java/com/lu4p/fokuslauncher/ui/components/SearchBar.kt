@@ -3,12 +3,15 @@ package com.lu4p.fokuslauncher.ui.components
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 
 /**
@@ -22,6 +25,8 @@ fun SearchBar(
     placeholder: String,
     modifier: Modifier = Modifier,
     focusRequester: FocusRequester? = null,
+    /** Invoked when the user presses Go/Done/Search on the IME (keyboard “enter”). */
+    onImeAction: (() -> Unit)? = null,
 ) {
     BasicTextField(
         value = query,
@@ -31,6 +36,16 @@ fun SearchBar(
         ),
         cursorBrush = SolidColor(MaterialTheme.colorScheme.onBackground),
         singleLine = true,
+        keyboardOptions =
+            KeyboardOptions(
+                imeAction = if (onImeAction != null) ImeAction.Go else ImeAction.Default
+            ),
+        keyboardActions =
+            KeyboardActions(
+                onGo = { onImeAction?.invoke() },
+                onDone = { onImeAction?.invoke() },
+                onSearch = { onImeAction?.invoke() }
+            ),
         decorationBox = { innerTextField ->
             if (query.isEmpty()) {
                 androidx.compose.material3.Text(

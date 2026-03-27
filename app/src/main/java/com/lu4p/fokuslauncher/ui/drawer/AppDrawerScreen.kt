@@ -110,6 +110,9 @@ fun AppDrawerScreen(
     AppDrawerContent(
             uiState = uiState,
             onSearchQueryChanged = viewModel::onSearchQueryChanged,
+            onSearchImeAction = {
+                if (viewModel.tryLaunchFirstSearchResult()) closeAndReset()
+            },
             onCategorySelected = viewModel::onCategorySelected,
             onCategoryLongPress = viewModel::onCategoryLongPress,
             onAppClick = { target ->
@@ -161,6 +164,7 @@ fun AppDrawerScreen(
 fun AppDrawerContent(
         uiState: AppDrawerUiState,
         onSearchQueryChanged: (String) -> Unit,
+        onSearchImeAction: () -> Unit = {},
         onCategorySelected: (String) -> Unit,
         onAppClick: (LaunchTarget) -> Unit,
         onSettingsClick: () -> Unit,
@@ -238,6 +242,7 @@ fun AppDrawerContent(
                     onQueryChange = onSearchQueryChanged,
                     placeholder = stringResource(R.string.search_apps_hint),
                     focusRequester = focusRequester,
+                    onImeAction = onSearchImeAction,
                     modifier = Modifier.fillMaxWidth().padding(end = 40.dp).testTag("search_bar")
             )
 

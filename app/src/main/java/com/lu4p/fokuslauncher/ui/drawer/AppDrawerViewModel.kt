@@ -331,6 +331,48 @@ constructor(
         }
     }
 
+    /**
+     * Launches the first visible search hit in drawer list order (profile sections, then private
+     * space), when the query is non-blank and not in leading-space browse mode. Used for IME
+     * confirm when multiple apps match.
+     */
+    fun tryLaunchFirstSearchResult(): Boolean {
+        val state = _uiState.value
+        val raw = state.searchQuery
+        if (raw.startsWith(" ")) return false
+        val trimmed = raw.trimStart()
+        if (trimmed.isBlank()) return false
+
+        val firstMain = state.filteredProfileSections.flatMap { it.apps }.firstOrNull()
+        if (firstMain != null) {
+            return launchTarget(launchTargetFromAppInfo(firstMain))
+        }
+        val firstPrivate = state.filteredPrivateSpaceApps.firstOrNull() ?: return false
+        val cn = firstPrivate.componentName ?: return false
+        val uh = firstPrivate.userHandle ?: return false
+        return launchTarget(
+                LaunchTarget.PrivateApp(
+                        packageName = firstPrivate.packageName,
+                        componentName = cn,
+                        userHandle = uh
+                )
+        )
+    }
+
+    private fun launchTargetFromAppInfo(app: AppInfo): LaunchTarget {
+        val uh = app.userHandle
+        val cn = app.componentName
+        return if (uh != null && cn != null) {
+            LaunchTarget.PrivateApp(
+                    packageName = app.packageName,
+                    componentName = cn,
+                    userHandle = uh
+            )
+        } else {
+            LaunchTarget.MainApp(app.packageName)
+        }
+    }
+
     fun onCategorySelected(category: String) {
         _uiState.update { state ->
             val sections = buildProfileSections(state.allApps)
@@ -787,20 +829,7 @@ constructor(
                             userHandle = userHandle
                     )
                 }
-        val mainTargets =
-                mainApps.map { app ->
-                    val uh = app.userHandle
-                    val cn = app.componentName
-                    if (uh != null && cn != null) {
-                        LaunchTarget.PrivateApp(
-                                packageName = app.packageName,
-                                componentName = cn,
-                                userHandle = uh
-                        )
-                    } else {
-                        LaunchTarget.MainApp(app.packageName)
-                    }
-                }
+        val mainTargets = mainApps.map { launchTargetFromAppInfo(it) }
         return privateTargets + mainTargets
     }
 
