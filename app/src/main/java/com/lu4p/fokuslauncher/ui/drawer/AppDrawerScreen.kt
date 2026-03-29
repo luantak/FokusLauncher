@@ -48,10 +48,14 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.R
@@ -64,6 +68,8 @@ import java.util.Locale
 
 /** Horizontal swipe distance (px) to move to the next/previous category in the app list. */
 private const val DRAWER_CATEGORY_SWIPE_THRESHOLD_PX = 120f
+private val DRAWER_MIN_TOP_PADDING = 48.dp
+private val DRAWER_TOP_INSET_BUFFER = 16.dp
 
 @Composable
 fun AppDrawerScreen(
@@ -161,6 +167,8 @@ fun AppDrawerContent(
 ) {
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
+    val density = LocalDensity.current
+    val view = LocalView.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val listState = rememberLazyListState()
     val latestCategories = rememberUpdatedState(uiState.categories)
@@ -212,12 +220,23 @@ fun AppDrawerContent(
             }
         }
     }
+    val contentTopPadding =
+            maxOf(
+                    DRAWER_MIN_TOP_PADDING,
+                    with(density) {
+                        (ViewCompat.getRootWindowInsets(view)
+                                        ?.getInsets(WindowInsetsCompat.Type.statusBars())
+                                        ?.top ?: 0)
+                                .toDp()
+                    } +
+                            DRAWER_TOP_INSET_BUFFER
+            )
 
     Box(modifier = modifier.fillMaxSize()) {
         Column(
                 modifier =
                         Modifier.fillMaxSize()
-                                .padding(top = 48.dp)
+                                .padding(top = contentTopPadding)
                                 .nestedScroll(nestedScrollConnection)
                                 .testTag("app_drawer_screen")
         ) {
