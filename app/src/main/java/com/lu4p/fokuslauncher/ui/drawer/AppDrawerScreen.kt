@@ -39,6 +39,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -63,7 +64,6 @@ import com.lu4p.fokuslauncher.ui.components.CategoryChips
 import com.lu4p.fokuslauncher.ui.components.SearchBar
 import com.lu4p.fokuslauncher.ui.util.categoryChipDisplayLabel
 import java.util.Locale
-import kotlinx.coroutines.delay
 
 /** Horizontal swipe distance (px) to move to the next/previous category in the app list. */
 private const val DRAWER_CATEGORY_SWIPE_THRESHOLD_PX = 120f
@@ -202,7 +202,8 @@ fun AppDrawerContent(
     // Autofocus the search bar and show keyboard when the drawer opens
     LaunchedEffect(uiState.autoOpenKeyboard) {
         if (!uiState.autoOpenKeyboard) return@LaunchedEffect
-        delay(200)
+        // Wait for layout so FocusRequester is attached; avoids a long fixed delay before IME shows.
+        repeat(2) { withFrameNanos { } }
         focusRequester.requestFocus()
     }
 

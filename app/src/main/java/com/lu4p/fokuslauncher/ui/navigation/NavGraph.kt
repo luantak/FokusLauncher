@@ -81,14 +81,17 @@ object Routes {
 }
 
 private const val SWIPE_THRESHOLD = 200f
-private const val ANIM_DURATION = 350
+private const val ANIM_DURATION = 200
+/** Hold at full slide after triggering a shortcut launch, then snap home (ms). */
+private const val SWIPE_LAUNCH_HOLD_MS = 40L
+private const val DRAWER_EXIT_MS = 140
 private const val HORIZONTAL_MAX_SLIDE_RATIO = 0.6f
 private const val HORIZONTAL_TRIGGER_RATIO = 0.6f
 private const val HORIZONTAL_DRAG_GAIN = 1.8f
 
 private fun snapBackAnimationSpec() = spring<Float>(
-    dampingRatio = Spring.DampingRatioMediumBouncy,
-    stiffness = Spring.StiffnessMedium
+    dampingRatio = Spring.DampingRatioNoBouncy,
+    stiffness = Spring.StiffnessHigh
 )
 
 @Composable
@@ -248,7 +251,7 @@ fun FokusNavGraph(
                             // Launch in a separate job we can track and cancel
                             snapBackJob = coroutineScope.launch {
                                 // Keep the panel at the swiped position briefly so launch feels continuous.
-                                delay(260)
+                                delay(SWIPE_LAUNCH_HOLD_MS)
                                 Animatable(horizontalOffsetPx).animateTo(
                                     targetValue = 0f,
                                     animationSpec = snapBackSpec
@@ -375,13 +378,13 @@ fun FokusNavGraph(
                     visible = showDrawer,
                     enter = slideInVertically(
                         animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioLowBouncy,
-                            stiffness = Spring.StiffnessMedium
+                            dampingRatio = Spring.DampingRatioNoBouncy,
+                            stiffness = Spring.StiffnessHigh
                         ),
                         initialOffsetY = { it }   // slide up from below the screen
                     ),
                     exit = slideOutVertically(
-                        animationSpec = tween(250),
+                        animationSpec = tween(DRAWER_EXIT_MS),
                         targetOffsetY = { it }     // slide back down
                     )
                 ) {
