@@ -1,0 +1,3 @@
+App drawer opens faster.
+Smoother animation when closing the app drawer.
+More responsive app list and quicker updates after uninstalling apps.
