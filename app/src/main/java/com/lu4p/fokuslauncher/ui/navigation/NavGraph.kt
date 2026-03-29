@@ -86,7 +86,6 @@ private const val SWIPE_THRESHOLD = 200f
 private const val ANIM_DURATION = 200
 /** Hold at full slide after triggering a shortcut launch, then snap home (ms). */
 private const val SWIPE_LAUNCH_HOLD_MS = 40L
-private const val DRAWER_EXIT_MS = 140
 private const val HORIZONTAL_MAX_SLIDE_RATIO = 0.6f
 private const val HORIZONTAL_TRIGGER_RATIO = 0.6f
 private const val HORIZONTAL_DRAG_GAIN = 1.8f
@@ -402,7 +401,10 @@ fun FokusNavGraph(
                         initialOffsetY = { it }   // slide up from below the screen
                     ),
                     exit = slideOutVertically(
-                        animationSpec = tween(DRAWER_EXIT_MS),
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioNoBouncy,
+                            stiffness = Spring.StiffnessMedium
+                        ),
                         targetOffsetY = { it }     // slide back down
                     )
                 ) {
