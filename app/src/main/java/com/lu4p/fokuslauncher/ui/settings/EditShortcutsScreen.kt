@@ -388,6 +388,6 @@ private fun EditShortcutIconPickerDialog(
                 Text(stringResource(R.string.action_cancel), color = MaterialTheme.colorScheme.onBackground)
             }
         },
-        containerColor = MaterialTheme.colorScheme.surface
+        containerColor = MaterialTheme.colorScheme.surfaceVariant
     )
 }
