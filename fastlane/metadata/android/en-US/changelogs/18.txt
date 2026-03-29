@@ -1,0 +1,5 @@
+Improved work profile support.
+The home button always returns to the home screen.
+Screen orientation is locked to portrait by default.
+Fixed "Edit home screen" opening scrolled to the wrong place.
+Shortcut icon picker background is no longer transparent.
