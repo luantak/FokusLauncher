@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
-import android.content.pm.ResolveInfo
 import android.location.LocationManager
 import android.os.BatteryManager
 import android.os.Build
@@ -33,6 +32,7 @@ import com.lu4p.fokuslauncher.data.model.WeatherData
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.data.repository.WeatherRepository
+import com.lu4p.fokuslauncher.utils.isDefaultHomeApp
 import com.lu4p.fokuslauncher.ui.util.formatShortcutTargetDisplay
 import com.lu4p.fokuslauncher.data.util.TemperatureUnitHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -506,12 +506,8 @@ class HomeViewModel @Inject constructor(
 
     private fun checkDefaultLauncher() {
         try {
-            val homeIntent = Intent(Intent.ACTION_MAIN).apply { addCategory(Intent.CATEGORY_HOME) }
-            val resolveInfo: ResolveInfo? = context.packageManager.resolveActivity(
-                homeIntent, PackageManager.MATCH_DEFAULT_ONLY
-            )
-            val isDefault = resolveInfo?.activityInfo?.packageName == context.packageName
-            _uiState.value = _uiState.value.copy(isDefaultLauncher = isDefault)
+            _uiState.value =
+                    _uiState.value.copy(isDefaultLauncher = context.isDefaultHomeApp())
         } catch (_: Exception) {
             _uiState.value = _uiState.value.copy(isDefaultLauncher = false)
         }

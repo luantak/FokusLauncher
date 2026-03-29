@@ -5,7 +5,6 @@ import android.app.WallpaperManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.content.pm.ResolveInfo
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import androidx.core.graphics.createBitmap
@@ -18,6 +17,7 @@ import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.repository.AppRepository
+import com.lu4p.fokuslauncher.utils.isDefaultHomeApp
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -155,14 +155,7 @@ class OnboardingViewModel @Inject constructor(
     }
 
     private fun checkDefaultLauncher() {
-        val homeIntent = Intent(Intent.ACTION_MAIN).apply {
-            addCategory(Intent.CATEGORY_HOME)
-        }
-        val resolveInfo: ResolveInfo? = context.packageManager.resolveActivity(
-            homeIntent, PackageManager.MATCH_DEFAULT_ONLY
-        )
-        val isDefault = resolveInfo?.activityInfo?.packageName == context.packageName
-        _isDefaultLauncher.value = isDefault
+        _isDefaultLauncher.value = context.isDefaultHomeApp()
     }
 
     private fun checkLocationPermission() {
