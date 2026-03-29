@@ -14,7 +14,10 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Named
 import javax.inject.Singleton
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -66,4 +69,10 @@ object AppModule {
     fun providePrivateSpaceManager(
         @ApplicationContext context: Context
     ): PrivateSpaceManager = PrivateSpaceManager(context)
+
+    /** CPU-bound drawer work; tests may replace with [Dispatchers.Unconfined]. */
+    @Provides
+    @Singleton
+    @Named("DrawerComputation")
+    fun provideDrawerComputationDispatcher(): CoroutineDispatcher = Dispatchers.Default
 }

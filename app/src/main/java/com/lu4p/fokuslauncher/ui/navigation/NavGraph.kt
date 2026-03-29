@@ -57,6 +57,7 @@ import androidx.navigation.compose.rememberNavController
 import android.view.WindowManager
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.ui.drawer.AppDrawerScreen
+import com.lu4p.fokuslauncher.ui.drawer.AppDrawerViewModel
 import com.lu4p.fokuslauncher.ui.home.HomeScreen
 import com.lu4p.fokuslauncher.ui.home.HomeViewModel
 import com.lu4p.fokuslauncher.ui.onboarding.OnboardingScreen
@@ -204,6 +205,10 @@ fun FokusNavGraph(
                 popEnterTransition = { androidx.compose.animation.EnterTransition.None }
             ) {
                 BackHandler(enabled = true) { /* launcher: no-op */ }
+
+                // Eager scope: start loading apps and pre-warming drawer caches as soon as Home is
+                // shown, not on first drawer composition (faster first open).
+                val appDrawerViewModel: AppDrawerViewModel = hiltViewModel()
 
                 val homeViewModel: HomeViewModel = hiltViewModel()
                 val lifecycleOwner = LocalLifecycleOwner.current
@@ -380,7 +385,7 @@ fun FokusNavGraph(
                     enter = slideInVertically(
                         animationSpec = spring(
                             dampingRatio = Spring.DampingRatioLowBouncy,
-                            stiffness = Spring.StiffnessHigh
+                            stiffness = Spring.StiffnessMedium
                         ),
                         initialOffsetY = { it }   // slide up from below the screen
                     ),
@@ -399,6 +404,7 @@ fun FokusNavGraph(
                             ) {}
                     ) {
                         AppDrawerScreen(
+                            viewModel = appDrawerViewModel,
                             onSettingsClick = {
                                 navController.navigate(Routes.SETTINGS) { launchSingleTop = true }
                             },

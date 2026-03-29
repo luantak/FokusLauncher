@@ -39,7 +39,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -49,6 +48,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -96,7 +96,7 @@ fun AppDrawerScreen(
 
     // Close the drawer after an app is auto-launched from search
     LaunchedEffect(Unit) {
-        viewModel.resetSearchState()
+        viewModel.resetSearchStateIfNeeded()
         viewModel.events.collect { event ->
             when (event) {
                 is DrawerEvent.AutoLaunch -> {
@@ -177,6 +177,7 @@ fun AppDrawerContent(
 ) {
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
     val listState = rememberLazyListState()
     val latestCategories = rememberUpdatedState(uiState.categories)
     val latestSelectedCategory = rememberUpdatedState(uiState.selectedCategory)
@@ -201,9 +202,10 @@ fun AppDrawerContent(
     // Autofocus the search bar and show keyboard when the drawer opens
     LaunchedEffect(uiState.autoOpenKeyboard) {
         if (!uiState.autoOpenKeyboard) return@LaunchedEffect
-        // Wait for layout so FocusRequester is attached; avoids a long fixed delay before IME shows.
-        repeat(2) { withFrameNanos { } }
+        // explicit show() helps IME
+        // appear sooner on some devices than focus alone.
         focusRequester.requestFocus()
+        keyboardController?.show()
     }
 
     // Swipe-down-to-close: detect overscroll at the top of the list

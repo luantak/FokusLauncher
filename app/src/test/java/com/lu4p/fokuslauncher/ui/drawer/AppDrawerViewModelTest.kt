@@ -30,6 +30,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -103,7 +104,13 @@ class AppDrawerViewModelTest {
         every { privateSpaceManager.launchApp(any(), any()) } returns true
         every { privateSpaceManager.profileStateChanged } returns privateProfileChanges
         viewModel =
-                AppDrawerViewModel(context, appRepository, privateSpaceManager, preferencesManager)
+                AppDrawerViewModel(
+                        context,
+                        appRepository,
+                        privateSpaceManager,
+                        preferencesManager,
+                        Dispatchers.Unconfined
+                )
         awaitState("apps to load") { it.allApps.isNotEmpty() }
     }
 
@@ -223,6 +230,26 @@ class AppDrawerViewModelTest {
         viewModel.onCategorySelected("Social")
         viewModel.onSearchQueryChanged("tw")
         viewModel.resetSearchState()
+
+        val state = viewModel.uiState.value
+        assertEquals("", state.searchQuery)
+        assertEquals("All apps", state.selectedCategory)
+        assertEquals(testApps.size, flatFiltered(state).size)
+    }
+
+    @Test
+    fun `resetSearchStateIfNeeded is no-op when already at default category and blank search`() {
+        val before = viewModel.uiState.value
+        viewModel.resetSearchStateIfNeeded()
+        assertSame(before, viewModel.uiState.value)
+    }
+
+    @Test
+    fun `resetSearchStateIfNeeded matches resetSearchState when dirty`() {
+        viewModel.onCategorySelected("Social")
+        viewModel.onSearchQueryChanged("tw")
+
+        viewModel.resetSearchStateIfNeeded()
 
         val state = viewModel.uiState.value
         assertEquals("", state.searchQuery)
