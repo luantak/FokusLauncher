@@ -44,6 +44,8 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         private val LAUNCHER_FONT_FAMILY_KEY = stringPreferencesKey("launcher_font_family")
         /** BCP-47 tag (e.g. en, pl). Empty = follow system. Sync with AppLocaleHelper. */
         private val APP_LOCALE_TAG_KEY = stringPreferencesKey("app_locale_tag")
+        private val ALLOW_LANDSCAPE_ROTATION_KEY =
+                booleanPreferencesKey("allow_landscape_rotation")
 
         /**
          * Format: "label;packageName;iconName" entries separated by "|" Falls back to legacy
@@ -261,6 +263,19 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         context.fokusLauncherPreferencesDataStore.edit { prefs ->
             if (trimmed.isEmpty()) prefs.remove(APP_LOCALE_TAG_KEY)
             else prefs[APP_LOCALE_TAG_KEY] = trimmed
+        }
+    }
+
+    // --- Screen rotation ---
+
+    val allowLandscapeRotationFlow: Flow<Boolean> =
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
+                prefs[ALLOW_LANDSCAPE_ROTATION_KEY] ?: false
+            }
+
+    suspend fun setAllowLandscapeRotation(allow: Boolean) {
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            prefs[ALLOW_LANDSCAPE_ROTATION_KEY] = allow
         }
     }
 

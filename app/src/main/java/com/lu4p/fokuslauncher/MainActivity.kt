@@ -3,6 +3,7 @@ package com.lu4p.fokuslauncher
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.os.Build
 import android.os.Bundle
 import android.view.View
@@ -47,6 +48,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        applyLauncherScreenOrientation(allowLandscape = false)
+
         // Preload apps in background to warm up cache
         CoroutineScope(Dispatchers.IO).launch {
             appRepository.getInstalledApps()
@@ -60,9 +63,16 @@ class MainActivity : AppCompatActivity() {
         hideStatusBar()
         lifecycleScope.launch {
             repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
-                preferencesManager.showStatusBarFlow.collect { showStatusBar ->
-                    shouldShowStatusBar = showStatusBar
-                    updateStatusBarVisibility(showStatusBar)
+                launch {
+                    preferencesManager.showStatusBarFlow.collect { showStatusBar ->
+                        shouldShowStatusBar = showStatusBar
+                        updateStatusBarVisibility(showStatusBar)
+                    }
+                }
+                launch {
+                    preferencesManager.allowLandscapeRotationFlow.collect { allowLandscape ->
+                        applyLauncherScreenOrientation(allowLandscape)
+                    }
                 }
             }
         }
@@ -121,6 +131,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateStatusBarVisibility(showStatusBar: Boolean) {
         if (showStatusBar) showStatusBar() else hideStatusBar()
+    }
+
+    private fun applyLauncherScreenOrientation(allowLandscape: Boolean) {
+        requestedOrientation =
+                if (allowLandscape) ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                else ActivityInfo.SCREEN_ORIENTATION_USER_PORTRAIT
     }
 
     companion object {

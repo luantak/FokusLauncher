@@ -50,6 +50,7 @@ data class SettingsUiState(
         val launcherFontFamilyName: String = "",
         /** BCP-47 tag; empty = system default. */
         val appLocaleTag: String = "",
+        val allowLandscapeRotation: Boolean = false,
         val allApps: List<AppInfo> = emptyList()
 )
 
@@ -153,6 +154,12 @@ constructor(
                         Pair(pair.first, Pair(pair.second, appLocaleTag))
                     }
                     .combine(preferencesManager.homeAlignmentFlow) { nested, homeAlignment ->
+                        Pair(nested, homeAlignment)
+                    }
+                    .combine(preferencesManager.allowLandscapeRotationFlow) {
+                            nestedAndHome,
+                            allowLandscapeRotation ->
+                        val (nested, homeAlignment) = nestedAndHome
                         val (sortTriple, fontAndLocale) = nested
                         val (fontFamilyName, appLocaleTag) = fontAndLocale
                         val (weatherWithSettingsState, hideAllAppsSection, drawerAppSortMode) =
@@ -186,6 +193,7 @@ constructor(
                                 homeAlignment = homeAlignment,
                                 launcherFontFamilyName = fontFamilyName,
                                 appLocaleTag = appLocaleTag,
+                                allowLandscapeRotation = allowLandscapeRotation,
                                 allApps = allApps
                         )
                     }
@@ -251,6 +259,10 @@ constructor(
 
     fun setShowStatusBar(show: Boolean) {
         viewModelScope.launch { preferencesManager.setShowStatusBar(show) }
+    }
+
+    fun setAllowLandscapeRotation(allow: Boolean) {
+        viewModelScope.launch { preferencesManager.setAllowLandscapeRotation(allow) }
     }
 
     fun setShowHomeScreenWidgets(show: Boolean) {

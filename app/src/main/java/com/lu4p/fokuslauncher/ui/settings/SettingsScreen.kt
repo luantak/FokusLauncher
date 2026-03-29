@@ -153,6 +153,14 @@ fun SettingsScreen(
             }
 
             item {
+                SettingsToggleRow(
+                        label = stringResource(R.string.settings_allow_landscape_rotation),
+                        checked = uiState.allowLandscapeRotation,
+                        onCheckedChange = { viewModel.setAllowLandscapeRotation(it) }
+                )
+            }
+
+            item {
                 AppLanguageDropdown(
                         currentTag = uiState.appLocaleTag,
                         onTagSelected = { tag -> viewModel.setAppLocaleTag(tag) }
