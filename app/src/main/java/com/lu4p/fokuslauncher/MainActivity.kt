@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.Bundle
 import android.view.View
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
@@ -19,6 +20,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.ui.navigation.FokusNavGraph
+import com.lu4p.fokuslauncher.ui.navigation.LauncherHomeCoordinatorViewModel
 import com.lu4p.fokuslauncher.ui.theme.FokusLauncherTheme
 import com.lu4p.fokuslauncher.ui.util.ProvideAppLocale
 import com.lu4p.fokuslauncher.ui.theme.composeFontFamilyFromStoredName
@@ -37,6 +39,8 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var appRepository: AppRepository
+
+    private val launcherHomeCoordinator: LauncherHomeCoordinatorViewModel by viewModels()
 
     private var shouldShowStatusBar: Boolean = false
 
@@ -82,12 +86,17 @@ class MainActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         if (intent.action == Intent.ACTION_MAIN && intent.hasCategory(Intent.CATEGORY_HOME)) {
-            CoroutineScope(Dispatchers.Main).launch {
+            lifecycleScope.launch {
                 val hasCompleted = preferencesManager.hasCompletedOnboardingFlow.first()
-                if (!hasCompleted) {
+                if (hasCompleted) {
+                    setIntent(intent)
+                    launcherHomeCoordinator.requestGoHome()
+                } else {
                     setIntent(Intent(this@MainActivity, MainActivity::class.java))
                 }
             }
+        } else {
+            setIntent(intent)
         }
     }
 

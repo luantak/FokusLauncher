@@ -8,6 +8,7 @@ import android.content.pm.LauncherApps
 import android.net.Uri
 import android.os.Build
 import android.os.Process
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
@@ -106,6 +107,17 @@ fun FokusNavGraph(
     val navController = rememberNavController()
     var showDrawer by remember { mutableStateOf(false) }
     val horizontalSwipeActive = remember { mutableStateOf(false) }
+
+    val componentActivity = LocalActivity.current as ComponentActivity
+    val launcherHomeCoordinator =
+        hiltViewModel<LauncherHomeCoordinatorViewModel>(viewModelStoreOwner = componentActivity)
+
+    LaunchedEffect(launcherHomeCoordinator, navController) {
+        launcherHomeCoordinator.goHomeRequests.collect {
+            showDrawer = false
+            navController.popBackStack(Routes.HOME, inclusive = false)
+        }
+    }
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val isHome = navBackStackEntry?.destination?.route == Routes.HOME
