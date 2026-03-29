@@ -1,0 +1,4 @@
+Work profile apps have their own category in the drawer.
+Work profile shortcuts are supported.
+Default categories can now be removed.
+Smoother, snappier animations throughout the launcher.
