@@ -10,6 +10,8 @@ import android.content.pm.ResolveInfo
 import android.location.LocationManager
 import android.os.BatteryManager
 import android.os.Build
+import android.os.Process
+import android.os.UserHandle
 import android.provider.AlarmClock
 import android.provider.CalendarContract
 import android.provider.Settings
@@ -254,6 +256,9 @@ class HomeViewModel @Inject constructor(
         _appMenuTarget.value = null
         _editRightShortcuts.value = rightSideShortcuts.value
         viewModelScope.launch(Dispatchers.IO) {
+            val apps = appRepository.getInstalledApps()
+            _allInstalledApps.value = apps
+            _appNameMap.value = apps.associate { it.packageName to it.label }
             _allShortcutActions.value = appRepository.getAllShortcutActions()
         }
     }
@@ -296,14 +301,18 @@ class HomeViewModel @Inject constructor(
 
     fun toggleRightShortcut(action: AppShortcutAction) {
         val current = _editRightShortcuts.value.toMutableList()
-        val existing = current.indexOfFirst { it.target == action.target }
+        val existing =
+                current.indexOfFirst {
+                    it.target == action.target && it.profileKey == action.profileKey
+                }
         if (existing >= 0) {
             current.removeAt(existing)
         } else {
             current.add(
                 HomeShortcut(
                     iconName = inferIconNameForAction(action),
-                    target = action.target
+                    target = action.target,
+                    profileKey = action.profileKey,
                 )
             )
         }
@@ -546,11 +555,30 @@ class HomeViewModel @Inject constructor(
         appRepository.launchApp(fav.packageName)
     }
 
-    fun launchShortcut(target: ShortcutTarget) {
-        when (target) {
-            is ShortcutTarget.App -> launchApp(target.packageName)
-            is ShortcutTarget.LauncherShortcut ->
-                appRepository.launchLauncherShortcut(target.packageName, target.shortcutId)
+    fun launchShortcut(shortcut: HomeShortcut) {
+        when (val target = shortcut.target) {
+            is ShortcutTarget.App -> {
+                if (shortcut.profileKey != "0") {
+                    val app =
+                            _allInstalledApps.value.firstOrNull {
+                                it.packageName == target.packageName &&
+                                        appProfileKey(it.userHandle) == shortcut.profileKey
+                            }
+                    val cn = app?.componentName
+                    val uh = app?.userHandle
+                    if (cn != null && uh != null && appRepository.launchMainActivity(cn, uh)) return
+                }
+                launchApp(target.packageName)
+            }
+            is ShortcutTarget.LauncherShortcut -> {
+                val user =
+                        resolveUserHandleForShortcut(shortcut.profileKey, target.packageName)
+                appRepository.launchLauncherShortcut(
+                        target.packageName,
+                        target.shortcutId,
+                        user,
+                )
+            }
             is ShortcutTarget.DeepLink -> {
                 val intent = try {
                     Intent.parseUri(target.intentUri, Intent.URI_INTENT_SCHEME)
@@ -567,11 +595,22 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun formatShortcutTarget(target: ShortcutTarget): String {
+    private fun resolveUserHandleForShortcut(profileKey: String, packageName: String): UserHandle {
+        if (profileKey == "0") return Process.myUserHandle()
+        val app =
+                _allInstalledApps.value.firstOrNull {
+                    it.packageName == packageName && appProfileKey(it.userHandle) == profileKey
+                }
+        return app?.userHandle ?: Process.myUserHandle()
+    }
+
+    fun formatShortcutTarget(target: ShortcutTarget, profileKey: String = "0"): String {
         val apps = _allInstalledApps.value
         val resolvedLabel =
                 if (target is ShortcutTarget.LauncherShortcut) {
-                    _allShortcutActions.value.firstOrNull { it.target == target }?.actionLabel
+                    _allShortcutActions.value
+                        .firstOrNull { it.target == target && it.profileKey == profileKey }
+                        ?.actionLabel
                 } else {
                     null
                 }
@@ -580,7 +619,8 @@ class HomeViewModel @Inject constructor(
                 target = target,
                 allApps = apps,
                 notSetLabel = context.getString(R.string.shortcut_target_not_set),
-                resolvedLauncherActionLabel = resolvedLabel
+                resolvedLauncherActionLabel = resolvedLabel,
+                profileKey = profileKey,
         )
     }
 

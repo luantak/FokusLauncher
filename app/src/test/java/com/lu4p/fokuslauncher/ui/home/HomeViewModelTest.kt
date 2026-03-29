@@ -12,6 +12,7 @@ import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
+import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.data.repository.WeatherRepository
@@ -351,8 +352,8 @@ class HomeViewModelTest {
     @Test
     fun `launchShortcut handles App target`() {
         val viewModel = createViewModel()
-        viewModel.launchShortcut(ShortcutTarget.App("com.lu4p.music"))
-        
+        viewModel.launchShortcut(HomeShortcut(target = ShortcutTarget.App("com.lu4p.music")))
+
         verify { appRepository.launchApp("com.lu4p.music") }
     }
 }

@@ -23,6 +23,7 @@ import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import com.lu4p.fokuslauncher.data.model.AppShortcutAction
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
+import com.lu4p.fokuslauncher.data.model.appProfileKey
 import com.lu4p.fokuslauncher.data.model.SystemCategoryKeys
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
 import com.lu4p.fokuslauncher.utils.ProfileHeuristics
@@ -306,10 +307,15 @@ constructor(
     /**
      * Launches an Android launcher shortcut action (long-press shortcut).
      */
-    fun launchLauncherShortcut(packageName: String, shortcutId: String): Boolean {
+    fun launchLauncherShortcut(
+            packageName: String,
+            shortcutId: String,
+            userHandle: UserHandle? = null
+    ): Boolean {
         return try {
             val launcherApps = context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as LauncherApps
-            launcherApps.startShortcut(packageName, shortcutId, null, null, Process.myUserHandle())
+            val user = userHandle ?: Process.myUserHandle()
+            launcherApps.startShortcut(packageName, shortcutId, null, null, user)
             true
         } catch (_: Exception) {
             false
@@ -332,17 +338,21 @@ constructor(
                 null
             }
 
+        val myUser = Process.myUserHandle()
         apps.forEach { app ->
+            val profileKey = appProfileKey(app.userHandle)
             actions.add(
                 AppShortcutAction(
                     appLabel = app.label,
                     actionLabel = AppShortcutAction.OPEN_APP_LABEL,
-                    target = ShortcutTarget.App(app.packageName)
+                    target = ShortcutTarget.App(app.packageName),
+                    profileKey = profileKey,
                 )
             )
 
             if (launcherApps == null) return@forEach
 
+            val shortcutUser = app.userHandle ?: myUser
             val shortcuts = try {
                 val query = LauncherApps.ShortcutQuery()
                     .setPackage(app.packageName)
@@ -351,7 +361,7 @@ constructor(
                             LauncherApps.ShortcutQuery.FLAG_MATCH_MANIFEST or
                             LauncherApps.ShortcutQuery.FLAG_MATCH_PINNED
                     )
-                launcherApps.getShortcuts(query, Process.myUserHandle()).orEmpty()
+                launcherApps.getShortcuts(query, shortcutUser).orEmpty()
             } catch (_: Exception) {
                 emptyList()
             }
@@ -372,14 +382,16 @@ constructor(
                             target = ShortcutTarget.LauncherShortcut(
                                 packageName = app.packageName,
                                 shortcutId = info.id
-                            )
+                            ),
+                            profileKey = profileKey,
                         )
                     )
                 }
         }
 
         return actions.sortedWith(
-            compareBy<AppShortcutAction> { it.appLabel.lowercase() }
+            compareBy<AppShortcutAction> { it.profileKey }
+                .thenBy { it.appLabel.lowercase() }
                 .thenBy { it.actionLabel.lowercase() }
         )
     }

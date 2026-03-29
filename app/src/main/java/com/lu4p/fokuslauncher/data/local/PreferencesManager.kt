@@ -329,17 +329,18 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
     private fun parseRightSideShortcuts(raw: String): List<HomeShortcut> {
         if (raw.isBlank()) return emptyList()
         return raw.split("|").mapNotNull { entry ->
-            val parts = entry.split(";", limit = 2)
-            if (parts.size != 2) return@mapNotNull null
+            val parts = entry.split(";")
+            if (parts.size < 2) return@mapNotNull null
             val iconName = parts[0].ifBlank { "circle" }
             val target = ShortcutTarget.decode(parts[1]) ?: return@mapNotNull null
-            HomeShortcut(iconName = iconName, target = target)
+            val profileKey = parts.getOrElse(2) { "0" }.ifBlank { "0" }
+            HomeShortcut(iconName = iconName, target = target, profileKey = profileKey)
         }
     }
 
     private fun serializeRightSideShortcuts(shortcuts: List<HomeShortcut>): String {
         return shortcuts.joinToString("|") { shortcut ->
-            "${shortcut.iconName};${ShortcutTarget.encode(shortcut.target)}"
+            "${shortcut.iconName};${ShortcutTarget.encode(shortcut.target)};${shortcut.profileKey}"
         }
     }
 

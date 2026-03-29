@@ -60,7 +60,6 @@ import com.lu4p.fokuslauncher.ui.drawer.sortAppsAlphabeticallyByProfileSection
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
-import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.ui.components.ClockWidget
 import com.lu4p.fokuslauncher.ui.components.DateBatteryRow
 import com.lu4p.fokuslauncher.ui.components.MinimalIcons
@@ -105,7 +104,7 @@ fun HomeScreen(
             onLabelClick = { fav -> viewModel.launchFavorite(fav) },
             onLabelLongPress = { fav -> viewModel.onFavoriteLongPress(fav) },
             onHomeScreenLongPress = { viewModel.onHomeScreenLongPress() },
-            onIconClick = { target -> viewModel.launchShortcut(target) },
+            onIconClick = { shortcut -> viewModel.launchShortcut(shortcut) },
             onSetDefaultLauncher = { viewModel.openDefaultLauncherSettings() },
             onClockClick = { viewModel.openClockApp() },
             onDateClick = { viewModel.openCalendarApp() },
@@ -163,7 +162,7 @@ fun HomeScreenContent(
     installedApps: List<AppInfo> = emptyList(),
     rightSideShortcuts: List<HomeShortcut>,
     onLabelClick: (FavoriteApp) -> Unit,
-    onIconClick: (ShortcutTarget) -> Unit,
+    onIconClick: (HomeShortcut) -> Unit,
     modifier: Modifier = Modifier,
     onLabelLongPress: (FavoriteApp) -> Unit = {},
     onHomeScreenLongPress: () -> Unit = {},
@@ -261,7 +260,7 @@ fun HomeScreenContent(
                                         tint = MaterialTheme.colorScheme.onBackground,
                                         modifier = Modifier
                                             .size(24.dp)
-                                            .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { onIconClick(shortcut.target) }
+                                            .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { onIconClick(shortcut) }
                                             .testTag("right_shortcut_icon_$index")
                                     )
                                 }
@@ -291,7 +290,7 @@ fun HomeScreenContent(
                                     tint = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier
                                         .size(24.dp)
-                                        .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { onIconClick(shortcut.target) }
+                                        .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { onIconClick(shortcut) }
                                         .testTag("right_shortcut_icon_$index")
                                 )
                             }
@@ -358,7 +357,7 @@ fun HomeScreenContent(
                                     tint = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier
                                         .size(24.dp)
-                                        .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { onIconClick(shortcut.target) }
+                                        .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { onIconClick(shortcut) }
                                         .testTag("right_shortcut_icon_$index")
                                 )
                             }

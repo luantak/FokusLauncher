@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -20,7 +21,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
@@ -48,15 +48,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.R
+import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.AppShortcutAction
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
-import com.lu4p.fokuslauncher.data.model.ShortcutTarget
+import com.lu4p.fokuslauncher.data.model.stableSelectionKey
 import com.lu4p.fokuslauncher.ui.components.MinimalIcons
+import com.lu4p.fokuslauncher.ui.drawer.DrawerProfileShortcutSectionUi
+import com.lu4p.fokuslauncher.ui.drawer.groupShortcutActionsIntoProfileSections
+import com.lu4p.fokuslauncher.ui.drawer.profileGroupedShortcutItems
+import com.lu4p.fokuslauncher.ui.drawer.profileOriginLabelForHomeShortcut
 import com.lu4p.fokuslauncher.ui.home.HomeViewModel
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
 
@@ -67,13 +73,15 @@ fun EditShortcutsScreen(
     onNavigateBack: () -> Unit,
     backgroundScrim: Color = FokusBackdrop.ScrimColorWithoutBlur
 ) {
+    val context = LocalContext.current
     val editShortcuts by viewModel.editRightShortcuts.collectAsStateWithLifecycle()
     val allActions by viewModel.allShortcutActions.collectAsStateWithLifecycle()
+    val allApps by viewModel.allInstalledApps.collectAsStateWithLifecycle()
     var searchQuery by remember { mutableStateOf("") }
     val iconPickerForIndex = remember { mutableStateOf<Int?>(null) }
 
     val selectedIds = remember(editShortcuts) {
-        editShortcuts.map { ShortcutTarget.encode(it.target) }.toSet()
+        editShortcuts.map { it.stableSelectionKey() }.toSet()
     }
     val uncheckedActions = remember(allActions, selectedIds, searchQuery) {
         allActions
@@ -83,11 +91,8 @@ fun EditShortcutsScreen(
                 else list.filter { it.displayLabel.contains(searchQuery, ignoreCase = true) }
             }
     }
-    val uncheckedActionsGrouped = remember(uncheckedActions) {
-        uncheckedActions
-            .groupBy { it.appLabel }
-            .toList()
-            .sortedBy { it.first.lowercase() }
+    val uncheckedShortcutSections = remember(uncheckedActions, allApps, context) {
+        groupShortcutActionsIntoProfileSections(context, uncheckedActions, allApps)
     }
 
     val listState = rememberLazyListState()
@@ -151,20 +156,24 @@ fun EditShortcutsScreen(
         ReorderableShortcutList(
             listState = listState,
             editShortcuts = editShortcuts,
-            uncheckedActionsGrouped = uncheckedActionsGrouped,
-            onToggleChecked = { target ->
+            allApps = allApps,
+            uncheckedShortcutSections = uncheckedShortcutSections,
+            onToggleChecked = { shortcut ->
                 viewModel.toggleRightShortcut(
                     AppShortcutAction(
-                        appLabel = viewModel.formatShortcutTarget(target),
+                        appLabel = viewModel.formatShortcutTarget(shortcut.target, shortcut.profileKey),
                         actionLabel = AppShortcutAction.OPEN_APP_LABEL,
-                        target = target
+                        target = shortcut.target,
+                        profileKey = shortcut.profileKey,
                     )
                 )
             },
             onToggleUnchecked = { action -> viewModel.toggleRightShortcut(action) },
             onReorder = { from, to -> viewModel.reorderRightShortcut(from, to) },
             onOpenIconPicker = { index -> iconPickerForIndex.value = index },
-            formatCheckedLabel = { target -> viewModel.formatShortcutTarget(target) }
+            formatCheckedLabel = { shortcut ->
+                viewModel.formatShortcutTarget(shortcut.target, shortcut.profileKey)
+            }
         )
     }
 
@@ -184,17 +193,19 @@ fun EditShortcutsScreen(
 private fun ReorderableShortcutList(
     listState: LazyListState,
     editShortcuts: List<HomeShortcut>,
-    uncheckedActionsGrouped: List<Pair<String, List<AppShortcutAction>>>,
-    onToggleChecked: (ShortcutTarget) -> Unit,
+    allApps: List<AppInfo>,
+    uncheckedShortcutSections: List<DrawerProfileShortcutSectionUi>,
+    onToggleChecked: (HomeShortcut) -> Unit,
     onToggleUnchecked: (AppShortcutAction) -> Unit,
     onReorder: (Int, Int) -> Unit,
     onOpenIconPicker: (Int) -> Unit,
-    formatCheckedLabel: (ShortcutTarget) -> String
+    formatCheckedLabel: (HomeShortcut) -> String
 ) {
     var draggedIndex by remember { mutableIntStateOf(-1) }
     var dragOffset by remember { mutableFloatStateOf(0f) }
     val itemHeightPx = with(LocalDensity.current) { 56.dp.toPx() }
     val openAppLabel = stringResource(R.string.shortcut_open_app)
+    val context = LocalContext.current
     val resetDragState = {
         draggedIndex = -1
         dragOffset = 0f
@@ -214,9 +225,13 @@ private fun ReorderableShortcutList(
 
         items(
             count = editShortcuts.size,
-            key = { "checked_shortcut_${ShortcutTarget.encode(editShortcuts[it].target)}" }
+            key = { "checked_shortcut_${editShortcuts[it].stableSelectionKey()}" }
         ) { index ->
             val shortcut = editShortcuts[index]
+            val profileBadge =
+                remember(shortcut, allApps, context) {
+                    profileOriginLabelForHomeShortcut(context, shortcut, allApps)
+                }
             val offset = if (index == draggedIndex) {
                 dragOffset.coerceIn(-itemHeightPx, itemHeightPx)
             } else {
@@ -226,9 +241,9 @@ private fun ReorderableShortcutList(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp)
+                    .heightIn(min = 56.dp)
                     .graphicsLayer { translationY = offset }
-                    .padding(horizontal = 16.dp),
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
@@ -237,7 +252,7 @@ private fun ReorderableShortcutList(
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier
                         .size(24.dp)
-                        .pointerInput(shortcut.target, editShortcuts.size) {
+                        .pointerInput(shortcut.target, shortcut.profileKey, editShortcuts.size) {
                             detectVerticalDragGestures(
                                 onDragStart = {
                                     draggedIndex = index
@@ -273,7 +288,7 @@ private fun ReorderableShortcutList(
                 Spacer(modifier = Modifier.width(8.dp))
                 Checkbox(
                     checked = true,
-                    onCheckedChange = { _ -> onToggleChecked(shortcut.target) }
+                    onCheckedChange = { _ -> onToggleChecked(shortcut) }
                 )
                 Spacer(modifier = Modifier.width(8.dp))
 
@@ -288,12 +303,21 @@ private fun ReorderableShortcutList(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                Text(
-                    text = formatCheckedLabel(shortcut.target),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.weight(1f, fill = false)
-                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = formatCheckedLabel(shortcut),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    if (profileBadge != null) {
+                        Text(
+                            text = profileBadge,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 2.dp)
+                        )
+                    }
+                }
             }
         }
 
@@ -306,43 +330,37 @@ private fun ReorderableShortcutList(
             )
         }
 
-        uncheckedActionsGrouped.forEach { (appLabel, actions) ->
-            item(key = "group_$appLabel") {
-                Text(
-                    text = appLabel,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-                )
-            }
-            items(
-                items = actions,
-                key = { "unchecked_shortcut_${it.id}" }
-            ) { action ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .padding(horizontal = 16.dp, vertical = 2.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Spacer(modifier = Modifier.size(24.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Checkbox(
-                        checked = false,
-                        onCheckedChange = { _ -> onToggleUnchecked(action) }
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = if (action.actionLabel == AppShortcutAction.OPEN_APP_LABEL) {
-                            openAppLabel
-                        } else {
-                            action.actionLabel
-                        },
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
+        profileGroupedShortcutItems(
+            sections = uncheckedShortcutSections,
+            keyPrefix = "unchecked_shortcut",
+            horizontalPadding = 16.dp,
+        ) { action ->
+            val primaryText =
+                if (action.actionLabel == AppShortcutAction.OPEN_APP_LABEL) {
+                    openAppLabel
+                } else {
+                    action.actionLabel
                 }
+            Row(
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .heightIn(min = 56.dp)
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Spacer(modifier = Modifier.size(24.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Checkbox(
+                    checked = false,
+                    onCheckedChange = { _ -> onToggleUnchecked(action) }
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = primaryText,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.weight(1f)
+                )
             }
         }
     }

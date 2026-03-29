@@ -7,9 +7,12 @@ package com.lu4p.fokuslauncher.data.model
 data class AppShortcutAction(
     val appLabel: String,
     val actionLabel: String,
-    val target: ShortcutTarget
+    val target: ShortcutTarget,
+    /** Same encoding as [FavoriteApp.profileKey] (`"0"` = owner). */
+    val profileKey: String = "0",
 ) {
-    val id: String get() = ShortcutTarget.encode(target)
+    /** Stable list / selection id (profile + target). */
+    val id: String get() = "$profileKey|${ShortcutTarget.encode(target)}"
 
     val displayLabel: String
         get() = if (actionLabel == OPEN_APP_LABEL) appLabel else "$appLabel - $actionLabel"

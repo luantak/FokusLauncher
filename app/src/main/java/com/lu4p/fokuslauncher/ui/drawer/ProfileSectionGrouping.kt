@@ -8,7 +8,10 @@ import android.os.UserHandle
 import android.os.UserManager
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.model.AppInfo
+import com.lu4p.fokuslauncher.data.model.AppShortcutAction
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
+import com.lu4p.fokuslauncher.data.model.HomeShortcut
+import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.model.appProfileKey
 import com.lu4p.fokuslauncher.utils.ProfileHeuristics
 
@@ -148,6 +151,25 @@ fun profileOriginLabelForApp(context: Context, app: AppInfo): String? {
  * Short label for the profile a home-screen favorite came from (null = personal / owner).
  * Uses the same naming rules as the app drawer when [matchingApp] supplies a [UserHandle].
  */
+/** Profile subtitle for a saved right-side shortcut (null = personal / owner). */
+fun profileOriginLabelForHomeShortcut(context: Context, shortcut: HomeShortcut, allApps: List<AppInfo>): String? {
+    if (shortcut.profileKey == "0") return null
+    matchingAppInfoForHomeShortcut(shortcut, allApps)?.let { return profileOriginLabelForApp(context, it) }
+    return context.getString(R.string.drawer_section_work_profile)
+}
+
+private fun matchingAppInfoForHomeShortcut(shortcut: HomeShortcut, allApps: List<AppInfo>): AppInfo? {
+    val packageName =
+            when (val t = shortcut.target) {
+                is ShortcutTarget.App -> t.packageName
+                is ShortcutTarget.LauncherShortcut -> t.packageName
+                else -> return null
+            }
+    return allApps.find {
+        it.packageName == packageName && appProfileKey(it.userHandle) == shortcut.profileKey
+    }
+}
+
 fun profileOriginLabelForFavorite(
         context: Context,
         fav: FavoriteApp,
@@ -206,5 +228,114 @@ internal fun profileSectionTitleForUser(
         context.getString(R.string.drawer_section_profile_numbered, serial)
     } else {
         context.getString(R.string.drawer_section_other_profile)
+    }
+}
+
+private val alphabeticalShortcutComparator =
+        compareBy<AppShortcutAction, String>(String.CASE_INSENSITIVE_ORDER) { it.appLabel }
+                .thenBy(String.CASE_INSENSITIVE_ORDER) { it.actionLabel }
+
+fun sortShortcutActionsAlphabetically(actions: List<AppShortcutAction>): List<AppShortcutAction> =
+        actions.sortedWith(alphabeticalShortcutComparator)
+
+/**
+ * Buckets shortcut actions by [AppShortcutAction.profileKey] using the same ordering as
+ * [groupAppsIntoProfileSections] (owner block, then secondary profiles by user serial).
+ */
+fun groupShortcutActionsIntoProfileSections(
+        context: Context,
+        actions: List<AppShortcutAction>,
+        allApps: List<AppInfo>,
+): List<DrawerProfileShortcutSectionUi> {
+    if (actions.isEmpty()) return emptyList()
+    val byProfile = actions.groupBy { it.profileKey }
+    val userManager =
+            try {
+                context.getSystemService(Context.USER_SERVICE) as? UserManager
+            } catch (_: Exception) {
+                null
+            }
+    if (userManager == null) {
+        return buildShortcutSectionsWithoutUserManager(context, byProfile, allApps)
+    }
+    val byUser = allApps.filter { it.userHandle != null }.groupBy { it.userHandle!! }
+    val orderedUsers =
+            byUser.keys.sortedBy { uh ->
+                try {
+                    userManager.getSerialNumberForUser(uh)
+                } catch (_: Exception) {
+                    Long.MAX_VALUE
+                }
+            }
+    return buildList {
+        val ownerActions = sortShortcutActionsAlphabetically(byProfile["0"].orEmpty())
+        if (ownerActions.isNotEmpty()) {
+            add(
+                    DrawerProfileShortcutSectionUi(
+                            id = "owner",
+                            title = context.getString(R.string.drawer_section_personal),
+                            actions = ownerActions,
+                    )
+            )
+        }
+        for (user in orderedUsers) {
+            val pk = appProfileKey(user)
+            val sectionActions = sortShortcutActionsAlphabetically(byProfile[pk].orEmpty())
+            if (sectionActions.isEmpty()) continue
+            add(
+                    DrawerProfileShortcutSectionUi(
+                            id = "u_${user.hashCode()}",
+                            title =
+                                    profileSectionTitleForUser(
+                                            context = context,
+                                            user = user,
+                                            userManager = userManager,
+                                            totalSecondaryProfiles = orderedUsers.size,
+                                    ),
+                            actions = sectionActions,
+                    )
+            )
+        }
+    }
+}
+
+private fun buildShortcutSectionsWithoutUserManager(
+        context: Context,
+        byProfile: Map<String, List<AppShortcutAction>>,
+        allApps: List<AppInfo>,
+): List<DrawerProfileShortcutSectionUi> {
+    return buildList {
+        val ownerActions = sortShortcutActionsAlphabetically(byProfile["0"].orEmpty())
+        if (ownerActions.isNotEmpty()) {
+            add(
+                    DrawerProfileShortcutSectionUi(
+                            id = "owner",
+                            title = context.getString(R.string.drawer_section_personal),
+                            actions = ownerActions,
+                    )
+            )
+        }
+        val byUser = allApps.filter { it.userHandle != null }.groupBy { it.userHandle!! }
+        for (user in byUser.keys) {
+            val pk = appProfileKey(user)
+            val sectionActions = sortShortcutActionsAlphabetically(byProfile[pk].orEmpty())
+            if (sectionActions.isEmpty()) continue
+            val title =
+                    when {
+                        byUser.keys.size == 1 &&
+                                !ProfileHeuristics.isLikelyCloneOrParallelProfile(context, user) ->
+                                context.getString(R.string.drawer_section_work_profile)
+                        ProfileHeuristics.isLikelyCloneOrParallelProfile(context, user) ->
+                                context.getString(R.string.drawer_section_clone_profile)
+                        else -> context.getString(R.string.drawer_section_other_profile)
+                    }
+            add(
+                    DrawerProfileShortcutSectionUi(
+                            id = "u_${user.hashCode()}",
+                            title = title,
+                            actions = sectionActions,
+                    )
+            )
+        }
     }
 }
