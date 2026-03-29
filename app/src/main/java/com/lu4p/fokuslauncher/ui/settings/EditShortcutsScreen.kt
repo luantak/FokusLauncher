@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -88,8 +90,12 @@ fun EditShortcutsScreen(
             .sortedBy { it.first.lowercase() }
     }
 
-    LaunchedEffect(Unit) {
-        viewModel.startEditingShortcuts()
+    val listState = rememberLazyListState()
+    var didSnapListTop by remember { mutableStateOf(false) }
+    LaunchedEffect(allActions.isNotEmpty()) {
+        if (didSnapListTop || allActions.isEmpty()) return@LaunchedEffect
+        listState.scrollToItem(0, 0)
+        didSnapListTop = true
     }
 
     BackHandler {
@@ -143,6 +149,7 @@ fun EditShortcutsScreen(
         )
 
         ReorderableShortcutList(
+            listState = listState,
             editShortcuts = editShortcuts,
             uncheckedActionsGrouped = uncheckedActionsGrouped,
             onToggleChecked = { target ->
@@ -175,6 +182,7 @@ fun EditShortcutsScreen(
 
 @Composable
 private fun ReorderableShortcutList(
+    listState: LazyListState,
     editShortcuts: List<HomeShortcut>,
     uncheckedActionsGrouped: List<Pair<String, List<AppShortcutAction>>>,
     onToggleChecked: (ShortcutTarget) -> Unit,
@@ -192,7 +200,7 @@ private fun ReorderableShortcutList(
         dragOffset = 0f
     }
 
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
+    LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
         if (editShortcuts.isNotEmpty()) {
             item(key = "header_checked_shortcuts") {
                 Text(

@@ -168,6 +168,10 @@ fun OnboardingScreen(
 
         // Show EditHomeAppsScreen as full-screen overlay during onboarding
         if (showEditHomeApps && homeViewModel != null) {
+            remember(homeViewModel) {
+                homeViewModel.startEditingHomeApps()
+                true
+            }
             EditHomeAppsScreen(
                 viewModel = homeViewModel,
                 onNavigateBack = { viewModel.onEditHomeAppsDismissed() },

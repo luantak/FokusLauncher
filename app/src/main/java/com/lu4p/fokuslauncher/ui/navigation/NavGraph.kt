@@ -486,11 +486,16 @@ fun FokusNavGraph(
                 exitTransition = { slideOutHorizontally(tween(ANIM_DURATION)) { -it } },
                 popEnterTransition = { slideInHorizontally(tween(ANIM_DURATION)) { -it } },
                 popExitTransition = { slideOutHorizontally(tween(ANIM_DURATION)) { it } }
-            ) {
-                val homeBackStackEntry = remember(navBackStackEntry) {
+            ) { editBackStackEntry ->
+                val homeBackStackEntry = remember(editBackStackEntry) {
                     navController.getBackStackEntry(Routes.HOME)
                 }
                 val homeViewModel: HomeViewModel = hiltViewModel(homeBackStackEntry)
+                // Run before first frame so edit lists are not briefly empty (only "All apps" visible).
+                remember(editBackStackEntry.id) {
+                    homeViewModel.startEditingHomeApps()
+                    true
+                }
                 EditHomeAppsScreen(
                     viewModel = homeViewModel,
                     onNavigateBack = { navController.popBackStack() },
@@ -504,11 +509,15 @@ fun FokusNavGraph(
                 exitTransition = { slideOutHorizontally(tween(ANIM_DURATION)) { -it } },
                 popEnterTransition = { slideInHorizontally(tween(ANIM_DURATION)) { -it } },
                 popExitTransition = { slideOutHorizontally(tween(ANIM_DURATION)) { it } }
-            ) {
-                val homeBackStackEntry = remember(navBackStackEntry) {
+            ) { editBackStackEntry ->
+                val homeBackStackEntry = remember(editBackStackEntry) {
                     navController.getBackStackEntry(Routes.HOME)
                 }
                 val homeViewModel: HomeViewModel = hiltViewModel(homeBackStackEntry)
+                remember(editBackStackEntry.id) {
+                    homeViewModel.startEditingShortcuts()
+                    true
+                }
                 EditShortcutsScreen(
                     viewModel = homeViewModel,
                     onNavigateBack = { navController.popBackStack() },

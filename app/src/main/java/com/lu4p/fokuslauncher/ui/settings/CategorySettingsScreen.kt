@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -30,6 +31,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -273,6 +275,14 @@ fun CategoryAppsScreen(
         groupAppsIntoProfileSections(context, uncheckedApps, ::sortAppsAlphabeticallyByProfileSection)
     }
 
+    val listState = rememberLazyListState()
+    var didSnapListTop by remember { mutableStateOf(false) }
+    LaunchedEffect(uiState.allApps.isNotEmpty()) {
+        if (didSnapListTop || uiState.allApps.isEmpty()) return@LaunchedEffect
+        listState.scrollToItem(0, 0)
+        didSnapListTop = true
+    }
+
     BackHandler { onNavigateBack() }
 
     Column(
@@ -313,7 +323,7 @@ fun CategoryAppsScreen(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
         )
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
             if (checkedApps.isNotEmpty()) {
                 item {
                     Text(

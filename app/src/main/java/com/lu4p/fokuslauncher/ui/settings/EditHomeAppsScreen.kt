@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -85,8 +87,12 @@ fun EditHomeAppsScreen(
         groupAppsIntoProfileSections(context, uncheckedApps, ::sortAppsAlphabeticallyByProfileSection)
     }
 
-    LaunchedEffect(Unit) {
-        viewModel.startEditingHomeApps()
+    val listState = rememberLazyListState()
+    var didSnapListTop by remember { mutableStateOf(false) }
+    LaunchedEffect(allApps.isNotEmpty()) {
+        if (didSnapListTop || allApps.isEmpty()) return@LaunchedEffect
+        listState.scrollToItem(0, 0)
+        didSnapListTop = true
     }
 
     BackHandler {
@@ -140,6 +146,7 @@ fun EditHomeAppsScreen(
         )
 
         ReorderableEditHomeAppsList(
+            listState = listState,
             editFavorites = editFavorites,
             uncheckedSections = uncheckedSections,
             allApps = allApps,
@@ -151,6 +158,7 @@ fun EditHomeAppsScreen(
 
 @Composable
 private fun ReorderableEditHomeAppsList(
+    listState: LazyListState,
     editFavorites: List<FavoriteApp>,
     uncheckedSections: List<DrawerProfileSectionUi>,
     allApps: List<AppInfo>,
@@ -166,7 +174,7 @@ private fun ReorderableEditHomeAppsList(
         dragOffset = 0f
     }
 
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
+    LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
         if (editFavorites.isNotEmpty()) {
             item(key = "header_checked") {
                 Text(
