@@ -15,6 +15,7 @@ import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.repository.AppRepository
+import com.lu4p.fokuslauncher.data.repository.RemovedApp
 import com.lu4p.fokuslauncher.data.repository.WeatherRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -24,6 +25,7 @@ import io.mockk.verify
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -50,6 +52,7 @@ class HomeViewModelTest {
     private lateinit var appRepository: AppRepository
     private lateinit var preferencesManager: PreferencesManager
     private lateinit var weatherRepository: WeatherRepository
+    private lateinit var removedPackages: MutableSharedFlow<RemovedApp>
     private val testDispatcher = StandardTestDispatcher()
     private var originalLocale: Locale = Locale.getDefault()
 
@@ -68,6 +71,7 @@ class HomeViewModelTest {
         appRepository = mockk(relaxed = true)
         preferencesManager = mockk(relaxed = true)
         weatherRepository = mockk(relaxed = true)
+        removedPackages = MutableSharedFlow(extraBufferCapacity = 1)
 
         // Mock battery intent
         val batteryIntent = mockk<Intent>(relaxed = true)
@@ -93,6 +97,7 @@ class HomeViewModelTest {
         every { appRepository.getAllRenamedApps() } returns flowOf(emptyList())
         every { appRepository.getInstalledApps() } returns emptyList()
         every { appRepository.getAllShortcutActions() } returns emptyList()
+        every { appRepository.getRemovedPackages() } returns removedPackages
     }
 
     @After
@@ -114,7 +119,7 @@ class HomeViewModelTest {
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceTimeBy(100)
 
-        val state = viewModel.uiState.value
+        val state = viewModel.clockUiState.value
         assertEquals(75, state.batteryPercent)
     }
 
@@ -123,7 +128,7 @@ class HomeViewModelTest {
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceTimeBy(1100)
 
-        val state = viewModel.uiState.value
+        val state = viewModel.clockUiState.value
         assertTrue(state.currentTime.isNotEmpty())
     }
 
@@ -136,7 +141,7 @@ class HomeViewModelTest {
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceTimeBy(100)
 
-        assertEquals(0, viewModel.uiState.value.batteryPercent)
+        assertEquals(0, viewModel.clockUiState.value.batteryPercent)
     }
 
     @Test
@@ -154,7 +159,7 @@ class HomeViewModelTest {
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceTimeBy(1100)
 
-        val state = viewModel.uiState.value
+        val state = viewModel.clockUiState.value
         assertTrue(state.currentDate.isNotEmpty())
     }
 
@@ -239,7 +244,7 @@ class HomeViewModelTest {
         every { batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) } returns 30
         viewModel.refreshBattery()
 
-        assertEquals(30, viewModel.uiState.value.batteryPercent)
+        assertEquals(30, viewModel.clockUiState.value.batteryPercent)
     }
 
     @Test
@@ -249,7 +254,7 @@ class HomeViewModelTest {
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceTimeBy(100)
 
-        assertEquals(0, viewModel.uiState.value.batteryPercent)
+        assertEquals(0, viewModel.clockUiState.value.batteryPercent)
     }
 
     @Test
@@ -265,7 +270,7 @@ class HomeViewModelTest {
         val viewModel = createViewModel(realContext)
         testDispatcher.scheduler.advanceTimeBy(100)
 
-        assertEquals(42, viewModel.uiState.value.batteryPercent)
+        assertEquals(42, viewModel.clockUiState.value.batteryPercent)
     }
 
     @Test
@@ -339,6 +344,49 @@ class HomeViewModelTest {
 
         coVerify(exactly = 0) { preferencesManager.setFavorites(any()) }
         collectJob.cancel()
+    }
+
+    @Test
+    fun `removed package disappears from favorites immediately`() {
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.runCurrent()
+
+        removedPackages.tryEmit(RemovedApp(packageName = "com.lu4p.music", profileKey = "0"))
+        testDispatcher.scheduler.runCurrent()
+
+        coVerify {
+            preferencesManager.setFavorites(
+                match { favorites ->
+                    favorites.none { it.packageName == "com.lu4p.music" } &&
+                        favorites.size == 2
+                }
+            )
+        }
+    }
+
+    @Test
+    fun `removed package only clears matching favorite profile`() {
+        every { preferencesManager.favoritesFlow } returns flowOf(
+            listOf(
+                FavoriteApp(label = "Music", packageName = "com.lu4p.music", iconName = "music", profileKey = "0"),
+                FavoriteApp(label = "Music Work", packageName = "com.lu4p.music", iconName = "music", profileKey = "42")
+            )
+        )
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.runCurrent()
+
+        removedPackages.tryEmit(RemovedApp(packageName = "com.lu4p.music", profileKey = "42"))
+        testDispatcher.scheduler.runCurrent()
+
+        coVerify {
+            preferencesManager.setFavorites(
+                match { favorites ->
+                    favorites.size == 1 &&
+                        favorites.single().packageName == "com.lu4p.music" &&
+                        favorites.single().profileKey == "0"
+                }
+            )
+        }
     }
 
     @Test

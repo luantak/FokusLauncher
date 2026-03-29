@@ -57,17 +57,23 @@ import java.util.Locale
 import javax.inject.Inject
 
 data class HomeUiState(
+    val showWidgets: Boolean = true,
+    val isDefaultLauncher: Boolean = true,
+    val homeAlignment: HomeAlignment = HomeAlignment.LEFT,
+    val doubleTapEmptyLockEnabled: Boolean = false,
+)
+
+data class HomeClockUiState(
     val currentTime: String = "",
     val currentDate: String = "",
     val batteryPercent: Int = 0,
-    val showWidgets: Boolean = true,
+)
+
+data class HomeWeatherUiState(
     val weather: WeatherData? = null,
     /** Matches system regional temperature unit; drives label and Open-Meteo request. */
     val weatherUseFahrenheit: Boolean = false,
     val showWeatherWidget: Boolean = false,
-    val isDefaultLauncher: Boolean = true,
-    val homeAlignment: HomeAlignment = HomeAlignment.LEFT,
-    val doubleTapEmptyLockEnabled: Boolean = false,
 )
 
 @HiltViewModel
@@ -80,6 +86,12 @@ class HomeViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+
+    private val _clockUiState = MutableStateFlow(HomeClockUiState())
+    val clockUiState: StateFlow<HomeClockUiState> = _clockUiState.asStateFlow()
+
+    private val _weatherUiState = MutableStateFlow(HomeWeatherUiState())
+    val weatherUiState: StateFlow<HomeWeatherUiState> = _weatherUiState.asStateFlow()
 
     // Raw favorites from DataStore
     private val rawFavorites: StateFlow<List<FavoriteApp>> = preferencesManager.favoritesFlow
@@ -174,6 +186,7 @@ class HomeViewModel @Inject constructor(
         loadShortcutActions()
         observeRenames()
         observeInstalledApps()
+        observeRemovedPackages()
     }
 
     override fun onCleared() {
@@ -200,6 +213,45 @@ class HomeViewModel @Inject constructor(
             appRepository.getInstalledAppsVersion().drop(1).collect {
                 refreshInstalledApps(forceReload = false)
                 loadShortcutActions()
+            }
+        }
+    }
+
+    private fun observeRemovedPackages() {
+        viewModelScope.launch {
+            appRepository.getRemovedPackages().collect { removedApp ->
+                _allInstalledApps.value =
+                    _allInstalledApps.value.filterNot {
+                        it.packageName == removedApp.packageName &&
+                            appProfileKey(it.userHandle) == removedApp.profileKey
+                    }
+                _appNameMap.value =
+                    _appNameMap.value
+                        .toMutableMap()
+                        .apply {
+                            val hasPrimaryInstall =
+                                _allInstalledApps.value.any {
+                                    it.packageName == removedApp.packageName && it.userHandle == null
+                                }
+                            if (!hasPrimaryInstall) {
+                                remove(removedApp.packageName)
+                            }
+                        }
+                _editFavorites.value =
+                    _editFavorites.value.filterNot {
+                        it.packageName == removedApp.packageName &&
+                            it.profileKey == removedApp.profileKey
+                    }
+
+                val currentFavorites = preferencesManager.favoritesFlow.first()
+                val updatedFavorites =
+                    currentFavorites.filterNot {
+                        it.packageName == removedApp.packageName &&
+                            it.profileKey == removedApp.profileKey
+                    }
+                if (updatedFavorites.size != currentFavorites.size) {
+                    preferencesManager.setFavorites(updatedFavorites)
+                }
             }
         }
     }
@@ -438,14 +490,24 @@ class HomeViewModel @Inject constructor(
 
     private fun startClockTicker() {
         viewModelScope.launch {
+            var lastLocale: Locale? = null
+            var timeFormat: SimpleDateFormat? = null
             while (true) {
                 val now = Date()
                 val locale = Locale.getDefault()
-                val timeFormat = SimpleDateFormat("H:mm", locale)
-                _uiState.value = _uiState.value.copy(
-                    currentTime = timeFormat.format(now),
-                    currentDate = formatCompactDate(now, locale)
-                )
+                if (locale != lastLocale || timeFormat == null) {
+                    lastLocale = locale
+                    timeFormat = SimpleDateFormat("H:mm", locale)
+                }
+                val current = _clockUiState.value
+                val updated =
+                    current.copy(
+                        currentTime = timeFormat.format(now),
+                        currentDate = formatCompactDate(now, locale)
+                    )
+                if (updated != current) {
+                    _clockUiState.value = updated
+                }
                 delay(1_000)
             }
         }
@@ -471,7 +533,10 @@ class HomeViewModel @Inject constructor(
         val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
         val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
         val percent = if (level >= 0 && scale > 0) (level * 100) / scale else 0
-        _uiState.value = _uiState.value.copy(batteryPercent = percent)
+        val current = _clockUiState.value
+        if (current.batteryPercent != percent) {
+            _clockUiState.value = current.copy(batteryPercent = percent)
+        }
     }
 
     private fun updateBattery() {
@@ -480,15 +545,15 @@ class HomeViewModel @Inject constructor(
             if (batteryIntent != null) {
                 setBatteryPercentFromIntent(batteryIntent)
             } else {
-                _uiState.value = _uiState.value.copy(batteryPercent = 0)
+                _clockUiState.value = _clockUiState.value.copy(batteryPercent = 0)
             }
         } catch (_: Exception) {
-            _uiState.value = _uiState.value.copy(batteryPercent = 0)
+            _clockUiState.value = _clockUiState.value.copy(batteryPercent = 0)
         }
     }
 
     private fun startWeatherTicker() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             while (true) {
                 fetchWeatherOnce()
                 delay(30 * 60 * 1000L)
@@ -569,7 +634,7 @@ class HomeViewModel @Inject constructor(
 
     fun refreshBattery() = updateBattery()
     fun refreshWeather() {
-        viewModelScope.launch { fetchWeatherOnce() }
+        viewModelScope.launch(Dispatchers.IO) { fetchWeatherOnce() }
     }
 
     fun launchApp(packageName: String) {
@@ -727,10 +792,15 @@ class HomeViewModel @Inject constructor(
             ) == PackageManager.PERMISSION_GRANTED
             val shouldShow = hasCoarsePermission && !optedOut
             val useFahrenheit = TemperatureUnitHelper.useFahrenheit(context)
-            _uiState.value =
-                    _uiState.value.copy(showWeatherWidget = shouldShow, weatherUseFahrenheit = useFahrenheit)
             if (!shouldShow) {
-                _uiState.value = _uiState.value.copy(weather = null)
+                val hiddenState = HomeWeatherUiState(
+                    weather = null,
+                    weatherUseFahrenheit = useFahrenheit,
+                    showWeatherWidget = false
+                )
+                if (_weatherUiState.value != hiddenState) {
+                    _weatherUiState.value = hiddenState
+                }
                 return
             }
             val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
@@ -738,14 +808,20 @@ class HomeViewModel @Inject constructor(
             val location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
                 ?: locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
                 ?: locationManager.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER)
-            if (location != null) {
-                val weather =
+            val updated = HomeWeatherUiState(
+                weather =
+                    location?.let {
                         weatherRepository.getWeather(
-                                location.latitude,
-                                location.longitude,
-                                useFahrenheit = useFahrenheit
+                            it.latitude,
+                            it.longitude,
+                            useFahrenheit = useFahrenheit
                         )
-                _uiState.value = _uiState.value.copy(weather = weather)
+                    },
+                weatherUseFahrenheit = useFahrenheit,
+                showWeatherWidget = true
+            )
+            if (_weatherUiState.value != updated) {
+                _weatherUiState.value = updated
             }
         } catch (_: Exception) { }
     }

@@ -79,10 +79,11 @@ class OnboardingViewModel @Inject constructor(
     // Swipe shortcuts state for SWIPE_SHORTCUTS step
     val swipeShortcutsState: StateFlow<SwipeShortcutsState> = combine(
         preferencesManager.swipeLeftTargetFlow,
-        preferencesManager.swipeRightTargetFlow
-    ) { swipeLeft, swipeRight ->
+        preferencesManager.swipeRightTargetFlow,
+        appRepository.getInstalledAppsVersion()
+    ) { swipeLeft, swipeRight, _ ->
         SwipeShortcutsState(
-            allApps = appRepository.getInstalledApps(),
+            allApps = appRepository.getInstalledAppsOnBackground(),
             swipeLeftTarget = swipeLeft,
             swipeRightTarget = swipeRight
         )

@@ -11,6 +11,7 @@ import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
 import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
+import com.lu4p.fokuslauncher.data.model.appProfileKey
 import com.lu4p.fokuslauncher.data.model.drawerOpenCountKey
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
@@ -69,6 +70,11 @@ sealed interface LaunchTarget {
     ) : LaunchTarget
 }
 
+private data class FilteredDrawerContent(
+        val filteredProfileSections: List<DrawerProfileSectionUi>,
+        val filteredPrivateSpaceApps: List<AppInfo>
+)
+
 @HiltViewModel
 class AppDrawerViewModel
 @Inject
@@ -108,11 +114,13 @@ constructor(
     private var privateSortCacheResult: List<AppInfo>? = null
 
     private var searchQueryApplyJob: Job? = null
+    private var searchQueryRequestId: Long = 0
 
     init {
         loadApps()
         observeHiddenAndRenamed()
         observeInstalledApps()
+        observeRemovedPackages()
         observeFavorites()
         observeDrawerKeyboardPreference()
         observeHideAllAppsPreference()
@@ -169,31 +177,24 @@ constructor(
                         latestDrawerSortMode = mode
                         latestOpenCounts = counts
                         val state = _uiState.value
-                        val sections = buildProfileSectionsSuspend(state.allApps)
-                        val trimmed = state.searchQuery.trimStart()
-                        val filteredSections =
-                                filterProfileSections(
-                                        sections = sections,
-                                        query = trimmed,
-                                        category = state.selectedCategory
-                                )
                         val reorderedPrivate =
                                 if (state.privateSpaceApps.isEmpty()) {
                                     state.privateSpaceApps
                                 } else {
                                     sortPrivateSpaceAppsCachedSuspend(state.privateSpaceApps)
                                 }
-                        val filteredPrivate =
-                                applyPrivateFilter(
-                                        query = trimmed,
-                                        selectedCategory = state.selectedCategory,
-                                        privateApps = reorderedPrivate
+                        val filteredContent =
+                                buildFilteredDrawerContent(
+                                        allApps = state.allApps,
+                                        privateApps = reorderedPrivate,
+                                        query = state.searchQuery,
+                                        category = state.selectedCategory
                                 )
                         _uiState.update {
                             it.copy(
                                     privateSpaceApps = reorderedPrivate,
-                                    filteredProfileSections = filteredSections,
-                                    filteredPrivateSpaceApps = filteredPrivate
+                                    filteredProfileSections = filteredContent.filteredProfileSections,
+                                    filteredPrivateSpaceApps = filteredContent.filteredPrivateSpaceApps
                             )
                         }
                         scheduleDrawerCachePrewarm()
@@ -222,10 +223,10 @@ constructor(
                                 categories = categories,
                                 hideAllAppsSection = hideAllAppsSection
                         )
-                val sections = buildProfileSectionsSuspend(state.allApps)
-                val filteredSections =
-                        filterProfileSections(
-                                sections = sections,
+                val filteredContent =
+                        buildFilteredDrawerContent(
+                                allApps = state.allApps,
+                                privateApps = state.privateSpaceApps,
                                 query = state.searchQuery,
                                 category = selectedCategory
                         )
@@ -234,13 +235,8 @@ constructor(
                             hideAllAppsSection = hideAllAppsSection,
                             selectedCategory = selectedCategory,
                             categories = categories,
-                            filteredProfileSections = filteredSections,
-                            filteredPrivateSpaceApps =
-                                    applyPrivateFilter(
-                                            query = state.searchQuery,
-                                            selectedCategory = selectedCategory,
-                                            privateApps = state.privateSpaceApps
-                                    )
+                            filteredProfileSections = filteredContent.filteredProfileSections,
+                            filteredPrivateSpaceApps = filteredContent.filteredPrivateSpaceApps
                     )
                 }
                 scheduleDrawerCachePrewarm()
@@ -310,6 +306,14 @@ constructor(
         }
     }
 
+    private fun observeRemovedPackages() {
+        viewModelScope.launch {
+            appRepository.getRemovedPackages().collect { removedApp ->
+                applyImmediatePackageRemoval(removedApp.packageName, removedApp.profileKey)
+            }
+        }
+    }
+
     /**
      * Applies hidden + renamed overlays and updates profile sections. Runs the expensive
      * PackageManager query off the main thread.
@@ -350,26 +354,74 @@ constructor(
                         categories = categories,
                         hideAllAppsSection = stateSnapshot.hideAllAppsSection
                 )
-        val sections = buildProfileSectionsSuspend(visible)
-        val filteredSections =
-                filterProfileSections(
-                        sections = sections,
+        val filteredContent =
+                buildFilteredDrawerContent(
+                        allApps = visible,
+                        privateApps = stateSnapshot.privateSpaceApps,
                         query = stateSnapshot.searchQuery,
                         category = selectedCategory
-                )
-        val filteredPrivate =
-                applyPrivateFilter(
-                        query = stateSnapshot.searchQuery,
-                        selectedCategory = selectedCategory,
-                        privateApps = stateSnapshot.privateSpaceApps
                 )
         _uiState.update { state ->
             state.copy(
                             allApps = visible,
                             selectedCategory = selectedCategory,
-                            filteredProfileSections = filteredSections
+                            filteredProfileSections = filteredContent.filteredProfileSections
                     )
-                    .copy(categories = categories, filteredPrivateSpaceApps = filteredPrivate)
+                    .copy(
+                            categories = categories,
+                            filteredPrivateSpaceApps = filteredContent.filteredPrivateSpaceApps
+                    )
+        }
+        scheduleDrawerCachePrewarm()
+    }
+
+    private suspend fun applyImmediatePackageRemoval(packageName: String, profileKey: String) {
+        val stateSnapshot = _uiState.value
+        val visible =
+                stateSnapshot.allApps.filterNot {
+                    it.packageName == packageName && appProfileKey(it.userHandle) == profileKey
+                }
+        val privateApps =
+                stateSnapshot.privateSpaceApps.filterNot {
+                    it.packageName == packageName && appProfileKey(it.userHandle) == profileKey
+                }
+        val categories =
+                deriveCategories(
+                        apps = visible,
+                        definedCategories = latestDefinedCategories,
+                        includePrivate =
+                                stateSnapshot.isPrivateSpaceUnlocked &&
+                                        privateApps.isNotEmpty(),
+                        includeWork = visible.any { isDrawerWorkProfileApp(context, it) },
+                        includeAllAppsSection = !stateSnapshot.hideAllAppsSection
+                )
+        val selectedCategory =
+                resolveSelectedCategory(
+                        currentCategory = stateSnapshot.selectedCategory,
+                        categories = categories,
+                        hideAllAppsSection = stateSnapshot.hideAllAppsSection
+                )
+        val filteredContent =
+                buildFilteredDrawerContent(
+                        allApps = visible,
+                        privateApps = privateApps,
+                        query = stateSnapshot.searchQuery,
+                        category = selectedCategory
+                )
+        _uiState.update { state ->
+            state.copy(
+                    allApps = visible,
+                    privateSpaceApps = privateApps,
+                    selectedCategory = selectedCategory,
+                    categories = categories,
+                    filteredProfileSections = filteredContent.filteredProfileSections,
+                    filteredPrivateSpaceApps = filteredContent.filteredPrivateSpaceApps,
+                    selectedApp =
+                            state.selectedApp?.takeUnless {
+                                it.packageName == packageName &&
+                                    appProfileKey(it.userHandle) == profileKey
+                            }
+            )
         }
         scheduleDrawerCachePrewarm()
     }
@@ -378,39 +430,39 @@ constructor(
 
     fun onSearchQueryChanged(query: String) {
         searchQueryApplyJob?.cancel()
+        searchQueryRequestId += 1
+        val requestId = searchQueryRequestId
+        _uiState.update { it.copy(searchQuery = query) }
         searchQueryApplyJob =
                 viewModelScope.launch {
-                    val trimmed = query.trimStart()
                     val snapshot = _uiState.value
-                    val sections = buildProfileSectionsSuspend(snapshot.allApps)
-                    val filteredSections =
-                            filterProfileSections(
-                                    sections = sections,
-                                    query = trimmed,
+                    val trimmed = query.trimStart()
+                    val filteredContent =
+                            buildFilteredDrawerContent(
+                                    allApps = snapshot.allApps,
+                                    privateApps = snapshot.privateSpaceApps,
+                                    query = query,
                                     category = snapshot.selectedCategory
                             )
-                    val filteredPrivate =
-                            applyPrivateFilter(
-                                    query = trimmed,
-                                    selectedCategory = snapshot.selectedCategory,
-                                    privateApps = snapshot.privateSpaceApps
-                            )
                     _uiState.update { state ->
-                        state.copy(
-                                searchQuery = query,
-                                filteredProfileSections = filteredSections,
-                                filteredPrivateSpaceApps = filteredPrivate
-                        )
+                        if (requestId != searchQueryRequestId || state.searchQuery != query) {
+                            state
+                        } else {
+                            state.copy(
+                                    filteredProfileSections = filteredContent.filteredProfileSections,
+                                    filteredPrivateSpaceApps = filteredContent.filteredPrivateSpaceApps
+                            )
+                        }
                     }
 
                     // Auto-launch when exactly one app matches across both lists.
                     // A leading space means "browse mode" – show the result but don't launch.
                     val browseMode = query.startsWith(" ")
-                    if (!browseMode && trimmed.isNotBlank()) {
-                        val mainFlat = filteredSections.flatMap { it.apps }
+                    if (requestId == searchQueryRequestId && !browseMode && trimmed.isNotBlank()) {
+                        val mainFlat = filteredContent.filteredProfileSections.flatMap { it.apps }
                         val allMatches =
                                 buildLaunchTargets(
-                                        privateApps = filteredPrivate,
+                                        privateApps = filteredContent.filteredPrivateSpaceApps,
                                         mainApps = mainFlat
                                 )
                         if (allMatches.size == 1) {
@@ -469,24 +521,18 @@ constructor(
     fun onCategorySelected(category: String) {
         viewModelScope.launch {
             val state = _uiState.value
-            val sections = buildProfileSectionsSuspend(state.allApps)
-            val filteredSections =
-                    filterProfileSections(
-                            sections = sections,
+            val filteredContent =
+                    buildFilteredDrawerContent(
+                            allApps = state.allApps,
+                            privateApps = state.privateSpaceApps,
                             query = state.searchQuery,
                             category = category
-                    )
-            val filteredPrivate =
-                    applyPrivateFilter(
-                            query = state.searchQuery,
-                            selectedCategory = category,
-                            privateApps = state.privateSpaceApps
                     )
             _uiState.update {
                 it.copy(
                         selectedCategory = category,
-                        filteredProfileSections = filteredSections,
-                        filteredPrivateSpaceApps = filteredPrivate
+                        filteredProfileSections = filteredContent.filteredProfileSections,
+                        filteredPrivateSpaceApps = filteredContent.filteredPrivateSpaceApps
                 )
             }
         }
@@ -652,16 +698,10 @@ constructor(
                             categories = categories,
                             hideAllAppsSection = state.hideAllAppsSection
                     )
-            val filteredPrivate =
-                    applyPrivateFilter(
-                            query = state.searchQuery,
-                            selectedCategory = selectedCategory,
-                            privateApps = apps
-                    )
-            val sections = buildProfileSectionsSuspend(state.allApps)
-            val filteredSections =
-                    filterProfileSections(
-                            sections = sections,
+            val filteredContent =
+                    buildFilteredDrawerContent(
+                            allApps = state.allApps,
+                            privateApps = apps,
                             query = state.searchQuery,
                             category = selectedCategory
                     )
@@ -671,8 +711,8 @@ constructor(
                         isPrivateSpaceUnlocked = unlocked,
                         privateSpaceApps = apps,
                         selectedCategory = selectedCategory,
-                        filteredProfileSections = filteredSections,
-                        filteredPrivateSpaceApps = filteredPrivate,
+                        filteredProfileSections = filteredContent.filteredProfileSections,
+                        filteredPrivateSpaceApps = filteredContent.filteredPrivateSpaceApps,
                         categories = categories
                 )
             }
@@ -714,10 +754,10 @@ constructor(
                             categories = state.categories,
                             hideAllAppsSection = state.hideAllAppsSection
                     )
-            val sections = buildProfileSectionsSuspend(state.allApps)
-            val filteredSections =
-                    filterProfileSections(
-                            sections = sections,
+            val filteredContent =
+                    buildFilteredDrawerContent(
+                            allApps = state.allApps,
+                            privateApps = state.privateSpaceApps,
                             query = "",
                             category = defaultCategory
                     )
@@ -725,13 +765,8 @@ constructor(
                 it.copy(
                         searchQuery = "",
                         selectedCategory = defaultCategory,
-                        filteredProfileSections = filteredSections,
-                        filteredPrivateSpaceApps =
-                                applyPrivateFilter(
-                                        query = "",
-                                        selectedCategory = defaultCategory,
-                                        privateApps = it.privateSpaceApps
-                                )
+                        filteredProfileSections = filteredContent.filteredProfileSections,
+                        filteredPrivateSpaceApps = filteredContent.filteredPrivateSpaceApps
                 )
             }
         }
@@ -955,6 +990,32 @@ constructor(
                 }
         val mainTargets = mainApps.map { launchTargetFromAppInfo(it) }
         return privateTargets + mainTargets
+    }
+
+    private suspend fun buildFilteredDrawerContent(
+            allApps: List<AppInfo>,
+            privateApps: List<AppInfo>,
+            query: String,
+            category: String
+    ): FilteredDrawerContent {
+        val sections = buildProfileSectionsSuspend(allApps)
+        val trimmed = query.trimStart()
+        return withContext(drawerComputationDispatcher) {
+            FilteredDrawerContent(
+                    filteredProfileSections =
+                            filterProfileSections(
+                                    sections = sections,
+                                    query = trimmed,
+                                    category = category
+                            ),
+                    filteredPrivateSpaceApps =
+                            applyPrivateFilter(
+                                    query = trimmed,
+                                    selectedCategory = category,
+                                    privateApps = privateApps
+                            )
+            )
+        }
     }
 
     private data class CombinedCategoryState(

@@ -12,6 +12,7 @@ import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.repository.AppRepository
+import com.lu4p.fokuslauncher.data.repository.RemovedApp
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
 import io.mockk.coVerify
 import io.mockk.every
@@ -54,6 +55,7 @@ class AppDrawerViewModelTest {
     private val drawerAppSortModeFlow = MutableStateFlow(DrawerAppSortMode.ALPHABETICAL)
     private val drawerAppOpenCountsFlow = MutableStateFlow<Map<String, Int>>(emptyMap())
     private val privateProfileChanges = MutableSharedFlow<Unit>()
+    private val removedPackages = MutableSharedFlow<RemovedApp>(extraBufferCapacity = 1)
     private val installedAppsVersion = MutableStateFlow(0L)
     private var installedApps: List<AppInfo> = emptyList()
 
@@ -87,6 +89,7 @@ class AppDrawerViewModelTest {
         preferencesManager = mockk(relaxed = true)
         installedAppsVersion.value = 0L
         every { appRepository.getInstalledAppsVersion() } returns installedAppsVersion.asStateFlow()
+        every { appRepository.getRemovedPackages() } returns removedPackages
         every { appRepository.invalidateCache() } answers { installedAppsVersion.value += 1L }
         installedApps = testApps
         every { appRepository.getInstalledApps() } answers { installedApps }
@@ -136,6 +139,7 @@ class AppDrawerViewModelTest {
 
     @Test
     fun `initial state loads all apps`() {
+        awaitState("initial filtered apps") { flatFiltered(it).size == testApps.size }
         val state = viewModel.uiState.value
 
         assertEquals(testApps.size, state.allApps.size)
@@ -255,6 +259,46 @@ class AppDrawerViewModelTest {
         assertEquals("", state.searchQuery)
         assertEquals("All apps", state.selectedCategory)
         assertEquals(testApps.size, flatFiltered(state).size)
+    }
+
+    @Test
+    fun `removed package disappears from drawer immediately`() {
+        removedPackages.tryEmit(RemovedApp(packageName = "com.lu4p.chrome", profileKey = "0"))
+        awaitState("drawer package removal") {
+            it.allApps.none { app -> app.packageName == "com.lu4p.chrome" }
+        }
+
+        val state = viewModel.uiState.value
+        assertFalse(state.allApps.any { it.packageName == "com.lu4p.chrome" })
+        assertFalse(flatFiltered(state).any { it.packageName == "com.lu4p.chrome" })
+    }
+
+    @Test
+    fun `removed package only clears matching drawer profile`() {
+        val workHandle = mockk<UserHandle>()
+        every { workHandle.hashCode() } returns 42
+        installedApps =
+            listOf(
+                AppInfo("com.lu4p.chrome", "Chrome", null),
+                AppInfo(
+                    "com.lu4p.chrome",
+                    "Chrome Work",
+                    null,
+                    userHandle = workHandle,
+                    componentName = mockk<ComponentName>(relaxed = true)
+                )
+            )
+        installedAppsVersion.value += 1L
+        awaitState("profile-specific apps to load") { it.allApps.size == 2 }
+
+        removedPackages.tryEmit(RemovedApp(packageName = "com.lu4p.chrome", profileKey = "42"))
+        awaitState("profile-specific drawer removal") { state ->
+            state.allApps.size == 1 && state.allApps.single().userHandle == null
+        }
+
+        val state = viewModel.uiState.value
+        assertEquals(1, state.allApps.size)
+        assertNull(state.allApps.single().userHandle)
     }
 
     @Test

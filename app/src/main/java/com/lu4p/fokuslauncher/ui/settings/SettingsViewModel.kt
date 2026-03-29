@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 data class SettingsUiState(
@@ -154,7 +155,7 @@ constructor(
                     .combine(preferencesManager.doubleTapEmptyLockFlow) { nestedAndRotation, doubleTapEmptyLock ->
                         Triple(nestedAndRotation.first, nestedAndRotation.second, doubleTapEmptyLock)
                     }
-                    .collect { (nestedAndHome, allowLandscapeRotation, doubleTapEmptyLock) ->
+                    .collectLatest { (nestedAndHome, allowLandscapeRotation, doubleTapEmptyLock) ->
                         val (nested, homeAlignment) = nestedAndHome
                         val (sortTriple, fontAndLocale) = nested
                         val (fontFamilyName, appLocaleTag) = fontAndLocale
@@ -167,13 +168,13 @@ constructor(
                         val (leftState, swipeRight) = swipeState
                         val categoryMap = leftState.appCategories
                         val allApps =
-                                appRepository.getInstalledApps().map { app ->
+                                appRepository.getInstalledAppsOnBackground().map { app ->
                                     app.copy(category = categoryMap[app.packageName] ?: app.category)
                                 }
+                        val hiddenLabels = allApps.associate { it.packageName to it.label }
                         val hiddenInfos =
                                 leftState.base.hiddenNames.map { pkg ->
-                                    val app = allApps.find { it.packageName == pkg }
-                                    HiddenAppInfo(packageName = pkg, label = app?.label ?: pkg)
+                                    HiddenAppInfo(packageName = pkg, label = hiddenLabels[pkg] ?: pkg)
                                 }
                         _uiState.value =
                                 SettingsUiState(

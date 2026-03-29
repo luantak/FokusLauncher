@@ -26,7 +26,6 @@ import com.lu4p.fokuslauncher.ui.theme.FokusLauncherTheme
 import com.lu4p.fokuslauncher.ui.util.ProvideAppLocale
 import com.lu4p.fokuslauncher.ui.theme.composeFontFamilyFromStoredName
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -51,8 +50,8 @@ class MainActivity : AppCompatActivity() {
         applyLauncherScreenOrientation(allowLandscape = false)
 
         // Preload apps in background to warm up cache
-        CoroutineScope(Dispatchers.IO).launch {
-            appRepository.getInstalledApps()
+        lifecycleScope.launch(Dispatchers.IO) {
+            appRepository.getInstalledAppsOnBackground()
         }
 
         enableEdgeToEdge()

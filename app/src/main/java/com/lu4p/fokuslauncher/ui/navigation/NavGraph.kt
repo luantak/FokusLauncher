@@ -369,21 +369,25 @@ fun FokusNavGraph(
                                     )
                             
                     ) {
-                        HomeScreen(
-                            viewModel = homeViewModel,
-                            onOpenSettings = {
-                                navController.navigate(Routes.SETTINGS) { launchSingleTop = true }
-                            },
-                            onOpenEditHomeApps = {
-                                navController.navigate(Routes.SETTINGS_EDIT_HOME_APPS) { launchSingleTop = true }
-                            },
+                        Box(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .graphicsLayer {
                                     translationX = horizontalOffsetPx
                                     alpha = if (showDrawer) 0f else 1f
                                 }
-                        )
+                        ) {
+                            HomeScreen(
+                                viewModel = homeViewModel,
+                                onOpenSettings = {
+                                    navController.navigate(Routes.SETTINGS) { launchSingleTop = true }
+                                },
+                                onOpenEditHomeApps = {
+                                    navController.navigate(Routes.SETTINGS_EDIT_HOME_APPS) { launchSingleTop = true }
+                                },
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
                     }
                 }
                 

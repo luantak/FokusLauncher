@@ -30,11 +30,16 @@ import com.lu4p.fokuslauncher.utils.ProfileHeuristics
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 
 /**
  * Repository responsible for loading and caching installed apps from the system, and managing
@@ -50,6 +55,7 @@ constructor(
 ) {
     private var cachedApps: List<AppInfo>? = null
     private val installedAppsVersion = MutableStateFlow(0L)
+    private val removedPackages = MutableSharedFlow<RemovedApp>(extraBufferCapacity = 8)
     private val packageChangeReceiver =
             object : android.content.BroadcastReceiver() {
                 override fun onReceive(context: Context?, intent: Intent?) {
@@ -60,6 +66,9 @@ constructor(
                         Intent.ACTION_PACKAGE_REMOVED,
                         Intent.ACTION_PACKAGE_REPLACED -> {
                             if (intent.action == Intent.ACTION_PACKAGE_REMOVED && replacing) return
+                            if (intent.action == Intent.ACTION_PACKAGE_REMOVED) {
+                                extractRemovedApp(intent)?.let(removedPackages::tryEmit)
+                            }
                             invalidateCache()
                         }
                     }
@@ -96,6 +105,9 @@ constructor(
         cachedApps = apps
         return apps
     }
+
+    suspend fun getInstalledAppsOnBackground(): List<AppInfo> =
+            withContext(Dispatchers.IO) { getInstalledApps() }
 
     /**
      * Loads launchable activities per [UserManager.userProfiles] via [LauncherApps.getActivityList],
@@ -273,6 +285,7 @@ constructor(
     }
 
     fun getInstalledAppsVersion(): StateFlow<Long> = installedAppsVersion
+    fun getRemovedPackages(): SharedFlow<RemovedApp> = removedPackages.asSharedFlow()
 
     /**
      * Launches an app by its package name.
@@ -624,6 +637,42 @@ constructor(
                 ?: SystemCategoryKeys.UTILITIES
     }
 
+    private fun extractRemovedApp(intent: Intent): RemovedApp? {
+        val packageName = intent.data?.schemeSpecificPart?.takeIf { it.isNotBlank() } ?: return null
+        val removedUser = extractUserHandle(intent)
+        val profileKey =
+                if (removedUser == null || removedUser == Process.myUserHandle()) {
+                    "0"
+                } else {
+                    appProfileKey(removedUser)
+                }
+        return RemovedApp(packageName = packageName, profileKey = profileKey)
+    }
+
+    private fun extractUserHandle(intent: Intent): UserHandle? {
+        val extraUser =
+                try {
+                    intent.getParcelableExtra(Intent.EXTRA_USER, UserHandle::class.java)
+                } catch (_: NoSuchMethodError) {
+                    @Suppress("DEPRECATION")
+                    intent.getParcelableExtra(Intent.EXTRA_USER) as? UserHandle
+                } catch (_: Exception) {
+                    null
+                }
+        if (extraUser != null) return extraUser
+
+        val uid = intent.getIntExtra(Intent.EXTRA_UID, -1)
+        return if (uid >= 0) {
+            try {
+                UserHandle.getUserHandleForUid(uid)
+            } catch (_: Exception) {
+                null
+            }
+        } else {
+            null
+        }
+    }
+
     private fun inferCategoryFromSystem(applicationInfo: ApplicationInfo?): String? {
         if (applicationInfo == null) return null
         return when (applicationInfo.category) {
@@ -641,3 +690,8 @@ constructor(
     private fun normalizeCategory(category: String): String =
             SystemCategoryKeys.normalize(context, category)
 }
+
+data class RemovedApp(
+        val packageName: String,
+        val profileKey: String
+)

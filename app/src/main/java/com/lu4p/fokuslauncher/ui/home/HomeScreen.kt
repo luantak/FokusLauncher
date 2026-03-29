@@ -7,6 +7,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -76,6 +77,8 @@ fun HomeScreen(
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val clockUiState by viewModel.clockUiState.collectAsStateWithLifecycle()
+    val weatherUiState by viewModel.weatherUiState.collectAsStateWithLifecycle()
     val favorites by viewModel.favorites.collectAsStateWithLifecycle()
     val rightSideShortcuts by viewModel.rightSideShortcuts.collectAsStateWithLifecycle()
     val allInstalledApps by viewModel.allInstalledApps.collectAsStateWithLifecycle()
@@ -83,6 +86,15 @@ fun HomeScreen(
     val appMenuTarget by viewModel.appMenuTarget.collectAsStateWithLifecycle()
     val showHomeScreenMenu by viewModel.showHomeScreenMenu.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val onFavoriteClick = remember(viewModel) { { fav: FavoriteApp -> viewModel.launchFavorite(fav) } }
+    val onFavoriteLongPress = remember(viewModel) { { fav: FavoriteApp -> viewModel.onFavoriteLongPress(fav) } }
+    val onHomeLongPress = remember(viewModel) { { viewModel.onHomeScreenLongPress() } }
+    val onShortcutClick = remember(viewModel) { { shortcut: HomeShortcut -> viewModel.launchShortcut(shortcut) } }
+    val onSetDefaultLauncher = remember(viewModel) { { viewModel.openDefaultLauncherSettings() } }
+    val onClockClick = remember(viewModel) { { viewModel.openClockApp() } }
+    val onDateClick = remember(viewModel) { { viewModel.openCalendarApp() } }
+    val onWeatherClick = remember(viewModel) { { viewModel.openWeatherAppPicker() } }
+    val onDoubleTapEmptyLock = remember(viewModel) { { viewModel.onDoubleTapEmptyLock() } }
 
     LaunchedEffect(viewModel) {
         viewModel.requestLockAccessibilitySettings.collect {
@@ -108,19 +120,21 @@ fun HomeScreen(
     Box(modifier = modifier.fillMaxSize()) {
         HomeScreenContent(
             uiState = uiState,
+            clockUiState = clockUiState,
+            weatherUiState = weatherUiState,
             favorites = favorites,
             installedApps = allInstalledApps,
             rightSideShortcuts = rightSideShortcuts,
-            onLabelClick = { fav -> viewModel.launchFavorite(fav) },
-            onLabelLongPress = { fav -> viewModel.onFavoriteLongPress(fav) },
-            onHomeScreenLongPress = { viewModel.onHomeScreenLongPress() },
-            onIconClick = { shortcut -> viewModel.launchShortcut(shortcut) },
-            onSetDefaultLauncher = { viewModel.openDefaultLauncherSettings() },
-            onClockClick = { viewModel.openClockApp() },
-            onDateClick = { viewModel.openCalendarApp() },
-            onWeatherClick = { viewModel.openWeatherAppPicker() },
+            onLabelClick = onFavoriteClick,
+            onLabelLongPress = onFavoriteLongPress,
+            onHomeScreenLongPress = onHomeLongPress,
+            onIconClick = onShortcutClick,
+            onSetDefaultLauncher = onSetDefaultLauncher,
+            onClockClick = onClockClick,
+            onDateClick = onDateClick,
+            onWeatherClick = onWeatherClick,
             doubleTapEmptyLockEnabled = uiState.doubleTapEmptyLockEnabled,
-            onDoubleTapEmptyLock = { viewModel.onDoubleTapEmptyLock() },
+            onDoubleTapEmptyLock = onDoubleTapEmptyLock,
         )
     }
 
@@ -170,6 +184,8 @@ fun HomeScreen(
 @Composable
 fun HomeScreenContent(
     uiState: HomeUiState,
+    clockUiState: HomeClockUiState,
+    weatherUiState: HomeWeatherUiState,
     favorites: List<FavoriteApp>,
     installedApps: List<AppInfo> = emptyList(),
     rightSideShortcuts: List<HomeShortcut>,
@@ -205,38 +221,14 @@ fun HomeScreenContent(
                 .padding(horizontal = 32.dp)
                 .padding(top = 80.dp, bottom = 48.dp)
         ) {
-            if (uiState.showWidgets) {
-                // Top row: Clock on left, Weather on right
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Top
-                ) {
-                    ClockWidget(
-                        time = uiState.currentTime,
-                        onClick = onClockClick,
-                        modifier = Modifier.testTag("clock_widget")
-                    )
-                    if (uiState.showWeatherWidget) {
-                        WeatherWidget(
-                            weather = uiState.weather,
-                            useFahrenheit = uiState.weatherUseFahrenheit,
-                            onClick = onWeatherClick,
-                            modifier = Modifier.padding(top = 16.dp)
-                        )
-                    }
-                }
-            }
-
-            if (uiState.showWidgets) {
-                // Date + Battery (clickable -> calendar)
-                DateBatteryRow(
-                    date = uiState.currentDate,
-                    batteryPercent = uiState.batteryPercent,
-                    onDateClick = onDateClick,
-                    modifier = Modifier.testTag("date_battery_row")
-                )
-            }
+            HomeWidgetsSection(
+                showWidgets = uiState.showWidgets,
+                clockUiState = clockUiState,
+                weatherUiState = weatherUiState,
+                onClockClick = onClockClick,
+                onDateClick = onDateClick,
+                onWeatherClick = onWeatherClick
+            )
 
             // Push favorites to the bottom; optional double-tap to lock on this empty band
             if (doubleTapEmptyLockEnabled) {
@@ -257,167 +249,229 @@ fun HomeScreenContent(
                 Spacer(modifier = Modifier.weight(1f))
             }
 
-            // Favorite apps: layout depends on alignment setting
-            when (uiState.homeAlignment) {
-                HomeAlignment.CENTER -> {
-                    // Centered layout: labels stacked above icons
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("favorites_list"),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        favorites.forEach { fav ->
-                            FavoriteAppItem(
-                                    fav = fav,
-                                    installedApps = installedApps,
-                                    onClick = { onLabelClick(fav) },
-                                    onLongPress = { onLabelLongPress(fav) },
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                            )
-                            Spacer(modifier = Modifier.height(20.dp))
-                        }
-                        if (rightSideShortcuts.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(24.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                rightSideShortcuts.reversed().forEachIndexed { index, shortcut ->
-                                    Icon(
-                                        imageVector = MinimalIcons.iconFor(shortcut.iconName),
-                                        contentDescription = stringResource(R.string.cd_shortcut_icon),
-                                        tint = MaterialTheme.colorScheme.onBackground,
-                                        modifier = Modifier
-                                            .size(24.dp)
-                                            .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { onIconClick(shortcut) }
-                                            .testTag("right_shortcut_icon_$index")
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-
-                HomeAlignment.RIGHT -> {
-                    // Swapped: icons on the left, labels on the right
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("favorites_list"),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.Bottom
-                    ) {
-                        // Left column: icon shortcuts
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(20.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            rightSideShortcuts.reversed().forEachIndexed { index, shortcut ->
-                                Icon(
-                                    imageVector = MinimalIcons.iconFor(shortcut.iconName),
-                                    contentDescription = stringResource(R.string.cd_shortcut_icon),
-                                    tint = MaterialTheme.colorScheme.onBackground,
-                                    modifier = Modifier
-                                        .size(24.dp)
-                                        .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { onIconClick(shortcut) }
-                                        .testTag("right_shortcut_icon_$index")
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.width(24.dp))
-
-                        // Right column: app labels
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(20.dp),
-                            modifier = Modifier.weight(1f),
-                            horizontalAlignment = Alignment.End
-                        ) {
-                            favorites.forEach { fav ->
-                                FavoriteAppItem(
-                                        fav = fav,
-                                        installedApps = installedApps,
-                                        onClick = { onLabelClick(fav) },
-                                        onLongPress = { onLabelLongPress(fav) },
-                                        horizontalAlignment = Alignment.End,
-                                )
-                            }
-                        }
-                    }
-                }
-
-                HomeAlignment.LEFT -> {
-                    // Default: labels left, icons right
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("favorites_list"),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.Bottom
-                    ) {
-                        // Left column: app labels
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(20.dp),
-                            modifier = Modifier.weight(1f),
-                            horizontalAlignment = Alignment.Start
-                        ) {
-                            favorites.forEach { fav ->
-                                FavoriteAppItem(
-                                        fav = fav,
-                                        installedApps = installedApps,
-                                        onClick = { onLabelClick(fav) },
-                                        onLongPress = { onLabelLongPress(fav) },
-                                        horizontalAlignment = Alignment.Start,
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.width(24.dp))
-
-                        // Right column: independent icon shortcuts (first in list = bottom)
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(20.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            rightSideShortcuts.reversed().forEachIndexed { index, shortcut ->
-                                Icon(
-                                    imageVector = MinimalIcons.iconFor(shortcut.iconName),
-                                    contentDescription = stringResource(R.string.cd_shortcut_icon),
-                                    tint = MaterialTheme.colorScheme.onBackground,
-                                    modifier = Modifier
-                                        .size(24.dp)
-                                        .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { onIconClick(shortcut) }
-                                        .testTag("right_shortcut_icon_$index")
-                                )
-                            }
-                        }
-                    }
-                }
-            }
+            HomeFavoritesSection(
+                homeAlignment = uiState.homeAlignment,
+                favorites = favorites,
+                installedApps = installedApps,
+                rightSideShortcuts = rightSideShortcuts,
+                onLabelClick = onLabelClick,
+                onLabelLongPress = onLabelLongPress,
+                onIconClick = onIconClick
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        // "Set as default launcher" banner at bottom
-        if (!uiState.isDefaultLauncher) {
-            OutlinedButton(
-                onClick = onSetDefaultLauncher,
-                shape = RoundedCornerShape(24.dp),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = MaterialTheme.colorScheme.onBackground
-                ),
+        HomeDefaultLauncherBanner(
+            isDefaultLauncher = uiState.isDefaultLauncher,
+            onSetDefaultLauncher = onSetDefaultLauncher
+        )
+    }
+}
+
+@Composable
+private fun HomeWidgetsSection(
+    showWidgets: Boolean,
+    clockUiState: HomeClockUiState,
+    weatherUiState: HomeWeatherUiState,
+    onClockClick: () -> Unit,
+    onDateClick: () -> Unit,
+    onWeatherClick: () -> Unit,
+) {
+    if (!showWidgets) return
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.Top
+    ) {
+        ClockWidget(
+            time = clockUiState.currentTime,
+            onClick = onClockClick,
+            modifier = Modifier.testTag("clock_widget")
+        )
+        if (weatherUiState.showWeatherWidget) {
+            WeatherWidget(
+                weather = weatherUiState.weather,
+                useFahrenheit = weatherUiState.weatherUseFahrenheit,
+                onClick = onWeatherClick,
+                modifier = Modifier.padding(top = 16.dp)
+            )
+        }
+    }
+
+    DateBatteryRow(
+        date = clockUiState.currentDate,
+        batteryPercent = clockUiState.batteryPercent,
+        onDateClick = onDateClick,
+        modifier = Modifier.testTag("date_battery_row")
+    )
+}
+
+@Composable
+private fun HomeFavoritesSection(
+    homeAlignment: HomeAlignment,
+    favorites: List<FavoriteApp>,
+    installedApps: List<AppInfo>,
+    rightSideShortcuts: List<HomeShortcut>,
+    onLabelClick: (FavoriteApp) -> Unit,
+    onLabelLongPress: (FavoriteApp) -> Unit,
+    onIconClick: (HomeShortcut) -> Unit,
+) {
+    when (homeAlignment) {
+        HomeAlignment.CENTER -> {
+            Column(
                 modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 12.dp)
-                    .testTag("set_default_launcher_button")
+                    .fillMaxWidth()
+                    .testTag("favorites_list"),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    text = stringResource(R.string.home_set_default_launcher),
-                    style = MaterialTheme.typography.labelMedium
-                )
+                favorites.forEach { fav ->
+                    FavoriteAppItem(
+                        fav = fav,
+                        installedApps = installedApps,
+                        onClick = { onLabelClick(fav) },
+                        onLongPress = { onLabelLongPress(fav) },
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    )
+                    Spacer(modifier = Modifier.height(20.dp))
+                }
+                if (rightSideShortcuts.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(24.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RightShortcutIcons(
+                            shortcuts = rightSideShortcuts,
+                            onIconClick = onIconClick
+                        )
+                    }
+                }
             }
         }
+
+        HomeAlignment.RIGHT -> {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("favorites_list"),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    RightShortcutIcons(
+                        shortcuts = rightSideShortcuts,
+                        onIconClick = onIconClick
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(24.dp))
+
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(20.dp),
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.End
+                ) {
+                    favorites.forEach { fav ->
+                        FavoriteAppItem(
+                            fav = fav,
+                            installedApps = installedApps,
+                            onClick = { onLabelClick(fav) },
+                            onLongPress = { onLabelLongPress(fav) },
+                            horizontalAlignment = Alignment.End,
+                        )
+                    }
+                }
+            }
+        }
+
+        HomeAlignment.LEFT -> {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("favorites_list"),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(20.dp),
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    favorites.forEach { fav ->
+                        FavoriteAppItem(
+                            fav = fav,
+                            installedApps = installedApps,
+                            onClick = { onLabelClick(fav) },
+                            onLongPress = { onLabelLongPress(fav) },
+                            horizontalAlignment = Alignment.Start,
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(24.dp))
+
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    RightShortcutIcons(
+                        shortcuts = rightSideShortcuts,
+                        onIconClick = onIconClick
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RightShortcutIcons(
+    shortcuts: List<HomeShortcut>,
+    onIconClick: (HomeShortcut) -> Unit,
+) {
+    shortcuts.reversed().forEachIndexed { index, shortcut ->
+        Icon(
+            imageVector = MinimalIcons.iconFor(shortcut.iconName),
+            contentDescription = stringResource(R.string.cd_shortcut_icon),
+            tint = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier
+                .size(24.dp)
+                .clickable(
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() }
+                ) { onIconClick(shortcut) }
+                .testTag("right_shortcut_icon_$index")
+        )
+    }
+}
+
+@Composable
+private fun BoxScope.HomeDefaultLauncherBanner(
+    isDefaultLauncher: Boolean,
+    onSetDefaultLauncher: () -> Unit,
+) {
+    if (isDefaultLauncher) return
+
+    OutlinedButton(
+        onClick = onSetDefaultLauncher,
+        shape = RoundedCornerShape(24.dp),
+        colors = ButtonDefaults.outlinedButtonColors(
+            contentColor = MaterialTheme.colorScheme.onBackground
+        ),
+        modifier = Modifier
+            .align(Alignment.BottomCenter)
+            .padding(bottom = 12.dp)
+            .testTag("set_default_launcher_button")
+    ) {
+        Text(
+            text = stringResource(R.string.home_set_default_launcher),
+            style = MaterialTheme.typography.labelMedium
+        )
     }
 }
 
