@@ -379,7 +379,7 @@ fun SettingsScreen(
                         Text(
                                 text =
                                         pluralStringResource(
-                                                R.plurals.settings_custom_categories_count,
+                                                R.plurals.settings_categories_count,
                                                 uiState.categoryDefinitions.size,
                                                 uiState.categoryDefinitions.size
                                         ),

@@ -28,7 +28,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 
 data class SettingsUiState(
@@ -72,42 +71,32 @@ constructor(
     val installedFontFamilies: StateFlow<List<String>> = _installedFontFamilies.asStateFlow()
 
     init {
-        loadAllApps()
         observeState()
-        observeInstalledApps()
         viewModelScope.launch(Dispatchers.IO) {
             _installedFontFamilies.value = SystemFontFamiliesProvider.loadSortedDistinct()
         }
     }
 
-    private fun loadAllApps() {
-        _uiState.value = _uiState.value.copy(allApps = appRepository.getInstalledApps())
-    }
-
-    private fun observeInstalledApps() {
-        viewModelScope.launch {
-            appRepository.getInstalledAppsVersion().drop(1).collect {
-                loadAllApps()
-            }
-        }
-    }
-
     private fun observeState() {
         viewModelScope.launch {
-            combine(
+            val favoritesQuintupleFlow =
+                    combine(
                             appRepository.getHiddenPackageNames(),
                             appRepository.getAllRenamedApps(),
                             preferencesManager.favoritesFlow,
                             preferencesManager.rightSideShortcutsFlow,
                             preferencesManager.swipeLeftTargetFlow
                     ) { hiddenNames, renamedApps, favorites, rightSideShortcuts, swipeLeft ->
-                Quintuple(
-                        hiddenNames = hiddenNames,
-                        renamedApps = renamedApps,
-                        favorites = favorites,
-                        rightSideShortcuts = rightSideShortcuts,
-                        swipeLeft = swipeLeft
-                )
+                        Quintuple(
+                                hiddenNames = hiddenNames,
+                                renamedApps = renamedApps,
+                                favorites = favorites,
+                                rightSideShortcuts = rightSideShortcuts,
+                                swipeLeft = swipeLeft
+                        )
+                    }
+            combine(appRepository.getInstalledAppsVersion(), favoritesQuintupleFlow) { _, base ->
+                base
             }
                     .combine(appRepository.getAllAppCategories()) { leftState, appCategories ->
                         leftState to appCategories.associate { it.packageName to it.category }
@@ -169,7 +158,11 @@ constructor(
                         val (weatherState, showStatusBar) = weatherWithStatusBar
                         val (swipeState, preferredWeatherApp) = weatherState
                         val (leftState, swipeRight) = swipeState
-                        val allApps = appRepository.getInstalledApps()
+                        val categoryMap = leftState.appCategories
+                        val allApps =
+                                appRepository.getInstalledApps().map { app ->
+                                    app.copy(category = categoryMap[app.packageName] ?: app.category)
+                                }
                         val hiddenInfos =
                                 leftState.base.hiddenNames.map { pkg ->
                                     val app = allApps.find { it.packageName == pkg }

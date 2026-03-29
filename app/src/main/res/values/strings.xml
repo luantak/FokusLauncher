@@ -145,9 +145,9 @@
         <item quantity="other">%d shortcuts configured</item>
     </plurals>
 
-    <plurals name="settings_custom_categories_count">
-        <item quantity="one">%d custom category</item>
-        <item quantity="other">%d custom categories</item>
+    <plurals name="settings_categories_count">
+        <item quantity="one">%d category</item>
+        <item quantity="other">%d categories</item>
     </plurals>
 
     <!-- Onboarding -->

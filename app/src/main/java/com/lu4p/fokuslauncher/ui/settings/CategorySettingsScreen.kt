@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -74,11 +75,10 @@ fun CategorySettingsScreen(
             normalizedNewCategory.isNotBlank() &&
                     !normalizedNewCategory.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true) &&
                     !normalizedNewCategory.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true)
-    val categories = remember(uiState.allApps, uiState.appCategories, uiState.categoryDefinitions) {
-        deriveEditableCategories(uiState)
-    }
+    val categories =
+            remember(uiState.allApps, uiState.categoryDefinitions) { deriveEditableCategories(uiState) }
     var localCategories by remember(categories) { mutableStateOf(categories) }
-    val appCounts = remember(uiState.allApps, uiState.appCategories) { buildCategoryCounts(uiState) }
+    val appCounts = remember(uiState.allApps) { buildCategoryCounts(uiState) }
 
     Column(
             modifier = Modifier
@@ -171,10 +171,10 @@ private fun ReorderableCategoryList(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier =
                             Modifier.fillMaxWidth()
-                                    .height(56.dp)
+                                    .heightIn(min = 56.dp)
                                     .graphicsLayer { translationY = offset }
                                     .clickable { onEditCategoryApps(category) }
-                                    .padding(horizontal = 16.dp)
+                                    .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
                 Icon(
                         imageVector = Icons.Default.DragHandle,
@@ -252,11 +252,11 @@ fun CategoryAppsScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var searchQuery by remember { mutableStateOf("") }
-    val checkedPackages = remember(uiState.allApps, uiState.appCategories, category) {
-        uiState.allApps.filter { app ->
-            val effective = uiState.appCategories[app.packageName] ?: app.category
-            effective.equals(category, ignoreCase = true)
-        }.map { it.packageName }.toSet()
+    val checkedPackages = remember(uiState.allApps, category) {
+        uiState.allApps
+                .filter { app -> app.category.equals(category, ignoreCase = true) }
+                .map { it.packageName }
+                .toSet()
     }
     val checkedApps = remember(uiState.allApps, checkedPackages) {
         uiState.allApps.filter { it.packageName in checkedPackages }
@@ -359,7 +359,7 @@ fun CategoryAppsScreen(
                     keyPrefix = "cat_unchecked",
                     horizontalPadding = 16.dp,
             ) { app ->
-                val currentCategory = (uiState.appCategories[app.packageName] ?: app.category)
+                val currentCategory = app.category
                 CategoryAppRow(
                         label = app.label,
                         checked = false,
@@ -411,20 +411,16 @@ private fun CategoryAppRow(
 private fun deriveEditableCategories(uiState: SettingsUiState): List<String> {
     val orderedDefined = uiState.categoryDefinitions.distinct()
     val dynamic =
-            uiState.allApps.mapNotNull { app ->
-                        val category = uiState.appCategories[app.packageName] ?: app.category
-                        category.takeIf { it.isNotBlank() }
-                    }
+            uiState.allApps
+                    .mapNotNull { app -> app.category.takeIf { it.isNotBlank() } }
                     .toSet()
     val extras = (dynamic - orderedDefined.toSet()).toList().sorted()
     return orderedDefined + extras
 }
 
 private fun buildCategoryCounts(uiState: SettingsUiState): Map<String, Int> {
-    return uiState.allApps.map { app ->
-                val effective = uiState.appCategories[app.packageName] ?: app.category
-                effective.trim()
-            }
+    return uiState.allApps
+            .map { app -> app.category.trim() }
             .filter { it.isNotBlank() }
             .groupingBy { it }
             .eachCount()

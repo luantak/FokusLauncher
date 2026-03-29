@@ -33,6 +33,9 @@ object SystemCategoryKeys {
             CategoryDef(MEDIA, R.string.inferred_category_media)
         )
 
+    /** English keys in the standard order used for default category definitions (drawer / settings). */
+    fun defaultOrderedCategoryNames(): List<String> = inferredCategories.map { it.key }
+
     fun normalize(context: Context, rawCategory: String): String {
         val trimmed = rawCategory.trim()
         if (trimmed.isBlank()) return ""

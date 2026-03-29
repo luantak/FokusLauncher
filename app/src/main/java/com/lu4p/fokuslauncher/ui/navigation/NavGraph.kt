@@ -65,6 +65,7 @@ import com.lu4p.fokuslauncher.ui.settings.CategorySettingsScreen
 import com.lu4p.fokuslauncher.ui.settings.EditHomeAppsScreen
 import com.lu4p.fokuslauncher.ui.settings.EditShortcutsScreen
 import com.lu4p.fokuslauncher.ui.settings.SettingsScreen
+import com.lu4p.fokuslauncher.ui.settings.SettingsViewModel
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -430,7 +431,10 @@ fun FokusNavGraph(
                     slideOutHorizontally(tween(ANIM_DURATION)) { it }
                 }
             ) {
+                val settingsViewModel: SettingsViewModel =
+                        hiltViewModel(viewModelStoreOwner = componentActivity)
                 SettingsScreen(
+                    viewModel = settingsViewModel,
                     onNavigateBack = { navController.popBackStack() },
                     onNavigateToHome = {
                         showDrawer = false
@@ -456,7 +460,10 @@ fun FokusNavGraph(
                 popEnterTransition = { slideInHorizontally(tween(ANIM_DURATION)) { -it } },
                 popExitTransition = { slideOutHorizontally(tween(ANIM_DURATION)) { it } }
             ) {
+                val settingsViewModel: SettingsViewModel =
+                        hiltViewModel(viewModelStoreOwner = componentActivity)
                 CategorySettingsScreen(
+                    viewModel = settingsViewModel,
                     onNavigateBack = { navController.popBackStack() },
                     onEditCategoryApps = { category ->
                         navController.navigate(
@@ -476,8 +483,11 @@ fun FokusNavGraph(
                 popEnterTransition = { slideInHorizontally(tween(ANIM_DURATION)) { -it } },
                 popExitTransition = { slideOutHorizontally(tween(ANIM_DURATION)) { it } }
             ) { entry ->
+                val settingsViewModel: SettingsViewModel =
+                        hiltViewModel(viewModelStoreOwner = componentActivity)
                 CategoryAppsScreen(
                     category = Uri.decode(entry.arguments?.getString("category").orEmpty()),
+                    viewModel = settingsViewModel,
                     onNavigateBack = { navController.popBackStack() },
                     backgroundScrim = Color.Black
                 )

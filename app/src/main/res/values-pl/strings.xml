@@ -149,11 +149,11 @@
         <item quantity="other">%d skonfigurowanych skrótów</item>
     </plurals>
 
-    <plurals name="settings_custom_categories_count">
-        <item quantity="one">%d niestandardowa kategoria</item>
-        <item quantity="few">%d niestandardowe kategorie</item>
-        <item quantity="many">%d niestandardowych kategorii</item>
-        <item quantity="other">%d niestandardowych kategorii</item>
+    <plurals name="settings_categories_count">
+        <item quantity="one">%d kategoria</item>
+        <item quantity="few">%d kategorie</item>
+        <item quantity="many">%d kategorii</item>
+        <item quantity="other">%d kategorii</item>
     </plurals>
 
     <!-- Onboarding -->

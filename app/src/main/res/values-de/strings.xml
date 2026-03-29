@@ -145,9 +145,9 @@
         <item quantity="other">%d Schnellzugriffe konfiguriert</item>
     </plurals>
 
-    <plurals name="settings_custom_categories_count">
-        <item quantity="one">%d benutzerdefinierte Kategorie</item>
-        <item quantity="other">%d benutzerdefinierte Kategorien</item>
+    <plurals name="settings_categories_count">
+        <item quantity="one">%d Kategorie</item>
+        <item quantity="other">%d Kategorien</item>
     </plurals>
 
     <!-- Onboarding -->

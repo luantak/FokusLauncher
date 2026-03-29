@@ -513,15 +513,28 @@ constructor(
         if (normalized.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true)) return
         if (normalized.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true)) return
 
-        val rawAssignments = appDao.getAllAppCategories().first()
-        rawAssignments.forEach { assignment ->
-            if (normalizeCategory(assignment.category).equals(normalized, ignoreCase = true)) {
-                appDao.setAppCategory(AppCategoryEntity(assignment.packageName, ""))
-            }
-        }
+        val assignmentsByPackage =
+                appDao.getAllAppCategories().first().associateBy { it.packageName }
 
-        appDao.removeCategoryAssignments(normalized)
-        appDao.removeCategoryDefinition(normalized)
+        // Include apps whose category is only from system inference (no Room row); otherwise the
+        // chip/list entry comes back immediately after removing the definition.
+        val appsToUncategorize =
+                getInstalledApps().mapNotNull { app ->
+                    val stored = assignmentsByPackage[app.packageName]
+                    val effective =
+                            if (stored != null) {
+                                normalizeCategory(stored.category)
+                            } else {
+                                normalizeCategory(app.category)
+                            }
+                    if (effective.equals(normalized, ignoreCase = true)) {
+                        AppCategoryEntity(app.packageName, "")
+                    } else {
+                        null
+                    }
+                }
+
+        appDao.deleteCategoryWithAppResets(appsToUncategorize, normalized)
     }
 
     suspend fun reorderCategoryDefinitions(categories: List<String>) {
@@ -545,10 +558,11 @@ constructor(
 
     /** Clears all app-specific data (hidden apps, renamed apps, categories). */
     suspend fun clearAllAppData() {
-        appDao.clearAllHiddenApps()
-        appDao.clearAllRenamedApps()
-        appDao.clearAllAppCategories()
-        appDao.clearAllCategoryDefinitions()
+        val defaults =
+                SystemCategoryKeys.defaultOrderedCategoryNames().mapIndexed { index, name ->
+                    AppCategoryDefinitionEntity(name = name, position = index)
+                }
+        appDao.resetAllAppData(defaults)
     }
 
     private fun registerPackageChangeReceiver() {

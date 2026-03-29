@@ -51,6 +51,9 @@ interface AppDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun setAppCategory(entity: AppCategoryEntity)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertAppCategories(entities: List<AppCategoryEntity>)
+
     @Query("DELETE FROM app_categories WHERE packageName = :packageName")
     suspend fun removeAppCategory(packageName: String)
 
@@ -84,6 +87,22 @@ interface AppDao {
     @Query("DELETE FROM app_category_definitions WHERE name = :name")
     suspend fun removeCategoryDefinition(name: String)
 
+    /**
+     * Clears categories, assignment rows, and the definition in one transaction so Flow collectors
+     * (e.g. settings UI counts) refresh once instead of after each per-app write.
+     */
+    @Transaction
+    suspend fun deleteCategoryWithAppResets(
+            appsToUncategorize: List<AppCategoryEntity>,
+            categoryName: String
+    ) {
+        if (appsToUncategorize.isNotEmpty()) {
+            upsertAppCategories(appsToUncategorize)
+        }
+        removeCategoryAssignments(categoryName)
+        removeCategoryDefinition(categoryName)
+    }
+
     @Transaction
     suspend fun replaceCategoryDefinitions(entities: List<AppCategoryDefinitionEntity>) {
         clearAllCategoryDefinitions()
@@ -105,4 +124,19 @@ interface AppDao {
 
     @Query("DELETE FROM app_category_definitions")
     suspend fun clearAllCategoryDefinitions()
+
+    /**
+     * Full data reset in one transaction so category-definition Flow observers never see an
+     * intermediate "everything cleared" frame without defaults restored.
+     */
+    @Transaction
+    suspend fun resetAllAppData(defaultCategoryDefinitions: List<AppCategoryDefinitionEntity>) {
+        clearAllHiddenApps()
+        clearAllRenamedApps()
+        clearAllAppCategories()
+        clearAllCategoryDefinitions()
+        if (defaultCategoryDefinitions.isNotEmpty()) {
+            upsertCategoryDefinitions(defaultCategoryDefinitions)
+        }
+    }
 }

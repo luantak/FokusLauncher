@@ -15,6 +15,7 @@ import com.lu4p.fokuslauncher.data.database.entity.AppCategoryDefinitionEntity
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryEntity
 import com.lu4p.fokuslauncher.data.database.entity.HiddenAppEntity
 import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
+import com.lu4p.fokuslauncher.data.model.SystemCategoryKeys
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -467,6 +468,18 @@ class AppRepositoryTest {
     }
 
     @Test
+    fun `clearAllAppData clears tables and restores default category definitions`() = runTest {
+        val expectedDefaults =
+                SystemCategoryKeys.defaultOrderedCategoryNames().mapIndexed { index, name ->
+                    AppCategoryDefinitionEntity(name, index)
+                }
+
+        repository.clearAllAppData()
+
+        coVerify { appDao.resetAllAppData(expectedDefaults) }
+    }
+
+    @Test
     fun `addCategoryDefinition stores normalized category name`() = runTest {
         every { appDao.getAllCategoryDefinitions() } returns flowOf(emptyList())
         coEvery { appDao.getMaxCategoryDefinitionPosition() } returns 3
@@ -489,7 +502,58 @@ class AppRepositoryTest {
         repository.deleteCategory("All apps")
         repository.deleteCategory("Private")
 
-        coVerify(exactly = 0) { appDao.removeCategoryAssignments(any()) }
+        coVerify(exactly = 0) { appDao.deleteCategoryWithAppResets(any(), any()) }
+    }
+
+    @Test
+    fun `deleteCategory clears apps that only have system inferred category`() = runTest {
+        every {
+            launcherApps.getActivityList(null, myUser)
+        } returns
+                listOf(
+                        createMockLauncherActivity(
+                                "com.lu4p.game",
+                                "Game",
+                                ApplicationInfo.CATEGORY_GAME
+                        )
+                )
+        every { appDao.getAllAppCategories() } returns flowOf(emptyList())
+
+        repository.invalidateCache()
+        repository.deleteCategory("Games")
+
+        coVerify {
+            appDao.deleteCategoryWithAppResets(
+                    listOf(AppCategoryEntity("com.lu4p.game", "")),
+                    "Games"
+            )
+        }
+    }
+
+    @Test
+    fun `deleteCategory clears explicit Room assignments matching name`() = runTest {
+        every {
+            launcherApps.getActivityList(null, myUser)
+        } returns
+                listOf(
+                        createMockLauncherActivity(
+                                "com.lu4p.app1",
+                                "App",
+                                ApplicationInfo.CATEGORY_UNDEFINED
+                        )
+                )
+        every { appDao.getAllAppCategories() } returns
+                flowOf(listOf(AppCategoryEntity("com.lu4p.app1", "Games")))
+
+        repository.invalidateCache()
+        repository.deleteCategory("Games")
+
+        coVerify {
+            appDao.deleteCategoryWithAppResets(
+                    listOf(AppCategoryEntity("com.lu4p.app1", "")),
+                    "Games"
+            )
+        }
     }
 
     // --- Helpers ---
