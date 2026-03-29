@@ -379,7 +379,7 @@ fun FokusNavGraph(
                     visible = showDrawer,
                     enter = slideInVertically(
                         animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioNoBouncy,
+                            dampingRatio = Spring.DampingRatioLowBouncy,
                             stiffness = Spring.StiffnessHigh
                         ),
                         initialOffsetY = { it }   // slide up from below the screen

@@ -97,7 +97,6 @@ fun AppDrawerScreen(
     // Close the drawer after an app is auto-launched from search
     LaunchedEffect(Unit) {
         viewModel.resetSearchState()
-        viewModel.refresh()
         viewModel.events.collect { event ->
             when (event) {
                 is DrawerEvent.AutoLaunch -> {

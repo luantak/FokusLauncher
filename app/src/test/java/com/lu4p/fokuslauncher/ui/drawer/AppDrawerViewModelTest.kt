@@ -21,6 +21,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
@@ -52,6 +53,7 @@ class AppDrawerViewModelTest {
     private val drawerAppSortModeFlow = MutableStateFlow(DrawerAppSortMode.ALPHABETICAL)
     private val drawerAppOpenCountsFlow = MutableStateFlow<Map<String, Int>>(emptyMap())
     private val privateProfileChanges = MutableSharedFlow<Unit>()
+    private val installedAppsVersion = MutableStateFlow(0L)
     private var installedApps: List<AppInfo> = emptyList()
 
     private val testApps =
@@ -82,6 +84,9 @@ class AppDrawerViewModelTest {
         appRepository = mockk(relaxed = true)
         privateSpaceManager = mockk(relaxed = true)
         preferencesManager = mockk(relaxed = true)
+        installedAppsVersion.value = 0L
+        every { appRepository.getInstalledAppsVersion() } returns installedAppsVersion.asStateFlow()
+        every { appRepository.invalidateCache() } answers { installedAppsVersion.value += 1L }
         installedApps = testApps
         every { appRepository.getInstalledApps() } answers { installedApps }
         every { appRepository.getHiddenPackageNames() } returns hiddenFlow

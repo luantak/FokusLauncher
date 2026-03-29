@@ -649,16 +649,13 @@ constructor(
         dismissMenu()
     }
 
+    /**
+     * Forces a reload of install state on next access. [observeInstalledApps] performs a single
+     * [rebuildVisibleApps] when the cache version bumps — avoids doubling work from also launching
+     * a rebuild here.
+     */
     fun refresh() {
         appRepository.invalidateCache()
-        viewModelScope.launch {
-            rebuildVisibleApps(
-                    hiddenSet = latestHiddenSet,
-                    renameMap = latestRenameMap,
-                    categoryMap = latestCategoryMap,
-                    definedCategories = latestDefinedCategories
-            )
-        }
     }
 
     fun resetSearchState() {
