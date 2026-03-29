@@ -275,25 +275,33 @@ fun FokusNavGraph(
                             .fillMaxSize()
                             .pointerInput(Unit) {
                                 var verticalDragOffset = 0f
+                                var drawerTriggered = false
                                 detectVerticalDragGestures(
                                     onDragStart = {
                                         verticalDragOffset = 0f
+                                        drawerTriggered = false
                                     },
                                     onVerticalDrag = { change, dragAmount ->
                                         change.consume()
                                         verticalDragOffset += dragAmount
+                                        if (!drawerTriggered && verticalDragOffset < -SWIPE_THRESHOLD) {
+                                            drawerTriggered = true
+                                            verticalDragOffset = 0f
+                                            showDrawer = true
+                                        }
                                     },
                                     onDragEnd = {
                                         when {
-                                            verticalDragOffset < -SWIPE_THRESHOLD -> showDrawer = true
                                             verticalDragOffset > SWIPE_THRESHOLD -> activity?.let {
                                                 MainActivity.expandStatusBar(it)
                                             }
                                         }
                                         verticalDragOffset = 0f
+                                        drawerTriggered = false
                                     },
                                     onDragCancel = {
                                         verticalDragOffset = 0f
+                                        drawerTriggered = false
                                     }
                                 )
                             }
