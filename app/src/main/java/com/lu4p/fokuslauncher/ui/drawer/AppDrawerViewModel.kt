@@ -2,10 +2,7 @@ package com.lu4p.fokuslauncher.ui.drawer
 
 import android.content.ComponentName
 import android.content.Context
-import android.content.pm.LauncherApps
-import android.os.Build
 import android.os.UserHandle
-import android.os.UserManager
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lu4p.fokuslauncher.R
@@ -17,7 +14,6 @@ import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.model.drawerOpenCountKey
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
-import com.lu4p.fokuslauncher.utils.ProfileHeuristics
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -92,17 +88,6 @@ constructor(
     private var latestDrawerSortMode: DrawerAppSortMode = DrawerAppSortMode.ALPHABETICAL
     private var latestOpenCounts: Map<String, Int> = emptyMap()
 
-    /** Cached [UserManager] for drawer section layout; safe to hold for process lifetime. */
-    private val drawerUserManager: UserManager? =
-            try {
-                context.getSystemService(Context.USER_SERVICE) as? UserManager
-            } catch (_: Exception) {
-                null
-            }
-
-    /** Case-insensitive label order without per-comparison [String.lowercase] allocations. */
-    private val alphabeticalAppComparator =
-            compareBy<AppInfo, String>(String.CASE_INSENSITIVE_ORDER) { it.label }
 
     // --- Profile sections cache (invalidates when apps list identity or sort inputs change) ---
     private var profileSectionsCache: List<DrawerProfileSectionUi>? = null
@@ -703,10 +688,10 @@ constructor(
 
     private fun sortDrawerApps(apps: List<AppInfo>): List<AppInfo> {
         if (latestDrawerSortMode != DrawerAppSortMode.MOST_OPENED) {
-            return apps.sortedWith(alphabeticalAppComparator)
+            return apps.sortedWith(alphabeticalAppComparatorForProfiles)
         }
         if (latestOpenCounts.values.none { it > 0 }) {
-            return apps.sortedWith(alphabeticalAppComparator)
+            return apps.sortedWith(alphabeticalAppComparatorForProfiles)
         }
         return apps.sortedWith(
                 compareByDescending<AppInfo> { app ->
@@ -763,82 +748,7 @@ constructor(
     }
 
     private fun buildProfileSectionsInner(apps: List<AppInfo>): List<DrawerProfileSectionUi> {
-        val userManager = drawerUserManager
-        if (userManager == null) {
-            val ownerApps = sortDrawerApps(apps.filter { it.userHandle == null })
-            val byUser = apps.filter { it.userHandle != null }.groupBy { it.userHandle!! }
-            return buildList {
-                if (ownerApps.isNotEmpty()) {
-                    add(
-                            DrawerProfileSectionUi(
-                                    id = "owner",
-                                    title = context.getString(R.string.drawer_section_personal),
-                                    apps = ownerApps
-                            )
-                    )
-                }
-                for (user in byUser.keys) {
-                    val list = sortDrawerApps(byUser.getValue(user))
-                    val title =
-                            when {
-                                byUser.keys.size == 1 &&
-                                        !ProfileHeuristics.isLikelyCloneOrParallelProfile(
-                                                context,
-                                                user
-                                        ) ->
-                                        context.getString(R.string.drawer_section_work_profile)
-                                ProfileHeuristics.isLikelyCloneOrParallelProfile(context, user) ->
-                                        context.getString(R.string.drawer_section_clone_profile)
-                                else -> context.getString(R.string.drawer_section_other_profile)
-                            }
-                    add(
-                            DrawerProfileSectionUi(
-                                    id = "u_${user.hashCode()}",
-                                    title = title,
-                                    apps = list
-                            )
-                    )
-                }
-            }
-        }
-
-        val ownerApps = sortDrawerApps(apps.filter { it.userHandle == null })
-        val byUser = apps.filter { it.userHandle != null }.groupBy { it.userHandle!! }
-        val orderedUsers =
-                byUser.keys.sortedBy { uh ->
-                    try {
-                        userManager.getSerialNumberForUser(uh)
-                    } catch (_: Exception) {
-                        Long.MAX_VALUE
-                    }
-                }
-
-        return buildList {
-            if (ownerApps.isNotEmpty()) {
-                add(
-                        DrawerProfileSectionUi(
-                                id = "owner",
-                                title = context.getString(R.string.drawer_section_personal),
-                                apps = ownerApps
-                        )
-                )
-            }
-            for (user in orderedUsers) {
-                val list = sortDrawerApps(byUser.getValue(user))
-                add(
-                        DrawerProfileSectionUi(
-                                id = "u_${user.hashCode()}",
-                                title =
-                                        profileTitleForUser(
-                                                user = user,
-                                                userManager = userManager,
-                                                totalSecondaryProfiles = orderedUsers.size
-                                        ),
-                                apps = list
-                        )
-                )
-            }
-        }
+        return groupAppsIntoProfileSections(context, apps, ::sortDrawerApps)
     }
 
     private fun filterProfileSections(
@@ -858,51 +768,6 @@ constructor(
                 apps = apps.filter { it.category.equals(category, ignoreCase = true) }
             }
             section.copy(apps = apps)
-        }
-    }
-
-    private fun profileTitleForUser(
-            user: UserHandle,
-            userManager: UserManager,
-            totalSecondaryProfiles: Int
-    ): String {
-        if (ProfileHeuristics.isManagedProfileForUser(userManager, user)) {
-            return context.getString(R.string.drawer_section_work_profile)
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val launcherApps =
-                    try {
-                        context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as? LauncherApps
-                    } catch (_: Exception) {
-                        null
-                    }
-            if (launcherApps != null &&
-                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM
-            ) {
-                try {
-                    when (launcherApps.getLauncherUserInfo(user)?.userType) {
-                        "android.os.usertype.profile.MANAGED" ->
-                                return context.getString(R.string.drawer_section_work_profile)
-                    }
-                } catch (_: Exception) {}
-            }
-        }
-        if (ProfileHeuristics.isLikelyCloneOrParallelProfile(context, user)) {
-            return context.getString(R.string.drawer_section_clone_profile)
-        }
-        if (totalSecondaryProfiles == 1) {
-            return context.getString(R.string.drawer_section_work_profile)
-        }
-        val serial =
-                try {
-                    userManager.getSerialNumberForUser(user)
-                } catch (_: Exception) {
-                    -1L
-                }
-        return if (serial >= 0L) {
-            context.getString(R.string.drawer_section_profile_numbered, serial)
-        } else {
-            context.getString(R.string.drawer_section_other_profile)
         }
     }
 

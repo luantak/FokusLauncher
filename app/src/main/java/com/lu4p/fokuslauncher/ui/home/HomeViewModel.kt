@@ -23,6 +23,7 @@ import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.AppShortcutAction
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
+import com.lu4p.fokuslauncher.data.model.appProfileKey
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
@@ -259,7 +260,8 @@ class HomeViewModel @Inject constructor(
 
     fun toggleAppOnHomeScreen(app: AppInfo) {
         val current = _editFavorites.value.toMutableList()
-        val existing = current.indexOfFirst { it.packageName == app.packageName }
+        val profileKey = appProfileKey(app.userHandle)
+        val existing = current.indexOfFirst { it.packageName == app.packageName && it.profileKey == profileKey }
         if (existing >= 0) {
             current.removeAt(existing)
         } else {
@@ -269,7 +271,8 @@ class HomeViewModel @Inject constructor(
                     label = resolvedName,
                     packageName = app.packageName,
                     iconName = "circle",
-                    iconPackage = ""
+                    iconPackage = "",
+                    profileKey = profileKey,
                 )
             )
         }
@@ -335,7 +338,7 @@ class HomeViewModel @Inject constructor(
     fun removeFavorite(fav: FavoriteApp) {
         viewModelScope.launch {
             val current = rawFavorites.value.toMutableList()
-            current.removeAll { it.packageName == fav.packageName }
+            current.removeAll { it.packageName == fav.packageName && it.profileKey == fav.profileKey }
             preferencesManager.setFavorites(current)
         }
         _appMenuTarget.value = null
@@ -528,6 +531,19 @@ class HomeViewModel @Inject constructor(
 
     fun launchApp(packageName: String) {
         appRepository.launchApp(packageName)
+    }
+
+    fun launchFavorite(fav: FavoriteApp) {
+        if (fav.profileKey != "0") {
+            val app =
+                    _allInstalledApps.value.firstOrNull {
+                        it.packageName == fav.packageName && appProfileKey(it.userHandle) == fav.profileKey
+                    }
+            val cn = app?.componentName
+            val uh = app?.userHandle
+            if (cn != null && uh != null && appRepository.launchMainActivity(cn, uh)) return
+        }
+        appRepository.launchApp(fav.packageName)
     }
 
     fun launchShortcut(target: ShortcutTarget) {

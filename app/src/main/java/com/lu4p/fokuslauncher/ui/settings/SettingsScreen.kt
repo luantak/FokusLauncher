@@ -77,6 +77,9 @@ import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.data.model.AppInfo
+import com.lu4p.fokuslauncher.ui.drawer.groupAppsIntoProfileSections
+import com.lu4p.fokuslauncher.ui.drawer.profileGroupedAppItems
+import com.lu4p.fokuslauncher.ui.drawer.sortAppsAlphabeticallyByProfileSection
 import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
@@ -1127,6 +1130,16 @@ private fun AppPickerDialog(
         onDismiss: () -> Unit
 ) {
     var filter by remember { mutableStateOf("") }
+    val context = LocalContext.current
+    val filtered =
+            remember(filter, allApps) {
+                if (filter.isBlank()) allApps
+                else allApps.filter { it.label.contains(filter, true) }
+            }
+    val filteredSections =
+            remember(filtered, context) {
+                groupAppsIntoProfileSections(context, filtered, ::sortAppsAlphabeticallyByProfileSection)
+            }
 
     AlertDialog(
             onDismissRequest = onDismiss,
@@ -1144,9 +1157,10 @@ private fun AppPickerDialog(
                     )
                     Spacer(Modifier.height(8.dp))
                     LazyColumn(modifier = Modifier.height(300.dp)) {
-                        items(
-                                if (filter.isBlank()) allApps
-                                else allApps.filter { it.label.contains(filter, true) }
+                        profileGroupedAppItems(
+                                sections = filteredSections,
+                                keyPrefix = "settings_app_pick",
+                                horizontalPadding = 8.dp,
                         ) { app ->
                             Text(
                                     text = app.label,

@@ -19,7 +19,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.CheckCircle
@@ -58,6 +57,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.ui.util.formatShortcutTargetDisplay
 import com.lu4p.fokuslauncher.data.model.AppInfo
+import com.lu4p.fokuslauncher.ui.drawer.groupAppsIntoProfileSections
+import com.lu4p.fokuslauncher.ui.drawer.profileGroupedAppItems
+import com.lu4p.fokuslauncher.ui.drawer.sortAppsAlphabeticallyByProfileSection
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.ui.home.HomeViewModel
 import com.lu4p.fokuslauncher.ui.settings.EditHomeAppsScreen
@@ -561,6 +563,16 @@ private fun OnboardingAppPickerDialog(
     onDismiss: () -> Unit
 ) {
     var filter by remember { mutableStateOf("") }
+    val context = LocalContext.current
+    val filtered =
+        remember(filter, allApps) {
+            if (filter.isBlank()) allApps
+            else allApps.filter { it.label.contains(filter, ignoreCase = true) }
+        }
+    val filteredSections =
+        remember(filtered, context) {
+            groupAppsIntoProfileSections(context, filtered, ::sortAppsAlphabeticallyByProfileSection)
+        }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -576,9 +588,10 @@ private fun OnboardingAppPickerDialog(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 LazyColumn(modifier = Modifier.height(300.dp)) {
-                    items(
-                        if (filter.isBlank()) allApps
-                        else allApps.filter { it.label.contains(filter, ignoreCase = true) }
+                    profileGroupedAppItems(
+                        sections = filteredSections,
+                        keyPrefix = "onboarding_app_pick",
+                        horizontalPadding = 8.dp,
                     ) { app ->
                         Text(
                             text = app.label,

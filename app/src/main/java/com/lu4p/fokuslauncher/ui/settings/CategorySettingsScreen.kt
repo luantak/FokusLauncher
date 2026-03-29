@@ -50,6 +50,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
+import com.lu4p.fokuslauncher.ui.drawer.groupAppsIntoProfileSections
+import com.lu4p.fokuslauncher.ui.drawer.profileGroupedAppItems
+import com.lu4p.fokuslauncher.ui.drawer.sortAppsAlphabeticallyByProfileSection
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
 import com.lu4p.fokuslauncher.ui.util.categoryChipDisplayLabel
@@ -254,7 +257,10 @@ fun CategoryAppsScreen(
         }.map { it.packageName }.toSet()
     }
     val checkedApps = remember(uiState.allApps, checkedPackages) {
-        uiState.allApps.filter { it.packageName in checkedPackages }.sortedBy { it.label.lowercase() }
+        uiState.allApps.filter { it.packageName in checkedPackages }
+    }
+    val checkedSections = remember(checkedApps, context) {
+        groupAppsIntoProfileSections(context, checkedApps, ::sortAppsAlphabeticallyByProfileSection)
     }
     val uncheckedApps = remember(uiState.allApps, checkedPackages, searchQuery) {
         uiState.allApps.filter { it.packageName !in checkedPackages }
@@ -262,7 +268,9 @@ fun CategoryAppsScreen(
                     if (searchQuery.isBlank()) apps
                     else apps.filter { it.label.contains(searchQuery, ignoreCase = true) }
                 }
-                .sortedBy { it.label.lowercase() }
+    }
+    val uncheckedSections = remember(uncheckedApps, context) {
+        groupAppsIntoProfileSections(context, uncheckedApps, ::sortAppsAlphabeticallyByProfileSection)
     }
 
     BackHandler { onNavigateBack() }
@@ -316,7 +324,11 @@ fun CategoryAppsScreen(
                     )
                 }
             }
-            items(checkedApps, key = { "checked_${it.packageName}" }) { app ->
+            profileGroupedAppItems(
+                    sections = checkedSections,
+                    keyPrefix = "cat_checked",
+                    horizontalPadding = 16.dp,
+            ) { app ->
                 CategoryAppRow(
                         label = app.label,
                         checked = true,
@@ -332,7 +344,11 @@ fun CategoryAppsScreen(
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                 )
             }
-            items(uncheckedApps, key = { "unchecked_${it.packageName}" }) { app ->
+            profileGroupedAppItems(
+                    sections = uncheckedSections,
+                    keyPrefix = "cat_unchecked",
+                    horizontalPadding = 16.dp,
+            ) { app ->
                 val currentCategory = (uiState.appCategories[app.packageName] ?: app.category)
                 CategoryAppRow(
                         label = app.label,

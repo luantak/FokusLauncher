@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
@@ -42,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -52,6 +52,11 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.lu4p.fokuslauncher.data.model.AppInfo
+import com.lu4p.fokuslauncher.data.model.appProfileKey
+import com.lu4p.fokuslauncher.ui.drawer.groupAppsIntoProfileSections
+import com.lu4p.fokuslauncher.ui.drawer.profileGroupedAppItems
+import com.lu4p.fokuslauncher.ui.drawer.profileOriginLabelForFavorite
+import com.lu4p.fokuslauncher.ui.drawer.sortAppsAlphabeticallyByProfileSection
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
@@ -95,8 +100,9 @@ fun HomeScreen(
         HomeScreenContent(
             uiState = uiState,
             favorites = favorites,
+            installedApps = allInstalledApps,
             rightSideShortcuts = rightSideShortcuts,
-            onLabelClick = { packageName -> viewModel.launchApp(packageName) },
+            onLabelClick = { fav -> viewModel.launchFavorite(fav) },
             onLabelLongPress = { fav -> viewModel.onFavoriteLongPress(fav) },
             onHomeScreenLongPress = { viewModel.onHomeScreenLongPress() },
             onIconClick = { target -> viewModel.launchShortcut(target) },
@@ -154,8 +160,9 @@ fun HomeScreen(
 fun HomeScreenContent(
     uiState: HomeUiState,
     favorites: List<FavoriteApp>,
+    installedApps: List<AppInfo> = emptyList(),
     rightSideShortcuts: List<HomeShortcut>,
-    onLabelClick: (String) -> Unit,
+    onLabelClick: (FavoriteApp) -> Unit,
     onIconClick: (ShortcutTarget) -> Unit,
     modifier: Modifier = Modifier,
     onLabelLongPress: (FavoriteApp) -> Unit = {},
@@ -232,18 +239,12 @@ fun HomeScreenContent(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         favorites.forEach { fav ->
-                            Text(
-                                text = fav.label,
-                                style = MaterialTheme.typography.headlineMedium,
-                                color = MaterialTheme.colorScheme.onBackground,
-                                modifier = Modifier
-                                    .combinedClickable(
-                                        indication = null,
-                                        interactionSource = remember { MutableInteractionSource() },
-                                        onClick = { onLabelClick(fav.packageName) },
-                                        onLongClick = { onLabelLongPress(fav) }
-                                    )
-                                    .testTag("favorite_${fav.label}")
+                            FavoriteAppItem(
+                                    fav = fav,
+                                    installedApps = installedApps,
+                                    onClick = { onLabelClick(fav) },
+                                    onLongPress = { onLabelLongPress(fav) },
+                                    horizontalAlignment = Alignment.CenterHorizontally,
                             )
                             Spacer(modifier = Modifier.height(20.dp))
                         }
@@ -305,18 +306,12 @@ fun HomeScreenContent(
                             horizontalAlignment = Alignment.End
                         ) {
                             favorites.forEach { fav ->
-                                Text(
-                                    text = fav.label,
-                                    style = MaterialTheme.typography.headlineMedium,
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                    modifier = Modifier
-                                        .combinedClickable(
-                                            indication = null,
-                                            interactionSource = remember { MutableInteractionSource() },
-                                            onClick = { onLabelClick(fav.packageName) },
-                                            onLongClick = { onLabelLongPress(fav) }
-                                        )
-                                        .testTag("favorite_${fav.label}")
+                                FavoriteAppItem(
+                                        fav = fav,
+                                        installedApps = installedApps,
+                                        onClick = { onLabelClick(fav) },
+                                        onLongPress = { onLabelLongPress(fav) },
+                                        horizontalAlignment = Alignment.End,
                                 )
                             }
                         }
@@ -339,18 +334,12 @@ fun HomeScreenContent(
                             horizontalAlignment = Alignment.Start
                         ) {
                             favorites.forEach { fav ->
-                                Text(
-                                    text = fav.label,
-                                    style = MaterialTheme.typography.headlineMedium,
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                    modifier = Modifier
-                                        .combinedClickable(
-                                            indication = null,
-                                            interactionSource = remember { MutableInteractionSource() },
-                                            onClick = { onLabelClick(fav.packageName) },
-                                            onLongClick = { onLabelLongPress(fav) }
-                                        )
-                                        .testTag("favorite_${fav.label}")
+                                FavoriteAppItem(
+                                        fav = fav,
+                                        installedApps = installedApps,
+                                        onClick = { onLabelClick(fav) },
+                                        onLongPress = { onLabelLongPress(fav) },
+                                        horizontalAlignment = Alignment.Start,
                                 )
                             }
                         }
@@ -399,6 +388,52 @@ fun HomeScreenContent(
                     style = MaterialTheme.typography.labelMedium
                 )
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun FavoriteAppItem(
+        fav: FavoriteApp,
+        installedApps: List<AppInfo>,
+        onClick: () -> Unit,
+        onLongPress: () -> Unit,
+        horizontalAlignment: Alignment.Horizontal,
+) {
+    val context = LocalContext.current
+    val badge =
+            remember(fav, installedApps, context) {
+                val match =
+                        installedApps.find {
+                            it.packageName == fav.packageName &&
+                                    appProfileKey(it.userHandle) == fav.profileKey
+                        }
+                profileOriginLabelForFavorite(context, fav, match)
+            }
+    Column(
+            horizontalAlignment = horizontalAlignment,
+            modifier =
+                    Modifier.combinedClickable(
+                                    indication = null,
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    onClick = onClick,
+                                    onLongClick = onLongPress,
+                            )
+                            .testTag("favorite_${fav.label}"),
+    ) {
+        Text(
+                text = fav.label,
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+        )
+        if (badge != null) {
+            Text(
+                    text = badge,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp),
+            )
         }
     }
 }
@@ -474,6 +509,15 @@ private fun WeatherAppPickerDialog(
     onDismiss: () -> Unit
 ) {
     var filter by remember { mutableStateOf("") }
+    val context = LocalContext.current
+    val filtered =
+        remember(filter, allApps) {
+            if (filter.isBlank()) allApps else allApps.filter { it.label.contains(filter, true) }
+        }
+    val filteredSections =
+        remember(filtered, context) {
+            groupAppsIntoProfileSections(context, filtered, ::sortAppsAlphabeticallyByProfileSection)
+        }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -490,9 +534,12 @@ private fun WeatherAppPickerDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(8.dp))
-                val filtered = if (filter.isBlank()) allApps else allApps.filter { it.label.contains(filter, true) }
                 LazyColumn(modifier = Modifier.height(300.dp)) {
-                    items(filtered) { app ->
+                    profileGroupedAppItems(
+                        sections = filteredSections,
+                        keyPrefix = "weather_app_pick",
+                        horizontalPadding = 8.dp,
+                    ) { app ->
                         Text(
                             text = app.label,
                             style = MaterialTheme.typography.bodyLarge,

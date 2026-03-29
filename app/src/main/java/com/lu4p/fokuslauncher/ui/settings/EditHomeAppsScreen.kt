@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -39,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -46,6 +48,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
+import com.lu4p.fokuslauncher.data.model.appProfileKey
+import com.lu4p.fokuslauncher.data.model.drawerOpenCountKey
+import com.lu4p.fokuslauncher.ui.drawer.DrawerProfileSectionUi
+import com.lu4p.fokuslauncher.ui.drawer.groupAppsIntoProfileSections
+import com.lu4p.fokuslauncher.ui.drawer.profileGroupedAppItems
+import com.lu4p.fokuslauncher.ui.drawer.profileOriginLabelForApp
+import com.lu4p.fokuslauncher.ui.drawer.profileOriginLabelForFavorite
+import com.lu4p.fokuslauncher.ui.drawer.sortAppsAlphabeticallyByProfileSection
 import com.lu4p.fokuslauncher.ui.home.HomeViewModel
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
 
@@ -58,18 +68,21 @@ fun EditHomeAppsScreen(
 ) {
     val editFavorites by viewModel.editFavorites.collectAsStateWithLifecycle()
     val allApps by viewModel.allInstalledApps.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     var searchQuery by remember { mutableStateOf("") }
 
-    val checkedPackages = remember(editFavorites) {
-        editFavorites.map { it.packageName }.toSet()
+    val checkedKeys = remember(editFavorites) {
+        editFavorites.map { drawerOpenCountKey(it.packageName, it.profileKey) }.toSet()
     }
-    val uncheckedApps = remember(allApps, checkedPackages, searchQuery) {
-        allApps.filter { it.packageName !in checkedPackages }
+    val uncheckedApps = remember(allApps, checkedKeys, searchQuery) {
+        allApps.filter { drawerOpenCountKey(it.packageName, it.userHandle) !in checkedKeys }
             .let { list ->
                 if (searchQuery.isBlank()) list
                 else list.filter { it.label.contains(searchQuery, ignoreCase = true) }
             }
-            .sortedBy { it.label.lowercase() }
+    }
+    val uncheckedSections = remember(uncheckedApps, context) {
+        groupAppsIntoProfileSections(context, uncheckedApps, ::sortAppsAlphabeticallyByProfileSection)
     }
 
     LaunchedEffect(Unit) {
@@ -128,7 +141,7 @@ fun EditHomeAppsScreen(
 
         ReorderableEditHomeAppsList(
             editFavorites = editFavorites,
-            uncheckedApps = uncheckedApps,
+            uncheckedSections = uncheckedSections,
             allApps = allApps,
             onToggle = { viewModel.toggleAppOnHomeScreen(it) },
             onReorder = { from, to -> viewModel.reorderFavorite(from, to) }
@@ -139,11 +152,12 @@ fun EditHomeAppsScreen(
 @Composable
 private fun ReorderableEditHomeAppsList(
     editFavorites: List<FavoriteApp>,
-    uncheckedApps: List<AppInfo>,
+    uncheckedSections: List<DrawerProfileSectionUi>,
     allApps: List<AppInfo>,
     onToggle: (AppInfo) -> Unit,
     onReorder: (Int, Int) -> Unit
 ) {
+    val context = LocalContext.current
     var draggedIndex by remember { mutableIntStateOf(-1) }
     var dragOffset by remember { mutableFloatStateOf(0f) }
     val itemHeightPx = with(LocalDensity.current) { 56.dp.toPx() }
@@ -166,9 +180,23 @@ private fun ReorderableEditHomeAppsList(
 
         items(
             count = editFavorites.size,
-            key = { "checked_${editFavorites[it].packageName}" }
+            key = {
+                val fav = editFavorites[it]
+                "checked_${drawerOpenCountKey(fav.packageName, fav.profileKey)}"
+            }
         ) { index ->
             val fav = editFavorites[index]
+            val matchingApp =
+                remember(fav.packageName, fav.profileKey, allApps) {
+                    allApps.find {
+                        it.packageName == fav.packageName &&
+                            appProfileKey(it.userHandle) == fav.profileKey
+                    }
+                }
+            val profileBadge =
+                remember(fav, matchingApp, context) {
+                    profileOriginLabelForFavorite(context, fav, matchingApp)
+                }
             val offset = if (index == draggedIndex) {
                 dragOffset.coerceIn(-itemHeightPx, itemHeightPx)
             } else {
@@ -178,9 +206,9 @@ private fun ReorderableEditHomeAppsList(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp)
+                    .heightIn(min = 56.dp)
                     .graphicsLayer { translationY = offset }
-                    .padding(horizontal = 16.dp),
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
@@ -189,7 +217,7 @@ private fun ReorderableEditHomeAppsList(
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier
                         .size(24.dp)
-                        .pointerInput(fav.packageName, editFavorites.size) {
+                        .pointerInput(fav.packageName, fav.profileKey, editFavorites.size) {
                             detectVerticalDragGestures(
                                 onDragStart = {
                                     draggedIndex = index
@@ -227,16 +255,29 @@ private fun ReorderableEditHomeAppsList(
                 Checkbox(
                     checked = true,
                     onCheckedChange = {
-                        allApps.find { it.packageName == fav.packageName }?.let { onToggle(it) }
+                        allApps.find {
+                            it.packageName == fav.packageName &&
+                                    appProfileKey(it.userHandle) == fav.profileKey
+                        }?.let { onToggle(it) }
                     }
                 )
                 Spacer(modifier = Modifier.width(8.dp))
 
-                Text(
-                    text = fav.label,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = fav.label,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    if (profileBadge != null) {
+                        Text(
+                            text = profileBadge,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 2.dp)
+                        )
+                    }
+                }
             }
         }
 
@@ -249,15 +290,20 @@ private fun ReorderableEditHomeAppsList(
             )
         }
 
-        items(
-            items = uncheckedApps,
-            key = { "unchecked_${it.packageName}" }
+        profileGroupedAppItems(
+            sections = uncheckedSections,
+            keyPrefix = "unchecked",
+            horizontalPadding = 16.dp,
         ) { app ->
+            val profileBadge =
+                remember(app.packageName, app.componentName, app.userHandle, context) {
+                    profileOriginLabelForApp(context, app)
+                }
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp)
-                    .padding(horizontal = 16.dp),
+                    .heightIn(min = 56.dp)
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Spacer(modifier = Modifier.size(24.dp))
@@ -267,12 +313,26 @@ private fun ReorderableEditHomeAppsList(
                     onCheckedChange = { onToggle(app) }
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = app.label,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = app.label,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    if (profileBadge != null) {
+                        Text(
+                            text = profileBadge,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 2.dp)
+                        )
+                    }
+                }
             }
+        }
+
+        item(key = "edit_home_list_bottom_spacer") {
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }

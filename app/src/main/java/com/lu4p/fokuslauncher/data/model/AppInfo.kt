@@ -17,3 +17,13 @@ data class AppInfo(
     /** Non-null when [userHandle] is set; the activity to start in that profile. */
     val componentName: ComponentName? = null
 )
+
+/**
+ * Stable LazyColumn/LazyRow key: same package and profile can have multiple launch activities
+ * (e.g. Google app); [drawerOpenCountKey] alone is not enough for those rows.
+ */
+fun appListStableKey(app: AppInfo): String {
+    val base = drawerOpenCountKey(app.packageName, app.userHandle)
+    val cn = app.componentName ?: return base
+    return "$base#${cn.flattenToString()}"
+}

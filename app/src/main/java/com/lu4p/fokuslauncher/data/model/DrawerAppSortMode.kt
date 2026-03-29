@@ -12,8 +12,14 @@ enum class DrawerAppSortMode {
     }
 }
 
+/** Stable profile segment for [userHandle]: owner user is `"0"`. */
+fun appProfileKey(userHandle: UserHandle?): String =
+        if (userHandle == null) "0" else userHandle.hashCode().toString()
+
+/** Stable key for open counts, list rows, and matching [FavoriteApp.profileKey]. */
+fun drawerOpenCountKey(packageName: String, profileKey: String): String =
+        "$profileKey|$packageName"
+
 /** Stable key for open counts (owner profile and per-[UserHandle] for work / private space). */
-fun drawerOpenCountKey(packageName: String, userHandle: UserHandle?): String {
-    val userPart = if (userHandle == null) "0" else userHandle.hashCode().toString()
-    return "$userPart|$packageName"
-}
+fun drawerOpenCountKey(packageName: String, userHandle: UserHandle?): String =
+        drawerOpenCountKey(packageName, appProfileKey(userHandle))

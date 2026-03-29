@@ -291,6 +291,19 @@ constructor(
     }
 
     /**
+     * Starts a launchable activity in another Android user (e.g. work profile) via [LauncherApps].
+     */
+    fun launchMainActivity(componentName: ComponentName, userHandle: UserHandle, options: Bundle? = null): Boolean {
+        return try {
+            val launcherApps = ContextCompat.getSystemService(context, LauncherApps::class.java) ?: return false
+            launcherApps.startMainActivity(componentName, userHandle, null, options)
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    /**
      * Launches an Android launcher shortcut action (long-press shortcut).
      */
     fun launchLauncherShortcut(packageName: String, shortcutId: String): Boolean {

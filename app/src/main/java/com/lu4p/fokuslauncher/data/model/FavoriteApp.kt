@@ -13,7 +13,12 @@ data class FavoriteApp(
     val label: String,
     val packageName: String,
     val iconName: String = "circle",
-    val iconPackage: String = "" // Encoded ShortcutTarget or legacy package name.
+    val iconPackage: String = "", // Encoded ShortcutTarget or legacy package name.
+    /**
+     * Same encoding as [appProfileKey]: `"0"` for the owner profile, else
+     * [UserHandle.hashCode] for work / secondary users (see [drawerOpenCountKey]).
+     */
+    val profileKey: String = "0",
 ) {
     /** Kept for backwards compat */
     val categoryLabel: String get() = label

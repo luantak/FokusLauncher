@@ -70,7 +70,7 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         context.fokusLauncherPreferencesDataStore.edit { prefs ->
             prefs[FAVORITES_KEY] =
                     favorites.joinToString("|") {
-                        "${it.label};${it.packageName};${it.iconName};${it.iconPackage}"
+                        "${it.label};${it.packageName};${it.iconName};${it.iconPackage};${it.profileKey}"
                     }
         }
     }
@@ -294,7 +294,8 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
                         label = semiParts[0],
                         packageName = semiParts[1],
                         iconName = semiParts[2],
-                        iconPackage = semiParts.getOrElse(3) { "" }
+                        iconPackage = semiParts.getOrElse(3) { "" },
+                        profileKey = semiParts.getOrElse(4) { "0" },
                 )
             } else {
                 // Legacy format: "label:packageName"

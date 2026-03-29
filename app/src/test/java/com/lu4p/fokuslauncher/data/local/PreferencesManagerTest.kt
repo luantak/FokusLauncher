@@ -91,7 +91,7 @@ class PreferencesManagerTest {
             FavoriteApp("Work", "com.lu4p.work", "work", "")
         )
         val serialized = favorites.joinToString("|") {
-            "${it.label};${it.packageName};${it.iconName};${it.iconPackage}"
+            "${it.label};${it.packageName};${it.iconName};${it.iconPackage};${it.profileKey}"
         }
         val deserialized = parseFavorites(serialized)
 
@@ -129,7 +129,8 @@ class PreferencesManagerTest {
                     label = semiParts[0],
                     packageName = semiParts[1],
                     iconName = semiParts[2],
-                    iconPackage = semiParts.getOrElse(3) { "" }
+                    iconPackage = semiParts.getOrElse(3) { "" },
+                    profileKey = semiParts.getOrElse(4) { "0" },
                 )
             } else {
                 val colonParts = entry.split(":", limit = 2)
