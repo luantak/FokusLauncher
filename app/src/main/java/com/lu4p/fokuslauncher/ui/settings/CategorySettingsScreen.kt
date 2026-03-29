@@ -74,7 +74,8 @@ fun CategorySettingsScreen(
     val canAddCategory =
             normalizedNewCategory.isNotBlank() &&
                     !normalizedNewCategory.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true) &&
-                    !normalizedNewCategory.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true)
+                    !normalizedNewCategory.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true) &&
+                    !normalizedNewCategory.equals(ReservedCategoryNames.WORK, ignoreCase = true)
     val categories =
             remember(uiState.allApps, uiState.categoryDefinitions) { deriveEditableCategories(uiState) }
     var localCategories by remember(categories) { mutableStateOf(categories) }

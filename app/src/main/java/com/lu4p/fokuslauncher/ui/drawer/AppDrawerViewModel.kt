@@ -184,6 +184,8 @@ constructor(
                                     includePrivate =
                                             state.isPrivateSpaceUnlocked &&
                                                     state.privateSpaceApps.isNotEmpty(),
+                                    includeWork =
+                                            state.allApps.any { isDrawerWorkProfileApp(context, it) },
                                     includeAllAppsSection = !hideAllAppsSection
                             )
                     val selectedCategory =
@@ -309,6 +311,7 @@ constructor(
                             includePrivate =
                                     state.isPrivateSpaceUnlocked &&
                                             state.privateSpaceApps.isNotEmpty(),
+                            includeWork = visible.any { isDrawerWorkProfileApp(context, it) },
                             includeAllAppsSection = !state.hideAllAppsSection
                     )
             val selectedCategory =
@@ -453,6 +456,7 @@ constructor(
     fun onCategoryLongPress(category: String) {
         if (category.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true)) return
         if (category.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true)) return
+        if (category.equals(ReservedCategoryNames.WORK, ignoreCase = true)) return
         _uiState.update { it.copy(selectedCategoryForActions = category) }
     }
 
@@ -588,12 +592,13 @@ constructor(
                     deriveCategories(
                             apps = state.allApps,
                             definedCategories =
-                                    state.categories
-                                            .filterNot {
-                                                it.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true) ||
-                                                        it.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true)
-                                            },
+                                    state.categories.filterNot {
+                                        it.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true) ||
+                                                it.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true) ||
+                                                it.equals(ReservedCategoryNames.WORK, ignoreCase = true)
+                                    },
                             includePrivate = unlocked && apps.isNotEmpty(),
+                            includeWork = state.allApps.any { isDrawerWorkProfileApp(context, it) },
                             includeAllAppsSection = !state.hideAllAppsSection
                     )
             val selectedCategory =
@@ -765,7 +770,12 @@ constructor(
                 apps = apps.filter { it.label.contains(query, ignoreCase = true) }
             }
             if (category.isNotBlank() && !category.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true)) {
-                apps = apps.filter { it.category.equals(category, ignoreCase = true) }
+                apps =
+                        if (category.equals(ReservedCategoryNames.WORK, ignoreCase = true)) {
+                            apps.filter { isDrawerWorkProfileApp(context, it) }
+                        } else {
+                            apps.filter { it.category.equals(category, ignoreCase = true) }
+                        }
             }
             section.copy(apps = apps)
         }
@@ -809,16 +819,26 @@ constructor(
             apps: List<AppInfo>,
             definedCategories: List<String>,
             includePrivate: Boolean,
+            includeWork: Boolean,
             includeAllAppsSection: Boolean
     ): List<String> {
         val dynamic = apps.map { it.category.trim() }.filter { it.isNotBlank() }.toSet()
         val orderedDefined = definedCategories.distinct()
         val extras = (dynamic - orderedDefined.toSet()).toList().sorted()
+        val skipUserList =
+                buildList {
+                    if (includeAllAppsSection) add(ReservedCategoryNames.ALL_APPS)
+                    if (includePrivate) add(ReservedCategoryNames.PRIVATE)
+                    if (includeWork) add(ReservedCategoryNames.WORK)
+                }
+        val skipLower = skipUserList.map { it.lowercase() }.toSet()
+        val definedFiltered =
+                orderedDefined.filterNot { it.lowercase() in skipLower }
+        val extrasFiltered = extras.filterNot { it.lowercase() in skipLower }
         return buildList {
-            if (includeAllAppsSection) add(ReservedCategoryNames.ALL_APPS)
-            if (includePrivate) add(ReservedCategoryNames.PRIVATE)
-            addAll(orderedDefined)
-            addAll(extras)
+            addAll(skipUserList)
+            addAll(definedFiltered)
+            addAll(extrasFiltered)
         }
     }
 

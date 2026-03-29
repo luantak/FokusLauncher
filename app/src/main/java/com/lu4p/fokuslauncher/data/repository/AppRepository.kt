@@ -478,6 +478,7 @@ constructor(
         if (normalized.isBlank()) return
         if (normalized.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true)) return
         if (normalized.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true)) return
+        if (normalized.equals(ReservedCategoryNames.WORK, ignoreCase = true)) return
         val existing =
                 appDao.getAllCategoryDefinitions().first().any { entity ->
                     normalizeCategory(entity.name).equals(normalized, ignoreCase = true)
@@ -496,8 +497,10 @@ constructor(
         if (oldNormalized.isBlank() || newNormalized.isBlank()) return
         if (oldNormalized.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true)) return
         if (oldNormalized.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true)) return
+        if (oldNormalized.equals(ReservedCategoryNames.WORK, ignoreCase = true)) return
         if (newNormalized.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true)) return
         if (newNormalized.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true)) return
+        if (newNormalized.equals(ReservedCategoryNames.WORK, ignoreCase = true)) return
 
         val rawAssignments = appDao.getAllAppCategories().first()
         rawAssignments.forEach { assignment ->
@@ -524,6 +527,7 @@ constructor(
         if (normalized.isBlank()) return
         if (normalized.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true)) return
         if (normalized.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true)) return
+        if (normalized.equals(ReservedCategoryNames.WORK, ignoreCase = true)) return
 
         val assignmentsByPackage =
                 appDao.getAllAppCategories().first().associateBy { it.packageName }
@@ -556,6 +560,7 @@ constructor(
                         .filter { it.isNotBlank() }
                         .filterNot { it.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true) }
                         .filterNot { it.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true) }
+                        .filterNot { it.equals(ReservedCategoryNames.WORK, ignoreCase = true) }
                         .distinct()
                         .toList()
         val entities = normalized.mapIndexed { index, name ->

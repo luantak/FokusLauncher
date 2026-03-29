@@ -5,6 +5,7 @@
     <!-- Special drawer categories: English keys live in ReservedCategoryNames.kt; translate these for UI. -->
     <string name="drawer_filter_all_apps">All apps</string>
     <string name="drawer_filter_private">Private</string>
+    <string name="drawer_filter_work">Work</string>
     <string name="drawer_menu_launcher_settings">Launcher settings</string>
     <string name="drawer_private_space_lock">Lock Private Space</string>
     <string name="drawer_private_space_unlock">Unlock Private Space</string>

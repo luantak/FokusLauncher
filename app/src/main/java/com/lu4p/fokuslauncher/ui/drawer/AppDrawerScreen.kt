@@ -490,7 +490,8 @@ fun CategoryActionSheet(
     val canRename =
             normalized.isNotBlank() &&
                     !normalized.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true) &&
-                    !normalized.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true)
+                    !normalized.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true) &&
+                    !normalized.equals(ReservedCategoryNames.WORK, ignoreCase = true)
     ModalBottomSheet(onDismissRequest = onDismiss) {
         OutlinedTextField(
                 value = renameValue,

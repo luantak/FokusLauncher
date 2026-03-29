@@ -46,6 +46,9 @@ object SystemCategoryKeys {
         if (trimmed.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true)) {
             return ReservedCategoryNames.PRIVATE
         }
+        if (trimmed.equals(ReservedCategoryNames.WORK, ignoreCase = true)) {
+            return ReservedCategoryNames.WORK
+        }
 
         inferredCategories.firstOrNull { def ->
             trimmed.equals(def.key, ignoreCase = true)

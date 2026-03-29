@@ -185,15 +185,17 @@ fun profileOriginLabelForFavorite(
             ?: context.getString(R.string.drawer_section_work_profile)
 }
 
-internal fun profileSectionTitleForUser(
+/**
+ * True when [user] is treated as the primary “work-style” profile in the drawer (managed profile,
+ * MANAGED user type, or the single non-clone secondary). Used for the Work category chip.
+ */
+internal fun isWorkProfileSectionUser(
         context: Context,
         user: UserHandle,
         userManager: UserManager,
         totalSecondaryProfiles: Int,
-): String {
-    if (ProfileHeuristics.isManagedProfileForUser(userManager, user)) {
-        return context.getString(R.string.drawer_section_work_profile)
-    }
+): Boolean {
+    if (ProfileHeuristics.isManagedProfileForUser(userManager, user)) return true
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         val launcherApps =
                 try {
@@ -205,18 +207,46 @@ internal fun profileSectionTitleForUser(
                         Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM
         ) {
             try {
-                when (launcherApps.getLauncherUserInfo(user)?.userType) {
-                    "android.os.usertype.profile.MANAGED" ->
-                            return context.getString(R.string.drawer_section_work_profile)
+                if (launcherApps.getLauncherUserInfo(user)?.userType ==
+                                "android.os.usertype.profile.MANAGED"
+                ) {
+                    return true
                 }
             } catch (_: Exception) {}
         }
     }
+    if (ProfileHeuristics.isLikelyCloneOrParallelProfile(context, user)) return false
+    return totalSecondaryProfiles == 1
+}
+
+/** True if [app] belongs to a profile shown under the Work drawer tab (non-owner only). */
+fun isDrawerWorkProfileApp(context: Context, app: AppInfo): Boolean {
+    val user = app.userHandle ?: return false
+    val userManager =
+            try {
+                context.getSystemService(Context.USER_SERVICE) as? UserManager
+            } catch (_: Exception) {
+                null
+            }
+    if (userManager == null) {
+        return !ProfileHeuristics.isLikelyCloneOrParallelProfile(context, user)
+    }
+    val myUser = Process.myUserHandle()
+    val totalSecondary = userManager.userProfiles.count { it != myUser }
+    return isWorkProfileSectionUser(context, user, userManager, totalSecondary)
+}
+
+internal fun profileSectionTitleForUser(
+        context: Context,
+        user: UserHandle,
+        userManager: UserManager,
+        totalSecondaryProfiles: Int,
+): String {
+    if (isWorkProfileSectionUser(context, user, userManager, totalSecondaryProfiles)) {
+        return context.getString(R.string.drawer_section_work_profile)
+    }
     if (ProfileHeuristics.isLikelyCloneOrParallelProfile(context, user)) {
         return context.getString(R.string.drawer_section_clone_profile)
-    }
-    if (totalSecondaryProfiles == 1) {
-        return context.getString(R.string.drawer_section_work_profile)
     }
     val serial =
             try {
