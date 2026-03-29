@@ -32,6 +32,7 @@ import com.lu4p.fokuslauncher.data.model.WeatherData
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.data.repository.WeatherRepository
+import com.lu4p.fokuslauncher.utils.LockScreenHelper
 import com.lu4p.fokuslauncher.utils.isDefaultHomeApp
 import com.lu4p.fokuslauncher.ui.util.formatShortcutTargetDisplay
 import com.lu4p.fokuslauncher.data.util.TemperatureUnitHelper
@@ -39,9 +40,11 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.drop
@@ -63,7 +66,8 @@ data class HomeUiState(
     val weatherUseFahrenheit: Boolean = false,
     val showWeatherWidget: Boolean = false,
     val isDefaultLauncher: Boolean = true,
-    val homeAlignment: HomeAlignment = HomeAlignment.LEFT
+    val homeAlignment: HomeAlignment = HomeAlignment.LEFT,
+    val doubleTapEmptyLockEnabled: Boolean = false,
 )
 
 @HiltViewModel
@@ -115,6 +119,9 @@ class HomeViewModel @Inject constructor(
     private val _showWeatherAppPicker = MutableStateFlow(false)
     val showWeatherAppPicker: StateFlow<Boolean> = _showWeatherAppPicker.asStateFlow()
 
+    private val _requestLockAccessibilitySettings = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val requestLockAccessibilitySettings = _requestLockAccessibilitySettings.asSharedFlow()
+
     // ── Edit screen state ───────────────────────────────────────────
 
     private val _allInstalledApps = MutableStateFlow<List<AppInfo>>(emptyList())
@@ -161,6 +168,7 @@ class HomeViewModel @Inject constructor(
         startWeatherTicker()
         observeHomeAlignment()
         observeWidgetsVisibility()
+        observeDoubleTapEmptyLock()
         checkDefaultLauncher()
         refreshInstalledApps()
         loadShortcutActions()
@@ -504,6 +512,25 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    private fun observeDoubleTapEmptyLock() {
+        viewModelScope.launch {
+            preferencesManager.doubleTapEmptyLockFlow.collect { prefEnabled ->
+                val svcEnabled = LockScreenHelper.isLockAccessibilityServiceEnabled(context)
+                _uiState.value =
+                        _uiState.value.copy(doubleTapEmptyLockEnabled = prefEnabled && svcEnabled)
+            }
+        }
+    }
+
+    fun refreshDoubleTapLockEffective() {
+        viewModelScope.launch {
+            val prefEnabled = preferencesManager.doubleTapEmptyLockFlow.first()
+            val svcEnabled = LockScreenHelper.isLockAccessibilityServiceEnabled(context)
+            _uiState.value =
+                    _uiState.value.copy(doubleTapEmptyLockEnabled = prefEnabled && svcEnabled)
+        }
+    }
+
     private fun checkDefaultLauncher() {
         try {
             _uiState.value =
@@ -514,6 +541,17 @@ class HomeViewModel @Inject constructor(
     }
 
     fun recheckDefaultLauncher() = checkDefaultLauncher()
+
+    /** Double-tap on the empty region above home screen apps; locks via accessibility if enabled. */
+    fun onDoubleTapEmptyLock() {
+        viewModelScope.launch {
+            if (!preferencesManager.doubleTapEmptyLockFlow.first()) return@launch
+            if (!LockScreenHelper.isLockAccessibilityServiceEnabled(context)) return@launch
+            if (LockScreenHelper.lockScreenIfPossible()) return@launch
+            Toast.makeText(context, R.string.double_tap_lock_failed, Toast.LENGTH_SHORT).show()
+            _requestLockAccessibilitySettings.emit(Unit)
+        }
+    }
 
     fun openDefaultLauncherSettings() {
         try {

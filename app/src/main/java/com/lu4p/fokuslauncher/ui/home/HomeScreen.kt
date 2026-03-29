@@ -34,6 +34,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -64,6 +65,7 @@ import com.lu4p.fokuslauncher.ui.components.ClockWidget
 import com.lu4p.fokuslauncher.ui.components.DateBatteryRow
 import com.lu4p.fokuslauncher.ui.components.MinimalIcons
 import com.lu4p.fokuslauncher.ui.components.WeatherWidget
+import com.lu4p.fokuslauncher.utils.LockScreenHelper
 
 @Composable
 fun HomeScreen(
@@ -80,12 +82,20 @@ fun HomeScreen(
     val showWeatherAppPicker by viewModel.showWeatherAppPicker.collectAsStateWithLifecycle()
     val appMenuTarget by viewModel.appMenuTarget.collectAsStateWithLifecycle()
     val showHomeScreenMenu by viewModel.showHomeScreenMenu.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+
+    LaunchedEffect(viewModel) {
+        viewModel.requestLockAccessibilitySettings.collect {
+            LockScreenHelper.openAccessibilitySettings(context)
+        }
+    }
 
     DisposableEffect(lifecycleOwner, viewModel) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 viewModel.refreshInstalledApps(forceReload = false)
                 viewModel.recheckDefaultLauncher()
+                viewModel.refreshDoubleTapLockEffective()
                 viewModel.refreshWeather()
             }
         }
@@ -108,7 +118,9 @@ fun HomeScreen(
             onSetDefaultLauncher = { viewModel.openDefaultLauncherSettings() },
             onClockClick = { viewModel.openClockApp() },
             onDateClick = { viewModel.openCalendarApp() },
-            onWeatherClick = { viewModel.openWeatherAppPicker() }
+            onWeatherClick = { viewModel.openWeatherAppPicker() },
+            doubleTapEmptyLockEnabled = uiState.doubleTapEmptyLockEnabled,
+            onDoubleTapEmptyLock = { viewModel.onDoubleTapEmptyLock() },
         )
     }
 
@@ -169,7 +181,9 @@ fun HomeScreenContent(
     onSetDefaultLauncher: () -> Unit = {},
     onClockClick: () -> Unit = {},
     onDateClick: () -> Unit = {},
-    onWeatherClick: () -> Unit = {}
+    onWeatherClick: () -> Unit = {},
+    doubleTapEmptyLockEnabled: Boolean = false,
+    onDoubleTapEmptyLock: () -> Unit = {},
 ) {
     val noIndication = remember { MutableInteractionSource() }
     Box(
@@ -224,8 +238,24 @@ fun HomeScreenContent(
                 )
             }
 
-            // Push favorites to the bottom
-            Spacer(modifier = Modifier.weight(1f))
+            // Push favorites to the bottom; optional double-tap to lock on this empty band
+            if (doubleTapEmptyLockEnabled) {
+                val emptyTapSource = remember { MutableInteractionSource() }
+                Box(
+                        modifier =
+                                Modifier.weight(1f)
+                                        .fillMaxWidth()
+                                        .combinedClickable(
+                                                indication = null,
+                                                interactionSource = emptyTapSource,
+                                                onClick = {},
+                                                onLongClick = onHomeScreenLongPress,
+                                                onDoubleClick = onDoubleTapEmptyLock,
+                                        )
+                )
+            } else {
+                Spacer(modifier = Modifier.weight(1f))
+            }
 
             // Favorite apps: layout depends on alignment setting
             when (uiState.homeAlignment) {

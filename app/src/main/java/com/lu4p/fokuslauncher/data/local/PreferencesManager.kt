@@ -46,6 +46,8 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         private val APP_LOCALE_TAG_KEY = stringPreferencesKey("app_locale_tag")
         private val ALLOW_LANDSCAPE_ROTATION_KEY =
                 booleanPreferencesKey("allow_landscape_rotation")
+        private val DOUBLE_TAP_EMPTY_LOCK_KEY =
+                booleanPreferencesKey("double_tap_empty_lock")
 
         /**
          * Format: "label;packageName;iconName" entries separated by "|" Falls back to legacy
@@ -276,6 +278,17 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
     suspend fun setAllowLandscapeRotation(allow: Boolean) {
         context.fokusLauncherPreferencesDataStore.edit { prefs ->
             prefs[ALLOW_LANDSCAPE_ROTATION_KEY] = allow
+        }
+    }
+
+    val doubleTapEmptyLockFlow: Flow<Boolean> =
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
+                prefs[DOUBLE_TAP_EMPTY_LOCK_KEY] ?: false
+            }
+
+    suspend fun setDoubleTapEmptyLock(enabled: Boolean) {
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            prefs[DOUBLE_TAP_EMPTY_LOCK_KEY] = enabled
         }
     }
 

@@ -116,6 +116,10 @@
     <string name="settings_section_home_screen">Ekran główny</string>
     <string name="settings_hide_widgets">Ukryj widżety</string>
     <string name="settings_hide_widgets_subtitle">Ukryj zegar, datę, naładowanie baterii i pogodę na ekranie głównym</string>
+    <string name="settings_double_tap_to_lock">Podwójne stuknięcie, by zablokować</string>
+    <string name="settings_double_tap_to_lock_subtitle">Wymaga uprawnienia ułatwień dostępu</string>
+    <string name="accessibility_lock_service_description">Umożliwia Fokus Launcher zablokowanie ekranu po podwójnym stuknięciu.</string>
+    <string name="double_tap_lock_failed">Nie udało się zablokować urządzenia</string>
     <string name="settings_edit_home_screen">Edytuj ekran główny</string>
     <string name="settings_edit_shortcuts">Edytuj skróty</string>
     <string name="settings_weather_app">Aplikacja pogodowa</string>

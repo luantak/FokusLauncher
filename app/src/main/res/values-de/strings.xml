@@ -114,6 +114,10 @@
     <string name="settings_section_home_screen">Startbildschirm</string>
     <string name="settings_hide_widgets">Widgets ausblenden</string>
     <string name="settings_hide_widgets_subtitle">Uhr, Datum, Akku und Wetter auf dem Startbildschirm ausblenden</string>
+    <string name="settings_double_tap_to_lock">Doppeltipp zum Sperren</string>
+    <string name="settings_double_tap_to_lock_subtitle">Erfordert die Bedienungshilfen-Berechtigung</string>
+    <string name="accessibility_lock_service_description">Erlaubt Fokus Launcher, den Bildschirm bei „Doppeltipp zum Sperren“ zu sperren.</string>
+    <string name="double_tap_lock_failed">Gerät konnte nicht gesperrt werden</string>
     <string name="settings_edit_home_screen">Startbildschirm bearbeiten</string>
     <string name="settings_edit_shortcuts">Schnellzugriffe bearbeiten</string>
     <string name="settings_weather_app">Wetter-App</string>

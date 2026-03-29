@@ -50,6 +50,7 @@ data class SettingsUiState(
         /** BCP-47 tag; empty = system default. */
         val appLocaleTag: String = "",
         val allowLandscapeRotation: Boolean = false,
+        val doubleTapEmptyLock: Boolean = false,
         val allApps: List<AppInfo> = emptyList()
 )
 
@@ -148,6 +149,12 @@ constructor(
                     .combine(preferencesManager.allowLandscapeRotationFlow) {
                             nestedAndHome,
                             allowLandscapeRotation ->
+                        nestedAndHome to allowLandscapeRotation
+                    }
+                    .combine(preferencesManager.doubleTapEmptyLockFlow) { nestedAndRotation, doubleTapEmptyLock ->
+                        Triple(nestedAndRotation.first, nestedAndRotation.second, doubleTapEmptyLock)
+                    }
+                    .collect { (nestedAndHome, allowLandscapeRotation, doubleTapEmptyLock) ->
                         val (nested, homeAlignment) = nestedAndHome
                         val (sortTriple, fontAndLocale) = nested
                         val (fontFamilyName, appLocaleTag) = fontAndLocale
@@ -168,29 +175,30 @@ constructor(
                                     val app = allApps.find { it.packageName == pkg }
                                     HiddenAppInfo(packageName = pkg, label = app?.label ?: pkg)
                                 }
-                        SettingsUiState(
-                                hiddenApps = hiddenInfos,
-                                renamedApps = leftState.base.renamedApps,
-                                appCategories = leftState.appCategories,
-                                categoryDefinitions = leftState.categoryDefinitions,
-                                favorites = leftState.base.favorites,
-                                rightSideShortcuts = leftState.base.rightSideShortcuts,
-                                swipeLeftTarget = leftState.base.swipeLeft,
-                                swipeRightTarget = swipeRight,
-                                preferredWeatherAppPackage = preferredWeatherApp,
-                                showStatusBar = showStatusBar,
-                                showHomeScreenWidgets = showHomeScreenWidgets,
-                                autoOpenDrawerKeyboard = autoOpenDrawerKeyboard,
-                                hideAllAppsSection = hideAllAppsSection,
-                                drawerAppSortMode = drawerAppSortMode,
-                                homeAlignment = homeAlignment,
-                                launcherFontFamilyName = fontFamilyName,
-                                appLocaleTag = appLocaleTag,
-                                allowLandscapeRotation = allowLandscapeRotation,
-                                allApps = allApps
-                        )
+                        _uiState.value =
+                                SettingsUiState(
+                                        hiddenApps = hiddenInfos,
+                                        renamedApps = leftState.base.renamedApps,
+                                        appCategories = leftState.appCategories,
+                                        categoryDefinitions = leftState.categoryDefinitions,
+                                        favorites = leftState.base.favorites,
+                                        rightSideShortcuts = leftState.base.rightSideShortcuts,
+                                        swipeLeftTarget = leftState.base.swipeLeft,
+                                        swipeRightTarget = swipeRight,
+                                        preferredWeatherAppPackage = preferredWeatherApp,
+                                        showStatusBar = showStatusBar,
+                                        showHomeScreenWidgets = showHomeScreenWidgets,
+                                        autoOpenDrawerKeyboard = autoOpenDrawerKeyboard,
+                                        hideAllAppsSection = hideAllAppsSection,
+                                        drawerAppSortMode = drawerAppSortMode,
+                                        homeAlignment = homeAlignment,
+                                        launcherFontFamilyName = fontFamilyName,
+                                        appLocaleTag = appLocaleTag,
+                                        allowLandscapeRotation = allowLandscapeRotation,
+                                        doubleTapEmptyLock = doubleTapEmptyLock,
+                                        allApps = allApps
+                                )
                     }
-                    .collect { _uiState.value = it }
         }
     }
 
@@ -256,6 +264,10 @@ constructor(
 
     fun setAllowLandscapeRotation(allow: Boolean) {
         viewModelScope.launch { preferencesManager.setAllowLandscapeRotation(allow) }
+    }
+
+    fun setDoubleTapEmptyLock(enabled: Boolean) {
+        viewModelScope.launch { preferencesManager.setDoubleTapEmptyLock(enabled) }
     }
 
     fun setShowHomeScreenWidgets(show: Boolean) {

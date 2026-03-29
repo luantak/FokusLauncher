@@ -114,6 +114,10 @@
     <string name="settings_section_home_screen">Home screen</string>
     <string name="settings_hide_widgets">Hide widgets</string>
     <string name="settings_hide_widgets_subtitle">Hide the clock, date, battery, and weather on the home screen</string>
+    <string name="settings_double_tap_to_lock">Double tap to lock</string>
+    <string name="settings_double_tap_to_lock_subtitle">Needs accessibility permission</string>
+    <string name="accessibility_lock_service_description">Allows Fokus Launcher to lock the screen when you use double tap to lock.</string>
+    <string name="double_tap_lock_failed">Could not lock the device</string>
     <string name="settings_edit_home_screen">Edit home screen</string>
     <string name="settings_edit_shortcuts">Edit shortcuts</string>
     <string name="settings_weather_app">Weather app</string>

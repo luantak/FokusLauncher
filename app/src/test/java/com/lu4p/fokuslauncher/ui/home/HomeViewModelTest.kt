@@ -85,6 +85,7 @@ class HomeViewModelTest {
         every { preferencesManager.weatherLocationOptedOutFlow } returns flowOf(false)
         every { preferencesManager.homeAlignmentFlow } returns flowOf(HomeAlignment.LEFT)
         every { preferencesManager.showHomeScreenWidgetsFlow } returns flowOf(true)
+        every { preferencesManager.doubleTapEmptyLockFlow } returns flowOf(false)
         coEvery { preferencesManager.ensureRightSideShortcutsInitialized() } returns Unit
         coEvery { preferencesManager.setFavorites(any()) } returns Unit
 

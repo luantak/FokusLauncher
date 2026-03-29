@@ -54,7 +54,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -75,6 +77,9 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.ui.drawer.groupAppsIntoProfileSections
@@ -83,6 +88,7 @@ import com.lu4p.fokuslauncher.ui.drawer.sortAppsAlphabeticallyByProfileSection
 import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
+import com.lu4p.fokuslauncher.utils.LockScreenHelper
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
 import com.lu4p.fokuslauncher.ui.theme.composeFontFamilyFromStoredName
 import com.lu4p.fokuslauncher.ui.util.formatShortcutTargetDisplay
@@ -101,6 +107,20 @@ fun SettingsScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val installedFontFamilies by viewModel.installedFontFamilies.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    var lockAccessibilityResumeTick by remember { mutableIntStateOf(0) }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) lockAccessibilityResumeTick++
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+    val lockAccessibilityOn =
+            remember(lockAccessibilityResumeTick) {
+                LockScreenHelper.isLockAccessibilityServiceEnabled(context)
+            }
 
     // Dialog states
     val showAppPickerFor = remember { mutableStateOf<String?>(null) } // swipeLeft/swipeRight
@@ -224,6 +244,25 @@ fun SettingsScreen(
                         checked = !uiState.showHomeScreenWidgets,
                         onCheckedChange = { hideWidgets ->
                             viewModel.setShowHomeScreenWidgets(!hideWidgets)
+                        }
+                )
+            }
+
+            item {
+                SettingsToggleRow(
+                        label = stringResource(R.string.settings_double_tap_to_lock),
+                        subtitle =
+                                stringResource(R.string.settings_double_tap_to_lock_subtitle),
+                        checked = uiState.doubleTapEmptyLock && lockAccessibilityOn,
+                        onCheckedChange = { enabled ->
+                            if (enabled) {
+                                viewModel.setDoubleTapEmptyLock(true)
+                                if (!LockScreenHelper.isLockAccessibilityServiceEnabled(context)) {
+                                    LockScreenHelper.openAccessibilitySettings(context)
+                                }
+                            } else {
+                                viewModel.setDoubleTapEmptyLock(false)
+                            }
                         }
                 )
             }
