@@ -116,6 +116,13 @@ constructor(
     private var searchQueryApplyJob: Job? = null
     private var searchQueryRequestId: Long = 0
 
+    /**
+     * Package/profile pairs removed via [applyImmediatePackageRemoval] before the next successful
+     * [rebuildVisibleApps] from [AppRepository.getInstalledApps]. Prevents a slower in-flight rebuild
+     * (e.g. from init) from overwriting the drawer with stale install data.
+     */
+    private val optimisticallyRemovedKeys = mutableSetOf<String>()
+
     init {
         loadApps()
         observeHiddenAndRenamed()
@@ -296,6 +303,7 @@ constructor(
     private fun observeInstalledApps() {
         viewModelScope.launch {
             appRepository.getInstalledAppsVersion().drop(1).collect {
+                synchronized(optimisticallyRemovedKeys) { optimisticallyRemovedKeys.clear() }
                 rebuildVisibleApps(
                         hiddenSet = latestHiddenSet,
                         renameMap = latestRenameMap,
@@ -325,6 +333,8 @@ constructor(
             definedCategories: List<String>
     ) {
         val base = withContext(Dispatchers.IO) { appRepository.getInstalledApps() }
+        val removedSnapshot =
+                synchronized(optimisticallyRemovedKeys) { optimisticallyRemovedKeys.toSet() }
         val visible =
                 base
                         .filter { it.packageName !in hiddenSet }
@@ -336,15 +346,22 @@ constructor(
                                     category = customCategory ?: app.category
                             )
                         }
+                        .filterNot { app ->
+                            drawerOpenCountKey(app.packageName, app.userHandle) in removedSnapshot
+                        }
 
         val stateSnapshot = _uiState.value
+        val privateAppsFiltered =
+                stateSnapshot.privateSpaceApps.filterNot { app ->
+                    drawerOpenCountKey(app.packageName, app.userHandle) in removedSnapshot
+                }
         val categories =
                 deriveCategories(
                         apps = visible,
                         definedCategories = definedCategories,
                         includePrivate =
                                 stateSnapshot.isPrivateSpaceUnlocked &&
-                                        stateSnapshot.privateSpaceApps.isNotEmpty(),
+                                        privateAppsFiltered.isNotEmpty(),
                         includeWork = visible.any { isDrawerWorkProfileApp(context, it) },
                         includeAllAppsSection = !stateSnapshot.hideAllAppsSection
                 )
@@ -357,13 +374,14 @@ constructor(
         val filteredContent =
                 buildFilteredDrawerContent(
                         allApps = visible,
-                        privateApps = stateSnapshot.privateSpaceApps,
+                        privateApps = privateAppsFiltered,
                         query = stateSnapshot.searchQuery,
                         category = selectedCategory
                 )
         _uiState.update { state ->
             state.copy(
                             allApps = visible,
+                            privateSpaceApps = privateAppsFiltered,
                             selectedCategory = selectedCategory,
                             filteredProfileSections = filteredContent.filteredProfileSections
                     )
@@ -376,6 +394,9 @@ constructor(
     }
 
     private suspend fun applyImmediatePackageRemoval(packageName: String, profileKey: String) {
+        synchronized(optimisticallyRemovedKeys) {
+            optimisticallyRemovedKeys.add(drawerOpenCountKey(packageName, profileKey))
+        }
         val stateSnapshot = _uiState.value
         val visible =
                 stateSnapshot.allApps.filterNot {
