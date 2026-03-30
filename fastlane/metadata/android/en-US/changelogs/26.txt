@@ -1,0 +1,1 @@
+Add a setting to return to Fokus automatically from any app after the device stayed locked for a while.
