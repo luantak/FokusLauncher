@@ -1,0 +1,1 @@
+Fix clock tap so it opens the OEM clock app reliably on Samsung and similar devices.
