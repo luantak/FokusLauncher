@@ -33,6 +33,8 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 data class AppDrawerUiState(
@@ -122,6 +124,14 @@ constructor(
      * (e.g. from init) from overwriting the drawer with stale install data.
      */
     private val optimisticallyRemovedKeys = mutableSetOf<String>()
+
+    /**
+     * [rebuildVisibleApps] is triggered from several collectors at once (init, Room metadata,
+     * package-cache invalidation). Without serialization, a slow load that briefly gets an empty
+     * [LauncherApps] result can finish after a successful rebuild and wipe the drawer until
+     * process death.
+     */
+    private val drawerListRebuildMutex = Mutex()
 
     init {
         loadApps()
@@ -332,119 +342,124 @@ constructor(
             categoryMap: Map<String, String>,
             definedCategories: List<String>
     ) {
-        val base = withContext(Dispatchers.IO) { appRepository.getInstalledApps() }
-        val removedSnapshot =
-                synchronized(optimisticallyRemovedKeys) { optimisticallyRemovedKeys.toSet() }
-        val visible =
-                base
-                        .filter { it.packageName !in hiddenSet }
-                        .map { app ->
-                            val customName = renameMap[app.packageName]
-                            val customCategory = categoryMap[app.packageName]
-                            app.copy(
-                                    label = customName ?: app.label,
-                                    category = customCategory ?: app.category
-                            )
-                        }
-                        .filterNot { app ->
-                            drawerOpenCountKey(app.packageName, app.userHandle) in removedSnapshot
-                        }
+        drawerListRebuildMutex.withLock {
+            val base = withContext(Dispatchers.IO) { appRepository.getInstalledApps() }
+            val removedSnapshot =
+                    synchronized(optimisticallyRemovedKeys) { optimisticallyRemovedKeys.toSet() }
+            val visible =
+                    base
+                            .filter { it.packageName !in hiddenSet }
+                            .map { app ->
+                                val customName = renameMap[app.packageName]
+                                val customCategory = categoryMap[app.packageName]
+                                app.copy(
+                                        label = customName ?: app.label,
+                                        category = customCategory ?: app.category
+                                )
+                            }
+                            .filterNot { app ->
+                                drawerOpenCountKey(app.packageName, app.userHandle) in
+                                        removedSnapshot
+                            }
 
-        val stateSnapshot = _uiState.value
-        val privateAppsFiltered =
-                stateSnapshot.privateSpaceApps.filterNot { app ->
-                    drawerOpenCountKey(app.packageName, app.userHandle) in removedSnapshot
-                }
-        val categories =
-                deriveCategories(
-                        apps = visible,
-                        definedCategories = definedCategories,
-                        includePrivate =
-                                stateSnapshot.isPrivateSpaceUnlocked &&
-                                        privateAppsFiltered.isNotEmpty(),
-                        includeWork = visible.any { isDrawerWorkProfileApp(context, it) },
-                        includeAllAppsSection = !stateSnapshot.hideAllAppsSection
-                )
-        val selectedCategory =
-                resolveSelectedCategory(
-                        currentCategory = stateSnapshot.selectedCategory,
-                        categories = categories,
-                        hideAllAppsSection = stateSnapshot.hideAllAppsSection
-                )
-        val filteredContent =
-                buildFilteredDrawerContent(
-                        allApps = visible,
-                        privateApps = privateAppsFiltered,
-                        query = stateSnapshot.searchQuery,
-                        category = selectedCategory
-                )
-        _uiState.update { state ->
-            state.copy(
-                            allApps = visible,
-                            privateSpaceApps = privateAppsFiltered,
-                            selectedCategory = selectedCategory,
-                            filteredProfileSections = filteredContent.filteredProfileSections
+            val stateSnapshot = _uiState.value
+            val privateAppsFiltered =
+                    stateSnapshot.privateSpaceApps.filterNot { app ->
+                        drawerOpenCountKey(app.packageName, app.userHandle) in removedSnapshot
+                    }
+            val categories =
+                    deriveCategories(
+                            apps = visible,
+                            definedCategories = definedCategories,
+                            includePrivate =
+                                    stateSnapshot.isPrivateSpaceUnlocked &&
+                                            privateAppsFiltered.isNotEmpty(),
+                            includeWork = visible.any { isDrawerWorkProfileApp(context, it) },
+                            includeAllAppsSection = !stateSnapshot.hideAllAppsSection
                     )
-                    .copy(
+            val selectedCategory =
+                    resolveSelectedCategory(
+                            currentCategory = stateSnapshot.selectedCategory,
                             categories = categories,
-                            filteredPrivateSpaceApps = filteredContent.filteredPrivateSpaceApps
+                            hideAllAppsSection = stateSnapshot.hideAllAppsSection
                     )
+            val filteredContent =
+                    buildFilteredDrawerContent(
+                            allApps = visible,
+                            privateApps = privateAppsFiltered,
+                            query = stateSnapshot.searchQuery,
+                            category = selectedCategory
+                    )
+            _uiState.update { state ->
+                state.copy(
+                                allApps = visible,
+                                privateSpaceApps = privateAppsFiltered,
+                                selectedCategory = selectedCategory,
+                                filteredProfileSections = filteredContent.filteredProfileSections
+                        )
+                        .copy(
+                                categories = categories,
+                                filteredPrivateSpaceApps = filteredContent.filteredPrivateSpaceApps
+                        )
+            }
+            scheduleDrawerCachePrewarm()
         }
-        scheduleDrawerCachePrewarm()
     }
 
     private suspend fun applyImmediatePackageRemoval(packageName: String, profileKey: String) {
-        synchronized(optimisticallyRemovedKeys) {
-            optimisticallyRemovedKeys.add(drawerOpenCountKey(packageName, profileKey))
-        }
-        val stateSnapshot = _uiState.value
-        val visible =
-                stateSnapshot.allApps.filterNot {
-                    it.packageName == packageName && appProfileKey(it.userHandle) == profileKey
-                }
-        val privateApps =
-                stateSnapshot.privateSpaceApps.filterNot {
-                    it.packageName == packageName && appProfileKey(it.userHandle) == profileKey
-                }
-        val categories =
-                deriveCategories(
-                        apps = visible,
-                        definedCategories = latestDefinedCategories,
-                        includePrivate =
-                                stateSnapshot.isPrivateSpaceUnlocked &&
-                                        privateApps.isNotEmpty(),
-                        includeWork = visible.any { isDrawerWorkProfileApp(context, it) },
-                        includeAllAppsSection = !stateSnapshot.hideAllAppsSection
-                )
-        val selectedCategory =
-                resolveSelectedCategory(
-                        currentCategory = stateSnapshot.selectedCategory,
-                        categories = categories,
-                        hideAllAppsSection = stateSnapshot.hideAllAppsSection
-                )
-        val filteredContent =
-                buildFilteredDrawerContent(
+        drawerListRebuildMutex.withLock {
+            synchronized(optimisticallyRemovedKeys) {
+                optimisticallyRemovedKeys.add(drawerOpenCountKey(packageName, profileKey))
+            }
+            val stateSnapshot = _uiState.value
+            val visible =
+                    stateSnapshot.allApps.filterNot {
+                        it.packageName == packageName && appProfileKey(it.userHandle) == profileKey
+                    }
+            val privateApps =
+                    stateSnapshot.privateSpaceApps.filterNot {
+                        it.packageName == packageName && appProfileKey(it.userHandle) == profileKey
+                    }
+            val categories =
+                    deriveCategories(
+                            apps = visible,
+                            definedCategories = latestDefinedCategories,
+                            includePrivate =
+                                    stateSnapshot.isPrivateSpaceUnlocked &&
+                                            privateApps.isNotEmpty(),
+                            includeWork = visible.any { isDrawerWorkProfileApp(context, it) },
+                            includeAllAppsSection = !stateSnapshot.hideAllAppsSection
+                    )
+            val selectedCategory =
+                    resolveSelectedCategory(
+                            currentCategory = stateSnapshot.selectedCategory,
+                            categories = categories,
+                            hideAllAppsSection = stateSnapshot.hideAllAppsSection
+                    )
+            val filteredContent =
+                    buildFilteredDrawerContent(
+                            allApps = visible,
+                            privateApps = privateApps,
+                            query = stateSnapshot.searchQuery,
+                            category = selectedCategory
+                    )
+            _uiState.update { state ->
+                state.copy(
                         allApps = visible,
-                        privateApps = privateApps,
-                        query = stateSnapshot.searchQuery,
-                        category = selectedCategory
+                        privateSpaceApps = privateApps,
+                        selectedCategory = selectedCategory,
+                        categories = categories,
+                        filteredProfileSections = filteredContent.filteredProfileSections,
+                        filteredPrivateSpaceApps = filteredContent.filteredPrivateSpaceApps,
+                        selectedApp =
+                                state.selectedApp?.takeUnless {
+                                    it.packageName == packageName &&
+                                        appProfileKey(it.userHandle) == profileKey
+                                }
                 )
-        _uiState.update { state ->
-            state.copy(
-                    allApps = visible,
-                    privateSpaceApps = privateApps,
-                    selectedCategory = selectedCategory,
-                    categories = categories,
-                    filteredProfileSections = filteredContent.filteredProfileSections,
-                    filteredPrivateSpaceApps = filteredContent.filteredPrivateSpaceApps,
-                    selectedApp =
-                            state.selectedApp?.takeUnless {
-                                it.packageName == packageName &&
-                                    appProfileKey(it.userHandle) == profileKey
-                            }
-            )
+            }
+            scheduleDrawerCachePrewarm()
         }
-        scheduleDrawerCachePrewarm()
     }
 
     // --- Search ---
