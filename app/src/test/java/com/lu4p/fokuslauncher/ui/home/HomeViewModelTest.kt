@@ -86,7 +86,6 @@ class HomeViewModelTest {
         every { preferencesManager.swipeRightTargetFlow } returns flowOf(null)
         every { preferencesManager.rightSideShortcutsFlow } returns flowOf(emptyList())
         every { preferencesManager.preferredWeatherAppFlow } returns flowOf("")
-        every { preferencesManager.weatherLocationOptedOutFlow } returns flowOf(false)
         every { preferencesManager.homeAlignmentFlow } returns flowOf(HomeAlignment.LEFT)
         every { preferencesManager.showHomeClockFlow } returns flowOf(true)
         every { preferencesManager.showHomeDateFlow } returns flowOf(true)

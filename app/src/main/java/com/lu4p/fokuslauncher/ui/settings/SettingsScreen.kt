@@ -108,12 +108,28 @@ fun SettingsScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val installedFontFamilies by viewModel.installedFontFamilies.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val activity = LocalActivity.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
     var lockAccessibilityResumeTick by remember { mutableIntStateOf(0) }
+    var hasCoarseLocationPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) lockAccessibilityResumeTick++
+            if (event == Lifecycle.Event.ON_RESUME) {
+                lockAccessibilityResumeTick++
+                hasCoarseLocationPermission =
+                    ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                    ) == PackageManager.PERMISSION_GRANTED
+            }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
@@ -136,6 +152,36 @@ fun SettingsScreen(
             onNavigateToHome()
         }
     }
+
+    val locationPermissionLauncher =
+            rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.RequestPermission()
+            ) {
+                hasCoarseLocationPermission =
+                        ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.ACCESS_COARSE_LOCATION
+                        ) == PackageManager.PERMISSION_GRANTED
+                if (!hasCoarseLocationPermission &&
+                                activity != null &&
+                                !ActivityCompat.shouldShowRequestPermissionRationale(
+                                        activity,
+                                        Manifest.permission.ACCESS_COARSE_LOCATION
+                                )) {
+                        context.startActivity(
+                                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                                        .apply {
+                                                data =
+                                                        Uri.fromParts(
+                                                                "package",
+                                                                context.packageName,
+                                                                null
+                                                        )
+                                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                        }
+                        )
+                }
+            }
 
     Column(modifier = Modifier
         .fillMaxSize()
@@ -335,40 +381,8 @@ fun SettingsScreen(
             }
 
             item {
-                val activity = LocalActivity.current
-                val hasLocationPermission =
-                        ContextCompat.checkSelfPermission(
-                                context,
-                                Manifest.permission.ACCESS_COARSE_LOCATION
-                        ) == PackageManager.PERMISSION_GRANTED
-                val locationPermissionLauncher =
-                        rememberLauncherForActivityResult(
-                                contract = ActivityResultContracts.RequestPermission()
-                        ) { granted ->
-                                if (!granted &&
-                                                activity != null &&
-                                                !ActivityCompat.shouldShowRequestPermissionRationale(
-                                                        activity,
-                                                        Manifest.permission.ACCESS_COARSE_LOCATION
-                                                )) {
-                                        context.startActivity(
-                                                Intent(
-                                                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS
-                                                )
-                                                        .apply {
-                                                                data =
-                                                                        Uri.fromParts(
-                                                                                "package",
-                                                                                context.packageName,
-                                                                                null
-                                                                        )
-                                                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                                        }
-                                        )
-                                }
-                        }
                 Column {
-                    if (!hasLocationPermission) {
+                    if (!hasCoarseLocationPermission) {
                         LocationWeatherRow(onEnableClick = {
                                 locationPermissionLauncher.launch(
                                         Manifest.permission.ACCESS_COARSE_LOCATION

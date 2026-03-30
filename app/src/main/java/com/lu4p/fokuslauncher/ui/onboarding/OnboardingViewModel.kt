@@ -177,9 +177,6 @@ class OnboardingViewModel @Inject constructor(
     }
 
     fun onSkipLocation() {
-        viewModelScope.launch {
-            preferencesManager.setWeatherLocationOptedOut(true)
-        }
         onNext()
     }
 

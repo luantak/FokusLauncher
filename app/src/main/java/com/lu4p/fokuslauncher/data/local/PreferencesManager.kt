@@ -40,7 +40,6 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         private val DRAWER_APP_OPEN_COUNTS_KEY = stringPreferencesKey("drawer_app_open_counts")
         private val HAS_COMPLETED_ONBOARDING_KEY = booleanPreferencesKey("has_completed_onboarding")
         private val ONBOARDING_REACHED_SET_DEFAULT_KEY = booleanPreferencesKey("onboarding_reached_set_default")
-        private val WEATHER_LOCATION_OPTED_OUT_KEY = booleanPreferencesKey("weather_location_opted_out")
         private val HOME_ALIGNMENT_KEY = stringPreferencesKey("home_alignment")
         private val LAUNCHER_FONT_FAMILY_KEY = stringPreferencesKey("launcher_font_family")
         /** BCP-47 tag (e.g. en, pl). Empty = follow system. Sync with AppLocaleHelper. */
@@ -320,19 +319,6 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
     suspend fun setDoubleTapEmptyLock(enabled: Boolean) {
         context.fokusLauncherPreferencesDataStore.edit { prefs ->
             prefs[DOUBLE_TAP_EMPTY_LOCK_KEY] = enabled
-        }
-    }
-
-    // --- Weather location opt-out ---
-
-    val weatherLocationOptedOutFlow: Flow<Boolean> =
-            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
-                prefs[WEATHER_LOCATION_OPTED_OUT_KEY] ?: false
-            }
-
-    suspend fun setWeatherLocationOptedOut(optedOut: Boolean) {
-        context.fokusLauncherPreferencesDataStore.edit { prefs ->
-            prefs[WEATHER_LOCATION_OPTED_OUT_KEY] = optedOut
         }
     }
 

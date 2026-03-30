@@ -103,15 +103,23 @@ fun HomeScreen(
     }
 
     DisposableEffect(lifecycleOwner, viewModel) {
+        val runResumeActions = {
+            viewModel.refreshInstalledApps(forceReload = false)
+            viewModel.recheckDefaultLauncher()
+            viewModel.refreshDoubleTapLockEffective()
+            viewModel.refreshWeather()
+        }
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                viewModel.refreshInstalledApps(forceReload = false)
-                viewModel.recheckDefaultLauncher()
-                viewModel.refreshDoubleTapLockEffective()
-                viewModel.refreshWeather()
+                runResumeActions()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
+        // Navigating back to Home composes this screen while the activity is already RESUMED,
+        // so ON_RESUME is not delivered to a newly registered observer — refresh once now.
+        if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+            runResumeActions()
+        }
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
         }

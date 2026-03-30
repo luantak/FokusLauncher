@@ -838,11 +838,10 @@ class HomeViewModel @Inject constructor(
                 }
                 return
             }
-            val optedOut = preferencesManager.weatherLocationOptedOutFlow.first()
             val hasCoarsePermission = ContextCompat.checkSelfPermission(
                 context, Manifest.permission.ACCESS_COARSE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
-            val shouldShow = hasCoarsePermission && !optedOut
+            val shouldShow = hasCoarsePermission
             if (!shouldShow) {
                 val hiddenState = HomeWeatherUiState(
                     weather = null,
