@@ -1,0 +1,2 @@
+Individually choose which home screen widgets are visible from settings.
+Fix for apps disappearing in rare cases.
