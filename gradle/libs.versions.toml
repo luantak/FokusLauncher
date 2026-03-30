@@ -1,5 +1,5 @@
 [versions]
-agp = "9.0.1"
+agp = "9.1.0"
 ksp = "2.3.5"
 hilt = "2.59.2"
 composeBom = "2026.03.00"
