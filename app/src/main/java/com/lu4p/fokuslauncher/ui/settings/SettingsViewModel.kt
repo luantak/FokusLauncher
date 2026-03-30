@@ -42,7 +42,10 @@ data class SettingsUiState(
         val swipeRightTarget: ShortcutTarget? = null,
         val preferredWeatherAppPackage: String = "",
         val showStatusBar: Boolean = false,
-        val showHomeScreenWidgets: Boolean = true,
+        val showHomeClock: Boolean = true,
+        val showHomeDate: Boolean = true,
+        val showHomeWeather: Boolean = true,
+        val showHomeBattery: Boolean = true,
         val autoOpenDrawerKeyboard: Boolean = true,
         val hideAllAppsSection: Boolean = false,
         val drawerAppSortMode: DrawerAppSortMode = DrawerAppSortMode.ALPHABETICAL,
@@ -81,6 +84,20 @@ constructor(
 
     private fun observeState() {
         viewModelScope.launch {
+            val homeWidgetItemsFlow =
+                    combine(
+                            preferencesManager.showHomeClockFlow,
+                            preferencesManager.showHomeDateFlow,
+                            preferencesManager.showHomeWeatherFlow,
+                            preferencesManager.showHomeBatteryFlow
+                    ) { showClock, showDate, showWeather, showBattery ->
+                        HomeWidgetItemSettings(
+                                showClock = showClock,
+                                showDate = showDate,
+                                showWeather = showWeather,
+                                showBattery = showBattery
+                        )
+                    }
             val favoritesQuintupleFlow =
                     combine(
                             appRepository.getHiddenPackageNames(),
@@ -120,13 +137,9 @@ constructor(
                     .combine(preferencesManager.showStatusBarFlow) { weatherState, showStatusBar ->
                         weatherState to showStatusBar
                     }
-                    .combine(preferencesManager.showHomeScreenWidgetsFlow) {
-                        weatherWithStatusBar, showHomeScreenWidgets ->
-                        weatherWithStatusBar to showHomeScreenWidgets
-                    }
                     .combine(preferencesManager.autoOpenDrawerKeyboardFlow) {
-                        weatherWithWidgets, autoOpenDrawerKeyboard ->
-                        weatherWithWidgets to autoOpenDrawerKeyboard
+                        weatherWithStatusBar, autoOpenDrawerKeyboard ->
+                        weatherWithStatusBar to autoOpenDrawerKeyboard
                     }
                     .combine(preferencesManager.hideAllAppsSectionFlow) {
                         weatherWithSettingsState, hideAllAppsSection ->
@@ -152,17 +165,27 @@ constructor(
                             allowLandscapeRotation ->
                         nestedAndHome to allowLandscapeRotation
                     }
-                    .combine(preferencesManager.doubleTapEmptyLockFlow) { nestedAndRotation, doubleTapEmptyLock ->
-                        Triple(nestedAndRotation.first, nestedAndRotation.second, doubleTapEmptyLock)
+                    .combine(homeWidgetItemsFlow) { nestedAndRotation, homeWidgetItems ->
+                        Pair(nestedAndRotation, homeWidgetItems)
                     }
-                    .collectLatest { (nestedAndHome, allowLandscapeRotation, doubleTapEmptyLock) ->
+                    .combine(preferencesManager.doubleTapEmptyLockFlow) { pair, doubleTapEmptyLock ->
+                        Triple(
+                                pair.first.first,
+                                pair.first.second,
+                                pair.second to doubleTapEmptyLock
+                        )
+                    }
+                    .collectLatest { triple ->
+                        val nestedAndHome = triple.first
+                        val allowLandscapeRotation = triple.second
+                        val homeWidgetItems = triple.third.first
+                        val doubleTapEmptyLock = triple.third.second
                         val (nested, homeAlignment) = nestedAndHome
                         val (sortTriple, fontAndLocale) = nested
                         val (fontFamilyName, appLocaleTag) = fontAndLocale
                         val (weatherWithSettingsState, hideAllAppsSection, drawerAppSortMode) =
                                 sortTriple
-                        val (weatherWithWidgets, autoOpenDrawerKeyboard) = weatherWithSettingsState
-                        val (weatherWithStatusBar, showHomeScreenWidgets) = weatherWithWidgets
+                        val (weatherWithStatusBar, autoOpenDrawerKeyboard) = weatherWithSettingsState
                         val (weatherState, showStatusBar) = weatherWithStatusBar
                         val (swipeState, preferredWeatherApp) = weatherState
                         val (leftState, swipeRight) = swipeState
@@ -188,7 +211,10 @@ constructor(
                                         swipeRightTarget = swipeRight,
                                         preferredWeatherAppPackage = preferredWeatherApp,
                                         showStatusBar = showStatusBar,
-                                        showHomeScreenWidgets = showHomeScreenWidgets,
+                                        showHomeClock = homeWidgetItems.showClock,
+                                        showHomeDate = homeWidgetItems.showDate,
+                                        showHomeWeather = homeWidgetItems.showWeather,
+                                        showHomeBattery = homeWidgetItems.showBattery,
                                         autoOpenDrawerKeyboard = autoOpenDrawerKeyboard,
                                         hideAllAppsSection = hideAllAppsSection,
                                         drawerAppSortMode = drawerAppSortMode,
@@ -202,6 +228,13 @@ constructor(
                     }
         }
     }
+
+    private data class HomeWidgetItemSettings(
+            val showClock: Boolean,
+            val showDate: Boolean,
+            val showWeather: Boolean,
+            val showBattery: Boolean
+    )
 
     private data class Quintuple(
             val hiddenNames: List<String>,
@@ -271,8 +304,20 @@ constructor(
         viewModelScope.launch { preferencesManager.setDoubleTapEmptyLock(enabled) }
     }
 
-    fun setShowHomeScreenWidgets(show: Boolean) {
-        viewModelScope.launch { preferencesManager.setShowHomeScreenWidgets(show) }
+    fun setShowHomeClock(show: Boolean) {
+        viewModelScope.launch { preferencesManager.setShowHomeClock(show) }
+    }
+
+    fun setShowHomeDate(show: Boolean) {
+        viewModelScope.launch { preferencesManager.setShowHomeDate(show) }
+    }
+
+    fun setShowHomeWeather(show: Boolean) {
+        viewModelScope.launch { preferencesManager.setShowHomeWeather(show) }
+    }
+
+    fun setShowHomeBattery(show: Boolean) {
+        viewModelScope.launch { preferencesManager.setShowHomeBattery(show) }
     }
 
     fun setAutoOpenDrawerKeyboard(enabled: Boolean) {

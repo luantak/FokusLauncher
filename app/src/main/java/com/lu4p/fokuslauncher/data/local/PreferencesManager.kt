@@ -28,9 +28,10 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         private val RIGHT_SIDE_SHORTCUTS_KEY = stringPreferencesKey("right_side_shortcuts")
         private val PREFERRED_WEATHER_APP_KEY = stringPreferencesKey("preferred_weather_app")
         private val SHOW_STATUS_BAR_KEY = booleanPreferencesKey("show_status_bar")
-        private val SHOW_HOME_SCREEN_WIDGETS_KEY =
-                booleanPreferencesKey("show_home_screen_widgets")
-        private val SHOW_HOME_SCREEN_INFO_KEY = booleanPreferencesKey("show_home_screen_info")
+        private val SHOW_HOME_CLOCK_KEY = booleanPreferencesKey("show_home_clock")
+        private val SHOW_HOME_DATE_KEY = booleanPreferencesKey("show_home_date")
+        private val SHOW_HOME_WEATHER_KEY = booleanPreferencesKey("show_home_weather")
+        private val SHOW_HOME_BATTERY_KEY = booleanPreferencesKey("show_home_battery")
         private val AUTO_OPEN_DRAWER_KEYBOARD_KEY =
                 booleanPreferencesKey("auto_open_drawer_keyboard")
         private val HIDE_ALL_APPS_SECTION_KEY =
@@ -145,17 +146,47 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         context.fokusLauncherPreferencesDataStore.edit { prefs -> prefs[SHOW_STATUS_BAR_KEY] = show }
     }
 
-    val showHomeScreenWidgetsFlow: Flow<Boolean> =
+    val showHomeClockFlow: Flow<Boolean> =
             context.fokusLauncherPreferencesDataStore.data.map { prefs ->
-                prefs[SHOW_HOME_SCREEN_WIDGETS_KEY]
-                        ?: prefs[SHOW_HOME_SCREEN_INFO_KEY]
-                        ?: true
+                prefs[SHOW_HOME_CLOCK_KEY] ?: true
             }
 
-    suspend fun setShowHomeScreenWidgets(show: Boolean) {
+    suspend fun setShowHomeClock(show: Boolean) {
         context.fokusLauncherPreferencesDataStore.edit { prefs ->
-            prefs[SHOW_HOME_SCREEN_WIDGETS_KEY] = show
-            prefs.remove(SHOW_HOME_SCREEN_INFO_KEY)
+            prefs[SHOW_HOME_CLOCK_KEY] = show
+        }
+    }
+
+    val showHomeDateFlow: Flow<Boolean> =
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
+                prefs[SHOW_HOME_DATE_KEY] ?: true
+            }
+
+    suspend fun setShowHomeDate(show: Boolean) {
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            prefs[SHOW_HOME_DATE_KEY] = show
+        }
+    }
+
+    val showHomeWeatherFlow: Flow<Boolean> =
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
+                prefs[SHOW_HOME_WEATHER_KEY] ?: true
+            }
+
+    suspend fun setShowHomeWeather(show: Boolean) {
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            prefs[SHOW_HOME_WEATHER_KEY] = show
+        }
+    }
+
+    val showHomeBatteryFlow: Flow<Boolean> =
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
+                prefs[SHOW_HOME_BATTERY_KEY] ?: true
+            }
+
+    suspend fun setShowHomeBattery(show: Boolean) {
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            prefs[SHOW_HOME_BATTERY_KEY] = show
         }
     }
 

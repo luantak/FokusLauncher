@@ -125,6 +125,7 @@ fun SettingsScreen(
     // Dialog states
     val showAppPickerFor = remember { mutableStateOf<String?>(null) } // swipeLeft/swipeRight
     val showResetConfirm = remember { mutableStateOf(false) }
+    var showHomeWidgetsDialog by remember { mutableStateOf(false) }
 
     val wallpaperPickerLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.GetContent()
@@ -238,14 +239,26 @@ fun SettingsScreen(
             item { SectionHeader(stringResource(R.string.settings_section_home_screen)) }
 
             item {
-                SettingsToggleRow(
-                        label = stringResource(R.string.settings_hide_widgets),
-                        subtitle = stringResource(R.string.settings_hide_widgets_subtitle),
-                        checked = !uiState.showHomeScreenWidgets,
-                        onCheckedChange = { hideWidgets ->
-                            viewModel.setShowHomeScreenWidgets(!hideWidgets)
-                        }
-                )
+                Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier =
+                                Modifier.fillMaxWidth()
+                                        .clickable { showHomeWidgetsDialog = true }
+                                        .padding(horizontal = 24.dp, vertical = 14.dp)
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                                text = stringResource(R.string.settings_home_widgets),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Text(
+                                text = homeWidgetsSummaryText(uiState),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.secondary
+                        )
+                    }
+                }
             }
 
             item {
@@ -607,6 +620,20 @@ fun SettingsScreen(
         )
     }
 
+    if (showHomeWidgetsDialog) {
+        HomeWidgetsSettingsDialog(
+                showClock = uiState.showHomeClock,
+                showDate = uiState.showHomeDate,
+                showWeather = uiState.showHomeWeather,
+                showBattery = uiState.showHomeBattery,
+                onClockChange = viewModel::setShowHomeClock,
+                onDateChange = viewModel::setShowHomeDate,
+                onWeatherChange = viewModel::setShowHomeWeather,
+                onBatteryChange = viewModel::setShowHomeBattery,
+                onDismiss = { showHomeWidgetsDialog = false }
+        )
+    }
+
     // App picker dialog (used for swipe shortcuts)
     showAppPickerFor.value?.let { pickerTarget ->
         AppPickerDialog(
@@ -625,6 +652,109 @@ fun SettingsScreen(
     }
 }
 
+@Composable
+private fun homeWidgetsSummaryText(uiState: SettingsUiState): String {
+    val clock = stringResource(R.string.settings_show_home_clock)
+    val date = stringResource(R.string.settings_show_home_date)
+    val weather = stringResource(R.string.settings_show_home_weather)
+    val battery = stringResource(R.string.settings_show_home_battery)
+    val parts =
+            buildList {
+                if (uiState.showHomeClock) add(clock)
+                if (uiState.showHomeDate) add(date)
+                if (uiState.showHomeWeather) add(weather)
+                if (uiState.showHomeBattery) add(battery)
+            }
+    return if (parts.isEmpty()) {
+        stringResource(R.string.settings_home_widgets_summary_none)
+    } else {
+        parts.joinToString(", ")
+    }
+}
+
+@Composable
+private fun HomeWidgetsSettingsDialog(
+        showClock: Boolean,
+        showDate: Boolean,
+        showWeather: Boolean,
+        showBattery: Boolean,
+        onClockChange: (Boolean) -> Unit,
+        onDateChange: (Boolean) -> Unit,
+        onWeatherChange: (Boolean) -> Unit,
+        onBatteryChange: (Boolean) -> Unit,
+        onDismiss: () -> Unit,
+) {
+    AlertDialog(
+            onDismissRequest = onDismiss,
+            title = {
+                Text(
+                        stringResource(R.string.settings_home_widgets_dialog_title),
+                        color = MaterialTheme.colorScheme.onBackground
+                )
+            },
+            text = {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    HomeWidgetDialogSwitchRow(
+                            label = stringResource(R.string.settings_show_home_clock),
+                            checked = showClock,
+                            onCheckedChange = onClockChange,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    HomeWidgetDialogSwitchRow(
+                            label = stringResource(R.string.settings_show_home_date),
+                            checked = showDate,
+                            onCheckedChange = onDateChange,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    HomeWidgetDialogSwitchRow(
+                            label = stringResource(R.string.settings_show_home_weather),
+                            checked = showWeather,
+                            onCheckedChange = onWeatherChange,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    HomeWidgetDialogSwitchRow(
+                            label = stringResource(R.string.settings_show_home_battery),
+                            checked = showBattery,
+                            onCheckedChange = onBatteryChange,
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = onDismiss) {
+                    Text(
+                            stringResource(R.string.action_done),
+                            color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+    )
+}
+
+@Composable
+private fun HomeWidgetDialogSwitchRow(
+        label: String,
+        checked: Boolean,
+        onCheckedChange: (Boolean) -> Unit,
+) {
+    Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier =
+                    Modifier.fillMaxWidth()
+                            .clickable { onCheckedChange(!checked) }
+                            .padding(vertical = 4.dp)
+    ) {
+        Text(
+                text = label,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.weight(1f)
+        )
+        Spacer(Modifier.width(12.dp))
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
+    }
+}
+
 // =========================  SUB-COMPOSABLES  =========================
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -633,20 +763,23 @@ private fun SettingsToggleRow(
         label: String,
         checked: Boolean,
         onCheckedChange: (Boolean) -> Unit,
-        subtitle: String? = null
+        subtitle: String? = null,
+        enabled: Boolean = true
 ) {
     Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier =
                     Modifier.fillMaxWidth()
-                            .clickable { onCheckedChange(!checked) }
+                            .clickable(enabled = enabled) { onCheckedChange(!checked) }
                             .padding(horizontal = 24.dp, vertical = 12.dp)
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
                     text = label,
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onBackground
+                    color =
+                            if (enabled) MaterialTheme.colorScheme.onBackground
+                            else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.38f)
             )
             if (!subtitle.isNullOrEmpty()) {
                 Spacer(Modifier.height(4.dp))
@@ -658,7 +791,11 @@ private fun SettingsToggleRow(
             }
         }
         Spacer(Modifier.width(16.dp))
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
+        Switch(
+                checked = checked,
+                onCheckedChange = onCheckedChange,
+                enabled = enabled
+        )
     }
 }
 

@@ -114,8 +114,13 @@
     <string name="settings_set_background_image">Ustaw obraz tła</string>
     <string name="settings_set_black_wallpaper">Ustaw czarną tapetę</string>
     <string name="settings_section_home_screen">Ekran główny</string>
-    <string name="settings_hide_widgets">Ukryj widżety</string>
-    <string name="settings_hide_widgets_subtitle">Ukryj zegar, datę, naładowanie baterii i pogodę na ekranie głównym</string>
+    <string name="settings_home_widgets">Skonfiguruj widżety</string>
+    <string name="settings_home_widgets_dialog_title">Co wyświetlać</string>
+    <string name="settings_home_widgets_summary_none">Nic</string>
+    <string name="settings_show_home_clock">Pokaż zegar</string>
+    <string name="settings_show_home_date">Pokaż datę</string>
+    <string name="settings_show_home_weather">Pokaż pogodę</string>
+    <string name="settings_show_home_battery">Pokaż poziom baterii</string>
     <string name="settings_double_tap_to_lock">Podwójne stuknięcie, aby zablokować</string>
     <string name="settings_double_tap_to_lock_subtitle">Wymaga uprawnienia ułatwień dostępu</string>
     <string name="accessibility_lock_service_description">Umożliwia Fokus Launcher zablokowanie ekranu po podwójnym stuknięciu.</string>

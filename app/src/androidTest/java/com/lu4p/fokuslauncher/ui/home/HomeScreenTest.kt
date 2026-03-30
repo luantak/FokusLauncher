@@ -21,33 +21,39 @@ class HomeScreenTest {
     @get:Rule
     val composeTestRule = createComposeRule()
 
-    private val testFavorites = listOf(
-        FavoriteApp(label = "Music", packageName = "com.lu4p.music", iconName = "music"),
-        FavoriteApp(label = "Work", packageName = "com.lu4p.work", iconName = "work"),
-        FavoriteApp(label = "Read", packageName = "com.lu4p.reader", iconName = "read"),
-        FavoriteApp(label = "Social", packageName = "com.lu4p.social", iconName = "chat"),
-        FavoriteApp(label = "Health", packageName = "com.lu4p.health", iconName = "fitness"),
-        FavoriteApp(label = "Finance", packageName = "com.lu4p.finance", iconName = "finance")
-    )
-    private val testRightSideShortcuts = testFavorites.map {
-        HomeShortcut(iconName = it.iconName, target = it.resolvedIconTarget)
-    }
+    private val testFavorites =
+            listOf(
+                    FavoriteApp(label = "Music", packageName = "com.lu4p.music", iconName = "music"),
+                    FavoriteApp(label = "Work", packageName = "com.lu4p.work", iconName = "work"),
+                    FavoriteApp(label = "Read", packageName = "com.lu4p.reader", iconName = "read"),
+                    FavoriteApp(label = "Social", packageName = "com.lu4p.social", iconName = "chat"),
+                    FavoriteApp(label = "Health", packageName = "com.lu4p.health", iconName = "fitness"),
+                    FavoriteApp(label = "Finance", packageName = "com.lu4p.finance", iconName = "finance")
+            )
+    private val testRightSideShortcuts =
+            testFavorites.map { HomeShortcut(iconName = it.iconName, target = it.resolvedIconTarget) }
+
+    private fun clock(
+            time: String = "3:56",
+            date: String = "Fri. 12 Jul.",
+            battery: Int = 88
+    ) = HomeClockUiState(currentTime = time, currentDate = date, batteryPercent = battery)
+
+    private val weatherOff = HomeWeatherUiState()
 
     @Test
     fun homeScreen_displaysClockWidget() {
         composeTestRule.setContent {
             FokusLauncherTheme {
                 HomeScreenContent(
-                    uiState = HomeUiState(
-                        currentTime = "3:56",
-                        currentDate = "Fri. 12 Jul.",
-                        batteryPercent = 88
-                    ),
-                    favorites = testFavorites,
-                    rightSideShortcuts = testRightSideShortcuts,
-                    onLabelClick = {},
-                    onLabelLongPress = {},
-                    onIconClick = {}
+                        uiState = HomeUiState(),
+                        clockUiState = clock(),
+                        weatherUiState = weatherOff,
+                        favorites = testFavorites,
+                        rightSideShortcuts = testRightSideShortcuts,
+                        onLabelClick = {},
+                        onLabelLongPress = {},
+                        onIconClick = {}
                 )
             }
         }
@@ -61,16 +67,14 @@ class HomeScreenTest {
         composeTestRule.setContent {
             FokusLauncherTheme {
                 HomeScreenContent(
-                    uiState = HomeUiState(
-                        currentTime = "3:56",
-                        currentDate = "Fri. 12 Jul.",
-                        batteryPercent = 88
-                    ),
-                    favorites = testFavorites,
-                    rightSideShortcuts = testRightSideShortcuts,
-                    onLabelClick = {},
-                    onLabelLongPress = {},
-                    onIconClick = {}
+                        uiState = HomeUiState(),
+                        clockUiState = clock(),
+                        weatherUiState = weatherOff,
+                        favorites = testFavorites,
+                        rightSideShortcuts = testRightSideShortcuts,
+                        onLabelClick = {},
+                        onLabelLongPress = {},
+                        onIconClick = {}
                 )
             }
         }
@@ -85,16 +89,14 @@ class HomeScreenTest {
         composeTestRule.setContent {
             FokusLauncherTheme {
                 HomeScreenContent(
-                    uiState = HomeUiState(
-                        currentTime = "3:56",
-                        currentDate = "Fri. 12 Jul.",
-                        batteryPercent = 88
-                    ),
-                    favorites = testFavorites,
-                    rightSideShortcuts = testRightSideShortcuts,
-                    onLabelClick = {},
-                    onLabelLongPress = {},
-                    onIconClick = {}
+                        uiState = HomeUiState(),
+                        clockUiState = clock(),
+                        weatherUiState = weatherOff,
+                        favorites = testFavorites,
+                        rightSideShortcuts = testRightSideShortcuts,
+                        onLabelClick = {},
+                        onLabelLongPress = {},
+                        onIconClick = {}
                 )
             }
         }
@@ -112,16 +114,15 @@ class HomeScreenTest {
         composeTestRule.setContent {
             FokusLauncherTheme {
                 HomeScreenContent(
-                    uiState = HomeUiState(
-                        currentTime = "12:00",
-                        currentDate = "Mon. 1 Jan.",
-                        batteryPercent = 100
-                    ),
-                    favorites = emptyList(),
-                    rightSideShortcuts = emptyList(),
-                    onLabelClick = {},
-                    onLabelLongPress = {},
-                    onIconClick = {}
+                        uiState = HomeUiState(),
+                        clockUiState =
+                                clock(time = "12:00", date = "Mon. 1 Jan.", battery = 100),
+                        weatherUiState = weatherOff,
+                        favorites = emptyList(),
+                        rightSideShortcuts = emptyList(),
+                        onLabelClick = {},
+                        onLabelLongPress = {},
+                        onIconClick = {}
                 )
             }
         }
@@ -135,16 +136,15 @@ class HomeScreenTest {
         composeTestRule.setContent {
             FokusLauncherTheme {
                 HomeScreenContent(
-                    uiState = HomeUiState(
-                        currentTime = "0:00",
-                        currentDate = "Sun. 31 Dec.",
-                        batteryPercent = 0
-                    ),
-                    favorites = emptyList(),
-                    rightSideShortcuts = emptyList(),
-                    onLabelClick = {},
-                    onLabelLongPress = {},
-                    onIconClick = {}
+                        uiState = HomeUiState(),
+                        clockUiState =
+                                clock(time = "0:00", date = "Sun. 31 Dec.", battery = 0),
+                        weatherUiState = weatherOff,
+                        favorites = emptyList(),
+                        rightSideShortcuts = emptyList(),
+                        onLabelClick = {},
+                        onLabelLongPress = {},
+                        onIconClick = {}
                 )
             }
         }
@@ -158,17 +158,14 @@ class HomeScreenTest {
         composeTestRule.setContent {
             FokusLauncherTheme {
                 HomeScreenContent(
-                    uiState = HomeUiState(
-                        currentTime = "3:56",
-                        currentDate = "Fri. 12 Jul.",
-                        batteryPercent = 88,
-                        isDefaultLauncher = false
-                    ),
-                    favorites = testFavorites,
-                    rightSideShortcuts = testRightSideShortcuts,
-                    onLabelClick = {},
-                    onLabelLongPress = {},
-                    onIconClick = {}
+                        uiState = HomeUiState(isDefaultLauncher = false),
+                        clockUiState = clock(),
+                        weatherUiState = weatherOff,
+                        favorites = testFavorites,
+                        rightSideShortcuts = testRightSideShortcuts,
+                        onLabelClick = {},
+                        onLabelLongPress = {},
+                        onIconClick = {}
                 )
             }
         }
@@ -182,17 +179,14 @@ class HomeScreenTest {
         composeTestRule.setContent {
             FokusLauncherTheme {
                 HomeScreenContent(
-                    uiState = HomeUiState(
-                        currentTime = "3:56",
-                        currentDate = "Fri. 12 Jul.",
-                        batteryPercent = 88,
-                        isDefaultLauncher = true
-                    ),
-                    favorites = testFavorites,
-                    rightSideShortcuts = testRightSideShortcuts,
-                    onLabelClick = {},
-                    onLabelLongPress = {},
-                    onIconClick = {}
+                        uiState = HomeUiState(isDefaultLauncher = true),
+                        clockUiState = clock(),
+                        weatherUiState = weatherOff,
+                        favorites = testFavorites,
+                        rightSideShortcuts = testRightSideShortcuts,
+                        onLabelClick = {},
+                        onLabelLongPress = {},
+                        onIconClick = {}
                 )
             }
         }
@@ -206,19 +200,19 @@ class HomeScreenTest {
         composeTestRule.setContent {
             FokusLauncherTheme {
                 HomeScreenContent(
-                    uiState = HomeUiState(
-                        currentTime = "3:56",
-                        currentDate = "Fri. 12 Jul.",
-                        batteryPercent = 88,
-                        weather = WeatherData(temperature = 22, iconCode = "01d"),
-                        showWeatherWidget = true
-                    ),
-                    favorites = testFavorites,
-                    rightSideShortcuts = testRightSideShortcuts,
-                    onLabelClick = {},
-                    onLabelLongPress = {},
-                    onIconClick = {},
-                    onWeatherClick = { weatherClicked = true }
+                        uiState = HomeUiState(showHomeWeather = true),
+                        clockUiState = clock(),
+                        weatherUiState =
+                                HomeWeatherUiState(
+                                        weather = WeatherData(temperature = 22, iconCode = "01d"),
+                                        showWeatherWidget = true
+                                ),
+                        favorites = testFavorites,
+                        rightSideShortcuts = testRightSideShortcuts,
+                        onLabelClick = {},
+                        onLabelLongPress = {},
+                        onIconClick = {},
+                        onWeatherClick = { weatherClicked = true }
                 )
             }
         }
@@ -233,21 +227,20 @@ class HomeScreenTest {
         composeTestRule.setContent {
             FokusLauncherTheme {
                 HomeScreenContent(
-                    uiState =
-                            HomeUiState(
-                                    currentTime = "3:56",
-                                    currentDate = "Fri. 12 Jul.",
-                                    batteryPercent = 88,
-                                    weather = WeatherData(temperature = 72, iconCode = "01d"),
-                                    weatherUseFahrenheit = true,
-                                    showWeatherWidget = true
-                            ),
-                    favorites = testFavorites,
-                    rightSideShortcuts = testRightSideShortcuts,
-                    onLabelClick = {},
-                    onLabelLongPress = {},
-                    onIconClick = {},
-                    onWeatherClick = {}
+                        uiState = HomeUiState(showHomeWeather = true),
+                        clockUiState = clock(),
+                        weatherUiState =
+                                HomeWeatherUiState(
+                                        weather = WeatherData(temperature = 72, iconCode = "01d"),
+                                        weatherUseFahrenheit = true,
+                                        showWeatherWidget = true
+                                ),
+                        favorites = testFavorites,
+                        rightSideShortcuts = testRightSideShortcuts,
+                        onLabelClick = {},
+                        onLabelLongPress = {},
+                        onIconClick = {},
+                        onWeatherClick = {}
                 )
             }
         }
@@ -257,23 +250,28 @@ class HomeScreenTest {
     }
 
     @Test
-    fun homeScreen_hidesWidgets_whenWidgetsDisabled() {
+    fun homeScreen_hidesAllHomeInfo_whenAllItemTogglesOff() {
         composeTestRule.setContent {
             FokusLauncherTheme {
                 HomeScreenContent(
-                    uiState = HomeUiState(
-                        currentTime = "3:56",
-                        currentDate = "Fri. 12 Jul.",
-                        batteryPercent = 88,
-                        showWidgets = false,
-                        weather = WeatherData(temperature = 22, iconCode = "01d"),
-                        showWeatherWidget = true
-                    ),
-                    favorites = testFavorites,
-                    rightSideShortcuts = testRightSideShortcuts,
-                    onLabelClick = {},
-                    onLabelLongPress = {},
-                    onIconClick = {}
+                        uiState =
+                                HomeUiState(
+                                        showHomeClock = false,
+                                        showHomeDate = false,
+                                        showHomeWeather = false,
+                                        showHomeBattery = false
+                                ),
+                        clockUiState = clock(),
+                        weatherUiState =
+                                HomeWeatherUiState(
+                                        weather = WeatherData(temperature = 22, iconCode = "01d"),
+                                        showWeatherWidget = true
+                                ),
+                        favorites = testFavorites,
+                        rightSideShortcuts = testRightSideShortcuts,
+                        onLabelClick = {},
+                        onLabelLongPress = {},
+                        onIconClick = {}
                 )
             }
         }

@@ -112,8 +112,13 @@
     <string name="settings_set_background_image">Hintergrundbild festlegen</string>
     <string name="settings_set_black_wallpaper">Schwarzes Hintergrundbild festlegen</string>
     <string name="settings_section_home_screen">Startbildschirm</string>
-    <string name="settings_hide_widgets">Widgets ausblenden</string>
-    <string name="settings_hide_widgets_subtitle">Uhr, Datum, Akku und Wetter auf dem Startbildschirm ausblenden</string>
+    <string name="settings_home_widgets">Widgets konfigurieren</string>
+    <string name="settings_home_widgets_dialog_title">Was anzeigen</string>
+    <string name="settings_home_widgets_summary_none">Nichts</string>
+    <string name="settings_show_home_clock">Uhr anzeigen</string>
+    <string name="settings_show_home_date">Datum anzeigen</string>
+    <string name="settings_show_home_weather">Wetter anzeigen</string>
+    <string name="settings_show_home_battery">Akkustand anzeigen</string>
     <string name="settings_double_tap_to_lock">Doppeltipp zum Sperren</string>
     <string name="settings_double_tap_to_lock_subtitle">Erfordert die Bedienungshilfen-Berechtigung</string>
     <string name="accessibility_lock_service_description">Erlaubt Fokus Launcher, den Bildschirm bei „Doppeltipp zum Sperren“ zu sperren.</string>

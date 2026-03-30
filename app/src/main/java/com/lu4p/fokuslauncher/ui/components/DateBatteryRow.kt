@@ -22,23 +22,38 @@ fun DateBatteryRow(
     date: String,
     batteryPercent: Int,
     modifier: Modifier = Modifier,
+    showDate: Boolean = true,
+    showBattery: Boolean = true,
     onDateClick: () -> Unit = {}
 ) {
+    if (!showDate && !showBattery) return
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
     ) {
-        Text(
-            text = date,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.secondary,
-            modifier = Modifier.clickable(indication = null, interactionSource = remember { MutableInteractionSource() }, onClick = onDateClick)
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = "$batteryPercent%",
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.secondary
-        )
+        if (showDate) {
+            Text(
+                text = date,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.secondary,
+                modifier =
+                        Modifier.clickable(
+                                indication = null,
+                                interactionSource =
+                                        remember { MutableInteractionSource() },
+                                onClick = onDateClick
+                        )
+            )
+        }
+        if (showDate && showBattery) {
+            Spacer(modifier = Modifier.width(8.dp))
+        }
+        if (showBattery) {
+            Text(
+                text = "$batteryPercent%",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.secondary
+            )
+        }
     }
 }

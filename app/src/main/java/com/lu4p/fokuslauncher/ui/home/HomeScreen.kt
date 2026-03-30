@@ -222,7 +222,7 @@ fun HomeScreenContent(
                 .padding(top = 80.dp, bottom = 48.dp)
         ) {
             HomeWidgetsSection(
-                showWidgets = uiState.showWidgets,
+                uiState = uiState,
                 clockUiState = clockUiState,
                 weatherUiState = weatherUiState,
                 onClockClick = onClockClick,
@@ -271,41 +271,54 @@ fun HomeScreenContent(
 
 @Composable
 private fun HomeWidgetsSection(
-    showWidgets: Boolean,
+    uiState: HomeUiState,
     clockUiState: HomeClockUiState,
     weatherUiState: HomeWeatherUiState,
     onClockClick: () -> Unit,
     onDateClick: () -> Unit,
     onWeatherClick: () -> Unit,
 ) {
-    if (!showWidgets) return
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.Top
-    ) {
-        ClockWidget(
-            time = clockUiState.currentTime,
-            onClick = onClockClick,
-            modifier = Modifier.testTag("clock_widget")
-        )
-        if (weatherUiState.showWeatherWidget) {
-            WeatherWidget(
-                weather = weatherUiState.weather,
-                useFahrenheit = weatherUiState.weatherUseFahrenheit,
-                onClick = onWeatherClick,
-                modifier = Modifier.padding(top = 16.dp)
-            )
+    val showClock = uiState.showHomeClock
+    val showWeather = uiState.showHomeWeather && weatherUiState.showWeatherWidget
+    if (showClock || showWeather) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement =
+                    when {
+                        showClock && showWeather -> Arrangement.SpaceBetween
+                        showWeather -> Arrangement.End
+                        else -> Arrangement.Start
+                    },
+            verticalAlignment = Alignment.Top
+        ) {
+            if (showClock) {
+                ClockWidget(
+                    time = clockUiState.currentTime,
+                    onClick = onClockClick,
+                    modifier = Modifier.testTag("clock_widget")
+                )
+            }
+            if (showWeather) {
+                WeatherWidget(
+                    weather = weatherUiState.weather,
+                    useFahrenheit = weatherUiState.weatherUseFahrenheit,
+                    onClick = onWeatherClick,
+                    modifier = Modifier.padding(top = 16.dp)
+                )
+            }
         }
     }
 
-    DateBatteryRow(
-        date = clockUiState.currentDate,
-        batteryPercent = clockUiState.batteryPercent,
-        onDateClick = onDateClick,
-        modifier = Modifier.testTag("date_battery_row")
-    )
+    if (uiState.showHomeDate || uiState.showHomeBattery) {
+        DateBatteryRow(
+            date = clockUiState.currentDate,
+            batteryPercent = clockUiState.batteryPercent,
+            showDate = uiState.showHomeDate,
+            showBattery = uiState.showHomeBattery,
+            onDateClick = onDateClick,
+            modifier = Modifier.testTag("date_battery_row")
+        )
+    }
 }
 
 @Composable

@@ -47,6 +47,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
@@ -57,7 +58,10 @@ import java.util.Locale
 import javax.inject.Inject
 
 data class HomeUiState(
-    val showWidgets: Boolean = true,
+    val showHomeClock: Boolean = true,
+    val showHomeDate: Boolean = true,
+    val showHomeWeather: Boolean = true,
+    val showHomeBattery: Boolean = true,
     val isDefaultLauncher: Boolean = true,
     val homeAlignment: HomeAlignment = HomeAlignment.LEFT,
     val doubleTapEmptyLockEnabled: Boolean = false,
@@ -179,7 +183,8 @@ class HomeViewModel @Inject constructor(
         updateBattery()
         startWeatherTicker()
         observeHomeAlignment()
-        observeWidgetsVisibility()
+        observeHomeWidgetItemPreferences()
+        observeWeatherRefreshTriggers()
         observeDoubleTapEmptyLock()
         checkDefaultLauncher()
         refreshInstalledApps()
@@ -569,11 +574,44 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private fun observeWidgetsVisibility() {
+    private fun observeHomeWidgetItemPreferences() {
         viewModelScope.launch {
-            preferencesManager.showHomeScreenWidgetsFlow.collect { showWidgets ->
-                _uiState.value = _uiState.value.copy(showWidgets = showWidgets)
+            combine(
+                preferencesManager.showHomeClockFlow,
+                preferencesManager.showHomeDateFlow,
+                preferencesManager.showHomeWeatherFlow,
+                preferencesManager.showHomeBatteryFlow
+            ) { showClock, showDate, showWeather, showBattery ->
+                WidgetItemPreferences(
+                        showClock,
+                        showDate,
+                        showWeather,
+                        showBattery
+                )
+            }.collect { w ->
+                _uiState.value =
+                        _uiState.value.copy(
+                                showHomeClock = w.showClock,
+                                showHomeDate = w.showDate,
+                                showHomeWeather = w.showWeather,
+                                showHomeBattery = w.showBattery
+                        )
             }
+        }
+    }
+
+    private data class WidgetItemPreferences(
+            val showClock: Boolean,
+            val showDate: Boolean,
+            val showWeather: Boolean,
+            val showBattery: Boolean
+    )
+
+    private fun observeWeatherRefreshTriggers() {
+        viewModelScope.launch {
+            preferencesManager.showHomeWeatherFlow
+                    .distinctUntilChanged()
+                    .collect { refreshWeather() }
         }
     }
 
@@ -786,12 +824,23 @@ class HomeViewModel @Inject constructor(
 
     private suspend fun fetchWeatherOnce() {
         try {
+            val useFahrenheit = TemperatureUnitHelper.useFahrenheit(context)
+            if (!preferencesManager.showHomeWeatherFlow.first()) {
+                val hiddenState = HomeWeatherUiState(
+                        weather = null,
+                        weatherUseFahrenheit = useFahrenheit,
+                        showWeatherWidget = false
+                )
+                if (_weatherUiState.value != hiddenState) {
+                    _weatherUiState.value = hiddenState
+                }
+                return
+            }
             val optedOut = preferencesManager.weatherLocationOptedOutFlow.first()
             val hasCoarsePermission = ContextCompat.checkSelfPermission(
                 context, Manifest.permission.ACCESS_COARSE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
             val shouldShow = hasCoarsePermission && !optedOut
-            val useFahrenheit = TemperatureUnitHelper.useFahrenheit(context)
             if (!shouldShow) {
                 val hiddenState = HomeWeatherUiState(
                     weather = null,
