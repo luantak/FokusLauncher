@@ -1,0 +1,2 @@
+Add diagnostic log export to help with bug reports. 
+Fix weather not working when it was skipped during onboarding.
