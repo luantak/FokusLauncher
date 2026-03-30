@@ -1,0 +1,1 @@
+Fix the app drawer sometimes showing no apps until Fokus was force-stopped.
