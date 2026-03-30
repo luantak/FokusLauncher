@@ -113,6 +113,16 @@ class AppRepositoryTest {
     }
 
     @Test
+    fun `getInstalledApps does not cache empty results`() {
+        every { launcherApps.getActivityList(null, myUser) } returns emptyList()
+
+        repository.getInstalledApps()
+        repository.getInstalledApps()
+
+        verify(exactly = 2) { launcherApps.getActivityList(null, myUser) }
+    }
+
+    @Test
     fun `invalidateCache forces reload on next call`() {
         every {
             launcherApps.getActivityList(null, myUser)

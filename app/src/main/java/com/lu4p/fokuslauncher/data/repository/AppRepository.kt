@@ -94,7 +94,10 @@ constructor(
 
     /**
      * Returns all launchable apps installed on the device, sorted alphabetically. Results are
-     * cached in memory after the first load.
+     * cached in memory after the first successful non-empty load.
+     *
+     * Empty lists are not cached: [LauncherApps.getActivityList] / package events can briefly
+     * yield no activities; caching that would hide every app until process death (e.g. force stop).
      */
     fun getInstalledApps(): List<AppInfo> {
         cachedApps?.let {
@@ -102,7 +105,9 @@ constructor(
         }
 
         val apps = loadInstalledAppsMergedAcrossProfiles()
-        cachedApps = apps
+        if (apps.isNotEmpty()) {
+            cachedApps = apps
+        }
         return apps
     }
 
