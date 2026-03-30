@@ -65,6 +65,7 @@ import com.lu4p.fokuslauncher.ui.settings.CategoryAppsScreen
 import com.lu4p.fokuslauncher.ui.settings.CategorySettingsScreen
 import com.lu4p.fokuslauncher.ui.settings.EditHomeAppsScreen
 import com.lu4p.fokuslauncher.ui.settings.EditShortcutsScreen
+import com.lu4p.fokuslauncher.ui.settings.DeviceControlSettingsScreen
 import com.lu4p.fokuslauncher.ui.settings.SettingsScreen
 import com.lu4p.fokuslauncher.ui.settings.SettingsViewModel
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
@@ -76,6 +77,7 @@ import java.util.function.Consumer
 object Routes {
     const val HOME = "home"
     const val SETTINGS = "settings"
+    const val SETTINGS_DEVICE_CONTROL = "settings_device_control"
     const val SETTINGS_CATEGORIES = "settings_categories"
     const val SETTINGS_CATEGORY_APPS = "settings_category_apps"
     const val SETTINGS_EDIT_HOME_APPS = "settings_edit_home_apps"
@@ -466,9 +468,28 @@ fun FokusNavGraph(
                     onEditRightShortcuts = {
                         navController.navigate(Routes.SETTINGS_EDIT_SHORTCUTS) { launchSingleTop = true }
                     },
+                    onOpenDeviceControlSettings = {
+                        navController.navigate(Routes.SETTINGS_DEVICE_CONTROL) { launchSingleTop = true }
+                    },
                     onEditCategories = {
                         navController.navigate(Routes.SETTINGS_CATEGORIES) { launchSingleTop = true }
                     },
+                    backgroundScrim = Color.Black
+                )
+            }
+
+            composable(
+                Routes.SETTINGS_DEVICE_CONTROL,
+                enterTransition = { slideInHorizontally(tween(ANIM_DURATION)) { it } },
+                exitTransition = { slideOutHorizontally(tween(ANIM_DURATION)) { -it } },
+                popEnterTransition = { slideInHorizontally(tween(ANIM_DURATION)) { -it } },
+                popExitTransition = { slideOutHorizontally(tween(ANIM_DURATION)) { it } }
+            ) {
+                val settingsViewModel: SettingsViewModel =
+                        hiltViewModel(viewModelStoreOwner = componentActivity)
+                DeviceControlSettingsScreen(
+                    viewModel = settingsViewModel,
+                    onNavigateBack = { navController.popBackStack() },
                     backgroundScrim = Color.Black
                 )
             }

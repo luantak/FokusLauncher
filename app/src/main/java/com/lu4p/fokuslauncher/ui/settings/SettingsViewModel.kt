@@ -61,6 +61,9 @@ data class SettingsUiState(
         val appLocaleTag: String = "",
         val allowLandscapeRotation: Boolean = false,
         val doubleTapEmptyLock: Boolean = false,
+        val longLockReturnHome: Boolean = false,
+        val longLockReturnHomeThresholdMinutes: Int =
+                PreferencesManager.DEFAULT_LONG_LOCK_RETURN_HOME_THRESHOLD_MINUTES,
         val allApps: List<AppInfo> = emptyList()
 )
 
@@ -181,11 +184,21 @@ constructor(
                                 pair.second to doubleTapEmptyLock
                         )
                     }
+                    .combine(preferencesManager.longLockReturnHomeFlow) { triple, longLockReturnHome ->
+                        Pair(triple, longLockReturnHome)
+                    }
+                    .combine(preferencesManager.longLockReturnHomeThresholdMinutesFlow) {
+                            pair,
+                            longLockThresholdMinutes ->
+                        Triple(pair.first, pair.second, longLockThresholdMinutes)
+                    }
                     .collectLatest { triple ->
-                        val nestedAndHome = triple.first
-                        val allowLandscapeRotation = triple.second
-                        val homeWidgetItems = triple.third.first
-                        val doubleTapEmptyLock = triple.third.second
+                        val nestedAndHome = triple.first.first
+                        val allowLandscapeRotation = triple.first.second
+                        val homeWidgetItems = triple.first.third.first
+                        val doubleTapEmptyLock = triple.first.third.second
+                        val longLockReturnHome = triple.second
+                        val longLockThresholdMinutes = triple.third
                         val (nested, homeAlignment) = nestedAndHome
                         val (sortTriple, fontAndLocale) = nested
                         val (fontFamilyName, appLocaleTag) = fontAndLocale
@@ -229,6 +242,8 @@ constructor(
                                         appLocaleTag = appLocaleTag,
                                         allowLandscapeRotation = allowLandscapeRotation,
                                         doubleTapEmptyLock = doubleTapEmptyLock,
+                                        longLockReturnHome = longLockReturnHome,
+                                        longLockReturnHomeThresholdMinutes = longLockThresholdMinutes,
                                         allApps = allApps
                                 )
                     }
@@ -308,6 +323,14 @@ constructor(
 
     fun setDoubleTapEmptyLock(enabled: Boolean) {
         viewModelScope.launch { preferencesManager.setDoubleTapEmptyLock(enabled) }
+    }
+
+    fun setLongLockReturnHome(enabled: Boolean) {
+        viewModelScope.launch { preferencesManager.setLongLockReturnHome(enabled) }
+    }
+
+    fun setLongLockReturnHomeThresholdMinutes(minutes: Int) {
+        viewModelScope.launch { preferencesManager.setLongLockReturnHomeThresholdMinutes(minutes) }
     }
 
     fun setShowHomeClock(show: Boolean) {

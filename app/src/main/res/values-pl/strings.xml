@@ -114,6 +114,12 @@
     <string name="settings_set_background_image">Ustaw obraz tła</string>
     <string name="settings_set_black_wallpaper">Ustaw czarną tapetę</string>
     <string name="settings_section_home_screen">Ekran główny</string>
+    <string name="settings_accessibility">Sterowanie urządzeniem</string>
+    <string name="settings_accessibility_subtitle">Zarządzaj funkcjami wymagającymi dostępu do ułatwień dostępu</string>
+    <string name="settings_accessibility_page_title">Sterowanie urządzeniem</string>
+    <string name="settings_accessibility_permission">Uprawnienie ułatwień dostępu</string>
+    <string name="settings_accessibility_permission_enabled">Przyznane dla Fokus Launchera</string>
+    <string name="settings_accessibility_permission_disabled">Wymagane do podwójnego stuknięcia, aby zablokować, i powrotu po długiej blokadzie</string>
     <string name="settings_home_widgets">Skonfiguruj widżety</string>
     <string name="settings_home_widgets_dialog_title">Co wyświetlać</string>
     <string name="settings_home_widgets_summary_none">Nic</string>
@@ -122,8 +128,12 @@
     <string name="settings_show_home_weather">Pokaż pogodę</string>
     <string name="settings_show_home_battery">Pokaż poziom baterii</string>
     <string name="settings_double_tap_to_lock">Podwójne stuknięcie, aby zablokować</string>
-    <string name="settings_double_tap_to_lock_subtitle">Wymaga uprawnienia ułatwień dostępu</string>
-    <string name="accessibility_lock_service_description">Umożliwia Fokus Launcher zablokowanie ekranu po podwójnym stuknięciu.</string>
+    <string name="settings_double_tap_to_lock_subtitle">Blokuje urządzenie po podwójnym stuknięciu pustego miejsca na ekranie głównym</string>
+    <string name="settings_return_home_after_long_lock">Powrót do ekranu głównego po długiej blokadzie</string>
+    <string name="settings_return_home_after_long_lock_subtitle">Po odblokowaniu pokaż launcher, jeśli urządzenie było zablokowane wystarczająco długo</string>
+    <string name="settings_long_lock_duration">Czas długiej blokady</string>
+    <string name="settings_long_lock_duration_subtitle">Jak długo urządzenie musi pozostać zablokowane, zanim Fokus po odblokowaniu wróci do ekranu głównego.</string>
+    <string name="accessibility_lock_service_description">Umożliwia Fokus Launcher blokowanie ekranu i powrót do launchera po długiej blokadzie.</string>
     <string name="double_tap_lock_failed">Nie udało się zablokować urządzenia</string>
     <string name="settings_edit_home_screen">Edytuj ekran główny</string>
     <string name="settings_edit_shortcuts">Edytuj skróty</string>
@@ -162,6 +172,13 @@
         <item quantity="few">%d skonfigurowane skróty</item>
         <item quantity="many">%d skonfigurowanych skrótów</item>
         <item quantity="other">%d skonfigurowanych skrótów</item>
+    </plurals>
+
+    <plurals name="settings_long_lock_duration_minutes">
+        <item quantity="one">%d minuta</item>
+        <item quantity="few">%d minuty</item>
+        <item quantity="many">%d minut</item>
+        <item quantity="other">%d minuty</item>
     </plurals>
 
     <plurals name="settings_categories_count">

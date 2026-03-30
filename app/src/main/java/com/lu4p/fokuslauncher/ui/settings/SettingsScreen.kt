@@ -56,6 +56,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -89,6 +90,7 @@ import com.lu4p.fokuslauncher.ui.drawer.sortAppsAlphabeticallyByProfileSection
 import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
+import com.lu4p.fokuslauncher.utils.BatteryOptimizationHelper
 import com.lu4p.fokuslauncher.utils.LockScreenHelper
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
 import com.lu4p.fokuslauncher.ui.theme.composeFontFamilyFromStoredName
@@ -102,6 +104,7 @@ fun SettingsScreen(
         onNavigateToHome: () -> Unit = {},
         onEditHomeScreen: () -> Unit = {},
         onEditRightShortcuts: () -> Unit = {},
+        onOpenDeviceControlSettings: () -> Unit = {},
         onEditCategories: () -> Unit = {},
         backgroundScrim: Color = FokusBackdrop.ScrimColorWithoutBlur
 ) {
@@ -111,7 +114,6 @@ fun SettingsScreen(
     val activity = LocalActivity.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    var lockAccessibilityResumeTick by remember { mutableIntStateOf(0) }
     var hasCoarseLocationPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(
@@ -123,7 +125,6 @@ fun SettingsScreen(
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                lockAccessibilityResumeTick++
                 hasCoarseLocationPermission =
                     ContextCompat.checkSelfPermission(
                         context,
@@ -134,10 +135,6 @@ fun SettingsScreen(
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
-    val lockAccessibilityOn =
-            remember(lockAccessibilityResumeTick) {
-                LockScreenHelper.isLockAccessibilityServiceEnabled(context)
-            }
 
     // Dialog states
     val showAppPickerFor = remember { mutableStateOf<String?>(null) } // swipeLeft/swipeRight
@@ -309,21 +306,10 @@ fun SettingsScreen(
             }
 
             item {
-                SettingsToggleRow(
-                        label = stringResource(R.string.settings_double_tap_to_lock),
-                        subtitle =
-                                stringResource(R.string.settings_double_tap_to_lock_subtitle),
-                        checked = uiState.doubleTapEmptyLock && lockAccessibilityOn,
-                        onCheckedChange = { enabled ->
-                            if (enabled) {
-                                viewModel.setDoubleTapEmptyLock(true)
-                                if (!LockScreenHelper.isLockAccessibilityServiceEnabled(context)) {
-                                    LockScreenHelper.openAccessibilitySettings(context)
-                                }
-                            } else {
-                                viewModel.setDoubleTapEmptyLock(false)
-                            }
-                        }
+                SettingsActionRow(
+                        label = stringResource(R.string.settings_accessibility),
+                        subtitle = stringResource(R.string.settings_accessibility_subtitle),
+                        onClick = onOpenDeviceControlSettings
                 )
             }
 
@@ -713,6 +699,145 @@ fun SettingsScreen(
                 },
                 onDismiss = { showAppPickerFor.value = null }
         )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DeviceControlSettingsScreen(
+        viewModel: SettingsViewModel = hiltViewModel(),
+        onNavigateBack: () -> Unit = {},
+        backgroundScrim: Color = FokusBackdrop.ScrimColorWithoutBlur
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var accessibilityResumeTick by remember { mutableIntStateOf(0) }
+    var ignoringBatteryOptimizations by remember {
+        mutableStateOf(BatteryOptimizationHelper.isIgnoringBatteryOptimizations(context))
+    }
+    var pendingEnableLongLock by remember { mutableStateOf(false) }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                accessibilityResumeTick++
+                ignoringBatteryOptimizations =
+                        BatteryOptimizationHelper.isIgnoringBatteryOptimizations(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    val lockAccessibilityOn =
+            remember(accessibilityResumeTick) {
+                LockScreenHelper.isLockAccessibilityServiceEnabled(context)
+            }
+
+    LaunchedEffect(lockAccessibilityOn, ignoringBatteryOptimizations, uiState.longLockReturnHome) {
+        if (uiState.longLockReturnHome &&
+                        (!lockAccessibilityOn || !ignoringBatteryOptimizations)) {
+            viewModel.setLongLockReturnHome(false)
+        }
+    }
+
+    LaunchedEffect(lockAccessibilityOn, ignoringBatteryOptimizations, pendingEnableLongLock) {
+        if (!pendingEnableLongLock) return@LaunchedEffect
+        if (lockAccessibilityOn && ignoringBatteryOptimizations) {
+            viewModel.setLongLockReturnHome(true)
+        }
+        pendingEnableLongLock = false
+    }
+
+    Column(
+            modifier = Modifier
+                    .fillMaxSize()
+                    .background(backgroundScrim)
+                    .testTag("device_control_settings_screen")
+    ) {
+        TopAppBar(
+                title = {
+                    Text(
+                            stringResource(R.string.settings_accessibility_page_title),
+                            color = MaterialTheme.colorScheme.onBackground
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.action_back),
+                                tint = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+                },
+                colors =
+                        TopAppBarDefaults.topAppBarColors(
+                                containerColor = MaterialTheme.colorScheme.background
+                        )
+        )
+
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+            item {
+                SettingsToggleRow(
+                        label = stringResource(R.string.settings_accessibility_permission),
+                        subtitle =
+                                stringResource(
+                                        if (lockAccessibilityOn) {
+                                            R.string.settings_accessibility_permission_enabled
+                                        } else {
+                                            R.string.settings_accessibility_permission_disabled
+                                        }
+                                ),
+                        checked = lockAccessibilityOn,
+                        onCheckedChange = { LockScreenHelper.openAccessibilitySettings(context) }
+                )
+            }
+
+            item {
+                SettingsToggleRow(
+                        label = stringResource(R.string.settings_double_tap_to_lock),
+                        subtitle =
+                                stringResource(R.string.settings_double_tap_to_lock_subtitle),
+                        checked = uiState.doubleTapEmptyLock,
+                        onCheckedChange = { enabled -> viewModel.setDoubleTapEmptyLock(enabled) },
+                        enabled = lockAccessibilityOn
+                )
+            }
+
+            item {
+                SettingsToggleRow(
+                        label = stringResource(R.string.settings_return_home_after_long_lock),
+                        subtitle =
+                                stringResource(
+                                        R.string.settings_return_home_after_long_lock_subtitle
+                                ),
+                        checked = uiState.longLockReturnHome,
+                        onCheckedChange = { enabled ->
+                            if (!enabled) {
+                                pendingEnableLongLock = false
+                                viewModel.setLongLockReturnHome(false)
+                            } else if (!ignoringBatteryOptimizations) {
+                                pendingEnableLongLock = true
+                                BatteryOptimizationHelper.openBatteryOptimizationSettings(context)
+                            } else {
+                                viewModel.setLongLockReturnHome(true)
+                            }
+                        },
+                        enabled = lockAccessibilityOn
+                )
+            }
+
+            if (lockAccessibilityOn && ignoringBatteryOptimizations && uiState.longLockReturnHome) {
+                item {
+                    LongLockThresholdRow(
+                            currentMinutes = uiState.longLockReturnHomeThresholdMinutes,
+                            onMinutesSelected = viewModel::setLongLockReturnHomeThresholdMinutes
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -1128,6 +1253,94 @@ private fun DrawerAppSortRow(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun LongLockThresholdRow(
+        currentMinutes: Int,
+        onMinutesSelected: (Int) -> Unit
+) {
+    val options = remember { listOf(1, 5, 15, 30) }
+    var expanded by remember { mutableStateOf(false) }
+    val selectedLabel =
+            pluralStringResource(
+                    R.plurals.settings_long_lock_duration_minutes,
+                    currentMinutes,
+                    currentMinutes
+            )
+    Column(
+            modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 12.dp)
+    ) {
+        Text(
+                text = stringResource(R.string.settings_long_lock_duration),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onBackground
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+                text = stringResource(R.string.settings_long_lock_duration_subtitle),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.secondary
+        )
+        Spacer(Modifier.height(12.dp))
+        ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+            OutlinedTextField(
+                    modifier =
+                            Modifier.menuAnchor(
+                                            ExposedDropdownMenuAnchorType.PrimaryNotEditable,
+                                            enabled = true
+                                    )
+                                    .fillMaxWidth(),
+                    value = selectedLabel,
+                    onValueChange = { _ -> },
+                    readOnly = true,
+                    singleLine = true,
+                    shape = SettingsPickerCorner,
+                    textStyle = MaterialTheme.typography.bodyLarge,
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                    colors = settingsPickerOutlinedFieldColors()
+            )
+            ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                    shape = SettingsPickerCorner,
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    tonalElevation = 0.dp,
+                    shadowElevation = 8.dp,
+                    border =
+                            BorderStroke(
+                                    width = 1.dp,
+                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.14f)
+                            ),
+            ) {
+                options.forEach { minutes ->
+                    DropdownMenuItem(
+                            text = {
+                                Text(
+                                        text =
+                                                pluralStringResource(
+                                                        R.plurals.settings_long_lock_duration_minutes,
+                                                        minutes,
+                                                        minutes
+                                                ),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onBackground
+                                )
+                            },
+                            onClick = {
+                                onMinutesSelected(minutes)
+                                expanded = false
+                            },
+                            colors = settingsPickerMenuItemColors(),
+                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                    )
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun HomeAlignmentRow(
         currentAlignment: HomeAlignment,
@@ -1194,6 +1407,35 @@ private fun SettingsDivider() {
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.16f)
     )
     Spacer(Modifier.height(10.dp))
+}
+
+@Composable
+private fun SettingsActionRow(
+        label: String,
+        subtitle: String,
+        onClick: () -> Unit
+) {
+    Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier =
+                    Modifier.fillMaxWidth()
+                            .clickable(onClick = onClick)
+                            .padding(horizontal = 24.dp, vertical = 12.dp)
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                    text = label,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onBackground
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.secondary
+            )
+        }
+    }
 }
 
 // --- Location for weather row (shown only when permission disabled) ---

@@ -112,6 +112,12 @@
     <string name="settings_set_background_image">Set background image</string>
     <string name="settings_set_black_wallpaper">Set black wallpaper</string>
     <string name="settings_section_home_screen">Home screen</string>
+    <string name="settings_accessibility">Device Control</string>
+    <string name="settings_accessibility_subtitle">Manage features that need accessibility access</string>
+    <string name="settings_accessibility_page_title">Device Control</string>
+    <string name="settings_accessibility_permission">Accessibility permission</string>
+    <string name="settings_accessibility_permission_enabled">Granted for Fokus Launcher</string>
+    <string name="settings_accessibility_permission_disabled">Required for double tap to lock and return home after long lock</string>
     <string name="settings_home_widgets">Configure widgets</string>
     <string name="settings_home_widgets_dialog_title">What to show</string>
     <string name="settings_home_widgets_summary_none">Nothing</string>
@@ -120,8 +126,15 @@
     <string name="settings_show_home_weather">Show weather</string>
     <string name="settings_show_home_battery">Show battery level</string>
     <string name="settings_double_tap_to_lock">Double tap to lock</string>
-    <string name="settings_double_tap_to_lock_subtitle">Needs accessibility permission</string>
-    <string name="accessibility_lock_service_description">Allows Fokus Launcher to lock the screen when you use double tap to lock.</string>
+    <string name="settings_double_tap_to_lock_subtitle">Lock the device by double tapping empty space on the home screen</string>
+    <string name="settings_return_home_after_long_lock">Return home after long lock</string>
+    <string name="settings_return_home_after_long_lock_subtitle">After unlock, show the launcher if the device stayed locked long enough</string>
+    <string name="settings_long_lock_duration">Long lock duration</string>
+    <string name="settings_long_lock_duration_subtitle">How long the device must stay locked before Fokus returns to your home screen on unlock.</string>
+    <string name="settings_long_lock_battery_optimization">Battery optimization</string>
+    <string name="settings_long_lock_battery_optimization_enabled">Launcher is still battery optimized. Turn this off on aggressive OEM firmware if return-home stops working reliably.</string>
+    <string name="settings_long_lock_battery_optimization_disabled">Battery optimization is already disabled for Fokus Launcher.</string>
+    <string name="accessibility_lock_service_description">Allows Fokus Launcher to lock the screen and return to the launcher after long locks.</string>
     <string name="double_tap_lock_failed">Could not lock the device</string>
     <string name="settings_edit_home_screen">Edit home screen</string>
     <string name="settings_edit_shortcuts">Edit shortcuts</string>
@@ -158,6 +171,11 @@
     <plurals name="settings_shortcuts_configured">
         <item quantity="one">%d shortcut configured</item>
         <item quantity="other">%d shortcuts configured</item>
+    </plurals>
+
+    <plurals name="settings_long_lock_duration_minutes">
+        <item quantity="one">%d minute</item>
+        <item quantity="other">%d minutes</item>
     </plurals>
 
     <plurals name="settings_categories_count">

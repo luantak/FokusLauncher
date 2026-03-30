@@ -4,6 +4,8 @@ import android.content.Context
 import android.os.UserHandle
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
@@ -48,6 +50,14 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
                 booleanPreferencesKey("allow_landscape_rotation")
         private val DOUBLE_TAP_EMPTY_LOCK_KEY =
                 booleanPreferencesKey("double_tap_empty_lock")
+        private val LONG_LOCK_RETURN_HOME_KEY =
+                booleanPreferencesKey("long_lock_return_home")
+        private val LONG_LOCK_RETURN_HOME_THRESHOLD_MINUTES_KEY =
+                intPreferencesKey("long_lock_return_home_threshold_minutes")
+        private val LONG_LOCK_LAST_SCREEN_OFF_AT_MS_KEY =
+                longPreferencesKey("long_lock_last_screen_off_at_ms")
+
+        const val DEFAULT_LONG_LOCK_RETURN_HOME_THRESHOLD_MINUTES = 15
 
         /**
          * Format: "label;packageName;iconName" entries separated by "|" Falls back to legacy
@@ -321,6 +331,53 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
             prefs[DOUBLE_TAP_EMPTY_LOCK_KEY] = enabled
         }
     }
+
+    val longLockReturnHomeFlow: Flow<Boolean> =
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
+                prefs[LONG_LOCK_RETURN_HOME_KEY] ?: false
+            }
+
+    suspend fun setLongLockReturnHome(enabled: Boolean) {
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            prefs[LONG_LOCK_RETURN_HOME_KEY] = enabled
+        }
+    }
+
+    val longLockReturnHomeThresholdMinutesFlow: Flow<Int> =
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
+                prefs[LONG_LOCK_RETURN_HOME_THRESHOLD_MINUTES_KEY]
+                        ?: DEFAULT_LONG_LOCK_RETURN_HOME_THRESHOLD_MINUTES
+            }
+
+    suspend fun setLongLockReturnHomeThresholdMinutes(minutes: Int) {
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            prefs[LONG_LOCK_RETURN_HOME_THRESHOLD_MINUTES_KEY] = minutes
+        }
+    }
+
+    val longLockLastScreenOffAtMsFlow: Flow<Long> =
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
+                prefs[LONG_LOCK_LAST_SCREEN_OFF_AT_MS_KEY] ?: 0L
+            }
+
+    suspend fun setLongLockLastScreenOffAtMs(timestampMs: Long) {
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            prefs[LONG_LOCK_LAST_SCREEN_OFF_AT_MS_KEY] = timestampMs
+        }
+    }
+
+    suspend fun clearLongLockLastScreenOffAtMs() {
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            prefs.remove(LONG_LOCK_LAST_SCREEN_OFF_AT_MS_KEY)
+        }
+    }
+
+    suspend fun getLongLockReturnHomeEnabled(): Boolean = longLockReturnHomeFlow.first()
+
+    suspend fun getLongLockReturnHomeThresholdMinutes(): Int =
+            longLockReturnHomeThresholdMinutesFlow.first()
+
+    suspend fun getLongLockLastScreenOffAtMs(): Long = longLockLastScreenOffAtMsFlow.first()
 
     /** Clears all preferences, equivalent to clearing app storage. */
     suspend fun clearAll() {
