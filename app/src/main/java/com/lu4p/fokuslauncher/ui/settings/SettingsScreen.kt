@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.widget.Toast
 import android.provider.Settings
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -556,6 +557,55 @@ fun SettingsScreen(
 
             // ========== RESET ==========
             item { SectionHeader(stringResource(R.string.settings_section_data)) }
+
+            item {
+                val scope = rememberCoroutineScope()
+                val activity = LocalActivity.current
+                Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier =
+                                Modifier.fillMaxWidth()
+                                        .clickable {
+                                            scope.launch {
+                                                val shareIntent = viewModel.createLogShareIntent()
+                                                if (shareIntent != null && activity != null) {
+                                                    activity.startActivity(
+                                                            Intent.createChooser(
+                                                                    shareIntent,
+                                                                    context.getString(
+                                                                            R.string.settings_export_logs_share_chooser
+                                                                    )
+                                                            )
+                                                    )
+                                                } else {
+                                                    Toast.makeText(
+                                                                    context,
+                                                                    context.getString(
+                                                                            R.string.toast_export_logs_failed
+                                                                    ),
+                                                                    Toast.LENGTH_SHORT
+                                                            )
+                                                            .show()
+                                                }
+                                            }
+                                        }
+                                        .padding(horizontal = 24.dp, vertical = 14.dp)
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                                text = stringResource(R.string.settings_export_logs_title),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Text(
+                                text = stringResource(R.string.settings_export_logs_subtitle),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.secondary
+                        )
+                    }
+                }
+            }
+
             item {
                 Row(
                         verticalAlignment = Alignment.CenterVertically,

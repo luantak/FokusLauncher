@@ -144,6 +144,11 @@
     <string name="settings_section_renamed_apps">Umbenannte Apps</string>
     <string name="settings_no_renamed_apps">Keine umbenannten Apps</string>
     <string name="settings_section_data">Daten</string>
+    <string name="settings_export_logs_title">App-Logs exportieren</string>
+    <string name="settings_export_logs_subtitle">Diagnosedatei für Fehlerberichte teilen</string>
+    <string name="settings_export_logs_share_chooser">Diagnoseprotokoll teilen</string>
+    <string name="settings_export_logs_share_subject">Fokus Launcher Diagnoseprotokoll</string>
+    <string name="toast_export_logs_failed">Logexport konnte nicht vorbereitet werden</string>
     <string name="settings_reset_all_data">Alle Daten zurücksetzen</string>
     <string name="settings_reset_confirm_title">Alle Daten zurücksetzen?</string>
     <string name="settings_reset_confirm_message">Dadurch werden Favoriten, Schnellzugriffe, ausgeblendete Apps, umbenannte Apps und alle anderen Einstellungen gelöscht. Die App wird in ihren Anfangszustand zurückgesetzt.</string>

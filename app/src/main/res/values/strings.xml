@@ -144,6 +144,11 @@
     <string name="settings_section_renamed_apps">Renamed apps</string>
     <string name="settings_no_renamed_apps">No renamed apps</string>
     <string name="settings_section_data">Data</string>
+    <string name="settings_export_logs_title">Export app logs</string>
+    <string name="settings_export_logs_subtitle">Share a diagnostic file for bug reports</string>
+    <string name="settings_export_logs_share_chooser">Share diagnostic log</string>
+    <string name="settings_export_logs_share_subject">Fokus Launcher diagnostic log</string>
+    <string name="toast_export_logs_failed">Could not prepare log export</string>
     <string name="settings_reset_all_data">Reset all data</string>
     <string name="settings_reset_confirm_title">Reset all data?</string>
     <string name="settings_reset_confirm_message">This will clear favorites, shortcuts, hidden apps, renamed apps, and all other settings. The app will return to its initial state.</string>

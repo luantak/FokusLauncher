@@ -15,8 +15,11 @@ import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.data.util.AppLocaleHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import android.app.WallpaperManager
+import android.content.ClipData
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
+import androidx.core.content.FileProvider
 import android.graphics.Canvas
 import androidx.core.graphics.createBitmap
 import android.graphics.Color as AndroidColor
@@ -30,6 +33,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import com.lu4p.fokuslauncher.R
+import com.lu4p.fokuslauncher.utils.AppDiagnosticLogExporter
 
 data class SettingsUiState(
         val hiddenApps: List<HiddenAppInfo> = emptyList(),
@@ -349,6 +355,35 @@ constructor(
             appRepository.invalidateCache()
         }
     }
+
+    /** Builds a share intent for a diagnostic text file (metadata + app process logcat). */
+    suspend fun createLogShareIntent(): Intent? =
+            withContext(Dispatchers.IO) {
+                runCatching {
+                    val file = AppDiagnosticLogExporter.writeExportFile(context)
+                    val uri =
+                            FileProvider.getUriForFile(
+                                    context,
+                                    "${context.packageName}.fileprovider",
+                                    file
+                            )
+                    Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        putExtra(
+                                Intent.EXTRA_SUBJECT,
+                                context.getString(R.string.settings_export_logs_share_subject)
+                        )
+                        clipData =
+                                ClipData.newUri(
+                                        context.contentResolver,
+                                        context.getString(R.string.settings_export_logs_title),
+                                        uri
+                                )
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                }.getOrNull()
+            }
 
     /** Clears all app state (preferences + database), equivalent to clearing storage. */
     suspend fun resetAllState() {

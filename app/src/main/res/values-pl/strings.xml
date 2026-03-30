@@ -146,6 +146,11 @@
     <string name="settings_section_renamed_apps">Aplikacje ze zmienioną nazwą</string>
     <string name="settings_no_renamed_apps">Brak aplikacji ze zmienioną nazwą</string>
     <string name="settings_section_data">Dane</string>
+    <string name="settings_export_logs_title">Eksportuj logi aplikacji</string>
+    <string name="settings_export_logs_subtitle">Udostępnij plik diagnostyczny (zgłaszanie błędów)</string>
+    <string name="settings_export_logs_share_chooser">Udostępnij log diagnostyczny</string>
+    <string name="settings_export_logs_share_subject">Log diagnostyczny Fokus Launcher</string>
+    <string name="toast_export_logs_failed">Nie udało się przygotować eksportu logów</string>
     <string name="settings_reset_all_data">Zresetuj wszystkie dane</string>
     <string name="settings_reset_confirm_title">Zresetować wszystkie dane?</string>
     <string name="settings_reset_confirm_message">To wyczyści twoje ulubione, skróty, ukryte aplikacje, aplikacje ze zmienioną nazwą i wszystkie inne ustawienia. Aplikacja powróci do stanu początkowego.</string>
