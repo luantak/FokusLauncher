@@ -780,20 +780,22 @@ class HomeViewModel @Inject constructor(
      * Opens the default clock / alarm app.
      */
     fun openClockApp() {
-        try {
-            val intent = Intent(AlarmClock.ACTION_SHOW_ALARMS).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            context.startActivity(intent)
-        } catch (_: Exception) {
-            // Fallback: try DeskClock
-            try {
-                val intent = Intent(Intent.ACTION_MAIN).apply {
-                    addCategory(Intent.CATEGORY_LAUNCHER)
-                    setPackage("com.google.android.deskclock")
+        val showAlarms =
+                Intent(AlarmClock.ACTION_SHOW_ALARMS).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
-                context.startActivity(intent)
+        try {
+            context.startActivity(showAlarms)
+            return
+        } catch (_: Exception) { }
+
+        val pm = context.packageManager
+        for (pkg in CLOCK_LAUNCH_PACKAGES) {
+            val launch = pm.getLaunchIntentForPackage(pkg) ?: continue
+            try {
+                launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(launch)
+                return
             } catch (_: Exception) { }
         }
     }
@@ -875,6 +877,15 @@ class HomeViewModel @Inject constructor(
         } catch (_: Exception) { }
     }
 
+    private companion object {
+        /** OEM / AOSP clock packages as fallback when [AlarmClock.ACTION_SHOW_ALARMS] is unavailable. */
+        val CLOCK_LAUNCH_PACKAGES =
+                listOf(
+                        "com.sec.android.app.clockpackage",
+                        "com.google.android.deskclock",
+                        "com.android.deskclock",
+                )
+    }
 }
 
 internal fun formatCompactDate(date: Date, locale: Locale): String {
