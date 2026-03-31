@@ -23,6 +23,7 @@ import kotlinx.coroutines.launch
 /** Minimal service used only for [performGlobalAction] lock screen from double-tap. */
 class LockScreenAccessibilityService : AccessibilityService() {
     private val tag = "FokusLockA11y"
+    private val transientLockStateGraceMs = 2_000L
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private lateinit var preferencesManager: PreferencesManager
     private var screenStateReceiverRegistered = false
@@ -77,6 +78,13 @@ class LockScreenAccessibilityService : AccessibilityService() {
     private suspend fun handleWindowStateChanged(packageName: String) {
         if (packageName == this.packageName) return
         if (!isDeviceCurrentlyLocked()) {
+            val lockedAt = preferencesManager.getLongLockLastScreenOffAtMs()
+            val withinTransientGrace =
+                    lockedAt > 0L && (System.currentTimeMillis() - lockedAt) < transientLockStateGraceMs
+            if (withinTransientGrace) {
+                Log.d(tag, "Ignoring transient unlocked window event from $packageName")
+                return
+            }
             clearPendingLockTracking("window:$packageName")
             return
         }
