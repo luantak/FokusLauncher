@@ -6,6 +6,7 @@
     <string name="drawer_filter_all_apps">Alle Apps</string>
     <string name="drawer_filter_private">Privat</string>
     <string name="drawer_filter_work">Arbeit</string>
+    <string name="drawer_filter_uncategorized">Ohne Kategorie</string>
     <string name="drawer_menu_launcher_settings">Launcher-Einstellungen</string>
     <string name="drawer_private_space_lock">Privaten Bereich sperren</string>
     <string name="drawer_private_space_unlock">Privaten Bereich entsperren</string>
@@ -64,6 +65,8 @@
     <string name="category_action_rename">Umbenennen</string>
     <string name="category_action_edit_apps">Apps in Kategorie bearbeiten</string>
     <string name="category_action_remove">Kategorie entfernen</string>
+    <string name="category_icon_picker_title">Kategorie-Symbol</string>
+    <string name="category_action_reset_icon">Standard-Symbol wiederherstellen</string>
     <string name="category_apps_screen_section_in_category">Apps in dieser Kategorie</string>
     <string name="category_no_category">Keine Kategorie</string>
     <string name="category_settings_title">App-Kategorien</string>
@@ -141,10 +144,12 @@
     <string name="settings_section_app_categories">App-Kategorien</string>
     <string name="settings_edit_app_categories">App-Kategorien bearbeiten</string>
     <string name="settings_section_app_drawer">App-Drawer</string>
-    <string name="settings_auto_open_keyboard">Tastatur im Drawer automatisch öffnen</string>
-    <string name="settings_auto_open_keyboard_subtitle">Suchfeld fokussieren und Tastatur anzeigen, wenn der Drawer geöffnet wird</string>
-    <string name="settings_hide_all_apps_section">Bereich "Alle Apps" ausblenden</string>
-    <string name="settings_hide_all_apps_section_subtitle">Den Drawer auf deine Kategorien und Suchergebnisse fokussieren</string>
+    <string name="settings_drawer_sidebar_categories">Kategorien-Seitenleiste anzeigen</string>
+    <string name="settings_drawer_sidebar_categories_subtitle">Ersetzt die Suchleiste durch eine vertikale Kategorien-Seitenleiste. Zum Suchen das Lupen-Symbol verwenden.</string>
+    <string name="settings_drawer_category_rail_side">Position der Kategorien-Seitenleiste</string>
+    <string name="settings_drawer_category_rail_side_subtitle">Standardmäßig ist die Seitenleiste rechts. Eine Kategorie in der Schublade lange drücken, um ihr Symbol zu ändern.</string>
+    <string name="settings_drawer_rail_position_left">Links</string>
+    <string name="settings_drawer_rail_position_right">Rechts</string>
     <string name="settings_drawer_app_sort">App-Sortierung</string>
     <string name="settings_drawer_app_sort_subtitle">„Meist geöffnet“ zählt Starts aus dem App-Drawer dieses Launchers. Ohne erfasste Öffnungen bleibt die Liste alphabetisch.</string>
     <string name="settings_drawer_app_sort_alphabetical">A–Z</string>

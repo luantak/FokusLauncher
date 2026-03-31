@@ -51,7 +51,6 @@ class AppDrawerViewModelTest {
     private val categoriesFlow = MutableStateFlow<List<AppCategoryEntity>>(emptyList())
     private val categoryDefinitionsFlow = MutableStateFlow<List<AppCategoryDefinitionEntity>>(emptyList())
     private val favoritesFlow = MutableStateFlow<List<FavoriteApp>>(emptyList())
-    private val autoOpenDrawerKeyboardFlow = MutableStateFlow(true)
     private val drawerAppSortModeFlow = MutableStateFlow(DrawerAppSortMode.ALPHABETICAL)
     private val drawerAppOpenCountsFlow = MutableStateFlow<Map<String, Int>>(emptyMap())
     private val privateProfileChanges = MutableSharedFlow<Unit>()
@@ -99,7 +98,6 @@ class AppDrawerViewModelTest {
         every { appRepository.getAllCategoryDefinitions() } returns categoryDefinitionsFlow
         every { appRepository.launchApp(any()) } returns true
         every { preferencesManager.favoritesFlow } returns favoritesFlow
-        every { preferencesManager.autoOpenDrawerKeyboardFlow } returns autoOpenDrawerKeyboardFlow
         every { preferencesManager.drawerAppSortModeFlow } returns drawerAppSortModeFlow
         every { preferencesManager.drawerAppOpenCountsFlow } returns drawerAppOpenCountsFlow
         every { privateSpaceManager.isSupported } returns false
@@ -161,19 +159,6 @@ class AppDrawerViewModelTest {
         assertEquals(2, flatFiltered(state).size)
         assertTrue(flatFiltered(state).any { it.label == "Calculator" })
         assertTrue(flatFiltered(state).any { it.label == "Calendar" })
-    }
-
-    @Test
-    fun `disabling auto open keyboard keeps search available`() {
-        viewModel.onSearchQueryChanged("cal")
-
-        autoOpenDrawerKeyboardFlow.value = false
-        awaitState("drawer keyboard auto open to be disabled") { !it.autoOpenKeyboard }
-
-        val state = viewModel.uiState.value
-        assertFalse(state.autoOpenKeyboard)
-        assertEquals("cal", state.searchQuery)
-        assertEquals(2, flatFiltered(state).size)
     }
 
     @Test

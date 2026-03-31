@@ -450,20 +450,20 @@ fun SettingsScreen(
 
             item {
                 SettingsToggleRow(
-                        label = stringResource(R.string.settings_auto_open_keyboard),
-                        subtitle = stringResource(R.string.settings_auto_open_keyboard_subtitle),
-                        checked = uiState.autoOpenDrawerKeyboard,
-                        onCheckedChange = { viewModel.setAutoOpenDrawerKeyboard(it) }
+                        label = stringResource(R.string.settings_drawer_sidebar_categories),
+                        subtitle = stringResource(R.string.settings_drawer_sidebar_categories_subtitle),
+                        checked = uiState.drawerSidebarCategories,
+                        onCheckedChange = { viewModel.setDrawerSidebarCategories(it) }
                 )
             }
 
-            item {
-                SettingsToggleRow(
-                        label = stringResource(R.string.settings_hide_all_apps_section),
-                        subtitle = stringResource(R.string.settings_hide_all_apps_section_subtitle),
-                        checked = uiState.hideAllAppsSection,
-                        onCheckedChange = { viewModel.setHideAllAppsSection(it) }
-                )
+            if (uiState.drawerSidebarCategories) {
+                item {
+                    DrawerCategoryRailSideRow(
+                            railOnLeft = uiState.drawerCategorySidebarOnLeft,
+                            onRailOnLeftChanged = { viewModel.setDrawerCategorySidebarOnLeft(it) }
+                    )
+                }
             }
 
             item {
@@ -1199,6 +1199,46 @@ private fun LauncherFontFamilyDropdown(
                             contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
                     )
                 }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DrawerCategoryRailSideRow(
+        railOnLeft: Boolean,
+        onRailOnLeftChanged: (Boolean) -> Unit
+) {
+    Column(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp)
+    ) {
+        Text(
+                text = stringResource(R.string.settings_drawer_category_rail_side),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onBackground
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+                text = stringResource(R.string.settings_drawer_category_rail_side_subtitle),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.secondary
+        )
+        Spacer(Modifier.height(12.dp))
+        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+            SegmentedButton(
+                    selected = railOnLeft,
+                    onClick = { onRailOnLeftChanged(true) },
+                    shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
+            ) {
+                Text(stringResource(R.string.settings_drawer_rail_position_left))
+            }
+            SegmentedButton(
+                    selected = !railOnLeft,
+                    onClick = { onRailOnLeftChanged(false) },
+                    shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
+            ) {
+                Text(stringResource(R.string.settings_drawer_rail_position_right))
             }
         }
     }

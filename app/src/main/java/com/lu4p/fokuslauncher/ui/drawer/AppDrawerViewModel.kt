@@ -14,6 +14,7 @@ import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.model.appProfileKey
 import com.lu4p.fokuslauncher.data.model.drawerOpenCountKey
 import com.lu4p.fokuslauncher.data.repository.AppRepository
+import com.lu4p.fokuslauncher.ui.components.MinimalIcons
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -42,8 +43,6 @@ data class AppDrawerUiState(
         /** One entry per Android user profile (personal, work, clone, …), after search/category. */
         val filteredProfileSections: List<DrawerProfileSectionUi> = emptyList(),
         val searchQuery: String = "",
-        val autoOpenKeyboard: Boolean = true,
-        val hideAllAppsSection: Boolean = false,
         val selectedCategory: String = ReservedCategoryNames.ALL_APPS,
         val categories: List<String> = listOf(ReservedCategoryNames.ALL_APPS),
         val selectedApp: AppInfo? = null,
@@ -56,7 +55,16 @@ data class AppDrawerUiState(
         val filteredPrivateSpaceApps: List<AppInfo> = emptyList(),
         /** Package names of apps already on the home screen. */
         val favoritePackageNames: Set<String> = emptySet(),
-        val selectedCategoryForActions: String? = null
+        val selectedCategoryForActions: String? = null,
+        /**
+         * Vertical category sidebar layout (optional setting). When true, the drawer omits the
+         * search bar and uses a leading sidebar instead of horizontal chips.
+         */
+        val useSidebarCategoryDrawer: Boolean = false,
+        /** When true (default), the category rail is on the physical right; false = left rail. */
+        val drawerCategorySidebarOnRight: Boolean = true,
+        /** Normalized category key → MinimalIcons name for the vertical rail and chip affordances. */
+        val categoryDrawerIconOverrides: Map<String, String> = emptyMap()
 )
 
 sealed interface DrawerEvent {
@@ -139,8 +147,8 @@ constructor(
         observeInstalledApps()
         observeRemovedPackages()
         observeFavorites()
-        observeDrawerKeyboardPreference()
-        observeHideAllAppsPreference()
+        observeDrawerSidebarPreference()
+        observeDrawerCategoryRailAndIcons()
         observeDrawerSortAndOpenCounts()
         refreshPrivateSpaceState()
         observePrivateSpaceChanges()
@@ -176,10 +184,59 @@ constructor(
         }
     }
 
-    private fun observeDrawerKeyboardPreference() {
+    private fun observeDrawerSidebarPreference() {
         viewModelScope.launch {
-            preferencesManager.autoOpenDrawerKeyboardFlow.collect { enabled ->
-                _uiState.update { state -> state.copy(autoOpenKeyboard = enabled) }
+            preferencesManager.drawerSidebarCategoriesFlow.collect { sidebarEnabled ->
+                val state = _uiState.value
+                val categories =
+                        deriveCategories(
+                                apps = state.allApps,
+                                definedCategories = latestDefinedCategories,
+                                includePrivate =
+                                        state.isPrivateSpaceUnlocked &&
+                                                state.privateSpaceApps.isNotEmpty(),
+                                includeWork =
+                                        state.allApps.any { isDrawerWorkProfileApp(context, it) },
+                                includeAllAppsSection = !sidebarEnabled
+                        )
+                val selectedCategory =
+                        resolveSelectedCategory(
+                                currentCategory = state.selectedCategory,
+                                categories = categories,
+                                skipAllAppsCategory = sidebarEnabled
+                        )
+                val filteredContent =
+                        buildFilteredDrawerContent(
+                                allApps = state.allApps,
+                                privateApps = state.privateSpaceApps,
+                                query = state.searchQuery,
+                                category = selectedCategory
+                        )
+                _uiState.update {
+                    it.copy(
+                            useSidebarCategoryDrawer = sidebarEnabled,
+                            selectedCategory = selectedCategory,
+                            categories = categories,
+                            filteredProfileSections = filteredContent.filteredProfileSections,
+                            filteredPrivateSpaceApps = filteredContent.filteredPrivateSpaceApps
+                    )
+                }
+                scheduleDrawerCachePrewarm()
+            }
+        }
+    }
+
+    private fun observeDrawerCategoryRailAndIcons() {
+        viewModelScope.launch {
+            preferencesManager.drawerCategorySidebarOnLeftFlow.collect { onLeft ->
+                _uiState.update { state ->
+                    state.copy(drawerCategorySidebarOnRight = !onLeft)
+                }
+            }
+        }
+        viewModelScope.launch {
+            preferencesManager.drawerCategoryIconsFlow.collect { icons ->
+                _uiState.update { state -> state.copy(categoryDrawerIconOverrides = icons) }
             }
         }
     }
@@ -216,48 +273,6 @@ constructor(
                         }
                         scheduleDrawerCachePrewarm()
                     }
-        }
-    }
-
-    private fun observeHideAllAppsPreference() {
-        viewModelScope.launch {
-            preferencesManager.hideAllAppsSectionFlow.collect { hideAllAppsSection ->
-                val state = _uiState.value
-                val categories =
-                        deriveCategories(
-                                apps = state.allApps,
-                                definedCategories = latestDefinedCategories,
-                                includePrivate =
-                                        state.isPrivateSpaceUnlocked &&
-                                                state.privateSpaceApps.isNotEmpty(),
-                                includeWork =
-                                        state.allApps.any { isDrawerWorkProfileApp(context, it) },
-                                includeAllAppsSection = !hideAllAppsSection
-                        )
-                val selectedCategory =
-                        resolveSelectedCategory(
-                                currentCategory = state.selectedCategory,
-                                categories = categories,
-                                hideAllAppsSection = hideAllAppsSection
-                        )
-                val filteredContent =
-                        buildFilteredDrawerContent(
-                                allApps = state.allApps,
-                                privateApps = state.privateSpaceApps,
-                                query = state.searchQuery,
-                                category = selectedCategory
-                        )
-                _uiState.update {
-                    it.copy(
-                            hideAllAppsSection = hideAllAppsSection,
-                            selectedCategory = selectedCategory,
-                            categories = categories,
-                            filteredProfileSections = filteredContent.filteredProfileSections,
-                            filteredPrivateSpaceApps = filteredContent.filteredPrivateSpaceApps
-                    )
-                }
-                scheduleDrawerCachePrewarm()
-            }
         }
     }
 
@@ -375,13 +390,13 @@ constructor(
                                     stateSnapshot.isPrivateSpaceUnlocked &&
                                             privateAppsFiltered.isNotEmpty(),
                             includeWork = visible.any { isDrawerWorkProfileApp(context, it) },
-                            includeAllAppsSection = !stateSnapshot.hideAllAppsSection
+                            includeAllAppsSection = !stateSnapshot.useSidebarCategoryDrawer
                     )
             val selectedCategory =
                     resolveSelectedCategory(
                             currentCategory = stateSnapshot.selectedCategory,
                             categories = categories,
-                            hideAllAppsSection = stateSnapshot.hideAllAppsSection
+                            skipAllAppsCategory = stateSnapshot.useSidebarCategoryDrawer
                     )
             val filteredContent =
                     buildFilteredDrawerContent(
@@ -428,13 +443,13 @@ constructor(
                                     stateSnapshot.isPrivateSpaceUnlocked &&
                                             privateApps.isNotEmpty(),
                             includeWork = visible.any { isDrawerWorkProfileApp(context, it) },
-                            includeAllAppsSection = !stateSnapshot.hideAllAppsSection
+                            includeAllAppsSection = !stateSnapshot.useSidebarCategoryDrawer
                     )
             val selectedCategory =
                     resolveSelectedCategory(
                             currentCategory = stateSnapshot.selectedCategory,
                             categories = categories,
-                            hideAllAppsSection = stateSnapshot.hideAllAppsSection
+                            skipAllAppsCategory = stateSnapshot.useSidebarCategoryDrawer
                     )
             val filteredContent =
                     buildFilteredDrawerContent(
@@ -575,9 +590,6 @@ constructor(
     }
 
     fun onCategoryLongPress(category: String) {
-        if (category.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true)) return
-        if (category.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true)) return
-        if (category.equals(ReservedCategoryNames.WORK, ignoreCase = true)) return
         _uiState.update { it.copy(selectedCategoryForActions = category) }
     }
 
@@ -588,12 +600,23 @@ constructor(
     fun renameCategory(oldName: String, newName: String) {
         viewModelScope.launch {
             appRepository.renameCategory(oldName, newName)
+            preferencesManager.renameDrawerCategoryIcon(oldName, newName)
             dismissCategoryActionSheet()
         }
     }
 
+    fun setCategoryDrawerIcon(category: String, iconName: String) {
+        if (!MinimalIcons.all.containsKey(iconName)) return
+        viewModelScope.launch { preferencesManager.setDrawerCategoryIcon(category, iconName) }
+    }
+
+    fun clearCategoryDrawerIcon(category: String) {
+        viewModelScope.launch { preferencesManager.clearDrawerCategoryIcon(category) }
+    }
+
     fun deleteCategory(name: String) {
         viewModelScope.launch {
+            preferencesManager.clearDrawerCategoryIcon(name)
             appRepository.deleteCategory(name)
             if (_uiState.value.selectedCategory.equals(name, ignoreCase = true)) {
                 val categoriesAfterDelete =
@@ -601,7 +624,7 @@ constructor(
                 onCategorySelected(
                         defaultCategory(
                                 categories = categoriesAfterDelete,
-                                hideAllAppsSection = _uiState.value.hideAllAppsSection
+                                skipAllAppsCategory = _uiState.value.useSidebarCategoryDrawer
                         )
                 )
             }
@@ -718,21 +741,16 @@ constructor(
             val categories =
                     deriveCategories(
                             apps = state.allApps,
-                            definedCategories =
-                                    state.categories.filterNot {
-                                        it.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true) ||
-                                                it.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true) ||
-                                                it.equals(ReservedCategoryNames.WORK, ignoreCase = true)
-                                    },
+                            definedCategories = latestDefinedCategories,
                             includePrivate = unlocked && apps.isNotEmpty(),
                             includeWork = state.allApps.any { isDrawerWorkProfileApp(context, it) },
-                            includeAllAppsSection = !state.hideAllAppsSection
+                            includeAllAppsSection = !state.useSidebarCategoryDrawer
                     )
             val selectedCategory =
                     resolveSelectedCategory(
                             currentCategory = state.selectedCategory,
                             categories = categories,
-                            hideAllAppsSection = state.hideAllAppsSection
+                            skipAllAppsCategory = state.useSidebarCategoryDrawer
                     )
             val filteredContent =
                     buildFilteredDrawerContent(
@@ -788,7 +806,7 @@ constructor(
             val defaultCategory =
                     defaultCategory(
                             categories = state.categories,
-                            hideAllAppsSection = state.hideAllAppsSection
+                            skipAllAppsCategory = state.useSidebarCategoryDrawer
                     )
             val filteredContent =
                     buildFilteredDrawerContent(
@@ -818,7 +836,7 @@ constructor(
         val expectedDefault =
                 defaultCategory(
                         categories = state.categories,
-                        hideAllAppsSection = state.hideAllAppsSection
+                        skipAllAppsCategory = state.useSidebarCategoryDrawer
                 )
         if (state.searchQuery.isBlank() &&
                         state.selectedCategory.equals(expectedDefault, ignoreCase = true)
@@ -941,6 +959,9 @@ constructor(
                 apps =
                         if (category.equals(ReservedCategoryNames.WORK, ignoreCase = true)) {
                             apps.filter { isDrawerWorkProfileApp(context, it) }
+                        } else if (category.equals(ReservedCategoryNames.UNCATEGORIZED, ignoreCase = true)
+                        ) {
+                            apps.filter { it.category.isBlank() }
                         } else {
                             apps.filter { it.category.equals(category, ignoreCase = true) }
                         }
@@ -969,17 +990,17 @@ constructor(
     private fun resolveSelectedCategory(
             currentCategory: String,
             categories: List<String>,
-            hideAllAppsSection: Boolean
+            skipAllAppsCategory: Boolean
     ): String {
         return if (categories.any { it.equals(currentCategory, ignoreCase = true) }) {
             currentCategory
         } else {
-            defaultCategory(categories, hideAllAppsSection)
+            defaultCategory(categories, skipAllAppsCategory)
         }
     }
 
-    private fun defaultCategory(categories: List<String>, hideAllAppsSection: Boolean): String {
-        if (!hideAllAppsSection) return ReservedCategoryNames.ALL_APPS
+    private fun defaultCategory(categories: List<String>, skipAllAppsCategory: Boolean): String {
+        if (!skipAllAppsCategory) return ReservedCategoryNames.ALL_APPS
         return categories.firstOrNull() ?: ReservedCategoryNames.ALL_APPS
     }
 
@@ -990,23 +1011,40 @@ constructor(
             includeWork: Boolean,
             includeAllAppsSection: Boolean
     ): List<String> {
+        val privateSpaceLast = !includeAllAppsSection
+        val hasUncategorizedApps = apps.any { it.category.isBlank() }
         val dynamic = apps.map { it.category.trim() }.filter { it.isNotBlank() }.toSet()
         val orderedDefined = definedCategories.distinct()
         val extras = (dynamic - orderedDefined.toSet()).toList().sorted()
-        val skipUserList =
-                buildList {
-                    if (includeAllAppsSection) add(ReservedCategoryNames.ALL_APPS)
-                    if (includePrivate) add(ReservedCategoryNames.PRIVATE)
-                    if (includeWork) add(ReservedCategoryNames.WORK)
+        val reservedLower =
+                buildSet {
+                    if (includeAllAppsSection) add(ReservedCategoryNames.ALL_APPS.lowercase())
+                    if (includePrivate) add(ReservedCategoryNames.PRIVATE.lowercase())
+                    if (includeWork) add(ReservedCategoryNames.WORK.lowercase())
                 }
-        val skipLower = skipUserList.map { it.lowercase() }.toSet()
         val definedFiltered =
-                orderedDefined.filterNot { it.lowercase() in skipLower }
-        val extrasFiltered = extras.filterNot { it.lowercase() in skipLower }
+                orderedDefined.filterNot { it.lowercase() in reservedLower }
+        val extrasFiltered =
+                extras.filterNot {
+                    it.lowercase() in reservedLower ||
+                            it.equals(ReservedCategoryNames.UNCATEGORIZED, ignoreCase = true)
+                }
+        val definedSansSyntheticUncategorized =
+                definedFiltered.filterNot {
+                    it.equals(ReservedCategoryNames.UNCATEGORIZED, ignoreCase = true)
+                }
         return buildList {
-            addAll(skipUserList)
-            addAll(definedFiltered)
+            if (includeAllAppsSection) add(ReservedCategoryNames.ALL_APPS)
+            if (privateSpaceLast) {
+                if (includeWork) add(ReservedCategoryNames.WORK)
+            } else {
+                if (includePrivate) add(ReservedCategoryNames.PRIVATE)
+                if (includeWork) add(ReservedCategoryNames.WORK)
+            }
+            addAll(definedSansSyntheticUncategorized)
             addAll(extrasFiltered)
+            if (hasUncategorizedApps) add(ReservedCategoryNames.UNCATEGORIZED)
+            if (privateSpaceLast && includePrivate) add(ReservedCategoryNames.PRIVATE)
         }
     }
 

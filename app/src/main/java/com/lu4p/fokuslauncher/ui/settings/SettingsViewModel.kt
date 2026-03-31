@@ -35,6 +35,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.lu4p.fokuslauncher.R
+import com.lu4p.fokuslauncher.ui.components.MinimalIcons
 import com.lu4p.fokuslauncher.utils.AppDiagnosticLogExporter
 
 data class SettingsUiState(
@@ -52,8 +53,12 @@ data class SettingsUiState(
         val showHomeDate: Boolean = true,
         val showHomeWeather: Boolean = true,
         val showHomeBattery: Boolean = true,
-        val autoOpenDrawerKeyboard: Boolean = true,
-        val hideAllAppsSection: Boolean = false,
+        /** Vertical category sidebar in the app drawer. */
+        val drawerSidebarCategories: Boolean = false,
+        /** When true, category rail is on the left; default false places it on the right. */
+        val drawerCategorySidebarOnLeft: Boolean = false,
+        /** Normalized category key → [MinimalIcons] name for the drawer sidebar rail. */
+        val categoryDrawerIconOverrides: Map<String, String> = emptyMap(),
         val drawerAppSortMode: DrawerAppSortMode = DrawerAppSortMode.ALPHABETICAL,
         val homeAlignment: HomeAlignment = HomeAlignment.LEFT,
         val launcherFontFamilyName: String = "",
@@ -146,16 +151,22 @@ constructor(
                     .combine(preferencesManager.showStatusBarFlow) { weatherState, showStatusBar ->
                         weatherState to showStatusBar
                     }
-                    .combine(preferencesManager.autoOpenDrawerKeyboardFlow) {
-                        weatherWithStatusBar, autoOpenDrawerKeyboard ->
-                        weatherWithStatusBar to autoOpenDrawerKeyboard
+                    .combine(preferencesManager.drawerSidebarCategoriesFlow) {
+                            weatherWithStatusBar,
+                            drawerSidebarCategories ->
+                        Triple(
+                                weatherWithStatusBar,
+                                drawerSidebarCategories,
+                                drawerSidebarCategories
+                        )
                     }
-                    .combine(preferencesManager.hideAllAppsSectionFlow) {
-                        weatherWithSettingsState, hideAllAppsSection ->
-                        weatherWithSettingsState to hideAllAppsSection
-                    }
-                    .combine(preferencesManager.drawerAppSortModeFlow) { hidePair, drawerAppSortMode ->
-                        Triple(hidePair.first, hidePair.second, drawerAppSortMode)
+                    .combine(preferencesManager.drawerAppSortModeFlow) {
+                            triple, drawerAppSortMode ->
+                        Triple(
+                                triple.first,
+                                triple.second,
+                                triple.third to drawerAppSortMode
+                        )
                     }
                     .combine(preferencesManager.launcherFontFamilyFlow) { triple, fontFamilyName ->
                         Pair(
@@ -192,7 +203,17 @@ constructor(
                             longLockThresholdMinutes ->
                         Triple(pair.first, pair.second, longLockThresholdMinutes)
                     }
-                    .collectLatest { triple ->
+                    .combine(preferencesManager.drawerCategorySidebarOnLeftFlow) { triple, railOnLeft ->
+                        triple to railOnLeft
+                    }
+                    .combine(preferencesManager.drawerCategoryIconsFlow) { pair, icons ->
+                        pair to icons
+                    }
+                    .collectLatest { tripleRailIcons ->
+                        val tripleAndRail = tripleRailIcons.first
+                        val categoryDrawerIconOverrides = tripleRailIcons.second
+                        val triple = tripleAndRail.first
+                        val drawerCategorySidebarOnLeft = tripleAndRail.second
                         val nestedAndHome = triple.first.first
                         val allowLandscapeRotation = triple.first.second
                         val homeWidgetItems = triple.first.third.first
@@ -202,9 +223,8 @@ constructor(
                         val (nested, homeAlignment) = nestedAndHome
                         val (sortTriple, fontAndLocale) = nested
                         val (fontFamilyName, appLocaleTag) = fontAndLocale
-                        val (weatherWithSettingsState, hideAllAppsSection, drawerAppSortMode) =
-                                sortTriple
-                        val (weatherWithStatusBar, autoOpenDrawerKeyboard) = weatherWithSettingsState
+                        val (weatherWithStatusBar, _, sidebarAndSort) = sortTriple
+                        val (drawerSidebarCategories, drawerAppSortMode) = sidebarAndSort
                         val (weatherState, showStatusBar) = weatherWithStatusBar
                         val (swipeState, preferredWeatherApp) = weatherState
                         val (leftState, swipeRight) = swipeState
@@ -234,8 +254,9 @@ constructor(
                                         showHomeDate = homeWidgetItems.showDate,
                                         showHomeWeather = homeWidgetItems.showWeather,
                                         showHomeBattery = homeWidgetItems.showBattery,
-                                        autoOpenDrawerKeyboard = autoOpenDrawerKeyboard,
-                                        hideAllAppsSection = hideAllAppsSection,
+                                        drawerSidebarCategories = drawerSidebarCategories,
+                                        drawerCategorySidebarOnLeft = drawerCategorySidebarOnLeft,
+                                        categoryDrawerIconOverrides = categoryDrawerIconOverrides,
                                         drawerAppSortMode = drawerAppSortMode,
                                         homeAlignment = homeAlignment,
                                         launcherFontFamilyName = fontFamilyName,
@@ -288,7 +309,10 @@ constructor(
     }
 
     fun deleteCategory(name: String) {
-        viewModelScope.launch { appRepository.deleteCategory(name) }
+        viewModelScope.launch {
+            preferencesManager.clearDrawerCategoryIcon(name)
+            appRepository.deleteCategory(name)
+        }
     }
 
     fun setAppCategory(packageName: String, category: String) {
@@ -349,12 +373,21 @@ constructor(
         viewModelScope.launch { preferencesManager.setShowHomeBattery(show) }
     }
 
-    fun setAutoOpenDrawerKeyboard(enabled: Boolean) {
-        viewModelScope.launch { preferencesManager.setAutoOpenDrawerKeyboard(enabled) }
+    fun setDrawerSidebarCategories(enabled: Boolean) {
+        viewModelScope.launch { preferencesManager.setDrawerSidebarCategories(enabled) }
     }
 
-    fun setHideAllAppsSection(hide: Boolean) {
-        viewModelScope.launch { preferencesManager.setHideAllAppsSection(hide) }
+    fun setDrawerCategorySidebarOnLeft(onLeft: Boolean) {
+        viewModelScope.launch { preferencesManager.setDrawerCategorySidebarOnLeft(onLeft) }
+    }
+
+    fun setCategoryDrawerIcon(category: String, iconName: String) {
+        if (!MinimalIcons.all.containsKey(iconName)) return
+        viewModelScope.launch { preferencesManager.setDrawerCategoryIcon(category, iconName) }
+    }
+
+    fun clearCategoryDrawerIcon(category: String) {
+        viewModelScope.launch { preferencesManager.clearDrawerCategoryIcon(category) }
     }
 
     fun setDrawerAppSortMode(mode: DrawerAppSortMode) {

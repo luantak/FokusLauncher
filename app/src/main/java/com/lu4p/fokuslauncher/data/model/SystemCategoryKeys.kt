@@ -49,6 +49,9 @@ object SystemCategoryKeys {
         if (trimmed.equals(ReservedCategoryNames.WORK, ignoreCase = true)) {
             return ReservedCategoryNames.WORK
         }
+        if (trimmed.equals(ReservedCategoryNames.UNCATEGORIZED, ignoreCase = true)) {
+            return ReservedCategoryNames.UNCATEGORIZED
+        }
 
         inferredCategories.firstOrNull { def ->
             trimmed.equals(def.key, ignoreCase = true)
@@ -65,6 +68,7 @@ object SystemCategoryKeys {
 
     fun displayLabel(context: Context, category: String): String {
         return when (normalize(context, category)) {
+            ReservedCategoryNames.UNCATEGORIZED -> context.getString(R.string.drawer_filter_uncategorized)
             UTILITIES -> context.getString(R.string.inferred_category_utilities)
             GAMES -> context.getString(R.string.inferred_category_games)
             PRODUCTIVITY -> context.getString(R.string.inferred_category_productivity)

@@ -11,6 +11,7 @@ import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.model.drawerOpenCountKey
 import com.lu4p.fokuslauncher.data.model.LauncherFontPreferences
+import com.lu4p.fokuslauncher.data.model.SystemCategoryKeys
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
@@ -20,6 +21,7 @@ import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import org.json.JSONObject
 
 @Singleton
 class PreferencesManager @Inject constructor(@param:ApplicationContext private val context: Context) {
@@ -34,10 +36,17 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         private val SHOW_HOME_DATE_KEY = booleanPreferencesKey("show_home_date")
         private val SHOW_HOME_WEATHER_KEY = booleanPreferencesKey("show_home_weather")
         private val SHOW_HOME_BATTERY_KEY = booleanPreferencesKey("show_home_battery")
-        private val AUTO_OPEN_DRAWER_KEYBOARD_KEY =
-                booleanPreferencesKey("auto_open_drawer_keyboard")
-        private val HIDE_ALL_APPS_SECTION_KEY =
-                booleanPreferencesKey("hide_all_apps_section")
+        /** Vertical category sidebar in the drawer instead of chips + search bar. */
+        private val DRAWER_SIDEBAR_CATEGORIES_KEY =
+                booleanPreferencesKey("drawer_sidebar_categories")
+        /**
+         * When true, the vertical category rail is on the left. Default false = rail on the right
+         * (toward the edge users often reach with the thumb).
+         */
+        private val DRAWER_CATEGORY_SIDEBAR_ON_LEFT_KEY =
+                booleanPreferencesKey("drawer_category_sidebar_on_left")
+        /** JSON object: normalized category key → MinimalIcons name. */
+        private val DRAWER_CATEGORY_ICONS_KEY = stringPreferencesKey("drawer_category_icons")
         private val DRAWER_APP_SORT_MODE_KEY = stringPreferencesKey("drawer_app_sort_mode")
         private val DRAWER_APP_OPEN_COUNTS_KEY = stringPreferencesKey("drawer_app_open_counts")
         private val HAS_COMPLETED_ONBOARDING_KEY = booleanPreferencesKey("has_completed_onboarding")
@@ -199,18 +208,67 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         }
     }
 
-    val autoOpenDrawerKeyboardFlow: Flow<Boolean> =
-            context.fokusLauncherPreferencesDataStore.data.map { prefs -> prefs[AUTO_OPEN_DRAWER_KEYBOARD_KEY] ?: true }
+    val drawerSidebarCategoriesFlow: Flow<Boolean> =
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
+                prefs[DRAWER_SIDEBAR_CATEGORIES_KEY] ?: false
+            }
 
-    suspend fun setAutoOpenDrawerKeyboard(enabled: Boolean) {
-        context.fokusLauncherPreferencesDataStore.edit { prefs -> prefs[AUTO_OPEN_DRAWER_KEYBOARD_KEY] = enabled }
+    suspend fun setDrawerSidebarCategories(enabled: Boolean) {
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            prefs[DRAWER_SIDEBAR_CATEGORIES_KEY] = enabled
+        }
     }
 
-    val hideAllAppsSectionFlow: Flow<Boolean> =
-            context.fokusLauncherPreferencesDataStore.data.map { prefs -> prefs[HIDE_ALL_APPS_SECTION_KEY] ?: false }
+    val drawerCategorySidebarOnLeftFlow: Flow<Boolean> =
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
+                prefs[DRAWER_CATEGORY_SIDEBAR_ON_LEFT_KEY] ?: false
+            }
 
-    suspend fun setHideAllAppsSection(hide: Boolean) {
-        context.fokusLauncherPreferencesDataStore.edit { prefs -> prefs[HIDE_ALL_APPS_SECTION_KEY] = hide }
+    suspend fun setDrawerCategorySidebarOnLeft(onLeft: Boolean) {
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            prefs[DRAWER_CATEGORY_SIDEBAR_ON_LEFT_KEY] = onLeft
+        }
+    }
+
+    val drawerCategoryIconsFlow: Flow<Map<String, String>> =
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
+                parseDrawerCategoryIcons(prefs[DRAWER_CATEGORY_ICONS_KEY] ?: "")
+            }
+
+    suspend fun setDrawerCategoryIcon(rawCategory: String, iconName: String) {
+        val key = SystemCategoryKeys.normalize(context, rawCategory)
+        if (key.isBlank()) return
+        val icon = iconName.trim()
+        if (icon.isEmpty()) return
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            val current = parseDrawerCategoryIcons(prefs[DRAWER_CATEGORY_ICONS_KEY] ?: "").toMutableMap()
+            current[key] = icon
+            prefs[DRAWER_CATEGORY_ICONS_KEY] = serializeDrawerCategoryIcons(current)
+        }
+    }
+
+    suspend fun clearDrawerCategoryIcon(rawCategory: String) {
+        val key = SystemCategoryKeys.normalize(context, rawCategory)
+        if (key.isBlank()) return
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            val current = parseDrawerCategoryIcons(prefs[DRAWER_CATEGORY_ICONS_KEY] ?: "").toMutableMap()
+            current.remove(key)
+            if (current.isEmpty()) prefs.remove(DRAWER_CATEGORY_ICONS_KEY)
+            else prefs[DRAWER_CATEGORY_ICONS_KEY] = serializeDrawerCategoryIcons(current)
+        }
+    }
+
+    suspend fun renameDrawerCategoryIcon(oldName: String, newName: String) {
+        val oldKey = SystemCategoryKeys.normalize(context, oldName)
+        val newKey = SystemCategoryKeys.normalize(context, newName)
+        if (oldKey.isBlank() || newKey.isBlank() || oldKey == newKey) return
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            val current = parseDrawerCategoryIcons(prefs[DRAWER_CATEGORY_ICONS_KEY] ?: "").toMutableMap()
+            val icon = current.remove(oldKey) ?: return@edit
+            current[newKey] = icon
+            if (current.isEmpty()) prefs.remove(DRAWER_CATEGORY_ICONS_KEY)
+            else prefs[DRAWER_CATEGORY_ICONS_KEY] = serializeDrawerCategoryIcons(current)
+        }
     }
 
     // --- App drawer sort & launch counts (drawer opens only) ---
@@ -447,5 +505,27 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
             val parts = key.split("|")
             "${parts[0]}|${parts[1]}|$count"
         }
+    }
+
+    private fun parseDrawerCategoryIcons(raw: String): Map<String, String> {
+        if (raw.isBlank()) return emptyMap()
+        return runCatching {
+            val o = JSONObject(raw)
+            buildMap {
+                val it = o.keys()
+                while (it.hasNext()) {
+                    val k = it.next()
+                    val v = o.optString(k, "")
+                    if (k.isNotBlank() && v.isNotBlank()) put(k, v)
+                }
+            }
+        }.getOrDefault(emptyMap())
+    }
+
+    private fun serializeDrawerCategoryIcons(map: Map<String, String>): String {
+        if (map.isEmpty()) return ""
+        val o = JSONObject()
+        map.entries.sortedBy { it.key }.forEach { (k, v) -> o.put(k, v) }
+        return o.toString()
     }
 }

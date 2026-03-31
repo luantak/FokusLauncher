@@ -18,6 +18,8 @@ fun categoryChipDisplayLabel(context: Context, category: String): String {
             context.getString(R.string.drawer_filter_private)
         category.equals(ReservedCategoryNames.WORK, ignoreCase = true) ->
             context.getString(R.string.drawer_filter_work)
+        category.equals(ReservedCategoryNames.UNCATEGORIZED, ignoreCase = true) ->
+            context.getString(R.string.drawer_filter_uncategorized)
         else -> SystemCategoryKeys.displayLabel(context, category)
     }
 }

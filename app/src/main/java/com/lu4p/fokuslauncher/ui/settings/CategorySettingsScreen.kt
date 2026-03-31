@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,11 +18,16 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items as lazyGridItems
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DragHandle
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -57,8 +63,10 @@ import com.lu4p.fokuslauncher.ui.drawer.groupAppsIntoProfileSections
 import com.lu4p.fokuslauncher.ui.drawer.profileGroupedAppItems
 import com.lu4p.fokuslauncher.ui.drawer.sortAppsAlphabeticallyByProfileSection
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.lu4p.fokuslauncher.ui.components.MinimalIcons
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
 import com.lu4p.fokuslauncher.ui.util.categoryChipDisplayLabel
+import com.lu4p.fokuslauncher.ui.util.resolvedCategoryDrawerIconName
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,12 +82,14 @@ fun CategorySettingsScreen(
     val canAddCategory =
             normalizedNewCategory.isNotBlank() &&
                     !normalizedNewCategory.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true) &&
+                    !normalizedNewCategory.equals(ReservedCategoryNames.UNCATEGORIZED, ignoreCase = true) &&
                     !normalizedNewCategory.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true) &&
                     !normalizedNewCategory.equals(ReservedCategoryNames.WORK, ignoreCase = true)
     val categories =
             remember(uiState.allApps, uiState.categoryDefinitions) { deriveEditableCategories(uiState) }
     var localCategories by remember(categories) { mutableStateOf(categories) }
     val appCounts = remember(uiState.allApps) { buildCategoryCounts(uiState) }
+    var categoryIconPickerFor by remember { mutableStateOf<String?>(null) }
 
     Column(
             modifier = Modifier
@@ -125,6 +135,9 @@ fun CategorySettingsScreen(
         ReorderableCategoryList(
                 categories = localCategories,
                 counts = appCounts,
+                showDrawerCategoryIcons = uiState.drawerSidebarCategories,
+                categoryDrawerIconOverrides = uiState.categoryDrawerIconOverrides,
+                onOpenCategoryIconPicker = { categoryIconPickerFor = it },
                 onReorder = { from, to ->
                     val reordered = localCategories.toMutableList()
                     val item = reordered.removeAt(from)
@@ -136,12 +149,32 @@ fun CategorySettingsScreen(
                 onDelete = { viewModel.deleteCategory(it) }
         )
     }
+
+    val pickerCategory = categoryIconPickerFor
+    if (pickerCategory != null) {
+        CategoryDrawerIconPickerDialog(
+                category = pickerCategory,
+                iconOverrides = uiState.categoryDrawerIconOverrides,
+                onSelect = { name ->
+                    viewModel.setCategoryDrawerIcon(pickerCategory, name)
+                    categoryIconPickerFor = null
+                },
+                onReset = {
+                    viewModel.clearCategoryDrawerIcon(pickerCategory)
+                    categoryIconPickerFor = null
+                },
+                onDismiss = { categoryIconPickerFor = null }
+        )
+    }
 }
 
 @Composable
 private fun ReorderableCategoryList(
         categories: List<String>,
         counts: Map<String, Int>,
+        showDrawerCategoryIcons: Boolean,
+        categoryDrawerIconOverrides: Map<String, String>,
+        onOpenCategoryIconPicker: (String) -> Unit,
         onReorder: (Int, Int) -> Unit,
         onReorderFinished: (List<String>) -> Unit,
         onEditCategoryApps: (String) -> Unit,
@@ -215,6 +248,25 @@ private fun ReorderableCategoryList(
                                         }
                 )
                 Spacer(modifier = Modifier.width(8.dp))
+                if (showDrawerCategoryIcons) {
+                    val railIconName =
+                            resolvedCategoryDrawerIconName(
+                                    context,
+                                    category,
+                                    categoryDrawerIconOverrides
+                            )
+                    IconButton(
+                            onClick = { onOpenCategoryIconPicker(category) },
+                            modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                                imageVector = MinimalIcons.iconFor(railIconName),
+                                contentDescription = stringResource(R.string.category_icon_picker_title),
+                                tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(4.dp))
+                }
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                             text = categoryChipDisplayLabel(context, category),
@@ -250,9 +302,14 @@ fun CategoryAppsScreen(
         onNavigateBack: () -> Unit,
         backgroundScrim: Color = FokusBackdrop.ScrimColorWithoutBlur
 ) {
+    val isUncategorizedBucket =
+            category.equals(ReservedCategoryNames.UNCATEGORIZED, ignoreCase = true)
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var searchQuery by remember { mutableStateOf("") }
+    LaunchedEffect(isUncategorizedBucket) {
+        if (isUncategorizedBucket) onNavigateBack()
+    }
     val checkedPackages = remember(uiState.allApps, category) {
         uiState.allApps
                 .filter { app -> app.category.equals(category, ignoreCase = true) }
@@ -286,11 +343,16 @@ fun CategoryAppsScreen(
 
     BackHandler { onNavigateBack() }
 
-    Column(
-            modifier = Modifier
-                    .fillMaxSize()
-                    .background(backgroundScrim)
-    ) {
+    if (isUncategorizedBucket) {
+        Box(
+                modifier = Modifier.fillMaxSize().background(backgroundScrim)
+        )
+    } else {
+        Column(
+                modifier = Modifier
+                        .fillMaxSize()
+                        .background(backgroundScrim)
+        ) {
         TopAppBar(
                 title = {
                     Text(
@@ -372,7 +434,67 @@ fun CategoryAppsScreen(
                 )
             }
         }
+        }
     }
+}
+
+@Composable
+private fun CategoryDrawerIconPickerDialog(
+        category: String,
+        iconOverrides: Map<String, String>,
+        onSelect: (String) -> Unit,
+        onReset: () -> Unit,
+        onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+    val resolved = resolvedCategoryDrawerIconName(context, category, iconOverrides)
+    AlertDialog(
+            onDismissRequest = onDismiss,
+            title = {
+                Text(
+                        stringResource(R.string.category_icon_picker_title),
+                        color = MaterialTheme.colorScheme.onBackground
+                )
+            },
+            text = {
+                Column {
+                    LazyVerticalGrid(
+                            columns = GridCells.Fixed(5),
+                            modifier = Modifier.height(320.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        lazyGridItems(MinimalIcons.names, key = { it }) { name ->
+                            Icon(
+                                    imageVector = MinimalIcons.iconFor(name),
+                                    contentDescription = name,
+                                    tint =
+                                            if (name == resolved) {
+                                                MaterialTheme.colorScheme.primary
+                                            } else {
+                                                MaterialTheme.colorScheme.onSurface
+                                            },
+                                    modifier =
+                                            Modifier.size(40.dp).clickable { onSelect(name) }
+                            )
+                        }
+                    }
+                    TextButton(onClick = onReset, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.category_action_reset_icon))
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = onDismiss) {
+                    Text(
+                            stringResource(R.string.action_cancel),
+                            color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+    )
 }
 
 @Composable

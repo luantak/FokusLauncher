@@ -6,6 +6,7 @@
     <string name="drawer_filter_all_apps">All apps</string>
     <string name="drawer_filter_private">Private</string>
     <string name="drawer_filter_work">Work</string>
+    <string name="drawer_filter_uncategorized">Uncategorized</string>
     <string name="drawer_menu_launcher_settings">Launcher settings</string>
     <string name="drawer_private_space_lock">Lock Private Space</string>
     <string name="drawer_private_space_unlock">Unlock Private Space</string>
@@ -64,6 +65,8 @@
     <string name="category_action_rename">Rename</string>
     <string name="category_action_edit_apps">Edit apps in category</string>
     <string name="category_action_remove">Remove category</string>
+    <string name="category_icon_picker_title">Category icon</string>
+    <string name="category_action_reset_icon">Reset to default icon</string>
     <string name="category_apps_screen_section_in_category">Apps in category</string>
     <string name="category_no_category">No category</string>
     <string name="category_settings_title">App categories</string>
@@ -144,10 +147,12 @@
     <string name="settings_section_app_categories">App categories</string>
     <string name="settings_edit_app_categories">Edit app categories</string>
     <string name="settings_section_app_drawer">App drawer</string>
-    <string name="settings_auto_open_keyboard">Auto-open keyboard in drawer</string>
-    <string name="settings_auto_open_keyboard_subtitle">Focus the search field and show the keyboard when the drawer opens</string>
-    <string name="settings_hide_all_apps_section">Hide All Apps section</string>
-    <string name="settings_hide_all_apps_section_subtitle">Keep the drawer focused on your categories and search results</string>
+    <string name="settings_drawer_sidebar_categories">Show category sidebar</string>
+    <string name="settings_drawer_sidebar_categories_subtitle">Replaces the search bar with a vertical category sidebar. Use the search icon to find apps.</string>
+    <string name="settings_drawer_category_rail_side">Category sidebar position</string>
+    <string name="settings_drawer_category_rail_side_subtitle">By default, the sidebar is on the right. Long-press a category in the drawer to change its icon.</string>
+    <string name="settings_drawer_rail_position_left">Left</string>
+    <string name="settings_drawer_rail_position_right">Right</string>
     <string name="settings_drawer_app_sort">App order</string>
     <string name="settings_drawer_app_sort_subtitle">Most opened counts launches from this launcher\'s app drawer. With no opens recorded, the list stays alphabetical.</string>
     <string name="settings_drawer_app_sort_alphabetical">A–Z</string>

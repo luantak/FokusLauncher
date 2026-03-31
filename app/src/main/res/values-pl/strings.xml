@@ -6,6 +6,7 @@
     <string name="drawer_filter_all_apps">Wszystkie aplikacje</string>
     <string name="drawer_filter_private">Prywatne</string>
     <string name="drawer_filter_work">Służbowe</string>
+    <string name="drawer_filter_uncategorized">Bez kategorii</string>
     <string name="drawer_menu_launcher_settings">Ustawienia launchera</string>
     <string name="drawer_private_space_lock">Zablokuj prywatną przestrzeń</string>
     <string name="drawer_private_space_unlock">Odblokuj prywatną przestrzeń</string>
@@ -64,6 +65,8 @@
     <string name="category_action_rename">Zmień nazwę</string>
     <string name="category_action_edit_apps">Edytuj aplikacje w kategorii</string>
     <string name="category_action_remove">Usuń kategorię</string>
+    <string name="category_icon_picker_title">Ikona kategorii</string>
+    <string name="category_action_reset_icon">Przywróć domyślną ikonę</string>
     <string name="category_apps_screen_section_in_category">Aplikacje w kategorii</string>
     <string name="category_no_category">Brak kategorii</string>
     <string name="category_settings_title">Kategorie aplikacji</string>
@@ -143,10 +146,12 @@
     <string name="settings_section_app_categories">Kategorie aplikacji</string>
     <string name="settings_edit_app_categories">Edytuj kategorie aplikacji</string>
     <string name="settings_section_app_drawer">Szuflada aplikacji</string>
-    <string name="settings_auto_open_keyboard">Automatycznie otwieraj klawiaturę w szufladzie</string>
-    <string name="settings_auto_open_keyboard_subtitle">Włącz wyszukiwarkę i pokaż klawiaturę po otwarciu szuflady</string>
-    <string name="settings_hide_all_apps_section">Ukryj sekcję Wszystkie aplikacje</string>
-    <string name="settings_hide_all_apps_section_subtitle">Skup szufladę na twoich kategoriach i wynikach wyszukiwania</string>
+    <string name="settings_drawer_sidebar_categories">Pasek kategorii w szufladzie</string>
+    <string name="settings_drawer_sidebar_categories_subtitle">Pionowy pasek kategorii: bez paska wyszukiwania; szukaj ikoną lupy</string>
+    <string name="settings_drawer_category_rail_side">Strona paska kategorii</string>
+    <string name="settings_drawer_category_rail_side_subtitle">Domyślnie po prawej. Przytrzymaj kategorię w szufladzie, aby zmienić ikonę.</string>
+    <string name="settings_drawer_rail_position_left">Lewa</string>
+    <string name="settings_drawer_rail_position_right">Prawa</string>
     <string name="settings_drawer_app_sort">Kolejność aplikacji</string>
     <string name="settings_drawer_app_sort_subtitle">Najczęściej otwierane liczy uruchomienia aplikacji z szuflady launchera. Bez naliczonych otwarć lista pozostaje alfabetyczna.</string>
     <string name="settings_drawer_app_sort_alphabetical">A–Z</string>

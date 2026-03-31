@@ -3,6 +3,7 @@ package com.lu4p.fokuslauncher.ui.drawer
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -30,14 +31,12 @@ class AppDrawerScreenTest {
 
     private fun singleProfileState(
         apps: List<AppInfo>,
-        searchQuery: String = "",
-        autoOpenKeyboard: Boolean = true
+        searchQuery: String = ""
     ) = AppDrawerUiState(
         allApps = apps,
         filteredProfileSections =
             listOf(DrawerProfileSectionUi(id = "owner", title = "Personal", apps = apps)),
         searchQuery = searchQuery,
-        autoOpenKeyboard = autoOpenKeyboard,
         categories = listOf("All apps", "Productivity", "Social")
     )
 
@@ -78,25 +77,7 @@ class AppDrawerScreenTest {
     }
 
     @Test
-    fun appDrawer_keepsSearchBarVisibleWhenAutoOpenDisabled() {
-        composeTestRule.setContent {
-            FokusLauncherTheme {
-                AppDrawerContent(
-                    uiState =
-                        singleProfileState(testApps, autoOpenKeyboard = false),
-                    onSearchQueryChanged = {},
-                    onCategorySelected = {},
-                    onAppClick = {},
-                    onSettingsClick = {}
-                )
-            }
-        }
-
-        composeTestRule.onNodeWithTag("search_bar").assertIsDisplayed()
-    }
-
-    @Test
-    fun appDrawer_displaysCategoryChips() {
+    fun appDrawer_displaysCategoryChips_byDefault() {
         composeTestRule.setContent {
             FokusLauncherTheme {
                 AppDrawerContent(
@@ -109,8 +90,30 @@ class AppDrawerScreenTest {
             }
         }
 
+        composeTestRule.onNodeWithTag("category_chips").assertIsDisplayed()
         composeTestRule.onNodeWithText("All apps").assertIsDisplayed()
         composeTestRule.onNodeWithText("Productivity").assertIsDisplayed()
+    }
+
+    @Test
+    fun appDrawer_displaysCategorySidebar_whenOptionEnabled() {
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                AppDrawerContent(
+                    uiState = singleProfileState(testApps),
+                    onSearchQueryChanged = {},
+                    onCategorySelected = {},
+                    onAppClick = {},
+                    onSettingsClick = {},
+                    useSidebarCategoryDrawer = true
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("category_rail").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("All apps").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("Productivity").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("drawer_search_icon").assertIsDisplayed()
     }
 
     @Test
@@ -186,6 +189,27 @@ class AppDrawerScreenTest {
         }
 
         composeTestRule.onNodeWithText("Social").performClick()
+        assertEquals("Social", selectedCategory)
+    }
+
+    @Test
+    fun appDrawer_sidebarCategory_tap_triggersCallback() {
+        var selectedCategory = ""
+
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                AppDrawerContent(
+                    uiState = singleProfileState(testApps),
+                    onSearchQueryChanged = {},
+                    onCategorySelected = { selectedCategory = it },
+                    onAppClick = {},
+                    onSettingsClick = {},
+                    useSidebarCategoryDrawer = true
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription("Social").performClick()
         assertEquals("Social", selectedCategory)
     }
 

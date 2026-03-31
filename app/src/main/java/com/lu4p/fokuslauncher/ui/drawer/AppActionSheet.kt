@@ -118,7 +118,7 @@ fun AppActionSheet(
             }
 
             if (!isOnHomeScreen) {
-                ActionRow(
+                DrawerSheetActionRow(
                     icon = Icons.Default.Home,
                     label = stringResource(R.string.action_add_to_home),
                     testTag = "action_add_to_home",
@@ -129,7 +129,7 @@ fun AppActionSheet(
                 )
             }
 
-            ActionRow(
+            DrawerSheetActionRow(
                 icon = Icons.Default.Info,
                 label = stringResource(R.string.action_app_info),
                 testTag = "action_app_info",
@@ -143,7 +143,7 @@ fun AppActionSheet(
                 }
             )
 
-            ActionRow(
+            DrawerSheetActionRow(
                 icon = Icons.Default.VisibilityOff,
                 label = stringResource(R.string.action_hide),
                 testTag = "action_hide",
@@ -153,7 +153,7 @@ fun AppActionSheet(
                 }
             )
 
-            ActionRow(
+            DrawerSheetActionRow(
                 icon = Icons.Default.Delete,
                 label = stringResource(R.string.action_uninstall),
                 testTag = "action_uninstall",
@@ -171,12 +171,16 @@ fun AppActionSheet(
 }
 
 @Composable
-private fun ActionRow(
+internal fun DrawerSheetActionRow(
     icon: ImageVector,
     label: String,
     testTag: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    destructive: Boolean = false
 ) {
+    val tint =
+        if (destructive) MaterialTheme.colorScheme.error
+        else MaterialTheme.colorScheme.onBackground
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -188,13 +192,13 @@ private fun ActionRow(
         Icon(
             imageVector = icon,
             contentDescription = label,
-            tint = MaterialTheme.colorScheme.onBackground
+            tint = tint
         )
         Spacer(modifier = Modifier.width(16.dp))
         Text(
             text = label,
             style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onBackground
+            color = tint
         )
     }
 }
