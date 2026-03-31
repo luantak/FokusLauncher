@@ -1,0 +1,2 @@
+Add an optional category sidebar in the app drawer.
+Fix “return home after long lock” being cancelled incorrectly when the lock state changes.
