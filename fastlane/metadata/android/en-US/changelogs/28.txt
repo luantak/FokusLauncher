@@ -1,0 +1,1 @@
+Auto close the keyboard when you scroll down in the app drawer.
