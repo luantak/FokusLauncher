@@ -15,6 +15,7 @@ import com.lu4p.fokuslauncher.data.database.entity.AppCategoryDefinitionEntity
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryEntity
 import com.lu4p.fokuslauncher.data.database.entity.HiddenAppEntity
 import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
+import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.SystemCategoryKeys
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
 import io.mockk.coEvery
@@ -621,5 +622,40 @@ class AppRepositoryTest {
                     }
             nonLocalizedLabel = label
         }
+    }
+
+    @Test
+    fun `appSupportsWebSearch true when package resolves WEB_SEARCH`() {
+        val app = AppInfo("com.browser", "Browser", null)
+        every {
+            packageManager.queryIntentActivities(any(), PackageManager.MATCH_DEFAULT_ONLY)
+        } returns listOf(createResolveInfo("com.browser", "Browser"))
+        assertTrue(repository.appSupportsWebSearch(app))
+    }
+
+    @Test
+    fun `appSupportsWebSearch false when query returns empty`() {
+        val app = AppInfo("com.nope", "Nope", null)
+        every {
+            packageManager.queryIntentActivities(any(), PackageManager.MATCH_DEFAULT_ONLY)
+        } returns emptyList()
+        assertFalse(repository.appSupportsWebSearch(app))
+    }
+
+    @Test
+    fun `appSupportsWebSearch true when only ACTION_SEARCH resolves`() {
+        val app = AppInfo("com.searchapp", "SearchApp", null)
+        every {
+            packageManager.queryIntentActivities(any(), PackageManager.MATCH_DEFAULT_ONLY)
+        } answers {
+            val intent = invocation.args[0] as Intent
+            when (intent.action) {
+                Intent.ACTION_WEB_SEARCH -> emptyList()
+                Intent.ACTION_SEARCH ->
+                        listOf(createResolveInfo("com.searchapp", "SearchApp"))
+                else -> emptyList()
+            }
+        }
+        assertTrue(repository.appSupportsWebSearch(app))
     }
 }

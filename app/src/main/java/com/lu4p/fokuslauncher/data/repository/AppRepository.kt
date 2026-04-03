@@ -1,13 +1,17 @@
 package com.lu4p.fokuslauncher.data.repository
 
+import android.app.SearchManager
 import android.content.ComponentName
 import android.content.Context
 import android.graphics.drawable.Drawable
 import android.content.Intent
 import android.content.IntentFilter
+import android.net.Uri
 import android.content.pm.ApplicationInfo
 import android.content.pm.LauncherApps
+import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
+import android.os.Build
 import android.os.Bundle
 import android.os.Process
 import android.os.UserHandle
@@ -308,6 +312,163 @@ constructor(
         } else {
             false
         }
+    }
+
+    /**
+     * Launches a web-style search in the given app or via the system resolver. [target] null uses
+     * [Intent.ACTION_WEB_SEARCH] without [Intent.setPackage]. [ShortcutTarget.DeepLink] URIs may
+     * include `%q` for the URL-encoded search text (legacy saved templates may still use `%s` or
+     * `{query}`; those are expanded the same way).
+     */
+    fun launchDotSearch(
+            profileKey: String,
+            target: ShortcutTarget?,
+            query: String,
+    ): Boolean {
+        val launchContext = dotSearchLaunchContext(profileKey, target)
+        val flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        when (target) {
+            null -> {
+                val intent =
+                        Intent(Intent.ACTION_WEB_SEARCH).apply {
+                            putExtra(SearchManager.QUERY, query)
+                            addFlags(flags)
+                        }
+                return startDotSearchActivity(launchContext, intent)
+            }
+            is ShortcutTarget.App -> {
+                val pkg = target.packageName
+                val webSearch =
+                        Intent(Intent.ACTION_WEB_SEARCH).apply {
+                            setPackage(pkg)
+                            putExtra(SearchManager.QUERY, query)
+                            addFlags(flags)
+                        }
+                if (startDotSearchActivity(launchContext, webSearch)) return true
+                val inAppSearch =
+                        Intent(Intent.ACTION_SEARCH).apply {
+                            setPackage(pkg)
+                            putExtra(SearchManager.QUERY, query)
+                            putExtra("query", query)
+                            addFlags(flags)
+                        }
+                return startDotSearchActivity(launchContext, inAppSearch)
+            }
+            is ShortcutTarget.DeepLink -> {
+                val expanded = expandDotSearchDeepLink(target.intentUri, query)
+                val intent =
+                        try {
+                            Intent.parseUri(expanded, Intent.URI_INTENT_SCHEME).apply {
+                                addFlags(flags)
+                            }
+                        } catch (_: Exception) {
+                            Intent(Intent.ACTION_VIEW, Uri.parse(expanded)).apply { addFlags(flags) }
+                        }
+                if (!intentUriContainsQueryPlaceholder(target.intentUri)) {
+                    intent.putExtra(SearchManager.QUERY, query)
+                    intent.putExtra("query", query)
+                }
+                return startDotSearchActivity(launchContext, intent)
+            }
+            is ShortcutTarget.LauncherShortcut -> return false
+        }
+    }
+
+    private fun intentUriContainsQueryPlaceholder(uri: String): Boolean =
+            uri.contains("%q") || uri.contains("%s") || uri.contains("{query}")
+
+    private fun expandDotSearchDeepLink(intentUri: String, query: String): String {
+        val encoded = Uri.encode(query)
+        return intentUri
+                .replace("{query}", encoded)
+                .replace("%s", encoded)
+                .replace("%q", encoded)
+    }
+
+    private fun resolveDotSearchUserHandle(
+            profileKey: String,
+            target: ShortcutTarget?,
+    ): UserHandle {
+        if (profileKey == "0") return Process.myUserHandle()
+        val pkg =
+                when (target) {
+                    is ShortcutTarget.App -> target.packageName
+                    is ShortcutTarget.LauncherShortcut -> target.packageName
+                    is ShortcutTarget.DeepLink -> null
+                    null -> null
+                } ?: return Process.myUserHandle()
+        val app =
+                getInstalledApps().firstOrNull {
+                    it.packageName == pkg && appProfileKey(it.userHandle) == profileKey
+                }
+        return app?.userHandle ?: Process.myUserHandle()
+    }
+
+    private fun dotSearchLaunchContext(profileKey: String, target: ShortcutTarget?): Context {
+        val user = resolveDotSearchUserHandle(profileKey, target)
+        if (user == Process.myUserHandle()) return context
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return context
+        return runCatching {
+            val m =
+                    Context::class.java.getMethod(
+                            "createContextAsUser",
+                            UserHandle::class.java,
+                            Int::class.javaPrimitiveType
+                    )
+            m.invoke(context, user, 0) as Context
+        }.getOrDefault(context)
+    }
+
+    private fun startDotSearchActivity(ctx: Context, intent: Intent): Boolean {
+        return try {
+            ctx.startActivity(intent)
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    /**
+     * True if [app] exposes an activity that handles [Intent.ACTION_WEB_SEARCH] or
+     * [Intent.ACTION_SEARCH] for its package (same convention as [launchDotSearch] for app targets).
+     */
+    fun appSupportsWebSearch(app: AppInfo): Boolean {
+        val pm = contextForAppUser(app).packageManager
+        val pkg = app.packageName
+        return packageResolvesSearchAction(pm, pkg, Intent.ACTION_WEB_SEARCH) ||
+                packageResolvesSearchAction(pm, pkg, Intent.ACTION_SEARCH)
+    }
+
+    private fun packageResolvesSearchAction(
+            pm: PackageManager,
+            packageName: String,
+            action: String
+    ): Boolean {
+        val probe =
+                Intent(action).apply {
+                    setPackage(packageName)
+                    putExtra(SearchManager.QUERY, ".")
+                }
+        return pm.queryIntentActivities(probe, PackageManager.MATCH_DEFAULT_ONLY).isNotEmpty()
+    }
+
+    fun filterAppsForDotSearchAppPicker(apps: List<AppInfo>): List<AppInfo> =
+            apps.filter { appSupportsWebSearch(it) }
+
+    private fun contextForAppUser(app: AppInfo): Context {
+        val uh = app.userHandle
+                ?: return context
+        if (uh == Process.myUserHandle()) return context
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return context
+        return runCatching {
+            val m =
+                    Context::class.java.getMethod(
+                            "createContextAsUser",
+                            UserHandle::class.java,
+                            Int::class.javaPrimitiveType
+                    )
+            m.invoke(context, uh, 0) as Context
+        }.getOrDefault(context)
     }
 
     /**

@@ -107,6 +107,7 @@ fun SettingsScreen(
         onEditRightShortcuts: () -> Unit = {},
         onOpenDeviceControlSettings: () -> Unit = {},
         onEditCategories: () -> Unit = {},
+        onDrawerDotSearchSettings: () -> Unit = {},
         backgroundScrim: Color = FokusBackdrop.ScrimColorWithoutBlur
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -472,6 +473,29 @@ fun SettingsScreen(
                         currentMode = uiState.drawerAppSortMode,
                         onModeChanged = { viewModel.setDrawerAppSortMode(it) }
                 )
+            }
+
+            item {
+                Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier =
+                                Modifier.fillMaxWidth()
+                                        .clickable(onClick = onDrawerDotSearchSettings)
+                                        .padding(horizontal = 24.dp, vertical = 14.dp)
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                                text = stringResource(R.string.settings_dot_search_title),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Text(
+                                text = stringResource(R.string.settings_dot_search_subtitle),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.secondary
+                        )
+                    }
+                }
             }
 
             item { SettingsDivider() }

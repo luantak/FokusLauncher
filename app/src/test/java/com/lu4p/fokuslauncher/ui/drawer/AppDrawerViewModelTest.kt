@@ -9,8 +9,10 @@ import com.lu4p.fokuslauncher.data.database.entity.AppCategoryEntity
 import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.AppInfo
+import com.lu4p.fokuslauncher.data.model.DotSearchTargetPreference
 import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
+import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.data.repository.RemovedApp
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
@@ -53,6 +55,9 @@ class AppDrawerViewModelTest {
     private val favoritesFlow = MutableStateFlow<List<FavoriteApp>>(emptyList())
     private val drawerAppSortModeFlow = MutableStateFlow(DrawerAppSortMode.ALPHABETICAL)
     private val drawerAppOpenCountsFlow = MutableStateFlow<Map<String, Int>>(emptyMap())
+    private val drawerDotSearchDefaultFlow = MutableStateFlow(DotSearchTargetPreference())
+    private val drawerDotSearchAliasesFlow =
+            MutableStateFlow<Map<Char, DotSearchTargetPreference>>(emptyMap())
     private val privateProfileChanges = MutableSharedFlow<Unit>()
     private val removedPackages = MutableSharedFlow<RemovedApp>(extraBufferCapacity = 1)
     private val installedAppsVersion = MutableStateFlow(0L)
@@ -101,6 +106,9 @@ class AppDrawerViewModelTest {
         every { preferencesManager.favoritesFlow } returns favoritesFlow
         every { preferencesManager.drawerAppSortModeFlow } returns drawerAppSortModeFlow
         every { preferencesManager.drawerAppOpenCountsFlow } returns drawerAppOpenCountsFlow
+        every { preferencesManager.drawerDotSearchDefaultFlow } returns drawerDotSearchDefaultFlow
+        every { preferencesManager.drawerDotSearchAliasesFlow } returns drawerDotSearchAliasesFlow
+        every { appRepository.launchDotSearch(any(), any(), any()) } returns true
         every { privateSpaceManager.isSupported } returns false
         every { privateSpaceManager.isPrivateSpaceUnlocked() } returns false
         every { privateSpaceManager.launchApp(any(), any()) } returns true
@@ -403,6 +411,42 @@ class AppDrawerViewModelTest {
         every { appRepository.launchApp(any()) } returns false
         assertFalse(viewModel.tryLaunchFirstSearchResult())
         every { appRepository.launchApp(any()) } returns true
+    }
+
+    @Test
+    fun `dot prefixed query does not auto launch app`() {
+        viewModel.onSearchQueryChanged(". Gmail")
+        verify(exactly = 0) { appRepository.launchApp(any()) }
+        assertEquals(". Gmail", viewModel.uiState.value.searchQuery)
+    }
+
+    @Test
+    fun `dot search typing shows unfiltered app list`() {
+        viewModel.onSearchQueryChanged(". zz")
+        assertEquals(testApps.size, flatFiltered(viewModel.uiState.value).size)
+    }
+
+    @Test
+    fun `tryLaunchFirstSearchResult runs default dot search`() {
+        viewModel.onSearchQueryChanged(".  cats  ")
+        assertTrue(viewModel.tryLaunchFirstSearchResult())
+        verify { appRepository.launchDotSearch("0", null, "cats") }
+        assertEquals("", viewModel.uiState.value.searchQuery)
+    }
+
+    @Test
+    fun `tryLaunchFirstSearchResult runs configured alias dot search`() {
+        drawerDotSearchAliasesFlow.value =
+                mapOf('a' to DotSearchTargetPreference(target = ShortcutTarget.App("com.lu4p.maps")))
+        viewModel.onSearchQueryChanged(".a somewhere")
+        assertTrue(viewModel.tryLaunchFirstSearchResult())
+        verify { appRepository.launchDotSearch("0", ShortcutTarget.App("com.lu4p.maps"), "somewhere") }
+    }
+
+    @Test
+    fun `tryLaunchFirstSearchResult returns false for unconfigured alias`() {
+        viewModel.onSearchQueryChanged(".z foo")
+        assertFalse(viewModel.tryLaunchFirstSearchResult())
     }
 
     // --- Long-press / action sheet tests ---

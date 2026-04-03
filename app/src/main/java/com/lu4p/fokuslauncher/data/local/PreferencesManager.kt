@@ -13,6 +13,7 @@ import com.lu4p.fokuslauncher.data.model.drawerOpenCountKey
 import com.lu4p.fokuslauncher.data.model.LauncherFontPreferences
 import com.lu4p.fokuslauncher.data.model.SystemCategoryKeys
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
+import com.lu4p.fokuslauncher.data.model.DotSearchTargetPreference
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -49,6 +50,10 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         private val DRAWER_CATEGORY_ICONS_KEY = stringPreferencesKey("drawer_category_icons")
         private val DRAWER_APP_SORT_MODE_KEY = stringPreferencesKey("drawer_app_sort_mode")
         private val DRAWER_APP_OPEN_COUNTS_KEY = stringPreferencesKey("drawer_app_open_counts")
+        /** JSON: {"profileKey":"0","target":""} — empty/missing target = system default search. */
+        private val DRAWER_DOT_SEARCH_DEFAULT_KEY = stringPreferencesKey("drawer_dot_search_default")
+        /** JSON object: single-character key → {"profileKey":"0","target":"app:…"}. */
+        private val DRAWER_DOT_SEARCH_ALIASES_KEY = stringPreferencesKey("drawer_dot_search_aliases")
         private val HAS_COMPLETED_ONBOARDING_KEY = booleanPreferencesKey("has_completed_onboarding")
         private val ONBOARDING_REACHED_SET_DEFAULT_KEY = booleanPreferencesKey("onboarding_reached_set_default")
         private val HOME_ALIGNMENT_KEY = stringPreferencesKey("home_alignment")
@@ -281,6 +286,64 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
     suspend fun setDrawerAppSortMode(mode: DrawerAppSortMode) {
         context.fokusLauncherPreferencesDataStore.edit { prefs ->
             prefs[DRAWER_APP_SORT_MODE_KEY] = mode.name
+        }
+    }
+
+    // --- Drawer dot-search ---
+
+    val drawerDotSearchDefaultFlow: Flow<DotSearchTargetPreference> =
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
+                parseDrawerDotSearchTargetJson(prefs[DRAWER_DOT_SEARCH_DEFAULT_KEY] ?: "")
+                        ?: DotSearchTargetPreference()
+            }
+
+    val drawerDotSearchAliasesFlow: Flow<Map<Char, DotSearchTargetPreference>> =
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
+                parseDrawerDotSearchAliasesJson(prefs[DRAWER_DOT_SEARCH_ALIASES_KEY] ?: "")
+            }
+
+    suspend fun setDrawerDotSearchDefault(config: DotSearchTargetPreference) {
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            val encoded = serializeDrawerDotSearchTarget(config)
+            if (encoded.isEmpty()) prefs.remove(DRAWER_DOT_SEARCH_DEFAULT_KEY)
+            else prefs[DRAWER_DOT_SEARCH_DEFAULT_KEY] = encoded
+        }
+    }
+
+    suspend fun clearDrawerDotSearchDefault() {
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            prefs.remove(DRAWER_DOT_SEARCH_DEFAULT_KEY)
+        }
+    }
+
+    suspend fun setDrawerDotSearchAlias(
+            alias: Char,
+            config: DotSearchTargetPreference,
+    ) {
+        val key = alias.lowercaseChar()
+        require(key in 'a'..'z') { "Alias must be a lowercase letter" }
+        require(config.target != null) { "Alias target is required" }
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            val current =
+                    parseDrawerDotSearchAliasesJson(
+                                    prefs[DRAWER_DOT_SEARCH_ALIASES_KEY] ?: ""
+                            )
+                            .toMutableMap()
+            current[key] = config
+            prefs[DRAWER_DOT_SEARCH_ALIASES_KEY] = serializeDrawerDotSearchAliases(current)
+        }
+    }
+
+    suspend fun removeDrawerDotSearchAlias(alias: Char) {
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            val current =
+                    parseDrawerDotSearchAliasesJson(
+                                    prefs[DRAWER_DOT_SEARCH_ALIASES_KEY] ?: ""
+                            )
+                            .toMutableMap()
+            current.remove(alias.lowercaseChar())
+            if (current.isEmpty()) prefs.remove(DRAWER_DOT_SEARCH_ALIASES_KEY)
+            else prefs[DRAWER_DOT_SEARCH_ALIASES_KEY] = serializeDrawerDotSearchAliases(current)
         }
     }
 
@@ -526,6 +589,59 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         if (map.isEmpty()) return ""
         val o = JSONObject()
         map.entries.sortedBy { it.key }.forEach { (k, v) -> o.put(k, v) }
+        return o.toString()
+    }
+
+    private fun parseDrawerDotSearchTargetJson(raw: String): DotSearchTargetPreference? {
+        if (raw.isBlank()) return null
+        return runCatching {
+            val o = JSONObject(raw)
+            val profileKey = o.optString("profileKey", "0").ifBlank { "0" }
+            val targetRaw = o.optString("target", "")
+            val target =
+                    if (targetRaw.isBlank()) null else ShortcutTarget.decode(targetRaw) ?: return null
+            DotSearchTargetPreference(profileKey = profileKey, target = target)
+        }.getOrNull()
+    }
+
+    private fun serializeDrawerDotSearchTarget(config: DotSearchTargetPreference): String {
+        if (config.target == null && config.profileKey == "0") return ""
+        val o = JSONObject()
+        o.put("profileKey", config.profileKey.ifBlank { "0" })
+        o.put("target", if (config.target == null) "" else ShortcutTarget.encode(config.target))
+        return o.toString()
+    }
+
+    private fun parseDrawerDotSearchAliasesJson(raw: String): Map<Char, DotSearchTargetPreference> {
+        if (raw.isBlank()) return emptyMap()
+        return runCatching {
+            val root = JSONObject(raw)
+            buildMap {
+                val keys = root.keys()
+                while (keys.hasNext()) {
+                    val k = keys.next()
+                    if (k.length != 1) continue
+                    val keyChar = k.single().lowercaseChar()
+                    if (keyChar !in 'a'..'z') continue
+                    val inner = root.optJSONObject(k) ?: continue
+                    val profileKey = inner.optString("profileKey", "0").ifBlank { "0" }
+                    val targetRaw = inner.optString("target", "")
+                    val target = ShortcutTarget.decode(targetRaw) ?: continue
+                    put(keyChar, DotSearchTargetPreference(profileKey, target))
+                }
+            }
+        }.getOrDefault(emptyMap())
+    }
+
+    private fun serializeDrawerDotSearchAliases(map: Map<Char, DotSearchTargetPreference>): String {
+        if (map.isEmpty()) return ""
+        val o = JSONObject()
+        map.entries.sortedBy { it.key }.forEach { (ch, pref) ->
+            val inner = JSONObject()
+            inner.put("profileKey", pref.profileKey.ifBlank { "0" })
+            inner.put("target", ShortcutTarget.encode(pref.target))
+            o.put(ch.lowercaseChar().toString(), inner)
+        }
         return o.toString()
     }
 }

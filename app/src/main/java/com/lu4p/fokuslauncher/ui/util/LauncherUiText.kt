@@ -39,7 +39,10 @@ fun formatShortcutTargetDisplay(
                     it.packageName == target.packageName &&
                             appProfileKey(it.userHandle) == profileKey
                 }?.label ?: target.packageName
-        is ShortcutTarget.DeepLink -> context.getString(R.string.shortcut_target_deep_link)
+        is ShortcutTarget.DeepLink -> {
+            val uri = target.intentUri.trim()
+            if (uri.isNotEmpty()) uri else context.getString(R.string.shortcut_target_deep_link)
+        }
         is ShortcutTarget.LauncherShortcut -> {
             val appName =
                     allApps.find {

@@ -66,6 +66,7 @@ import com.lu4p.fokuslauncher.ui.settings.CategorySettingsScreen
 import com.lu4p.fokuslauncher.ui.settings.EditHomeAppsScreen
 import com.lu4p.fokuslauncher.ui.settings.EditShortcutsScreen
 import com.lu4p.fokuslauncher.ui.settings.DeviceControlSettingsScreen
+import com.lu4p.fokuslauncher.ui.settings.DrawerDotSearchSettingsScreen
 import com.lu4p.fokuslauncher.ui.settings.SettingsScreen
 import com.lu4p.fokuslauncher.ui.settings.SettingsViewModel
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
@@ -82,6 +83,7 @@ object Routes {
     const val SETTINGS_CATEGORY_APPS = "settings_category_apps"
     const val SETTINGS_EDIT_HOME_APPS = "settings_edit_home_apps"
     const val SETTINGS_EDIT_SHORTCUTS = "settings_edit_shortcuts"
+    const val SETTINGS_DRAWER_DOT_SEARCH = "settings_drawer_dot_search"
 }
 
 private const val SWIPE_THRESHOLD = 200f
@@ -474,7 +476,23 @@ fun FokusNavGraph(
                     onEditCategories = {
                         navController.navigate(Routes.SETTINGS_CATEGORIES) { launchSingleTop = true }
                     },
+                    onDrawerDotSearchSettings = {
+                        navController.navigate(Routes.SETTINGS_DRAWER_DOT_SEARCH) { launchSingleTop = true }
+                    },
                     backgroundScrim = Color.Black
+                )
+            }
+
+            composable(
+                Routes.SETTINGS_DRAWER_DOT_SEARCH,
+                enterTransition = { slideInHorizontally(tween(ANIM_DURATION)) { it } },
+                exitTransition = { slideOutHorizontally(tween(ANIM_DURATION)) { -it } },
+                popEnterTransition = { slideInHorizontally(tween(ANIM_DURATION)) { -it } },
+                popExitTransition = { slideOutHorizontally(tween(ANIM_DURATION)) { it } }
+            ) {
+                DrawerDotSearchSettingsScreen(
+                        onNavigateBack = { navController.popBackStack() },
+                        backgroundScrim = Color.Black
                 )
             }
 

@@ -157,6 +157,29 @@
     <string name="settings_drawer_app_sort_subtitle">Most opened counts launches from this launcher\'s app drawer. With no opens recorded, the list stays alphabetical.</string>
     <string name="settings_drawer_app_sort_alphabetical">A–Z</string>
     <string name="settings_drawer_app_sort_most_opened">Most opened</string>
+    <string name="settings_dot_search_title">Dot search</string>
+    <string name="settings_dot_search_subtitle">Type `. terms` or `.&lt;lowercase letter&gt; terms` in the drawer search bar</string>
+    <string name="settings_dot_search_screen_title">Drawer dot search</string>
+    <string name="settings_dot_search_explanation">In the app drawer, type a dot and a space, then your search words. For a shortcut, use a dot, one lowercase letter, a space, then your search (for example `.a coffee`). The app list only includes apps that expose web search or standard in-app search for their package. For other sites or apps, add an HTTPS URL or deep link template and put %1$s where the search text belongs (for example https://example.com/search?q=%1$s).</string>
+    <string name="settings_dot_search_default_label">Default search app</string>
+    <string name="settings_dot_search_url_template">URL template</string>
+    <string name="settings_dot_search_url_template_dialog_title">Search URL template</string>
+    <string name="settings_dot_search_url_template_help">You can use an HTTPS search link or an app deep link (for example intent://). Put %1$s where the search words should go—the launcher replaces it with what you type after `. search` or `.x search`. Example: https://example.com/search?q=%1$s</string>
+    <string name="settings_dot_search_url_template_error">Include %1$s where the search text goes (example: https://example.com/search?q=%1$s).</string>
+    <string name="settings_dot_search_add_shortcut_title">Add shortcut</string>
+    <string name="settings_dot_search_add_shortcut_app">App (search intent)</string>
+    <string name="settings_dot_search_add_shortcut_url">URL template</string>
+    <string name="settings_dot_search_url_template_for_alias">URL for .%1$s …</string>
+    <string name="settings_dot_search_no_web_search_apps">No installed apps expose web or in-app search intents for their package.</string>
+    <string name="settings_dot_search_default_system">System default (browser)</string>
+    <string name="settings_dot_search_aliases_section">Letter shortcuts</string>
+    <string name="settings_dot_search_add_alias">Add shortcut</string>
+    <string name="settings_dot_search_alias_dialog_title">Shortcut letter</string>
+    <string name="settings_dot_search_invalid_alias">Enter one lowercase letter (a–z).</string>
+    <string name="settings_dot_search_alias_taken">That character is already used.</string>
+    <string name="settings_dot_search_pick_default_app">Choose app for `. search`</string>
+    <string name="settings_dot_search_pick_alias_app">Choose app for this shortcut</string>
+    <string name="cd_remove_alias">Remove shortcut</string>
     <string name="settings_section_hidden_apps">Hidden apps</string>
     <string name="settings_no_hidden_apps">No hidden apps</string>
     <string name="settings_section_renamed_apps">Renamed apps</string>

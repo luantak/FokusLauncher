@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.AppInfo
+import com.lu4p.fokuslauncher.data.model.DotSearchTargetPreference
 import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
 import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
@@ -15,6 +16,8 @@ import com.lu4p.fokuslauncher.data.model.appProfileKey
 import com.lu4p.fokuslauncher.data.model.drawerOpenCountKey
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.ui.components.MinimalIcons
+import com.lu4p.fokuslauncher.utils.DotSearchParsed
+import com.lu4p.fokuslauncher.utils.DotSearchSyntax
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
 import com.lu4p.fokuslauncher.utils.containsNormalizedSearch
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -127,6 +130,9 @@ constructor(
     private var searchQueryApplyJob: Job? = null
     private var searchQueryRequestId: Long = 0
 
+    private var drawerDotSearchDefault: DotSearchTargetPreference = DotSearchTargetPreference()
+    private var drawerDotSearchAliases: Map<Char, DotSearchTargetPreference> = emptyMap()
+
     /**
      * Package/profile pairs removed via [applyImmediatePackageRemoval] before the next successful
      * [rebuildVisibleApps] from [AppRepository.getInstalledApps]. Prevents a slower in-flight rebuild
@@ -151,9 +157,19 @@ constructor(
         observeDrawerSidebarPreference()
         observeDrawerCategoryRailAndIcons()
         observeDrawerSortAndOpenCounts()
+        observeDrawerDotSearchPreferences()
         refreshPrivateSpaceState()
         observePrivateSpaceChanges()
         scheduleDrawerCachePrewarm()
+    }
+
+    private fun observeDrawerDotSearchPreferences() {
+        viewModelScope.launch {
+            preferencesManager.drawerDotSearchDefaultFlow.collect { drawerDotSearchDefault = it }
+        }
+        viewModelScope.launch {
+            preferencesManager.drawerDotSearchAliasesFlow.collect { drawerDotSearchAliases = it }
+        }
     }
 
     /**
@@ -210,7 +226,7 @@ constructor(
                         buildFilteredDrawerContent(
                                 allApps = state.allApps,
                                 privateApps = state.privateSpaceApps,
-                                query = state.searchQuery,
+                                rawSearchQuery = state.searchQuery,
                                 category = selectedCategory
                         )
                 _uiState.update {
@@ -262,7 +278,7 @@ constructor(
                                 buildFilteredDrawerContent(
                                         allApps = state.allApps,
                                         privateApps = reorderedPrivate,
-                                        query = state.searchQuery,
+                                        rawSearchQuery = state.searchQuery,
                                         category = state.selectedCategory
                                 )
                         _uiState.update {
@@ -403,7 +419,7 @@ constructor(
                     buildFilteredDrawerContent(
                             allApps = visible,
                             privateApps = privateAppsFiltered,
-                            query = stateSnapshot.searchQuery,
+                            rawSearchQuery = stateSnapshot.searchQuery,
                             category = selectedCategory
                     )
             _uiState.update { state ->
@@ -456,7 +472,7 @@ constructor(
                     buildFilteredDrawerContent(
                             allApps = visible,
                             privateApps = privateApps,
-                            query = stateSnapshot.searchQuery,
+                            rawSearchQuery = stateSnapshot.searchQuery,
                             category = selectedCategory
                     )
             _uiState.update { state ->
@@ -493,7 +509,7 @@ constructor(
                             buildFilteredDrawerContent(
                                     allApps = snapshot.allApps,
                                     privateApps = snapshot.privateSpaceApps,
-                                    query = query,
+                                    rawSearchQuery = query,
                                     category = snapshot.selectedCategory
                             )
                     _uiState.update { state ->
@@ -509,8 +525,13 @@ constructor(
 
                     // Auto-launch when exactly one app matches across both lists.
                     // A leading space means "browse mode" – show the result but don't launch.
+                    // Dot-prefixed queries are handled via IME / dot-search, not single-app auto-launch.
                     val browseMode = query.startsWith(" ")
-                    if (requestId == searchQueryRequestId && !browseMode && trimmed.isNotBlank()) {
+                    if (requestId == searchQueryRequestId &&
+                                    !browseMode &&
+                                    !trimmed.startsWith(".") &&
+                                    trimmed.isNotBlank()
+                    ) {
                         val mainFlat = filteredContent.filteredProfileSections.flatMap { it.apps }
                         val allMatches =
                                 buildLaunchTargets(
@@ -539,6 +560,26 @@ constructor(
         if (raw.startsWith(" ")) return false
         val trimmed = raw.trimStart()
         if (trimmed.isBlank()) return false
+
+        when (val parsed = DotSearchSyntax.parse(trimmed)) {
+            is DotSearchParsed.Default -> {
+                val pref = drawerDotSearchDefault
+                if (appRepository.launchDotSearch(pref.profileKey, pref.target, parsed.searchText)) {
+                    resetSearchState()
+                    return true
+                }
+                return false
+            }
+            is DotSearchParsed.Alias -> {
+                val pref = drawerDotSearchAliases[parsed.aliasChar] ?: return false
+                if (appRepository.launchDotSearch(pref.profileKey, pref.target, parsed.searchText)) {
+                    resetSearchState()
+                    return true
+                }
+                return false
+            }
+            null -> {}
+        }
 
         val firstMain = state.filteredProfileSections.flatMap { it.apps }.firstOrNull()
         if (firstMain != null) {
@@ -577,7 +618,7 @@ constructor(
                     buildFilteredDrawerContent(
                             allApps = state.allApps,
                             privateApps = state.privateSpaceApps,
-                            query = state.searchQuery,
+                            rawSearchQuery = state.searchQuery,
                             category = category
                     )
             _uiState.update {
@@ -757,7 +798,7 @@ constructor(
                     buildFilteredDrawerContent(
                             allApps = state.allApps,
                             privateApps = apps,
-                            query = state.searchQuery,
+                            rawSearchQuery = state.searchQuery,
                             category = selectedCategory
                     )
             _uiState.update {
@@ -813,7 +854,7 @@ constructor(
                     buildFilteredDrawerContent(
                             allApps = state.allApps,
                             privateApps = state.privateSpaceApps,
-                            query = "",
+                            rawSearchQuery = "",
                             category = defaultCategory
                     )
             _uiState.update {
@@ -1070,22 +1111,24 @@ constructor(
     private suspend fun buildFilteredDrawerContent(
             allApps: List<AppInfo>,
             privateApps: List<AppInfo>,
-            query: String,
+            rawSearchQuery: String,
             category: String
     ): FilteredDrawerContent {
         val sections = buildProfileSectionsSuspend(allApps)
-        val trimmed = query.trimStart()
+        val trimmed = rawSearchQuery.trimStart()
+        val filterQuery =
+                if (DotSearchSyntax.isPossibleDotSearchPrefix(trimmed)) "" else trimmed
         return withContext(drawerComputationDispatcher) {
             FilteredDrawerContent(
                     filteredProfileSections =
                             filterProfileSections(
                                     sections = sections,
-                                    query = trimmed,
+                                    query = filterQuery,
                                     category = category
                             ),
                     filteredPrivateSpaceApps =
                             applyPrivateFilter(
-                                    query = trimmed,
+                                    query = filterQuery,
                                     selectedCategory = category,
                                     privateApps = privateApps
                             )
