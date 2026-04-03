@@ -60,6 +60,7 @@ import com.lu4p.fokuslauncher.ui.drawer.profileOriginLabelForFavorite
 import com.lu4p.fokuslauncher.ui.drawer.sortAppsAlphabeticallyByProfileSection
 import com.lu4p.fokuslauncher.ui.home.HomeViewModel
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
+import com.lu4p.fokuslauncher.utils.containsNormalizedSearch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,7 +81,7 @@ fun EditHomeAppsScreen(
         allApps.filter { drawerOpenCountKey(it.packageName, it.userHandle) !in checkedKeys }
             .let { list ->
                 if (searchQuery.isBlank()) list
-                else list.filter { it.label.contains(searchQuery, ignoreCase = true) }
+                else list.filter { it.label.containsNormalizedSearch(searchQuery) }
             }
     }
     val uncheckedSections = remember(uncheckedApps, context) {

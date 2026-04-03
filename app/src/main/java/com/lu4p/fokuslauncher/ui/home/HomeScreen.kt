@@ -67,6 +67,7 @@ import com.lu4p.fokuslauncher.ui.components.DateBatteryRow
 import com.lu4p.fokuslauncher.ui.components.MinimalIcons
 import com.lu4p.fokuslauncher.ui.components.WeatherWidget
 import com.lu4p.fokuslauncher.utils.LockScreenHelper
+import com.lu4p.fokuslauncher.utils.containsNormalizedSearch
 
 @Composable
 fun HomeScreen(
@@ -616,7 +617,8 @@ private fun WeatherAppPickerDialog(
     val context = LocalContext.current
     val filtered =
         remember(filter, allApps) {
-            if (filter.isBlank()) allApps else allApps.filter { it.label.contains(filter, true) }
+            if (filter.isBlank()) allApps
+            else allApps.filter { it.label.containsNormalizedSearch(filter) }
         }
     val filteredSections =
         remember(filtered, context) {

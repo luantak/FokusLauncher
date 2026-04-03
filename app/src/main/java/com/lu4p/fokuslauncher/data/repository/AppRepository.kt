@@ -27,6 +27,7 @@ import com.lu4p.fokuslauncher.data.model.appProfileKey
 import com.lu4p.fokuslauncher.data.model.SystemCategoryKeys
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
 import com.lu4p.fokuslauncher.utils.ProfileHeuristics
+import com.lu4p.fokuslauncher.utils.containsNormalizedSearch
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -417,7 +418,7 @@ constructor(
     /** Searches the installed apps list by a query string, matching against the app label. */
     fun searchApps(query: String): List<AppInfo> {
         if (query.isBlank()) return getInstalledApps()
-        return getInstalledApps().filter { it.label.contains(query, ignoreCase = true) }
+        return getInstalledApps().filter { it.label.containsNormalizedSearch(query) }
     }
 
     /** Filters apps by category. Returns all apps if category is blank or "All apps". */

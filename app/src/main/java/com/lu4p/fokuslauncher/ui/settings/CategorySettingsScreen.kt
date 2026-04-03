@@ -67,6 +67,7 @@ import com.lu4p.fokuslauncher.ui.components.MinimalIcons
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
 import com.lu4p.fokuslauncher.ui.util.categoryChipDisplayLabel
 import com.lu4p.fokuslauncher.ui.util.resolvedCategoryDrawerIconName
+import com.lu4p.fokuslauncher.utils.containsNormalizedSearch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -326,7 +327,7 @@ fun CategoryAppsScreen(
         uiState.allApps.filter { it.packageName !in checkedPackages }
                 .let { apps ->
                     if (searchQuery.isBlank()) apps
-                    else apps.filter { it.label.contains(searchQuery, ignoreCase = true) }
+                    else apps.filter { it.label.containsNormalizedSearch(searchQuery) }
                 }
     }
     val uncheckedSections = remember(uncheckedApps, context) {

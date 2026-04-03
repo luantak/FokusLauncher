@@ -64,6 +64,7 @@ class AppDrawerViewModelTest {
                     AppInfo("com.lu4p.calculator", "Calculator", null),
                     AppInfo("com.lu4p.calendar", "Calendar", null),
                     AppInfo("com.lu4p.camera", "Camera", null),
+                    AppInfo("com.lu4p.camera.fr", "Càmera", null),
                     AppInfo("com.lu4p.chrome", "Chrome", null),
                     AppInfo("com.lu4p.gmail", "Gmail", null, category = "Productivity"),
                     AppInfo("com.lu4p.bank", "Bank", null, category = "Finance"),
@@ -159,6 +160,15 @@ class AppDrawerViewModelTest {
         assertEquals(2, flatFiltered(state).size)
         assertTrue(flatFiltered(state).any { it.label == "Calculator" })
         assertTrue(flatFiltered(state).any { it.label == "Calendar" })
+    }
+
+    @Test
+    fun `search matches labels ignoring accents`() {
+        viewModel.onSearchQueryChanged("cam")
+
+        val labels = flatFiltered(viewModel.uiState.value).map { it.label }.toSet()
+        assertTrue(labels.contains("Camera"))
+        assertTrue(labels.contains("Càmera"))
     }
 
     @Test

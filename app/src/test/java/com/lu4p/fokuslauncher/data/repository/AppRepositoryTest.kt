@@ -154,6 +154,18 @@ class AppRepositoryTest {
     }
 
     @Test
+    fun `searchApps accent-insensitive match`() {
+        every {
+            launcherApps.getActivityList(null, myUser)
+        } returns listOf(createMockLauncherActivity("com.lu4p.camera", "Càmera"))
+
+        val result = repository.searchApps("cam")
+
+        assertEquals(1, result.size)
+        assertEquals("Càmera", result[0].label)
+    }
+
+    @Test
     fun `searchApps with blank query returns all apps`() {
         every {
             launcherApps.getActivityList(null, myUser)

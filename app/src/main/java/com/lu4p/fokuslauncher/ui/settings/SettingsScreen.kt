@@ -92,6 +92,7 @@ import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.utils.BatteryOptimizationHelper
 import com.lu4p.fokuslauncher.utils.LockScreenHelper
+import com.lu4p.fokuslauncher.utils.containsNormalizedSearch
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
 import com.lu4p.fokuslauncher.ui.theme.composeFontFamilyFromStoredName
 import com.lu4p.fokuslauncher.ui.util.formatShortcutTargetDisplay
@@ -1664,7 +1665,7 @@ private fun AppPickerDialog(
     val filtered =
             remember(filter, allApps) {
                 if (filter.isBlank()) allApps
-                else allApps.filter { it.label.contains(filter, true) }
+                else allApps.filter { it.label.containsNormalizedSearch(filter) }
             }
     val filteredSections =
             remember(filtered, context) {

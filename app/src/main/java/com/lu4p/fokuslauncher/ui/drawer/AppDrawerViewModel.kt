@@ -16,6 +16,7 @@ import com.lu4p.fokuslauncher.data.model.drawerOpenCountKey
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.ui.components.MinimalIcons
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
+import com.lu4p.fokuslauncher.utils.containsNormalizedSearch
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -953,7 +954,7 @@ constructor(
         return sections.map { section ->
             var apps = section.apps
             if (query.isNotBlank()) {
-                apps = apps.filter { it.label.contains(query, ignoreCase = true) }
+                apps = apps.filter { it.label.containsNormalizedSearch(query) }
             }
             if (category.isNotBlank() && !category.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true)) {
                 apps =
@@ -983,7 +984,7 @@ constructor(
         return if (query.isBlank()) {
             privateApps
         } else {
-            privateApps.filter { it.label.contains(query, ignoreCase = true) }
+            privateApps.filter { it.label.containsNormalizedSearch(query) }
         }
     }
 

@@ -63,6 +63,7 @@ import com.lu4p.fokuslauncher.ui.drawer.sortAppsAlphabeticallyByProfileSection
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.ui.home.HomeViewModel
 import com.lu4p.fokuslauncher.ui.settings.EditHomeAppsScreen
+import com.lu4p.fokuslauncher.utils.containsNormalizedSearch
 
 @Composable
 fun OnboardingScreen(
@@ -571,7 +572,7 @@ private fun OnboardingAppPickerDialog(
     val filtered =
         remember(filter, allApps) {
             if (filter.isBlank()) allApps
-            else allApps.filter { it.label.contains(filter, ignoreCase = true) }
+            else allApps.filter { it.label.containsNormalizedSearch(filter) }
         }
     val filteredSections =
         remember(filtered, context) {

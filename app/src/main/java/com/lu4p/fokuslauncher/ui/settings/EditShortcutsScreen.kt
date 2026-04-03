@@ -65,6 +65,7 @@ import com.lu4p.fokuslauncher.ui.drawer.profileGroupedShortcutItems
 import com.lu4p.fokuslauncher.ui.drawer.profileOriginLabelForHomeShortcut
 import com.lu4p.fokuslauncher.ui.home.HomeViewModel
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
+import com.lu4p.fokuslauncher.utils.containsNormalizedSearch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -88,7 +89,7 @@ fun EditShortcutsScreen(
             .filter { it.id !in selectedIds }
             .let { list ->
                 if (searchQuery.isBlank()) list
-                else list.filter { it.displayLabel.contains(searchQuery, ignoreCase = true) }
+                else list.filter { it.displayLabel.containsNormalizedSearch(searchQuery) }
             }
     }
     val uncheckedShortcutSections = remember(uncheckedActions, allApps, context) {
