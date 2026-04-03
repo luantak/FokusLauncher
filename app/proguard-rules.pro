@@ -19,3 +19,6 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# MinimalIcons loads all Material outlined vectors via reflection; keep glyph classes from shrinking.
+-keep class androidx.compose.material.icons.** { *; }

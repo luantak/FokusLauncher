@@ -35,7 +35,7 @@ fun categoryDrawerIconName(category: String): String {
         c.equals(SystemCategoryKeys.SOCIAL, ignoreCase = true) -> "person"
         c.equals(SystemCategoryKeys.MEDIA, ignoreCase = true) -> "headset"
         else -> {
-            val options = MinimalIcons.names
+            val options = MinimalIcons.namesForDefaultCategoryHash
             val idx = (c.lowercase(Locale.getDefault()).hashCode() and Int.MAX_VALUE) % options.size
             options[idx]
         }

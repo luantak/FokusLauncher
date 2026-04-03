@@ -1,6 +1,8 @@
 package com.lu4p.fokuslauncher.ui.components
 
 import androidx.compose.material.icons.Icons
+import androidx.annotation.StringRes
+import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.outlined.Alarm
 import androidx.compose.material.icons.outlined.Apps
@@ -56,87 +58,334 @@ import androidx.compose.material.icons.outlined.Translate
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material.icons.outlined.VolunteerActivism
 import androidx.compose.material.icons.outlined.Work
-import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.lu4p.fokuslauncher.R
+import com.lu4p.fokuslauncher.ui.components.generated.MaterialOutlinedIconCategories
+import com.lu4p.fokuslauncher.ui.components.generated.MaterialOutlinedIconIndex
+import java.lang.reflect.Modifier
+import java.util.Locale
+import java.util.TreeMap
 
 /**
- * A curated set of minimal, outline-style icons for home-screen shortcuts.
- * Uses Material Outlined icons for a clean, light look.
+ * Home-screen and drawer icons using Material **Outlined** symbols (same family as
+ * [Google Fonts Material Symbols](https://fonts.google.com/icons) “outlined” style), exposed
+ * as Compose vectors via `material-icons-extended`.
+ *
+ * Glyphs are [Icons.Outlined] extension properties; names are enumerated by
+ * [MaterialOutlinedIconIndex] (from the library’s sources). Picker **sections** use **categories**
+ * from [Google Material Symbols metadata](https://fonts.google.com/metadata/icons?key=material_symbols)
+ * ([MaterialOutlinedIconCategories]). The **full** outlined index is loaded for [iconFor] / the drawer
+ * rail; [names] and [iconPickerSections] list only glyphs allowed by [isOmittedFromIconPickers].
+ * Unknown keys still resolve to [Icons.Outlined.Circle]. Legacy `send` uses
+ * [Icons.AutoMirrored.Outlined.Send] (not in the index).
  */
 object MinimalIcons {
 
-    val all: Map<String, ImageVector> = linkedMapOf(
-        // Default & basic
-        "circle" to Icons.Outlined.Circle,
-        "dot" to Icons.Outlined.Circle,
-        "apps" to Icons.Outlined.Apps,
-        "menu" to Icons.Outlined.Menu,
-        "category" to Icons.Outlined.Category,
-        // Communication
-        "chat" to Icons.Outlined.Email,
-        "mail" to Icons.Outlined.Mail,
-        "send" to Icons.AutoMirrored.Outlined.Send,
-        "call" to Icons.Outlined.Call,
-        "phone" to Icons.Outlined.Phone,
-        "contacts" to Icons.Outlined.Contacts,
-        "link" to Icons.Outlined.Link,
-        "share" to Icons.Outlined.Share,
-        // Media & creativity
-        "music" to Icons.Outlined.MusicNote,
-        "video" to Icons.Outlined.Videocam,
-        "camera" to Icons.Outlined.CameraAlt,
-        "gallery" to Icons.Outlined.Photo,
-        "image" to Icons.Outlined.Image,
-        "play" to Icons.Outlined.PlayArrow,
-        "art" to Icons.Outlined.Palette,
-        "book" to Icons.Outlined.Book,
-        "read" to Icons.Outlined.Book,
-        "news" to Icons.Outlined.Newspaper,
-        "headset" to Icons.Outlined.Headset,
-        // Place & travel
-        "home" to Icons.Outlined.Home,
-        "map" to Icons.Outlined.Map,
-        "place" to Icons.Outlined.Place,
-        "location" to Icons.Outlined.LocationOn,
-        "directions" to Icons.Outlined.Directions,
-        "travel" to Icons.Outlined.Flight,
-        // Time & calendar
-        "alarm" to Icons.Outlined.Alarm,
-        "timer" to Icons.Outlined.Timer,
-        "calendar" to Icons.Outlined.CalendarMonth,
-        "event" to Icons.Outlined.Event,
-        // People & preferences
-        "person" to Icons.Outlined.Person,
-        "favorite" to Icons.Outlined.Favorite,
-        "favorite_border" to Icons.Outlined.FavoriteBorder,
-        "bookmark" to Icons.Outlined.Bookmark,
-        "bookmark_border" to Icons.Outlined.BookmarkBorder,
-        "volunteer" to Icons.Outlined.VolunteerActivism,
-        // Work & productivity
-        "work" to Icons.Outlined.Work,
-        "folder" to Icons.Outlined.Folder,
-        "code" to Icons.Outlined.Code,
-        "settings" to Icons.Outlined.Settings,
-        // Commerce & finance
-        "finance" to Icons.Outlined.AccountBalance,
-        "shop" to Icons.Outlined.ShoppingCart,
-        "bag" to Icons.Outlined.ShoppingBag,
-        // Lifestyle
-        "food" to Icons.Outlined.Restaurant,
-        "game" to Icons.Outlined.Gamepad,
-        "star" to Icons.Outlined.Star,
-        "star_border" to Icons.Outlined.StarBorder,
-        // System & misc
-        "cloud" to Icons.Outlined.Cloud,
-        "search" to Icons.Outlined.Search,
-        "notifications" to Icons.Outlined.Notifications,
-        "lock" to Icons.Outlined.Lock,
-        "dark" to Icons.Outlined.DarkMode,
-        "language" to Icons.Outlined.Language,
-        "translate" to Icons.Outlined.Translate,
+    data class IconPickerSection(
+            @param:StringRes val titleRes: Int,
+            /**
+             * If set, shown instead of [titleRes] (e.g. a Google category label we have not added to
+             * strings.xml yet).
+             */
+            val titleLiteral: String? = null,
+            val names: List<String>,
     )
 
-    val names: List<String> = all.keys.toList()
+    /**
+     * Icons whose Google Symbols metadata category is one of these are omitted from [names] /
+     * pickers (see [isOmittedFromIconPickers]). Icons with **no** metadata row are omitted as well.
+     */
+    private val pickerOmittedGoogleCategories: Set<String> =
+            setOf(
+                    "Text",
+                    "Android",
+                    "UI actions",
+                    "Actions",
+                    "Home",
+            )
 
-    fun iconFor(name: String): ImageVector = all[name] ?: Icons.Outlined.Circle
+    /** Display order for [MaterialOutlinedIconCategories] labels (aligned roughly with fonts.google.com). */
+    private val googleCategorySectionOrder: List<String> =
+            listOf(
+                    "Communicate",
+                    "Social",
+                    "Maps",
+                    "Travel",
+                    "Transit",
+                    "Activities",
+                    "Business",
+                    "Hardware",
+                    "Household",
+                    "Privacy",
+                    "Images",
+                    "Audio&Video",
+            )
+ 
+    private fun isOmittedFromIconPickers(name: String): Boolean {
+        val cat = MaterialOutlinedIconCategories.GOOGLE_CATEGORY_BY_ICON_NAME[name] ?: return true
+        return cat in pickerOmittedGoogleCategories
+    }
+
+    /** Picker section bucket: Google category, or Communicate for legacy `send` (not in metadata). */
+    private fun pickerSectionCategoryForName(name: String): String? {
+        MaterialOutlinedIconCategories.GOOGLE_CATEGORY_BY_ICON_NAME[name]?.let { return it }
+        return if (name == "send") "Communicate" else null
+    }
+
+    /**
+     * Every glyph in [MaterialOutlinedIconIndex], loaded for display ([iconFor], [all], legacy maps).
+     */
+    private val allOutlinedIcons: Map<String, ImageVector> by lazy { loadAllOutlinedFromIndex() }
+
+    /** Vectors that appear in [names] / pickers (at least one non-omitted outlined name). */
+    private val pickerOutlinedIconVectorSet: Set<ImageVector> by lazy {
+        allOutlinedIcons.mapNotNullTo(mutableSetOf()) { (name, vec) ->
+            if (isOmittedFromIconPickers(name)) null else vec
+        }
+    }
+
+    /** Legacy snake_case keys from earlier versions; values may differ from the PascalCase outlined name. */
+    private val legacyAliases: Map<String, ImageVector> =
+            mapOf(
+                    "circle" to Icons.Outlined.Circle,
+                    "dot" to Icons.Outlined.Circle,
+                    "apps" to Icons.Outlined.Apps,
+                    "menu" to Icons.Outlined.Menu,
+                    "category" to Icons.Outlined.Category,
+                    "chat" to Icons.Outlined.Email,
+                    "mail" to Icons.Outlined.Mail,
+                    "send" to Icons.AutoMirrored.Outlined.Send,
+                    "call" to Icons.Outlined.Call,
+                    "phone" to Icons.Outlined.Phone,
+                    "contacts" to Icons.Outlined.Contacts,
+                    "link" to Icons.Outlined.Link,
+                    "share" to Icons.Outlined.Share,
+                    "music" to Icons.Outlined.MusicNote,
+                    "video" to Icons.Outlined.Videocam,
+                    "camera" to Icons.Outlined.CameraAlt,
+                    "gallery" to Icons.Outlined.Photo,
+                    "image" to Icons.Outlined.Image,
+                    "play" to Icons.Outlined.PlayArrow,
+                    "art" to Icons.Outlined.Palette,
+                    "book" to Icons.Outlined.Book,
+                    "read" to Icons.Outlined.Book,
+                    "news" to Icons.Outlined.Newspaper,
+                    "headset" to Icons.Outlined.Headset,
+                    "home" to Icons.Outlined.Home,
+                    "map" to Icons.Outlined.Map,
+                    "place" to Icons.Outlined.Place,
+                    "location" to Icons.Outlined.LocationOn,
+                    "directions" to Icons.Outlined.Directions,
+                    "travel" to Icons.Outlined.Flight,
+                    "alarm" to Icons.Outlined.Alarm,
+                    "timer" to Icons.Outlined.Timer,
+                    "calendar" to Icons.Outlined.CalendarMonth,
+                    "event" to Icons.Outlined.Event,
+                    "person" to Icons.Outlined.Person,
+                    "favorite" to Icons.Outlined.Favorite,
+                    "favorite_border" to Icons.Outlined.FavoriteBorder,
+                    "bookmark" to Icons.Outlined.Bookmark,
+                    "bookmark_border" to Icons.Outlined.BookmarkBorder,
+                    "volunteer" to Icons.Outlined.VolunteerActivism,
+                    "work" to Icons.Outlined.Work,
+                    "folder" to Icons.Outlined.Folder,
+                    "code" to Icons.Outlined.Code,
+                    "settings" to Icons.Outlined.Settings,
+                    "finance" to Icons.Outlined.AccountBalance,
+                    "shop" to Icons.Outlined.ShoppingCart,
+                    "bag" to Icons.Outlined.ShoppingBag,
+                    "food" to Icons.Outlined.Restaurant,
+                    "game" to Icons.Outlined.Gamepad,
+                    "star" to Icons.Outlined.Star,
+                    "star_border" to Icons.Outlined.StarBorder,
+                    "cloud" to Icons.Outlined.Cloud,
+                    "search" to Icons.Outlined.Search,
+                    "notifications" to Icons.Outlined.Notifications,
+                    "lock" to Icons.Outlined.Lock,
+                    "dark" to Icons.Outlined.DarkMode,
+                    "language" to Icons.Outlined.Language,
+                    "translate" to Icons.Outlined.Translate,
+            )
+
+    /** Valid storage keys: full outlined index plus all legacy aliases (see [iconFor]). */
+    val all: Map<String, ImageVector> by lazy {
+        buildMap {
+            putAll(allOutlinedIcons)
+            putAll(legacyAliases)
+        }
+    }
+
+    /**
+     * Keys for icon pickers: **one entry per distinct** [ImageVector]. Outlined glyph names (e.g.
+     * `Call`) win over legacy aliases (`call`) for the same shape. Order is A–Z (case-insensitive,
+     * then exact spelling). Glyphs catalogued under [pickerOmittedGoogleCategories], or with no
+     * metadata row, are excluded.
+     */
+    val names: List<String> by lazy {
+        val iconByVector = LinkedHashMap<ImageVector, String>()
+        val pickerVectors = pickerOutlinedIconVectorSet
+        for (name in allOutlinedIcons.keys) {
+            if (isOmittedFromIconPickers(name)) continue
+            val vector = allOutlinedIcons.getValue(name)
+            iconByVector.putIfAbsent(vector, name)
+        }
+        for (name in legacyAliases.keys.sorted()) {
+            val vector = legacyAliases.getValue(name)
+            if (name != "send" && vector !in pickerVectors) continue
+            iconByVector.putIfAbsent(vector, name)
+        }
+        val sort = compareBy<String> { it.lowercase(Locale.ROOT) }.thenBy { it }
+        iconByVector.values.sortedWith(sort)
+    }
+
+    /**
+     * Icon pickers: sections follow **Google Material Symbols** category metadata; see
+     * [pickerSectionCategoryForName]. Order within a section is A–Z (case-insensitive).
+     */
+    val iconPickerSections: List<IconPickerSection> by lazy { buildIconPickerSections() }
+
+    /** Single section for search-filtered results (shortcut picker). */
+    fun iconPickerSearchSections(matches: List<String>): List<IconPickerSection> {
+        if (matches.isEmpty()) return emptyList()
+        return listOf(IconPickerSection(R.string.icon_cat_search_results, names = matches))
+    }
+
+    @StringRes
+    private fun stringResForGoogleCategory(googleLabel: String): Int =
+            when (googleLabel) {
+                "Actions" -> R.string.icon_cat_actions
+                "Activities" -> R.string.icon_cat_activities
+                "Android" -> R.string.icon_cat_android
+                "Audio&Video" -> R.string.icon_cat_audio_video
+                "Business" -> R.string.icon_cat_business
+                "Communicate" -> R.string.icon_cat_communicate
+                "Hardware" -> R.string.icon_cat_hardware
+                "Home" -> R.string.icon_cat_home
+                "Household" -> R.string.icon_cat_household
+                "Images" -> R.string.icon_cat_images
+                "Maps" -> R.string.icon_cat_maps
+                "Privacy" -> R.string.icon_cat_privacy
+                "Social" -> R.string.icon_cat_social
+                "Text" -> R.string.icon_cat_text
+                "Transit" -> R.string.icon_cat_transit
+                "Travel" -> R.string.icon_cat_travel
+                "UI actions" -> R.string.icon_cat_ui_actions
+                else -> R.string.icon_cat_other
+            }
+
+    private fun buildIconPickerSections(): List<IconPickerSection> {
+        val labels = names.toSet()
+        val sort = compareBy<String> { it.lowercase(Locale.ROOT) }.thenBy { it }
+        val byCategory = mutableMapOf<String, MutableList<String>>()
+        for (name in labels) {
+            val cat = pickerSectionCategoryForName(name) ?: continue
+            byCategory.getOrPut(cat) { mutableListOf() }.add(name)
+        }
+        val sections = mutableListOf<IconPickerSection>()
+        val ordered = googleCategorySectionOrder.toSet()
+        for (cat in googleCategorySectionOrder) {
+            val list = byCategory[cat]?.sortedWith(sort) ?: continue
+            if (list.isNotEmpty()) {
+                sections += IconPickerSection(stringResForGoogleCategory(cat), names = list)
+            }
+        }
+        val extras = (byCategory.keys - ordered).sorted()
+        for (cat in extras) {
+            val list = byCategory.getValue(cat).sortedWith(sort)
+            val res = stringResForGoogleCategory(cat)
+            sections +=
+                    if (res == R.string.icon_cat_other) {
+                        IconPickerSection(res, titleLiteral = cat, names = list)
+                    } else {
+                        IconPickerSection(res, names = list)
+                    }
+        }
+        return sections
+    }
+
+    /**
+     * Keys used when hashing a custom category name to a default rail icon. Kept to the legacy
+     * alias set for stable defaults (resolved with [iconFor]).
+     */
+    val namesForDefaultCategoryHash: List<String> = legacyAliases.keys.sorted()
+
+    fun iconFor(name: String): ImageVector {
+        legacyAliases[name]?.let { return it }
+        allOutlinedIcons[name]?.let { return it }
+        val pascal = snakeToPascalCase(name)
+        if (pascal != name) allOutlinedIcons[pascal]?.let { return it }
+        return Icons.Outlined.Circle
+    }
+
+    fun iconKeyMatchesStoredIcon(pickerKey: String, storedKey: String): Boolean =
+            iconFor(pickerKey) == iconFor(storedKey)
+
+    /** Text used when filtering icons in a picker (glyph name + split words, e.g. `WifiCalling3`). */
+    fun materialOutlinedSearchHaystack(propertyName: String): String =
+            buildString {
+                append(propertyName)
+                append(' ')
+                append(
+                        propertyName
+                                .replace(Regex("([a-z])([A-Z])"), "$1 $2")
+                                .replace(Regex("([A-Za-z])([0-9])"), "$1 $2")
+                                .lowercase(Locale.getDefault())
+                )
+            }
+
+    private fun snakeToPascalCase(snake: String): String {
+        if ('_' !in snake) return snake
+        return snake.split('_').joinToString("") { part ->
+            part.replaceFirstChar { ch ->
+                if (ch.isLowerCase()) ch.titlecase(Locale.getDefault()) else ch.toString()
+            }
+        }
+    }
+
+    private fun loadAllOutlinedFromIndex(): Map<String, ImageVector> {
+        val loader = checkNotNull(Icons.Outlined::class.java.classLoader) { "Icons.Outlined classloader" }
+        val out = TreeMap<String, ImageVector>()
+        val recvOutlined = Icons.Outlined
+        val clsOutlined = Icons.Outlined::class.java
+        for (base in MaterialOutlinedIconIndex.OUTLINED_FILE_BASES) {
+            loadExtensionOutlinedIcon(
+                            packageFqcn = "androidx.compose.material.icons.outlined",
+                            fileBase = base,
+                            receiverClass = clsOutlined,
+                            receiver = recvOutlined,
+                            classLoader = loader,
+                    )
+                    ?.let { out[base] = it }
+        }
+        return out
+    }
+
+    private fun loadExtensionOutlinedIcon(
+            packageFqcn: String,
+            fileBase: String,
+            receiverClass: Class<*>,
+            receiver: Any,
+            classLoader: ClassLoader,
+    ): ImageVector? {
+        val fqcn = "$packageFqcn.${fileBase}Kt"
+        val clazz =
+                try {
+                    Class.forName(fqcn, false, classLoader)
+                } catch (_: ClassNotFoundException) {
+                    return null
+                }
+        for (method in clazz.declaredMethods) {
+            if (!Modifier.isStatic(method.modifiers)) continue
+            if (method.returnType != ImageVector::class.java) continue
+            if (method.parameterCount != 1) continue
+            if (method.parameterTypes[0] != receiverClass) continue
+            method.isAccessible = true
+            return try {
+                method.invoke(null, receiver) as ImageVector
+            } catch (_: Throwable) {
+                continue
+            }
+        }
+        return null
+    }
 }

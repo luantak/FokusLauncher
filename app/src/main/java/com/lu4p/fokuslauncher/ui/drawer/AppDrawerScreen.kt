@@ -2,6 +2,7 @@ package com.lu4p.fokuslauncher.ui.drawer
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.text.KeyboardActions
@@ -11,11 +12,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -88,9 +84,11 @@ import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import com.lu4p.fokuslauncher.ui.components.CategoryChips
 import com.lu4p.fokuslauncher.ui.components.DrawerCategorySidebar
+import com.lu4p.fokuslauncher.ui.components.CategoryIconPickerDialog
 import com.lu4p.fokuslauncher.ui.components.MinimalIcons
 import com.lu4p.fokuslauncher.ui.components.SearchBar
 import com.lu4p.fokuslauncher.ui.util.categoryChipDisplayLabel
+import com.lu4p.fokuslauncher.ui.util.resolvedCategoryDrawerIconName
 import java.util.Locale
 
 /** Horizontal swipe distance (px) to move to the next/previous category in the app list. */
@@ -363,6 +361,7 @@ fun AppDrawerScreen(
     uiState.selectedCategoryForActions?.let { category ->
         CategoryActionSheet(
                 category = category,
+                categoryDrawerIconOverrides = uiState.categoryDrawerIconOverrides,
                 onDismiss = viewModel::dismissCategoryActionSheet,
                 onRename = { newName: String -> viewModel.renameCategory(category, newName) },
                 onEditApps = {
@@ -690,6 +689,7 @@ fun AppDrawerContent(
 @Composable
 fun CategoryActionSheet(
         category: String,
+        categoryDrawerIconOverrides: Map<String, String> = emptyMap(),
         onDismiss: () -> Unit,
         onRename: (String) -> Unit,
         onEditApps: () -> Unit,
@@ -699,6 +699,7 @@ fun CategoryActionSheet(
 ) {
     val context = LocalContext.current
     val sheetState = rememberModalBottomSheetState()
+    var showIconPickerDialog by remember(category) { mutableStateOf(false) }
     var renameMode by remember(category) { mutableStateOf(false) }
     var renameValue by remember(category) {
         mutableStateOf(categoryChipDisplayLabel(context, category))
@@ -713,6 +714,8 @@ fun CategoryActionSheet(
     val showEditApps = !isReservedDrawerCategory
     val canDelete = showEditApps
     val displayTitle = categoryChipDisplayLabel(context, category)
+    val drawerRailIconKey =
+            resolvedCategoryDrawerIconName(context, category, categoryDrawerIconOverrides)
 
     ModalBottomSheet(
             onDismissRequest = onDismiss,
@@ -781,33 +784,27 @@ fun CategoryActionSheet(
                 )
             }
 
-            Text(
-                    text = stringResource(R.string.category_icon_picker_title),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
-            )
-            LazyVerticalGrid(
-                    columns = GridCells.Adaptive(minSize = 48.dp),
+            Row(
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier =
-                            Modifier.heightIn(max = 220.dp)
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 24.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                            Modifier.fillMaxWidth()
+                                    .clickable { showIconPickerDialog = true }
+                                    .padding(horizontal = 24.dp, vertical = 16.dp)
+                                    .testTag("category_action_choose_icon")
             ) {
-                items(MinimalIcons.names, key = { it }) { name ->
-                    IconButton(
-                            onClick = { onSetCategoryIcon(name) },
-                            modifier = Modifier.size(48.dp)
-                    ) {
-                        Icon(
-                                imageVector = MinimalIcons.iconFor(name),
-                                contentDescription = name,
-                                tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
+                Icon(
+                        imageVector = MinimalIcons.iconFor(drawerRailIconKey),
+                        contentDescription = stringResource(R.string.icon_picker_current_icon),
+                        modifier = Modifier.size(28.dp),
+                        tint = MaterialTheme.colorScheme.onBackground
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+                Text(
+                        text = stringResource(R.string.category_icon_picker_title),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.weight(1f)
+                )
             }
             DrawerSheetActionRow(
                     icon = Icons.Default.Restore,
@@ -825,6 +822,18 @@ fun CategoryActionSheet(
                 )
             }
         }
+    }
+
+    if (showIconPickerDialog) {
+        CategoryIconPickerDialog(
+                category = category,
+                iconOverrides = categoryDrawerIconOverrides,
+                onSelect = { name ->
+                    onSetCategoryIcon(name)
+                    showIconPickerDialog = false
+                },
+                onDismiss = { showIconPickerDialog = false }
+        )
     }
 }
 

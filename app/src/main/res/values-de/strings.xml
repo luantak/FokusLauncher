@@ -104,6 +104,28 @@
     <string name="edit_home_section_on_home">Apps auf dem Startbildschirm</string>
     <string name="edit_home_section_all_apps">@string/drawer_filter_all_apps</string>
     <string name="edit_shortcuts_choose_icon">Symbol auswählen</string>
+    <string name="search_icons">Symbole suchen</string>
+    <string name="icon_picker_current_icon">Aktuelles Symbol</string>
+    <string name="icon_cat_home">Zuhause</string>
+    <string name="icon_cat_communicate">Kommunikation</string>
+    <string name="icon_cat_social">Soziales</string>
+    <string name="icon_cat_images">Bilder</string>
+    <string name="icon_cat_audio_video">Audio &amp; Video</string>
+    <string name="icon_cat_text">Text</string>
+    <string name="icon_cat_maps">Karten</string>
+    <string name="icon_cat_travel">Reisen</string>
+    <string name="icon_cat_transit">Verkehr</string>
+    <string name="icon_cat_activities">Aktivitäten</string>
+    <string name="icon_cat_business">Business</string>
+    <string name="icon_cat_hardware">Hardware</string>
+    <string name="icon_cat_android">Android</string>
+    <string name="icon_cat_ui_actions">UI-Aktionen</string>
+    <string name="icon_cat_actions">Aktionen</string>
+    <string name="icon_cat_household">Haushalt</string>
+    <string name="icon_cat_privacy">Datenschutz</string>
+    <string name="icon_cat_other">Sonstige</string>
+    <string name="icon_cat_no_metadata">Weitere Symbole</string>
+    <string name="icon_cat_search_results">Treffer</string>
 
     <!-- Settings -->
     <string name="settings_title">Einstellungen</string>

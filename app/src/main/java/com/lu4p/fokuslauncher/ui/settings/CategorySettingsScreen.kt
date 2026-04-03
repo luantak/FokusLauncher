@@ -18,16 +18,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items as lazyGridItems
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DragHandle
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -63,6 +59,7 @@ import com.lu4p.fokuslauncher.ui.drawer.groupAppsIntoProfileSections
 import com.lu4p.fokuslauncher.ui.drawer.profileGroupedAppItems
 import com.lu4p.fokuslauncher.ui.drawer.sortAppsAlphabeticallyByProfileSection
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.lu4p.fokuslauncher.ui.components.CategoryIconPickerDialog
 import com.lu4p.fokuslauncher.ui.components.MinimalIcons
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
 import com.lu4p.fokuslauncher.ui.util.categoryChipDisplayLabel
@@ -139,6 +136,7 @@ fun CategorySettingsScreen(
                 showDrawerCategoryIcons = uiState.drawerSidebarCategories,
                 categoryDrawerIconOverrides = uiState.categoryDrawerIconOverrides,
                 onOpenCategoryIconPicker = { categoryIconPickerFor = it },
+                onResetCategoryDrawerIcon = { viewModel.clearCategoryDrawerIcon(it) },
                 onReorder = { from, to ->
                     val reordered = localCategories.toMutableList()
                     val item = reordered.removeAt(from)
@@ -153,15 +151,11 @@ fun CategorySettingsScreen(
 
     val pickerCategory = categoryIconPickerFor
     if (pickerCategory != null) {
-        CategoryDrawerIconPickerDialog(
+        CategoryIconPickerDialog(
                 category = pickerCategory,
                 iconOverrides = uiState.categoryDrawerIconOverrides,
                 onSelect = { name ->
                     viewModel.setCategoryDrawerIcon(pickerCategory, name)
-                    categoryIconPickerFor = null
-                },
-                onReset = {
-                    viewModel.clearCategoryDrawerIcon(pickerCategory)
                     categoryIconPickerFor = null
                 },
                 onDismiss = { categoryIconPickerFor = null }
@@ -176,6 +170,7 @@ private fun ReorderableCategoryList(
         showDrawerCategoryIcons: Boolean,
         categoryDrawerIconOverrides: Map<String, String>,
         onOpenCategoryIconPicker: (String) -> Unit,
+        onResetCategoryDrawerIcon: (String) -> Unit,
         onReorder: (Int, Int) -> Unit,
         onReorderFinished: (List<String>) -> Unit,
         onEditCategoryApps: (String) -> Unit,
@@ -264,6 +259,17 @@ private fun ReorderableCategoryList(
                                 imageVector = MinimalIcons.iconFor(railIconName),
                                 contentDescription = stringResource(R.string.category_icon_picker_title),
                                 tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    IconButton(
+                            onClick = { onResetCategoryDrawerIcon(category) },
+                            modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                                imageVector = Icons.Default.Restore,
+                                contentDescription =
+                                        stringResource(R.string.category_action_reset_icon),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     Spacer(modifier = Modifier.width(4.dp))
@@ -437,65 +443,6 @@ fun CategoryAppsScreen(
         }
         }
     }
-}
-
-@Composable
-private fun CategoryDrawerIconPickerDialog(
-        category: String,
-        iconOverrides: Map<String, String>,
-        onSelect: (String) -> Unit,
-        onReset: () -> Unit,
-        onDismiss: () -> Unit
-) {
-    val context = LocalContext.current
-    val resolved = resolvedCategoryDrawerIconName(context, category, iconOverrides)
-    AlertDialog(
-            onDismissRequest = onDismiss,
-            title = {
-                Text(
-                        stringResource(R.string.category_icon_picker_title),
-                        color = MaterialTheme.colorScheme.onBackground
-                )
-            },
-            text = {
-                Column {
-                    LazyVerticalGrid(
-                            columns = GridCells.Fixed(5),
-                            modifier = Modifier.height(320.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        lazyGridItems(MinimalIcons.names, key = { it }) { name ->
-                            Icon(
-                                    imageVector = MinimalIcons.iconFor(name),
-                                    contentDescription = name,
-                                    tint =
-                                            if (name == resolved) {
-                                                MaterialTheme.colorScheme.primary
-                                            } else {
-                                                MaterialTheme.colorScheme.onSurface
-                                            },
-                                    modifier =
-                                            Modifier.size(40.dp).clickable { onSelect(name) }
-                            )
-                        }
-                    }
-                    TextButton(onClick = onReset, modifier = Modifier.fillMaxWidth()) {
-                        Text(stringResource(R.string.category_action_reset_icon))
-                    }
-                }
-            },
-            confirmButton = {},
-            dismissButton = {
-                TextButton(onClick = onDismiss) {
-                    Text(
-                            stringResource(R.string.action_cancel),
-                            color = MaterialTheme.colorScheme.onBackground
-                    )
-                }
-            },
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-    )
 }
 
 @Composable

@@ -104,6 +104,29 @@
     <string name="edit_home_section_on_home">Home screen apps</string>
     <string name="edit_home_section_all_apps">@string/drawer_filter_all_apps</string>
     <string name="edit_shortcuts_choose_icon">Choose icon</string>
+    <string name="search_icons">Search icons</string>
+    <string name="icon_picker_current_icon">Current icon</string>
+    <!-- Google Material Symbols metadata categories (fonts.google.com); see MaterialOutlinedIconCategories. -->
+    <string name="icon_cat_home">Home</string>
+    <string name="icon_cat_communicate">Communicate</string>
+    <string name="icon_cat_social">Social</string>
+    <string name="icon_cat_images">Images</string>
+    <string name="icon_cat_audio_video">Audio &amp; video</string>
+    <string name="icon_cat_text">Text</string>
+    <string name="icon_cat_maps">Maps</string>
+    <string name="icon_cat_travel">Travel</string>
+    <string name="icon_cat_transit">Transit</string>
+    <string name="icon_cat_activities">Activities</string>
+    <string name="icon_cat_business">Business</string>
+    <string name="icon_cat_hardware">Hardware</string>
+    <string name="icon_cat_android">Android</string>
+    <string name="icon_cat_ui_actions">UI actions</string>
+    <string name="icon_cat_actions">Actions</string>
+    <string name="icon_cat_household">Household</string>
+    <string name="icon_cat_privacy">Privacy</string>
+    <string name="icon_cat_other">Other</string>
+    <string name="icon_cat_no_metadata">All other icons</string>
+    <string name="icon_cat_search_results">Matching icons</string>
 
     <!-- Settings -->
     <string name="settings_title">Settings</string>

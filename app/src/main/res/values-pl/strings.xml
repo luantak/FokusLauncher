@@ -106,6 +106,28 @@
     <string name="edit_home_section_on_home">Aplikacje na ekranie głównym</string>
     <string name="edit_home_section_all_apps">@string/drawer_filter_all_apps</string>
     <string name="edit_shortcuts_choose_icon">Wybierz ikonę</string>
+    <string name="search_icons">Szukaj ikon</string>
+    <string name="icon_picker_current_icon">Bieżąca ikona</string>
+    <string name="icon_cat_home">Dom</string>
+    <string name="icon_cat_communicate">Komunikacja</string>
+    <string name="icon_cat_social">Społecznościowe</string>
+    <string name="icon_cat_images">Obrazy</string>
+    <string name="icon_cat_audio_video">Audio i wideo</string>
+    <string name="icon_cat_text">Tekst</string>
+    <string name="icon_cat_maps">Mapy</string>
+    <string name="icon_cat_travel">Podróże</string>
+    <string name="icon_cat_transit">Komunikacja miejska</string>
+    <string name="icon_cat_activities">Aktywności</string>
+    <string name="icon_cat_business">Biznes</string>
+    <string name="icon_cat_hardware">Sprzęt</string>
+    <string name="icon_cat_android">Android</string>
+    <string name="icon_cat_ui_actions">Interfejs</string>
+    <string name="icon_cat_actions">Akcje</string>
+    <string name="icon_cat_household">Dom i życie</string>
+    <string name="icon_cat_privacy">Prywatność</string>
+    <string name="icon_cat_other">Inne</string>
+    <string name="icon_cat_no_metadata">Pozostałe ikony</string>
+    <string name="icon_cat_search_results">Dopasowania</string>
 
     <!-- Settings -->
     <string name="settings_title">Ustawienia</string>

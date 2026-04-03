@@ -4,13 +4,11 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -18,14 +16,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DragHandle
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -33,7 +27,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -58,6 +51,7 @@ import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.AppShortcutAction
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.stableSelectionKey
+import com.lu4p.fokuslauncher.ui.components.MinimalIconPickerDialog
 import com.lu4p.fokuslauncher.ui.components.MinimalIcons
 import com.lu4p.fokuslauncher.ui.drawer.DrawerProfileShortcutSectionUi
 import com.lu4p.fokuslauncher.ui.drawer.groupShortcutActionsIntoProfileSections
@@ -179,13 +173,19 @@ fun EditShortcutsScreen(
     }
 
     iconPickerForIndex.value?.let { pickerIndex ->
-        EditShortcutIconPickerDialog(
-            currentIconName = editShortcuts.getOrNull(pickerIndex)?.iconName ?: "circle",
-            onSelect = { name ->
-                viewModel.updateShortcutIcon(pickerIndex, name)
-                iconPickerForIndex.value = null
-            },
-            onDismiss = { iconPickerForIndex.value = null }
+        MinimalIconPickerDialog(
+                storedIconKey = editShortcuts.getOrNull(pickerIndex)?.iconName ?: "circle",
+                title = {
+                    Text(
+                            stringResource(R.string.edit_shortcuts_choose_icon),
+                            color = MaterialTheme.colorScheme.onBackground
+                    )
+                },
+                onSelect = { name ->
+                    viewModel.updateShortcutIcon(pickerIndex, name)
+                    iconPickerForIndex.value = null
+                },
+                onDismiss = { iconPickerForIndex.value = null }
         )
     }
 }
@@ -367,46 +367,3 @@ private fun ReorderableShortcutList(
     }
 }
 
-@Composable
-private fun EditShortcutIconPickerDialog(
-    currentIconName: String,
-    onSelect: (String) -> Unit,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(stringResource(R.string.edit_shortcuts_choose_icon), color = MaterialTheme.colorScheme.onBackground)
-        },
-        text = {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(5),
-                modifier = Modifier.height(320.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(MinimalIcons.names) { name ->
-                    Icon(
-                        imageVector = MinimalIcons.iconFor(name),
-                        contentDescription = name,
-                        tint = if (name == currentIconName) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.onSurface
-                        },
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clickable { onSelect(name) }
-                    )
-                }
-            }
-        },
-        confirmButton = {},
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.action_cancel), color = MaterialTheme.colorScheme.onBackground)
-            }
-        },
-        containerColor = MaterialTheme.colorScheme.surfaceVariant
-    )
-}
