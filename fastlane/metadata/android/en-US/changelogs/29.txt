@@ -1,0 +1,7 @@
+New feature dot search: type ". query" for a web search. Aim it at another app or a custom link, or add letter shortcuts ".w query". 
+Better drawer search: skip accents when typing. (cafe finds café).
+
+Swipe left/right: now supports shortcuts.
+There are now 1,140 icons to choose from.
+
+Added Danish, Turkish and Chinese (Simplified), thanks to everyone who  translated.
