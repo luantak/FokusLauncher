@@ -388,6 +388,9 @@ fun FokusNavGraph(
                                 onOpenEditHomeApps = {
                                     navController.navigate(Routes.SETTINGS_EDIT_HOME_APPS) { launchSingleTop = true }
                                 },
+                                onOpenEditShortcuts = {
+                                    navController.navigate(Routes.SETTINGS_EDIT_SHORTCUTS) { launchSingleTop = true }
+                                },
                                 modifier = Modifier.fillMaxSize()
                             )
                         }

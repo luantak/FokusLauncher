@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -74,7 +75,8 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel(),
     onOpenSettings: () -> Unit = {},
-    onOpenEditHomeApps: () -> Unit = {}
+    onOpenEditHomeApps: () -> Unit = {},
+    onOpenEditShortcuts: () -> Unit = {},
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -172,6 +174,10 @@ fun HomeScreen(
             onEditHomeScreen = {
                 viewModel.dismissHomeScreenMenu()
                 onOpenEditHomeApps()
+            },
+            onEditShortcuts = {
+                viewModel.dismissHomeScreenMenu()
+                onOpenEditShortcuts()
             },
             onOpenSettings = {
                 viewModel.dismissHomeScreenMenu()
@@ -548,6 +554,7 @@ private fun FavoriteAppItem(
 private fun HomeScreenLongPressSheet(
     onDismiss: () -> Unit,
     onEditHomeScreen: () -> Unit,
+    onEditShortcuts: () -> Unit,
     onOpenSettings: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState()
@@ -578,6 +585,27 @@ private fun HomeScreenLongPressSheet(
                 Spacer(modifier = Modifier.width(16.dp))
                 Text(
                     text = stringResource(R.string.settings_edit_home_screen),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = {
+                        onEditShortcuts()
+                    })
+                    .padding(horizontal = 24.dp, vertical = 16.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.TouchApp,
+                    contentDescription = stringResource(R.string.settings_edit_shortcuts),
+                    tint = MaterialTheme.colorScheme.onBackground
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+                Text(
+                    text = stringResource(R.string.settings_edit_shortcuts),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onBackground
                 )
