@@ -110,7 +110,6 @@
     <string name="settings_weather_app">Hava durumu uygulaması</string>
     <string name="settings_swipe_left">Sola kaydır</string>
     <string name="settings_swipe_right">Sağa kaydır</string>
-    <string name="settings_section_app_categories">Uygulama kategorileri</string>
     <string name="settings_edit_app_categories">Uygulama kategorilerini düzenle</string>
     <string name="settings_section_app_drawer">Uygulama menüsü</string>
     <string name="settings_drawer_app_sort">Uygulama sırası</string>

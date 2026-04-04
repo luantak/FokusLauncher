@@ -119,7 +119,6 @@
     <string name="settings_weather_app">Vejr app</string>
     <string name="settings_swipe_left">Stryg til venstre</string>
     <string name="settings_swipe_right">Stryg til højre</string>
-    <string name="settings_section_app_categories">App kategorier</string>
     <string name="settings_edit_app_categories">Tilpas app kategorier</string>
     <string name="settings_section_app_drawer">App skuffe</string>
     <string name="settings_drawer_sidebar_categories">Vis kategori sidebar</string>

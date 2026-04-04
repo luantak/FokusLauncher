@@ -160,7 +160,6 @@
     <string name="settings_weather_app">Wetter-App</string>
     <string name="settings_swipe_left">Nach links wischen</string>
     <string name="settings_swipe_right">Nach rechts wischen</string>
-    <string name="settings_section_app_categories">App-Kategorien</string>
     <string name="settings_edit_app_categories">App-Kategorien bearbeiten</string>
     <string name="settings_section_app_drawer">App-Drawer</string>
     <string name="settings_drawer_sidebar_categories">Kategorien-Seitenleiste anzeigen</string>

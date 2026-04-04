@@ -67,6 +67,7 @@ import com.lu4p.fokuslauncher.ui.settings.EditHomeAppsScreen
 import com.lu4p.fokuslauncher.ui.settings.EditShortcutsScreen
 import com.lu4p.fokuslauncher.ui.settings.DeviceControlSettingsScreen
 import com.lu4p.fokuslauncher.ui.settings.DrawerDotSearchSettingsScreen
+import com.lu4p.fokuslauncher.ui.settings.HomeWidgetsSettingsScreen
 import com.lu4p.fokuslauncher.ui.settings.SettingsScreen
 import com.lu4p.fokuslauncher.ui.settings.SettingsViewModel
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
@@ -83,6 +84,7 @@ object Routes {
     const val SETTINGS_CATEGORY_APPS = "settings_category_apps"
     const val SETTINGS_EDIT_HOME_APPS = "settings_edit_home_apps"
     const val SETTINGS_EDIT_SHORTCUTS = "settings_edit_shortcuts"
+    const val SETTINGS_HOME_WIDGETS = "settings_home_widgets"
     const val SETTINGS_DRAWER_DOT_SEARCH = "settings_drawer_dot_search"
 }
 
@@ -482,7 +484,26 @@ fun FokusNavGraph(
                     onDrawerDotSearchSettings = {
                         navController.navigate(Routes.SETTINGS_DRAWER_DOT_SEARCH) { launchSingleTop = true }
                     },
+                    onOpenHomeWidgetsSettings = {
+                        navController.navigate(Routes.SETTINGS_HOME_WIDGETS) { launchSingleTop = true }
+                    },
                     backgroundScrim = Color.Black
+                )
+            }
+
+            composable(
+                Routes.SETTINGS_HOME_WIDGETS,
+                enterTransition = { slideInHorizontally(tween(ANIM_DURATION)) { it } },
+                exitTransition = { slideOutHorizontally(tween(ANIM_DURATION)) { -it } },
+                popEnterTransition = { slideInHorizontally(tween(ANIM_DURATION)) { -it } },
+                popExitTransition = { slideOutHorizontally(tween(ANIM_DURATION)) { it } }
+            ) {
+                val settingsViewModel: SettingsViewModel =
+                        hiltViewModel(viewModelStoreOwner = componentActivity)
+                HomeWidgetsSettingsScreen(
+                        viewModel = settingsViewModel,
+                        onNavigateBack = { navController.popBackStack() },
+                        backgroundScrim = Color.Black
                 )
             }
 

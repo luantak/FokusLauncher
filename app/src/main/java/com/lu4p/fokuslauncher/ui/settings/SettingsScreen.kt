@@ -26,6 +26,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.NavigateNext
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.Close
@@ -110,6 +111,7 @@ fun SettingsScreen(
         onOpenDeviceControlSettings: () -> Unit = {},
         onEditCategories: () -> Unit = {},
         onDrawerDotSearchSettings: () -> Unit = {},
+        onOpenHomeWidgetsSettings: () -> Unit = {},
         backgroundScrim: Color = FokusBackdrop.ScrimColorWithoutBlur
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -143,7 +145,6 @@ fun SettingsScreen(
     // Dialog states
     val showAppPickerFor = remember { mutableStateOf<String?>(null) } // swipeLeft/swipeRight/weather
     val showResetConfirm = remember { mutableStateOf(false) }
-    var showHomeWidgetsDialog by remember { mutableStateOf(false) }
 
     val wallpaperPickerLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.GetContent()
@@ -287,26 +288,11 @@ fun SettingsScreen(
             item { SectionHeader(stringResource(R.string.settings_section_home_screen)) }
 
             item {
-                Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier =
-                                Modifier.fillMaxWidth()
-                                        .clickable { showHomeWidgetsDialog = true }
-                                        .padding(horizontal = 24.dp, vertical = 14.dp)
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                                text = stringResource(R.string.settings_home_widgets),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onBackground
-                        )
-                        Text(
-                                text = homeWidgetsSummaryText(uiState),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.secondary
-                        )
-                    }
-                }
+                SettingsSubpageNavigationRow(
+                        label = stringResource(R.string.settings_home_widgets),
+                        subtitle = homeWidgetsSummaryText(uiState),
+                        onClick = onOpenHomeWidgetsSettings
+                )
             }
 
             item {
@@ -318,48 +304,23 @@ fun SettingsScreen(
             }
 
             item {
-                Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier =
-                                Modifier.fillMaxWidth()
-                                        .clickable(onClick = onEditHomeScreen)
-                                        .padding(horizontal = 24.dp, vertical = 14.dp)
-                ) {
-                    Text(
-                            text = stringResource(R.string.settings_edit_home_screen),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onBackground,
-                            modifier = Modifier.weight(1f)
-                    )
-                }
+                SettingsSubpageNavigationRow(
+                        label = stringResource(R.string.settings_edit_home_screen),
+                        onClick = onEditHomeScreen
+                )
             }
 
             item {
-                Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier =
-                                Modifier.fillMaxWidth()
-                                        .clickable(onClick = onEditRightShortcuts)
-                                        .padding(horizontal = 24.dp, vertical = 14.dp)
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                                text = stringResource(R.string.settings_edit_shortcuts),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onBackground
-                        )
-                        Text(
-                                text =
-                                        pluralStringResource(
-                                                R.plurals.settings_shortcuts_configured,
-                                                uiState.rightSideShortcuts.size,
-                                                uiState.rightSideShortcuts.size
-                                        ),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.secondary
-                        )
-                    }
-                }
+                SettingsSubpageNavigationRow(
+                        label = stringResource(R.string.settings_edit_shortcuts),
+                        subtitle =
+                                pluralStringResource(
+                                        R.plurals.settings_shortcuts_configured,
+                                        uiState.rightSideShortcuts.size,
+                                        uiState.rightSideShortcuts.size
+                                ),
+                        onClick = onEditRightShortcuts
+                )
             }
 
             // Home screen alignment picker
@@ -417,40 +378,21 @@ fun SettingsScreen(
 
             item { SettingsDivider() }
 
-            // ========== APP CATEGORIES ==========
-            item { SectionHeader(stringResource(R.string.settings_section_app_categories)) }
-            item {
-                Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier =
-                                Modifier.fillMaxWidth()
-                                        .clickable(onClick = onEditCategories)
-                                        .padding(horizontal = 24.dp, vertical = 14.dp)
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                                text = stringResource(R.string.settings_edit_app_categories),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onBackground
-                        )
-                        Text(
-                                text =
-                                        pluralStringResource(
-                                                R.plurals.settings_categories_count,
-                                                uiState.categoryDefinitions.size,
-                                                uiState.categoryDefinitions.size
-                                        ),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.secondary
-                        )
-                    }
-                }
-            }
-
-            item { SettingsDivider() }
-
-            // ========== APP DRAWER ==========
+            // ========== APP DRAWER (includes categories) ==========
             item { SectionHeader(stringResource(R.string.settings_section_app_drawer)) }
+
+            item {
+                SettingsSubpageNavigationRow(
+                        label = stringResource(R.string.settings_edit_app_categories),
+                        subtitle =
+                                pluralStringResource(
+                                        R.plurals.settings_categories_count,
+                                        uiState.categoryDefinitions.size,
+                                        uiState.categoryDefinitions.size
+                                ),
+                        onClick = onEditCategories
+                )
+            }
 
             item {
                 SettingsToggleRow(
@@ -478,26 +420,11 @@ fun SettingsScreen(
             }
 
             item {
-                Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier =
-                                Modifier.fillMaxWidth()
-                                        .clickable(onClick = onDrawerDotSearchSettings)
-                                        .padding(horizontal = 24.dp, vertical = 14.dp)
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                                text = stringResource(R.string.settings_dot_search_title),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onBackground
-                        )
-                        Text(
-                                text = stringResource(R.string.settings_dot_search_subtitle),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.secondary
-                        )
-                    }
-                }
+                SettingsSubpageNavigationRow(
+                        label = stringResource(R.string.settings_dot_search_title),
+                        subtitle = stringResource(R.string.settings_dot_search_subtitle),
+                        onClick = onDrawerDotSearchSettings
+                )
             }
 
             item { SettingsDivider() }
@@ -714,20 +641,6 @@ fun SettingsScreen(
         )
     }
 
-    if (showHomeWidgetsDialog) {
-        HomeWidgetsSettingsDialog(
-                showClock = uiState.showHomeClock,
-                showDate = uiState.showHomeDate,
-                showWeather = uiState.showHomeWeather,
-                showBattery = uiState.showHomeBattery,
-                onClockChange = viewModel::setShowHomeClock,
-                onDateChange = viewModel::setShowHomeDate,
-                onWeatherChange = viewModel::setShowHomeWeather,
-                onBatteryChange = viewModel::setShowHomeBattery,
-                onDismiss = { showHomeWidgetsDialog = false }
-        )
-    }
-
     showAppPickerFor.value?.let { pickerTarget ->
         when (pickerTarget) {
             "swipeLeft", "swipeRight" -> {
@@ -756,6 +669,76 @@ fun SettingsScreen(
                             showAppPickerFor.value = null
                         },
                         onDismiss = { showAppPickerFor.value = null }
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun HomeWidgetsSettingsScreen(
+        viewModel: SettingsViewModel = hiltViewModel(),
+        onNavigateBack: () -> Unit = {},
+        backgroundScrim: Color = FokusBackdrop.ScrimColorWithoutBlur
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    Column(
+            modifier =
+                    Modifier.fillMaxSize()
+                            .background(backgroundScrim)
+                            .testTag("home_widgets_settings_screen")
+    ) {
+        TopAppBar(
+                title = {
+                    Text(
+                            stringResource(R.string.settings_home_widgets),
+                            color = MaterialTheme.colorScheme.onBackground
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.action_back),
+                                tint = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+                },
+                colors =
+                        TopAppBarDefaults.topAppBarColors(
+                                containerColor = MaterialTheme.colorScheme.background
+                        )
+        )
+
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+            item {
+                SettingsToggleRow(
+                        label = stringResource(R.string.settings_show_home_clock),
+                        checked = uiState.showHomeClock,
+                        onCheckedChange = { viewModel.setShowHomeClock(it) }
+                )
+            }
+            item {
+                SettingsToggleRow(
+                        label = stringResource(R.string.settings_show_home_date),
+                        checked = uiState.showHomeDate,
+                        onCheckedChange = { viewModel.setShowHomeDate(it) }
+                )
+            }
+            item {
+                SettingsToggleRow(
+                        label = stringResource(R.string.settings_show_home_weather),
+                        checked = uiState.showHomeWeather,
+                        onCheckedChange = { viewModel.setShowHomeWeather(it) }
+                )
+            }
+            item {
+                SettingsToggleRow(
+                        label = stringResource(R.string.settings_show_home_battery),
+                        checked = uiState.showHomeBattery,
+                        onCheckedChange = { viewModel.setShowHomeBattery(it) }
                 )
             }
         }
@@ -918,89 +901,6 @@ private fun homeWidgetsSummaryText(uiState: SettingsUiState): String {
         stringResource(R.string.settings_home_widgets_summary_none)
     } else {
         parts.joinToString(", ")
-    }
-}
-
-@Composable
-private fun HomeWidgetsSettingsDialog(
-        showClock: Boolean,
-        showDate: Boolean,
-        showWeather: Boolean,
-        showBattery: Boolean,
-        onClockChange: (Boolean) -> Unit,
-        onDateChange: (Boolean) -> Unit,
-        onWeatherChange: (Boolean) -> Unit,
-        onBatteryChange: (Boolean) -> Unit,
-        onDismiss: () -> Unit,
-) {
-    AlertDialog(
-            onDismissRequest = onDismiss,
-            title = {
-                Text(
-                        stringResource(R.string.settings_home_widgets_dialog_title),
-                        color = MaterialTheme.colorScheme.onBackground
-                )
-            },
-            text = {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    HomeWidgetDialogSwitchRow(
-                            label = stringResource(R.string.settings_show_home_clock),
-                            checked = showClock,
-                            onCheckedChange = onClockChange,
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    HomeWidgetDialogSwitchRow(
-                            label = stringResource(R.string.settings_show_home_date),
-                            checked = showDate,
-                            onCheckedChange = onDateChange,
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    HomeWidgetDialogSwitchRow(
-                            label = stringResource(R.string.settings_show_home_weather),
-                            checked = showWeather,
-                            onCheckedChange = onWeatherChange,
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    HomeWidgetDialogSwitchRow(
-                            label = stringResource(R.string.settings_show_home_battery),
-                            checked = showBattery,
-                            onCheckedChange = onBatteryChange,
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = onDismiss) {
-                    Text(
-                            stringResource(R.string.action_done),
-                            color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            },
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-    )
-}
-
-@Composable
-private fun HomeWidgetDialogSwitchRow(
-        label: String,
-        checked: Boolean,
-        onCheckedChange: (Boolean) -> Unit,
-) {
-    Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier =
-                    Modifier.fillMaxWidth()
-                            .clickable { onCheckedChange(!checked) }
-                            .padding(vertical = 4.dp)
-    ) {
-        Text(
-                text = label,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.weight(1f)
-        )
-        Spacer(Modifier.width(12.dp))
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }
 
@@ -1519,12 +1419,21 @@ private fun SettingsActionRow(
         subtitle: String,
         onClick: () -> Unit
 ) {
+    SettingsSubpageNavigationRow(label = label, subtitle = subtitle, onClick = onClick)
+}
+
+@Composable
+private fun SettingsSubpageNavigationRow(
+        label: String,
+        subtitle: String? = null,
+        onClick: () -> Unit,
+) {
     Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier =
                     Modifier.fillMaxWidth()
                             .clickable(onClick = onClick)
-                            .padding(horizontal = 24.dp, vertical = 12.dp)
+                            .padding(horizontal = 24.dp, vertical = 14.dp)
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
@@ -1532,13 +1441,21 @@ private fun SettingsActionRow(
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onBackground
             )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.secondary
-            )
+            if (!subtitle.isNullOrEmpty()) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.secondary
+                )
+            }
         }
+        Icon(
+                imageVector = Icons.AutoMirrored.Filled.NavigateNext,
+                contentDescription = stringResource(R.string.cd_open_subpage),
+                tint = MaterialTheme.colorScheme.secondary,
+                modifier = Modifier.size(22.dp)
+        )
     }
 }
 

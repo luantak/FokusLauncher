@@ -63,7 +63,6 @@
     <string name="settings_swipe_left">左滑</string>
     <string name="settings_swipe_right">右滑</string>
     <string name="settings_section_app_drawer">应用抽屉</string>
-    <string name="settings_section_app_categories">应用分类</string>
     <string name="settings_edit_app_categories">编辑应用分类</string>
     <string name="settings_drawer_app_sort">应用排序</string>
     <string name="settings_drawer_app_sort_subtitle">“常用”统计的是从此启动器抽屉中的应用启动次数。若没有启动记录，将按字母顺序排序</string>
