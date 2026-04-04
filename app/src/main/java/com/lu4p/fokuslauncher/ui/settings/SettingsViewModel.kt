@@ -6,6 +6,7 @@ import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
+import com.lu4p.fokuslauncher.data.model.AppShortcutAction
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.font.SystemFontFamiliesProvider
@@ -69,7 +70,8 @@ data class SettingsUiState(
         val longLockReturnHome: Boolean = false,
         val longLockReturnHomeThresholdMinutes: Int =
                 PreferencesManager.DEFAULT_LONG_LOCK_RETURN_HOME_THRESHOLD_MINUTES,
-        val allApps: List<AppInfo> = emptyList()
+        val allApps: List<AppInfo> = emptyList(),
+        val allShortcutActions: List<AppShortcutAction> = emptyList(),
 )
 
 data class HiddenAppInfo(val packageName: String, val label: String)
@@ -233,6 +235,7 @@ constructor(
                                 appRepository.getInstalledAppsOnBackground().map { app ->
                                     app.copy(category = categoryMap[app.packageName] ?: app.category)
                                 }
+                        val allShortcutActions = appRepository.getAllShortcutActionsOnBackground()
                         val hiddenLabels = allApps.associate { it.packageName to it.label }
                         val hiddenInfos =
                                 leftState.base.hiddenNames.map { pkg ->
@@ -265,7 +268,8 @@ constructor(
                                         doubleTapEmptyLock = doubleTapEmptyLock,
                                         longLockReturnHome = longLockReturnHome,
                                         longLockReturnHomeThresholdMinutes = longLockThresholdMinutes,
-                                        allApps = allApps
+                                        allApps = allApps,
+                                        allShortcutActions = allShortcutActions
                                 )
                     }
         }

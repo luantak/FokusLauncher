@@ -141,7 +141,7 @@ fun SettingsScreen(
     }
 
     // Dialog states
-    val showAppPickerFor = remember { mutableStateOf<String?>(null) } // swipeLeft/swipeRight
+    val showAppPickerFor = remember { mutableStateOf<String?>(null) } // swipeLeft/swipeRight/weather
     val showResetConfirm = remember { mutableStateOf(false) }
     var showHomeWidgetsDialog by remember { mutableStateOf(false) }
 
@@ -728,21 +728,37 @@ fun SettingsScreen(
         )
     }
 
-    // App picker dialog (used for swipe shortcuts)
     showAppPickerFor.value?.let { pickerTarget ->
-        AppPickerDialog(
-                allApps = uiState.allApps,
-                onSelect = { packageName ->
-                    when (pickerTarget) {
-                        "swipeLeft" -> viewModel.setSwipeLeftTarget(ShortcutTarget.App(packageName))
-                        "swipeRight" ->
-                                viewModel.setSwipeRightTarget(ShortcutTarget.App(packageName))
-                        "weather" -> viewModel.setPreferredWeatherApp(packageName)
-                    }
-                    showAppPickerFor.value = null
-                },
-                onDismiss = { showAppPickerFor.value = null }
-        )
+        when (pickerTarget) {
+            "swipeLeft", "swipeRight" -> {
+                ShortcutActionPickerDialog(
+                        allActions = uiState.allShortcutActions,
+                        allApps = uiState.allApps,
+                        title = stringResource(R.string.edit_shortcuts_section_all_actions),
+                        onSelect = { action ->
+                            when (pickerTarget) {
+                                "swipeLeft" -> viewModel.setSwipeLeftTarget(action.target)
+                                "swipeRight" -> viewModel.setSwipeRightTarget(action.target)
+                            }
+                            showAppPickerFor.value = null
+                        },
+                        onDismiss = { showAppPickerFor.value = null }
+                )
+            }
+            else -> {
+                AppPickerDialog(
+                        allApps = uiState.allApps,
+                        onSelect = { packageName ->
+                            when (pickerTarget) {
+                                "weather" -> viewModel.setPreferredWeatherApp(packageName)
+                                else -> {}
+                            }
+                            showAppPickerFor.value = null
+                        },
+                        onDismiss = { showAppPickerFor.value = null }
+                )
+            }
+        }
     }
 }
 

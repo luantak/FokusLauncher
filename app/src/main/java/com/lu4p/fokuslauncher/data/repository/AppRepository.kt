@@ -534,13 +534,19 @@ constructor(
 
             val shortcutUser = app.userHandle ?: myUser
             val shortcuts = try {
-                val query = LauncherApps.ShortcutQuery()
-                    .setPackage(app.packageName)
-                    .setQueryFlags(
+                val queryFlags =
                         LauncherApps.ShortcutQuery.FLAG_MATCH_DYNAMIC or
-                            LauncherApps.ShortcutQuery.FLAG_MATCH_MANIFEST or
-                            LauncherApps.ShortcutQuery.FLAG_MATCH_PINNED
-                    )
+                                LauncherApps.ShortcutQuery.FLAG_MATCH_MANIFEST or
+                                LauncherApps.ShortcutQuery.FLAG_MATCH_PINNED or
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                                    LauncherApps.ShortcutQuery.FLAG_MATCH_CACHED
+                                } else {
+                                    0
+                                }
+                val query =
+                        LauncherApps.ShortcutQuery()
+                                .setPackage(app.packageName)
+                                .setQueryFlags(queryFlags)
                 launcherApps.getShortcuts(query, shortcutUser).orEmpty()
             } catch (_: Exception) {
                 emptyList()
@@ -575,6 +581,9 @@ constructor(
                 .thenBy { it.actionLabel.lowercase() }
         )
     }
+
+    suspend fun getAllShortcutActionsOnBackground(): List<AppShortcutAction> =
+            withContext(Dispatchers.IO) { getAllShortcutActions() }
 
     /** Searches the installed apps list by a query string, matching against the app label. */
     fun searchApps(query: String): List<AppInfo> {

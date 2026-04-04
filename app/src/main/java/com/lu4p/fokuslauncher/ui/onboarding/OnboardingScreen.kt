@@ -15,10 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilledTonalButton
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.CheckCircle
@@ -31,7 +28,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextButton
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -57,13 +53,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.ui.util.formatShortcutTargetDisplay
 import com.lu4p.fokuslauncher.data.model.AppInfo
-import com.lu4p.fokuslauncher.ui.drawer.groupAppsIntoProfileSections
-import com.lu4p.fokuslauncher.ui.drawer.profileGroupedAppItems
-import com.lu4p.fokuslauncher.ui.drawer.sortAppsAlphabeticallyByProfileSection
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
+import com.lu4p.fokuslauncher.ui.settings.ShortcutActionPickerDialog
 import com.lu4p.fokuslauncher.ui.home.HomeViewModel
 import com.lu4p.fokuslauncher.ui.settings.EditHomeAppsScreen
-import com.lu4p.fokuslauncher.utils.containsNormalizedSearch
 
 @Composable
 fun OnboardingScreen(
@@ -547,74 +540,21 @@ private fun SwipeShortcutsStep(
     }
 
     showAppPickerFor.value?.let { pickerTarget ->
-        OnboardingAppPickerDialog(
+        ShortcutActionPickerDialog(
+            allActions = swipeState.allShortcutActions,
             allApps = swipeState.allApps,
-            onSelect = { packageName ->
+            title = stringResource(R.string.edit_shortcuts_section_all_actions),
+            onSelect = { action ->
                 when (pickerTarget) {
-                    "swipeLeft" -> onSetSwipeLeft(ShortcutTarget.App(packageName))
-                    "swipeRight" -> onSetSwipeRight(ShortcutTarget.App(packageName))
+                    "swipeLeft" -> onSetSwipeLeft(action.target)
+                    "swipeRight" -> onSetSwipeRight(action.target)
                 }
                 showAppPickerFor.value = null
             },
-            onDismiss = { showAppPickerFor.value = null }
+            onDismiss = { showAppPickerFor.value = null },
+            containerColor = Color.Black
         )
     }
-}
-
-@Composable
-private fun OnboardingAppPickerDialog(
-    allApps: List<AppInfo>,
-    onSelect: (String) -> Unit,
-    onDismiss: () -> Unit
-) {
-    var filter by remember { mutableStateOf("") }
-    val context = LocalContext.current
-    val filtered =
-        remember(filter, allApps) {
-            if (filter.isBlank()) allApps
-            else allApps.filter { it.label.containsNormalizedSearch(filter) }
-        }
-    val filteredSections =
-        remember(filtered, context) {
-            groupAppsIntoProfileSections(context, filtered, ::sortAppsAlphabeticallyByProfileSection)
-        }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.onboarding_swipe_pick_app), color = MaterialTheme.colorScheme.onBackground) },
-        text = {
-            Column {
-                OutlinedTextField(
-                    value = filter,
-                    onValueChange = { filter = it },
-                    label = { Text(stringResource(R.string.search)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                LazyColumn(modifier = Modifier.height(300.dp)) {
-                    profileGroupedAppItems(
-                        sections = filteredSections,
-                        keyPrefix = "onboarding_app_pick",
-                        horizontalPadding = 8.dp,
-                    ) { app ->
-                        Text(
-                            text = app.label,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onBackground,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onSelect(app.packageName) }
-                                .padding(vertical = 10.dp, horizontal = 8.dp)
-                        )
-                    }
-                }
-            }
-        },
-        confirmButton = {},
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.onboarding_swipe_cancel)) } },
-        containerColor = Color.Black
-    )
 }
 
 @Composable

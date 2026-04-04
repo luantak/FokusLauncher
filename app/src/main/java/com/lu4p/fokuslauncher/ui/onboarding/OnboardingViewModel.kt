@@ -15,6 +15,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.AppInfo
+import com.lu4p.fokuslauncher.data.model.AppShortcutAction
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.utils.isDefaultHomeApp
@@ -42,6 +43,7 @@ enum class OnboardingStep {
 
 data class SwipeShortcutsState(
     val allApps: List<AppInfo> = emptyList(),
+    val allShortcutActions: List<AppShortcutAction> = emptyList(),
     val swipeLeftTarget: ShortcutTarget? = null,
     val swipeRightTarget: ShortcutTarget? = null
 )
@@ -83,7 +85,8 @@ class OnboardingViewModel @Inject constructor(
         appRepository.getInstalledAppsVersion()
     ) { swipeLeft, swipeRight, _ ->
         SwipeShortcutsState(
-            allApps = appRepository.getInstalledAppsOnBackground(),
+            allApps = appRepository.getInstalledApps(),
+            allShortcutActions = appRepository.getAllShortcutActions(),
             swipeLeftTarget = swipeLeft,
             swipeRightTarget = swipeRight
         )
