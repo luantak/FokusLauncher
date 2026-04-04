@@ -61,23 +61,20 @@ import androidx.compose.material.icons.outlined.Work
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.ui.components.generated.MaterialOutlinedIconCategories
-import com.lu4p.fokuslauncher.ui.components.generated.MaterialOutlinedIconIndex
-import java.lang.reflect.Modifier
+import com.lu4p.fokuslauncher.ui.components.generated.MaterialShippedOutlinedIcons
 import java.util.Locale
-import java.util.TreeMap
 
 /**
  * Home-screen and drawer icons using Material **Outlined** symbols (same family as
  * [Google Fonts Material Symbols](https://fonts.google.com/icons) “outlined” style), exposed
  * as Compose vectors via `material-icons-extended`.
  *
- * Glyphs are [Icons.Outlined] extension properties; names are enumerated by
- * [MaterialOutlinedIconIndex] (from the library’s sources). Picker **sections** use **categories**
- * from [Google Material Symbols metadata](https://fonts.google.com/metadata/icons?key=material_symbols)
- * ([MaterialOutlinedIconCategories]). The **full** outlined index is loaded for [iconFor] / the drawer
- * rail; [names] and [iconPickerSections] list only glyphs allowed by [isOmittedFromIconPickers].
+ * Only a **subset** of extended outlined glyphs is shipped ([MaterialShippedOutlinedIcons]): every
+ * icon allowed in pickers plus [legacyAliases] Outlined targets, so R8 can strip unused library
+ * icons. Regenerate that file with `scripts/gen_shipped_outlined_icons.py` when the full index or
+ * picker rules change. Picker **sections** use [MaterialOutlinedIconCategories] (Google metadata).
  * Unknown keys still resolve to [Icons.Outlined.Circle]. Legacy `send` uses
- * [Icons.AutoMirrored.Outlined.Send] (not in the index).
+ * [Icons.AutoMirrored.Outlined.Send].
  */
 object MinimalIcons {
 
@@ -133,9 +130,10 @@ object MinimalIcons {
     }
 
     /**
-     * Every glyph in [MaterialOutlinedIconIndex], loaded for display ([iconFor], [all], legacy maps).
+     * Shipped outlined glyphs only ([MaterialShippedOutlinedIcons]); keys not included here fall
+     * through [iconFor] to [Icons.Outlined.Circle] unless matched by [legacyAliases].
      */
-    private val allOutlinedIcons: Map<String, ImageVector> by lazy { loadAllOutlinedFromIndex() }
+    private val allOutlinedIcons: Map<String, ImageVector> = MaterialShippedOutlinedIcons.byName
 
     /** Vectors that appear in [names] / pickers (at least one non-omitted outlined name). */
     private val pickerOutlinedIconVectorSet: Set<ImageVector> by lazy {
@@ -207,7 +205,7 @@ object MinimalIcons {
                     "translate" to Icons.Outlined.Translate,
             )
 
-    /** Valid storage keys: full outlined index plus all legacy aliases (see [iconFor]). */
+    /** Valid storage keys: shipped outlined names plus all legacy aliases (see [iconFor]). */
     val all: Map<String, ImageVector> by lazy {
         buildMap {
             putAll(allOutlinedIcons)
@@ -340,52 +338,5 @@ object MinimalIcons {
                 if (ch.isLowerCase()) ch.titlecase(Locale.getDefault()) else ch.toString()
             }
         }
-    }
-
-    private fun loadAllOutlinedFromIndex(): Map<String, ImageVector> {
-        val loader = checkNotNull(Icons.Outlined::class.java.classLoader) { "Icons.Outlined classloader" }
-        val out = TreeMap<String, ImageVector>()
-        val recvOutlined = Icons.Outlined
-        val clsOutlined = Icons.Outlined::class.java
-        for (base in MaterialOutlinedIconIndex.OUTLINED_FILE_BASES) {
-            loadExtensionOutlinedIcon(
-                            packageFqcn = "androidx.compose.material.icons.outlined",
-                            fileBase = base,
-                            receiverClass = clsOutlined,
-                            receiver = recvOutlined,
-                            classLoader = loader,
-                    )
-                    ?.let { out[base] = it }
-        }
-        return out
-    }
-
-    private fun loadExtensionOutlinedIcon(
-            packageFqcn: String,
-            fileBase: String,
-            receiverClass: Class<*>,
-            receiver: Any,
-            classLoader: ClassLoader,
-    ): ImageVector? {
-        val fqcn = "$packageFqcn.${fileBase}Kt"
-        val clazz =
-                try {
-                    Class.forName(fqcn, false, classLoader)
-                } catch (_: ClassNotFoundException) {
-                    return null
-                }
-        for (method in clazz.declaredMethods) {
-            if (!Modifier.isStatic(method.modifiers)) continue
-            if (method.returnType != ImageVector::class.java) continue
-            if (method.parameterCount != 1) continue
-            if (method.parameterTypes[0] != receiverClass) continue
-            method.isAccessible = true
-            return try {
-                method.invoke(null, receiver) as ImageVector
-            } catch (_: Throwable) {
-                continue
-            }
-        }
-        return null
     }
 }

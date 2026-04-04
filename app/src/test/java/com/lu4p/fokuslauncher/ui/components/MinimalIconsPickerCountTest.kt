@@ -8,9 +8,9 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * [MinimalIcons.names] loads outlined icons via reflection; Robolectric provides a classpath close
- * enough for unit tests. The constant documents how many distinct glyphs appear in icon pickers when
- * categories / the material index change.
+ * [MinimalIcons.names] uses the shipped outlined subset; Robolectric suffices for unit tests. The
+ * constant documents how many distinct glyphs appear in icon pickers when categories / shipped set
+ * change (regenerate [MaterialShippedOutlinedIcons] via `scripts/gen_shipped_outlined_icons.py`).
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
@@ -20,7 +20,7 @@ class MinimalIconsPickerCountTest {
     fun minimalIconPicker_namesCount_matchesExpectedCatalogSize() {
         val names = MinimalIcons.names
         assertEquals(
-                "Update EXPECTED_PICKER_ICON_COUNT when MaterialOutlinedIconIndex, " +
+                "Update EXPECTED_PICKER_ICON_COUNT when MaterialShippedOutlinedIcons, " +
                         "MaterialOutlinedIconCategories, or picker filters change.",
                 EXPECTED_PICKER_ICON_COUNT,
                 names.size

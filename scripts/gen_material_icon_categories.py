@@ -9,6 +9,9 @@ Then:
   python3 scripts/gen_material_icon_categories.py build/material_symbols_icons.json \\
     app/src/main/java/com/lu4p/fokuslauncher/ui/components/generated/MaterialOutlinedIconIndex.kt \\
     app/src/main/java/com/lu4p/fokuslauncher/ui/components/generated/MaterialOutlinedIconCategories.kt
+
+Then refresh the APK icon subset:
+  python3 scripts/gen_shipped_outlined_icons.py ...
 """
 from __future__ import annotations
 
