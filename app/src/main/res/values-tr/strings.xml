@@ -113,10 +113,6 @@
     <string name="settings_section_app_categories">Uygulama kategorileri</string>
     <string name="settings_edit_app_categories">Uygulama kategorilerini düzenle</string>
     <string name="settings_section_app_drawer">Uygulama menüsü</string>
-    <string name="settings_auto_open_keyboard">Uygulama menüsünde klavyeyi otomatik olarak aç</string>
-    <string name="settings_auto_open_keyboard_subtitle">Menü açıldığında arama alanına odaklan ve klavyeyi göster</string>
-    <string name="settings_hide_all_apps_section">Tüm uygulamaları gizleme bölümü</string>
-    <string name="settings_hide_all_apps_section_subtitle">Menüyü kategorilerinize ve arama sonuçlarınıza odaklı tutun</string>
     <string name="settings_drawer_app_sort">Uygulama sırası</string>
     <string name="settings_drawer_app_sort_subtitle">En çok açılan uygulamalar, bu launcher\'ın uygulama menüsünden yapılan açılışları sayar. Hiçbir açılış kaydedilmediyse, liste alfabetik olarak sıralanır.</string>
     <string name="settings_drawer_app_sort_alphabetical">A-Z</string>

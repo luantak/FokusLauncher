@@ -63,12 +63,8 @@
     <string name="settings_swipe_left">左滑</string>
     <string name="settings_swipe_right">右滑</string>
     <string name="settings_section_app_drawer">应用抽屉</string>
-    <string name="settings_auto_open_keyboard">在抽屉中自动打开键盘</string>
-    <string name="settings_auto_open_keyboard_subtitle">当抽屉开启时，自动聚焦搜索框并打开键盘</string>
-    <string name="settings_hide_all_apps_section">不显示所有应用</string>
     <string name="settings_section_app_categories">应用分类</string>
     <string name="settings_edit_app_categories">编辑应用分类</string>
-    <string name="settings_hide_all_apps_section_subtitle">使应用抽屉更专注于你的应用分类和搜索结果</string>
     <string name="settings_drawer_app_sort">应用排序</string>
     <string name="settings_drawer_app_sort_subtitle">“常用”统计的是从此启动器抽屉中的应用启动次数。若没有启动记录，将按字母顺序排序</string>
     <string name="settings_drawer_app_sort_alphabetical">A–Z</string>
