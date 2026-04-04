@@ -35,7 +35,7 @@ fun DateBatteryRow(
             Text(
                 text = date,
                 style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.secondary,
+                color = MaterialTheme.colorScheme.onBackground,
                 modifier =
                         Modifier.clickable(
                                 indication = null,
@@ -52,7 +52,7 @@ fun DateBatteryRow(
             Text(
                 text = "$batteryPercent%",
                 style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.secondary
+                color = MaterialTheme.colorScheme.onBackground
             )
         }
     }
