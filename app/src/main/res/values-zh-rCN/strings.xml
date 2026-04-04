@@ -57,6 +57,7 @@
     <string name="settings_set_background_image">设置背景图像</string>
     <string name="settings_set_black_wallpaper">设为纯黑背景</string>
     <string name="settings_section_home_screen">主屏幕</string>
+    <string name="settings_home_widgets_subtitle">选择要显示哪些小组件，以及轻点它们时要打开的应用</string>
     <string name="settings_edit_home_screen">编辑主屏幕</string>
     <string name="settings_edit_shortcuts">编辑快捷方式</string>
     <string name="settings_weather_app">天气应用</string>

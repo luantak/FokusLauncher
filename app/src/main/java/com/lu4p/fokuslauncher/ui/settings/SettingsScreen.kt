@@ -290,7 +290,8 @@ fun SettingsScreen(
             item {
                 SettingsSubpageNavigationRow(
                         label = stringResource(R.string.settings_home_widgets),
-                        subtitle = homeWidgetsSummaryText(uiState),
+                        subtitle =
+                                stringResource(R.string.settings_home_widgets_subtitle),
                         onClick = onOpenHomeWidgetsSettings
                 )
             }
@@ -999,26 +1000,6 @@ fun DeviceControlSettingsScreen(
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun homeWidgetsSummaryText(uiState: SettingsUiState): String {
-    val clock = stringResource(R.string.settings_show_home_clock)
-    val date = stringResource(R.string.settings_show_home_date)
-    val weather = stringResource(R.string.settings_show_home_weather)
-    val battery = stringResource(R.string.settings_show_home_battery)
-    val parts =
-            buildList {
-                if (uiState.showHomeClock) add(clock)
-                if (uiState.showHomeDate) add(date)
-                if (uiState.showHomeWeather) add(weather)
-                if (uiState.showHomeBattery) add(battery)
-            }
-    return if (parts.isEmpty()) {
-        stringResource(R.string.settings_home_widgets_summary_none)
-    } else {
-        parts.joinToString(", ")
     }
 }
 

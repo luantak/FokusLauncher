@@ -88,8 +88,8 @@
     <string name="settings_accessibility_permission_enabled">Fokus Launcher için izin verildi</string>
     <string name="settings_accessibility_permission_disabled">Çift tıklama kilidi ve uzun kilit sonrası ana ekrana dönme için gereklidir</string>
     <string name="settings_home_widgets">Widget\'ları düzenle</string>
+    <string name="settings_home_widgets_subtitle">Hangi widget\'ların gösterileceğini ve dokununca hangi uygulamaların açılacağını seçin</string>
     <string name="settings_home_widgets_dialog_title">Gosterilecekler</string>
-    <string name="settings_home_widgets_summary_none">Hiçbirşey</string>
     <string name="settings_show_home_clock">Saati göster</string>
     <string name="settings_show_home_date">Tarihi göster</string>
     <string name="settings_show_home_weather">Hava durumunu göster</string>

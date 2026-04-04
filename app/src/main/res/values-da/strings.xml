@@ -97,8 +97,8 @@
     <string name="settings_accessibility_permission_enabled">Tilladelse givet til Fokus Startskærm</string>
     <string name="settings_accessibility_permission_disabled">Kræves til dobbelttryk for at låse og vende tilbage til startskærmen efter langtids lås</string>
     <string name="settings_home_widgets">Konfigurer widgets</string>
+    <string name="settings_home_widgets_subtitle">Vælg hvilke widgets der vises, og hvilke apps der åbnes, når du trykker på dem</string>
     <string name="settings_home_widgets_dialog_title">Hvad skal der vises</string>
-    <string name="settings_home_widgets_summary_none">Ingenting</string>
     <string name="settings_show_home_clock">Vis ur</string>
     <string name="settings_show_home_date">Vis dato</string>
     <string name="settings_show_home_weather">Vis vejr</string>

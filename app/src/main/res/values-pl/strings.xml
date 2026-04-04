@@ -143,8 +143,8 @@
     <string name="settings_accessibility_permission_enabled">Przyznane dla Fokus Launchera</string>
     <string name="settings_accessibility_permission_disabled">Wymagane do podwójnego stuknięcia, aby zablokować, i powrotu po długiej blokadzie</string>
     <string name="settings_home_widgets">Skonfiguruj widżety</string>
+    <string name="settings_home_widgets_subtitle">Wybierz, które widżety pokazywać i które aplikacje otwierać po dotknięciu</string>
     <string name="settings_home_widgets_dialog_title">Co wyświetlać</string>
-    <string name="settings_home_widgets_summary_none">Nic</string>
     <string name="settings_show_home_clock">Pokaż zegar</string>
     <string name="settings_show_home_date">Pokaż datę</string>
     <string name="settings_show_home_weather">Pokaż pogodę</string>

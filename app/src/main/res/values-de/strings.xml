@@ -141,8 +141,8 @@
     <string name="settings_accessibility_permission_enabled">Für Fokus Launcher gewährt</string>
     <string name="settings_accessibility_permission_disabled">Erforderlich für Doppeltipp zum Sperren und Rückkehr nach langer Sperre</string>
     <string name="settings_home_widgets">Widgets konfigurieren</string>
+    <string name="settings_home_widgets_subtitle">Wähle, welche Widgets angezeigt werden und welche Apps sich beim Antippen öffnen</string>
     <string name="settings_home_widgets_dialog_title">Was anzeigen</string>
-    <string name="settings_home_widgets_summary_none">Nichts</string>
     <string name="settings_show_home_clock">Uhr anzeigen</string>
     <string name="settings_show_home_date">Datum anzeigen</string>
     <string name="settings_show_home_weather">Wetter anzeigen</string>

@@ -146,8 +146,8 @@
     <string name="settings_accessibility_permission_enabled">Granted for Fokus Launcher</string>
     <string name="settings_accessibility_permission_disabled">Required for double tap to lock and return home after long lock</string>
     <string name="settings_home_widgets">Configure widgets</string>
+    <string name="settings_home_widgets_subtitle">Choose which widgets to show and which apps to open when you tap them</string>
     <string name="settings_home_widgets_dialog_title">What to show</string>
-    <string name="settings_home_widgets_summary_none">Nothing</string>
     <string name="settings_show_home_clock">Show clock</string>
     <string name="settings_show_home_date">Show date</string>
     <string name="settings_show_home_weather">Show weather</string>
