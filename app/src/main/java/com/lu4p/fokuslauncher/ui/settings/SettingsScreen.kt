@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.outlined.LocationOn
+import androidx.compose.material.icons.outlined.Translate
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -74,6 +75,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.background
 import com.lu4p.fokuslauncher.R
+import java.text.Collator
 import java.util.Locale
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -559,6 +561,23 @@ fun SettingsScreen(
                         context.startActivity(
                             Intent(Intent.ACTION_VIEW, "https://github.com/luantak/FokusLauncher".toUri())
                                 .apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+                        )
+                    }
+                )
+            }
+
+            item {
+                ExternalLinkRow(
+                    icon = Icons.Outlined.Translate,
+                    title = stringResource(R.string.settings_weblate_title),
+                    subtitle = stringResource(R.string.settings_weblate_subtitle),
+                    onClick = {
+                        context.startActivity(
+                            Intent(
+                                            Intent.ACTION_VIEW,
+                                            "https://hosted.weblate.org/engage/fokus-launcher/".toUri()
+                                    )
+                                    .apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
                         )
                     }
                 )
@@ -1061,12 +1080,16 @@ private fun AppLanguageDropdown(
         onTagSelected: (String) -> Unit
 ) {
     val systemDefaultLabel = stringResource(R.string.settings_language_system_default)
-    val supportedLocaleTags = remember { listOf("en", "de", "pl") }
+    val supportedLocaleTags = remember { listOf("en", "de", "pl", "zh-CN", "tr", "da") }
     val options =
             remember(systemDefaultLabel) {
+                val collator = Collator.getInstance(Locale.ROOT).apply { strength = Collator.PRIMARY }
                 buildList {
                     add("" to systemDefaultLabel)
-                    supportedLocaleTags.forEach { tag -> add(tag to languageAutonym(tag)) }
+                    supportedLocaleTags
+                            .map { tag -> tag to languageAutonym(tag) }
+                            .sortedWith { a, b -> collator.compare(a.second, b.second) }
+                            .forEach { add(it) }
                 }
             }
     var expanded by remember { mutableStateOf(false) }

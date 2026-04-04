@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Fokus Launcher</string>
-
     <!-- Special drawer categories: English keys live in ReservedCategoryNames.kt; translate these for UI. -->
     <string name="drawer_filter_all_apps">Alle Apps</string>
     <string name="drawer_filter_private">Privat</string>
@@ -102,7 +100,6 @@
     <string name="edit_shortcuts_section_selected">Ausgewählte Schnellzugriffe</string>
     <string name="edit_shortcuts_section_all_actions">Alle App-Aktionen</string>
     <string name="edit_home_section_on_home">Apps auf dem Startbildschirm</string>
-    <string name="edit_home_section_all_apps">@string/drawer_filter_all_apps</string>
     <string name="edit_shortcuts_choose_icon">Symbol auswählen</string>
     <string name="search_icons">Symbole suchen</string>
     <string name="icon_picker_current_icon">Aktuelles Symbol</string>
@@ -253,6 +250,8 @@
     <string name="settings_connect_section">Verbinden</string>
     <string name="settings_github_title">Stern auf GitHub geben</string>
     <string name="settings_github_subtitle">Quellcode ansehen und mitmachen</string>
+    <string name="settings_weblate_title">Beim Übersetzen helfen</string>
+    <string name="settings_weblate_subtitle">Übersetzungen auf Weblate beitragen</string>
     <string name="settings_matrix_title">Am Chat teilnehmen</string>
     <string name="settings_matrix_subtitle">Hilfe erhalten und Feedback geben</string>
 </resources>

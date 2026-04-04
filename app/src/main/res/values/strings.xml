@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Fokus Launcher</string>
+    <string name="app_name" translatable="false">Fokus</string>
 
     <!-- Special drawer categories: English keys live in ReservedCategoryNames.kt; translate these for UI. -->
     <string name="drawer_filter_all_apps">All apps</string>
@@ -102,7 +102,7 @@
     <string name="edit_shortcuts_section_selected">Selected shortcuts</string>
     <string name="edit_shortcuts_section_all_actions">All app actions</string>
     <string name="edit_home_section_on_home">Home screen apps</string>
-    <string name="edit_home_section_all_apps">@string/drawer_filter_all_apps</string>
+    <string name="edit_home_section_all_apps" translatable="false">@string/drawer_filter_all_apps</string>
     <string name="edit_shortcuts_choose_icon">Choose icon</string>
     <string name="search_icons">Search icons</string>
     <string name="icon_picker_current_icon">Current icon</string>
@@ -280,6 +280,8 @@
     <string name="settings_connect_section">Connect</string>
     <string name="settings_github_title">Star on GitHub</string>
     <string name="settings_github_subtitle">View source and contribute</string>
+    <string name="settings_weblate_title">Help translate</string>
+    <string name="settings_weblate_subtitle">Contribute translations on Weblate</string>
     <string name="settings_matrix_title">Join the discussion</string>
     <string name="settings_matrix_subtitle">Get help and share feedback</string>
 </resources>
