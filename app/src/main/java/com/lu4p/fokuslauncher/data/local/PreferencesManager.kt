@@ -32,6 +32,8 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         private val SWIPE_RIGHT_KEY = stringPreferencesKey("swipe_right_app")
         private val RIGHT_SIDE_SHORTCUTS_KEY = stringPreferencesKey("right_side_shortcuts")
         private val PREFERRED_WEATHER_APP_KEY = stringPreferencesKey("preferred_weather_app")
+        private val PREFERRED_CLOCK_APP_KEY = stringPreferencesKey("preferred_clock_app")
+        private val PREFERRED_CALENDAR_APP_KEY = stringPreferencesKey("preferred_calendar_app")
         private val SHOW_STATUS_BAR_KEY = booleanPreferencesKey("show_status_bar")
         private val SHOW_HOME_CLOCK_KEY = booleanPreferencesKey("show_home_clock")
         private val SHOW_HOME_DATE_KEY = booleanPreferencesKey("show_home_date")
@@ -158,6 +160,30 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
 
     suspend fun setPreferredWeatherApp(packageName: String) {
         context.fokusLauncherPreferencesDataStore.edit { prefs -> prefs[PREFERRED_WEATHER_APP_KEY] = packageName }
+    }
+
+    // --- Clock / calendar tap overrides (home widgets) ---
+
+    val preferredClockAppFlow: Flow<String> =
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
+                prefs[PREFERRED_CLOCK_APP_KEY] ?: ""
+            }
+
+    suspend fun setPreferredClockApp(packageName: String) {
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            prefs[PREFERRED_CLOCK_APP_KEY] = packageName
+        }
+    }
+
+    val preferredCalendarAppFlow: Flow<String> =
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
+                prefs[PREFERRED_CALENDAR_APP_KEY] ?: ""
+            }
+
+    suspend fun setPreferredCalendarApp(packageName: String) {
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            prefs[PREFERRED_CALENDAR_APP_KEY] = packageName
+        }
     }
 
     // --- System UI ---

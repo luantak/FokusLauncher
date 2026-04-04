@@ -683,6 +683,56 @@ fun HomeWidgetsSettingsScreen(
         backgroundScrim: Color = FokusBackdrop.ScrimColorWithoutBlur
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val activity = LocalActivity.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val showAppPickerFor = remember { mutableStateOf<String?>(null) }
+
+    var hasCoarseLocationPermission by remember {
+        mutableStateOf(
+                ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                hasCoarseLocationPermission =
+                        ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.ACCESS_COARSE_LOCATION
+                        ) == PackageManager.PERMISSION_GRANTED
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    val locationPermissionLauncher =
+            rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.RequestPermission()
+            ) {
+                hasCoarseLocationPermission =
+                        ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.ACCESS_COARSE_LOCATION
+                        ) == PackageManager.PERMISSION_GRANTED
+                if (!hasCoarseLocationPermission &&
+                                activity != null &&
+                                !ActivityCompat.shouldShowRequestPermissionRationale(
+                                        activity,
+                                        Manifest.permission.ACCESS_COARSE_LOCATION
+                                )) {
+                    context.startActivity(
+                            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                data = Uri.fromParts("package", context.packageName, null)
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                    )
+                }
+            }
 
     Column(
             modifier =
@@ -741,7 +791,75 @@ fun HomeWidgetsSettingsScreen(
                         onCheckedChange = { viewModel.setShowHomeBattery(it) }
                 )
             }
+            item { SettingsDivider() }
+            item {
+                Column {
+                    if (!hasCoarseLocationPermission) {
+                        LocationWeatherRow(onEnableClick = {
+                            locationPermissionLauncher.launch(
+                                    Manifest.permission.ACCESS_COARSE_LOCATION
+                            )
+                        })
+                    } else {
+                        val weatherAppLabel =
+                                formatWeatherAppLabel(
+                                        context,
+                                        uiState.preferredWeatherAppPackage,
+                                        uiState.allApps
+                                )
+                        ShortcutTargetRow(
+                                label = stringResource(R.string.settings_weather_app),
+                                currentTarget = weatherAppLabel,
+                                onPickApp = { showAppPickerFor.value = "weather" },
+                                onClear = { viewModel.setPreferredWeatherApp("") }
+                        )
+                    }
+                }
+            }
+            item {
+                val clockLabel =
+                        formatWidgetAppOverrideLabel(
+                                context,
+                                uiState.preferredClockAppPackage,
+                                uiState.allApps
+                        )
+                ShortcutTargetRow(
+                        label = stringResource(R.string.settings_widget_clock_app),
+                        currentTarget = clockLabel,
+                        onPickApp = { showAppPickerFor.value = "clock" },
+                        onClear = { viewModel.setPreferredClockApp("") }
+                )
+            }
+            item {
+                val calendarLabel =
+                        formatWidgetAppOverrideLabel(
+                                context,
+                                uiState.preferredCalendarAppPackage,
+                                uiState.allApps
+                        )
+                ShortcutTargetRow(
+                        label = stringResource(R.string.settings_widget_calendar_app),
+                        currentTarget = calendarLabel,
+                        onPickApp = { showAppPickerFor.value = "calendar" },
+                        onClear = { viewModel.setPreferredCalendarApp("") }
+                )
+            }
         }
+    }
+
+    showAppPickerFor.value?.let { pickerTarget ->
+        AppPickerDialog(
+                allApps = uiState.allApps,
+                onSelect = { packageName ->
+                    when (pickerTarget) {
+                        "weather" -> viewModel.setPreferredWeatherApp(packageName)
+                        "clock" -> viewModel.setPreferredClockApp(packageName)
+                        "calendar" -> viewModel.setPreferredCalendarApp(packageName)
+                    }
+                    showAppPickerFor.value = null
+                },
+                onDismiss = { showAppPickerFor.value = null }
+        )
     }
 }
 
@@ -1692,6 +1810,17 @@ private fun AppPickerDialog(
             },
             containerColor = MaterialTheme.colorScheme.surfaceVariant
     )
+}
+
+private fun formatWidgetAppOverrideLabel(
+        context: Context,
+        packageName: String,
+        allApps: List<AppInfo>
+): String {
+    if (packageName.isNotBlank()) {
+        return allApps.find { it.packageName == packageName }?.label ?: packageName
+    }
+    return context.getString(R.string.settings_weather_app_system_default)
 }
 
 private fun formatWeatherAppLabel(

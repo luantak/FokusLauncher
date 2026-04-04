@@ -94,6 +94,8 @@
     <string name="settings_show_home_date">Tarihi göster</string>
     <string name="settings_show_home_weather">Hava durumunu göster</string>
     <string name="settings_show_home_battery">Pil seviyesini göster</string>
+    <string name="settings_widget_clock_app">Saat uygulaması</string>
+    <string name="settings_widget_calendar_app">Takvim uygulaması</string>
     <string name="settings_double_tap_to_lock">Kitlemek için çift tıkla</string>
     <string name="settings_double_tap_to_lock_subtitle">Cihazı ana ekrandaki boş alana çift tıklayarak kilitleyin</string>
     <string name="settings_return_home_after_long_lock">Uzun kilitlenmenin ardından ana ekrana dönün</string>

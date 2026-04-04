@@ -103,6 +103,8 @@
     <string name="settings_show_home_date">Vis dato</string>
     <string name="settings_show_home_weather">Vis vejr</string>
     <string name="settings_show_home_battery">Vis batteri niveau</string>
+    <string name="settings_widget_clock_app">Ur-app</string>
+    <string name="settings_widget_calendar_app">Kalender-app</string>
     <string name="settings_double_tap_to_lock">Dobbelt tryk for at låse</string>
     <string name="settings_double_tap_to_lock_subtitle">Lås enheden ved at dobbelt trykke på et tomt område på startskærmen</string>
     <string name="settings_return_home_after_long_lock">Vend tilbage til start skærmen efter langtids lås</string>

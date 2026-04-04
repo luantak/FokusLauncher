@@ -60,6 +60,8 @@
     <string name="settings_edit_home_screen">编辑主屏幕</string>
     <string name="settings_edit_shortcuts">编辑快捷方式</string>
     <string name="settings_weather_app">天气应用</string>
+    <string name="settings_widget_clock_app">时钟应用</string>
+    <string name="settings_widget_calendar_app">日历应用</string>
     <string name="settings_swipe_left">左滑</string>
     <string name="settings_swipe_right">右滑</string>
     <string name="settings_section_app_drawer">应用抽屉</string>

@@ -147,6 +147,8 @@
     <string name="settings_show_home_date">Datum anzeigen</string>
     <string name="settings_show_home_weather">Wetter anzeigen</string>
     <string name="settings_show_home_battery">Akkustand anzeigen</string>
+    <string name="settings_widget_clock_app">Uhr-App</string>
+    <string name="settings_widget_calendar_app">Kalender-App</string>
     <string name="settings_double_tap_to_lock">Doppeltipp zum Sperren</string>
     <string name="settings_double_tap_to_lock_subtitle">Sperrt das Gerät durch doppeltes Tippen auf eine leere Stelle des Startbildschirms</string>
     <string name="settings_return_home_after_long_lock">Nach langer Sperre zum Startbildschirm zurückkehren</string>

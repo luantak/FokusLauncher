@@ -152,6 +152,8 @@
     <string name="settings_show_home_date">Show date</string>
     <string name="settings_show_home_weather">Show weather</string>
     <string name="settings_show_home_battery">Show battery level</string>
+    <string name="settings_widget_clock_app">Clock app</string>
+    <string name="settings_widget_calendar_app">Calendar app</string>
     <string name="settings_double_tap_to_lock">Double tap to lock</string>
     <string name="settings_double_tap_to_lock_subtitle">Lock the device by double tapping empty space on the home screen</string>
     <string name="settings_return_home_after_long_lock">Return home after long lock</string>

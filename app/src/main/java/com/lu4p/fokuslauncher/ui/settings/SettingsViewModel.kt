@@ -49,6 +49,8 @@ data class SettingsUiState(
         val swipeLeftTarget: ShortcutTarget? = null,
         val swipeRightTarget: ShortcutTarget? = null,
         val preferredWeatherAppPackage: String = "",
+        val preferredClockAppPackage: String = "",
+        val preferredCalendarAppPackage: String = "",
         val showStatusBar: Boolean = false,
         val showHomeClock: Boolean = true,
         val showHomeDate: Boolean = true,
@@ -100,18 +102,33 @@ constructor(
 
     private fun observeState() {
         viewModelScope.launch {
-            val homeWidgetItemsFlow =
+            val homeWidgetTogglesFlow =
                     combine(
                             preferencesManager.showHomeClockFlow,
                             preferencesManager.showHomeDateFlow,
                             preferencesManager.showHomeWeatherFlow,
                             preferencesManager.showHomeBatteryFlow
                     ) { showClock, showDate, showWeather, showBattery ->
-                        HomeWidgetItemSettings(
+                        HomeWidgetToggles(
                                 showClock = showClock,
                                 showDate = showDate,
                                 showWeather = showWeather,
                                 showBattery = showBattery
+                        )
+                    }
+            val homeWidgetItemsFlow =
+                    combine(
+                            homeWidgetTogglesFlow,
+                            preferencesManager.preferredClockAppFlow,
+                            preferencesManager.preferredCalendarAppFlow
+                    ) { toggles, clockPkg, calendarPkg ->
+                        HomeWidgetItemSettings(
+                                showClock = toggles.showClock,
+                                showDate = toggles.showDate,
+                                showWeather = toggles.showWeather,
+                                showBattery = toggles.showBattery,
+                                preferredClockAppPackage = clockPkg,
+                                preferredCalendarAppPackage = calendarPkg
                         )
                     }
             val favoritesQuintupleFlow =
@@ -252,6 +269,8 @@ constructor(
                                         swipeLeftTarget = leftState.base.swipeLeft,
                                         swipeRightTarget = swipeRight,
                                         preferredWeatherAppPackage = preferredWeatherApp,
+                                        preferredClockAppPackage = homeWidgetItems.preferredClockAppPackage,
+                                        preferredCalendarAppPackage = homeWidgetItems.preferredCalendarAppPackage,
                                         showStatusBar = showStatusBar,
                                         showHomeClock = homeWidgetItems.showClock,
                                         showHomeDate = homeWidgetItems.showDate,
@@ -275,11 +294,20 @@ constructor(
         }
     }
 
-    private data class HomeWidgetItemSettings(
+    private data class HomeWidgetToggles(
             val showClock: Boolean,
             val showDate: Boolean,
             val showWeather: Boolean,
             val showBattery: Boolean
+    )
+
+    private data class HomeWidgetItemSettings(
+            val showClock: Boolean,
+            val showDate: Boolean,
+            val showWeather: Boolean,
+            val showBattery: Boolean,
+            val preferredClockAppPackage: String,
+            val preferredCalendarAppPackage: String
     )
 
     private data class Quintuple(
@@ -339,6 +367,14 @@ constructor(
 
     fun setPreferredWeatherApp(packageName: String) {
         viewModelScope.launch { preferencesManager.setPreferredWeatherApp(packageName) }
+    }
+
+    fun setPreferredClockApp(packageName: String) {
+        viewModelScope.launch { preferencesManager.setPreferredClockApp(packageName) }
+    }
+
+    fun setPreferredCalendarApp(packageName: String) {
+        viewModelScope.launch { preferencesManager.setPreferredCalendarApp(packageName) }
     }
 
     fun setShowStatusBar(show: Boolean) {

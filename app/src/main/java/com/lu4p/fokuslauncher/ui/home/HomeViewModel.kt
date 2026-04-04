@@ -167,6 +167,14 @@ class HomeViewModel @Inject constructor(
         preferencesManager.preferredWeatherAppFlow
             .stateIn(viewModelScope, SharingStarted.Eagerly, "")
 
+    private val preferredClockAppPackage: StateFlow<String> =
+        preferencesManager.preferredClockAppFlow
+            .stateIn(viewModelScope, SharingStarted.Eagerly, "")
+
+    private val preferredCalendarAppPackage: StateFlow<String> =
+        preferencesManager.preferredCalendarAppFlow
+            .stateIn(viewModelScope, SharingStarted.Eagerly, "")
+
     private val batteryChangedReceiver = object : BroadcastReceiver() {
         override fun onReceive(ctx: Context?, intent: Intent?) {
             if (intent?.action != Intent.ACTION_BATTERY_CHANGED) return
@@ -780,6 +788,10 @@ class HomeViewModel @Inject constructor(
      * Opens the default clock / alarm app.
      */
     fun openClockApp() {
+        val overridePkg = preferredClockAppPackage.value
+        if (overridePkg.isNotBlank() && appRepository.launchApp(overridePkg)) {
+            return
+        }
         val showAlarms =
                 Intent(AlarmClock.ACTION_SHOW_ALARMS).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -804,6 +816,10 @@ class HomeViewModel @Inject constructor(
      * Opens the default calendar app.
      */
     fun openCalendarApp() {
+        val overridePkg = preferredCalendarAppPackage.value
+        if (overridePkg.isNotBlank() && appRepository.launchApp(overridePkg)) {
+            return
+        }
         try {
             val intent = Intent(Intent.ACTION_VIEW).apply {
                 data = CalendarContract.CONTENT_URI.buildUpon()

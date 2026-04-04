@@ -149,6 +149,8 @@
     <string name="settings_show_home_date">Pokaż datę</string>
     <string name="settings_show_home_weather">Pokaż pogodę</string>
     <string name="settings_show_home_battery">Pokaż poziom baterii</string>
+    <string name="settings_widget_clock_app">Aplikacja zegara</string>
+    <string name="settings_widget_calendar_app">Aplikacja kalendarza</string>
     <string name="settings_double_tap_to_lock">Podwójne stuknięcie, aby zablokować</string>
     <string name="settings_double_tap_to_lock_subtitle">Blokuje urządzenie po podwójnym stuknięciu pustego miejsca na ekranie głównym</string>
     <string name="settings_return_home_after_long_lock">Powrót do ekranu głównego po długiej blokadzie</string>
