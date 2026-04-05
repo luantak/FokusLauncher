@@ -2,19 +2,21 @@ Fokus Launcher is an Android launcher for people who want a simpler, cleaner def
 
 <b>Home Screen</b>
 
-The home screen is intentionally minimal: a large clock and date, battery status, optional weather, configurable favorite app labels, and a configurable right-side shortcut rail. Primary interactions are gesture-based — swipe up to open the app drawer, swipe down to expand the notification shade, and swipe left or right to launch shortcut targets.
+The home screen is intentionally minimal: a large clock and date, battery status, optional weather, configurable favorite app labels, and a configurable right-side shortcut rail. Tap the clock, date, or weather to open the apps you configure for each in settings. Primary interactions are gesture-based: swipe up to open the app drawer, swipe down to expand the notification shade, and swipe left or right to launch shortcut targets.
 
 <b>App Drawer</b>
 
-The app drawer is optimized for quick launch. Search and category filters narrow results instantly, and when only one app matches a query Fokus can launch it directly. Long-pressing a drawer app shows actions: add to home, rename, hide, and uninstall.
+The drawer supports quick search, categories you define in settings, and optional alphabetical or most-opened app order. When only one app matches a search, Fokus can launch it directly. Optional category sidebar mode replaces the inline search bar with a vertical category rail; use the search icon when you need text search. Long-pressing an app offers add to home, rename, hide, and uninstall.
+
+Dot search keeps you in that same field for web or in-app search. Type a period, a space, and your query, for example ". cats"; that searches in your browser by default until you change the default under Dot search in settings. For letter shortcuts, type a period, one lowercase letter, a space, and your query, for example ".a coffee" when you assigned the letter "a" there. Dot search settings also list search-capable apps and lets you add HTTPS or deep-link URL templates with a placeholder for the query.
 
 <b>Customization</b>
 
-You can edit home apps, configure right-side shortcuts (including launcher shortcut actions, not just app opens), hide or rename any app, choose a custom font for the launcher UI, and manage all launcher data from the settings screen.
+Edit home apps, configure right-side shortcuts (including launcher shortcut actions), hide or rename apps, choose a custom font, and manage launcher data from the settings screen.
 
 <b>Weather</b>
 
-Weather is powered by Open-Meteo — no account or API key required. Results are cached for 30 minutes. Location permission is optional and only used for local weather.
+Weather is powered by Open-Meteo. No account or API key is required. Results are cached for 30 minutes. Location permission is optional and only used for local weather.
 
 <b>Work Profile</b>
 
@@ -24,10 +26,18 @@ Work profile apps are shown alongside personal apps in the drawer when a work pr
 
 On Android 15 and above (API 35+), Fokus supports Android's Private Space with lock/unlock controls and a separate section in the app drawer for private apps when the space is unlocked.
 
+<b>Optional Device Controls</b>
+
+These features only work if you turn on accessibility for Fokus in Android settings.
+
+Double tap to lock can turn off the screen from empty home space. Return home after long lock can bring Fokus to the foreground when you unlock after the device stayed locked longer than a threshold you choose; that option also needs battery optimization disabled for reliable timing.
+
 <b>First-Run Onboarding</b>
 
 On first launch, Fokus walks you through welcome, optional location permission, default-launcher setup, home-screen customization, swipe-shortcut setup, and quick gesture tips.
 
 <b>Permissions</b>
 
-Fokus asks only for what it uses: app discovery, uninstall intents, weather fetches, optional local weather location, hidden-profile access for Private Space, and status-bar expansion.
+Fokus asks only for what it uses.
+
+That covers uninstall flows from the launcher, internet access for weather and dot search, optional coarse location for local weather, and hidden-profile access for Private Space on supported versions. It also covers expanding the notification shade from swipe-down gestures, battery-optimization prompts for optional long-lock behavior, and applying wallpapers you choose in settings.

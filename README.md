@@ -41,25 +41,44 @@ with minimal visual noise.
 
 ## Current Feature Set
 
-Fokus keeps the home screen intentionally minimal: large clock and date, battery
-status, optional weather, configurable favorite app labels, and a configurable
-right-side shortcut rail. The primary interactions are gesture-based, with swipe
-up to open the drawer, swipe down to open the notification/status shade, and
-left/right swipes to launch shortcut targets.
+### Home screen and gestures
 
-The app drawer is optimized for quick launch. Search and categories can narrow
-results fast, and when only one app matches a query, Fokus can launch it
-directly. Long-pressing a drawer app opens actions like add to home, rename,
-hide, and uninstall.
+The home screen stays minimal: large clock and date, battery status, weather,
+favorite app labels, and a right-side shortcut rail. Tapping the clock, date, or
+weather opens the apps you configure for those widgets in settings. Swipe up for
+the drawer, swipe down for the notification shade, swipe left/right for shortcut
+targets.
 
-Customization and organization are built in. You can edit home apps, edit
-right-side shortcuts (including launcher shortcut actions, not just app opens),
-hide or rename apps, and manage launcher data from settings. A custom font can
-be selected to match your personal taste. Weather uses Open-Meteo with no API
-key and caches results for 30 minutes. On Android 15+ (API 35+), Fokus also
-supports Private Space with lock/unlock controls and a separate drawer section
-for private apps when unlocked. Work profile apps are shown alongside personal
-apps in the drawer when a work profile is active.
+### App drawer
+
+Search and categories narrow the list quickly, and you can define and assign
+categories in settings. A single matching app can launch on search. **Category
+sidebar** (Settings → **Show category sidebar**) swaps the bar for a vertical
+category rail. Use the search icon for text search, pick left or right
+placement, long-press a category to change its icon. **Dot search** sends the
+search field to the web or an app: `. query` for the default target,
+`.<letter> query` for a shortcut (for example `.a coffee`). Configure targets
+under Settings → Dot search (search-capable apps or URL templates with a query
+placeholder). Long-press an app for add to home, rename, hide, or uninstall.
+
+### Customization and profiles
+
+Edit home apps and shortcuts (including launcher shortcut actions), hide or
+rename apps, and manage launcher data from settings. Choose a custom font.
+Weather uses Open-Meteo (no API key) with a 30-minute cache. On Android 15+ (API
+35+), Private Space adds lock/unlock and a separate private-apps section in the
+drawer. Work profile apps appear with personal apps when a work profile is
+active.
+
+### Device controls (optional)
+
+These features need Android's accessibility service.
+
+**Double tap to lock** locks the screen from a double-tap on empty home space.
+**Return home after long lock** notices when the device stayed locked with the
+screen off longer than a threshold you set (default 15 minutes) and brings Fokus
+to the foreground on unlock so you start on the home screen. That second option
+also needs battery optimization disabled for reliable timing.
 
 ## First-Run Experience
 
@@ -110,24 +129,29 @@ preferences, and Navigation Compose for screen flow.
 
 ## Permissions
 
-Fokus asks only for what it uses: app discovery, uninstall intents, weather
-fetches, optional local weather location, hidden-profile access for Private
-Space support, and status-bar expansion interactions.
+Fokus asks only for what it uses. Installed apps are listed via `LauncherApps`
+and `<queries>` in the manifest, not `QUERY_ALL_PACKAGES`.
 
-| Permission                | Purpose                                       |
-| ------------------------- | --------------------------------------------- |
-| `QUERY_ALL_PACKAGES`      | Enumerate installed apps for launcher UI      |
-| `REQUEST_DELETE_PACKAGES` | Trigger uninstall flow from launcher actions  |
-| `INTERNET`                | Fetch weather data                            |
-| `ACCESS_COARSE_LOCATION`  | Show location-based weather                   |
-| `ACCESS_HIDDEN_PROFILES`  | Support Android Private Space profile access  |
-| `EXPAND_STATUS_BAR`       | Expand notifications/status bar from launcher |
+| Permission                             | Purpose                                                                           |
+| -------------------------------------- | --------------------------------------------------------------------------------- |
+| `REQUEST_DELETE_PACKAGES`              | Trigger uninstall flow from launcher actions                                      |
+| `INTERNET`                             | Fetch weather data                                                                |
+| `ACCESS_COARSE_LOCATION`               | Show location-based weather (runtime prompt)                                      |
+| `ACCESS_HIDDEN_PROFILES`               | Private Space apps in the drawer when unlocked                                    |
+| `EXPAND_STATUS_BAR`                    | Open notification shade from swipe-down gestures                                  |
+| `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` | Prompt to disable battery optimization (required for return home after long lock) |
+| `SET_WALLPAPER`                        | Set image or solid black wallpaper from settings                                  |
+
+**Double tap to lock** and **return home after long lock** require the optional
+accessibility service.
 
 ## Contributing
 
 If you want to improve Fokus, open an issue or send a pull request with a clear
 problem statement and reproduction details when relevant. Focused changes,
-thoughtful UX decisions, and good test coverage are always appreciated.
+thoughtful UX decisions, and good test coverage are always appreciated. For bug
+reports, **Settings → Export app logs** can attach a diagnostic file to your
+message.
 
 ### Translations
 
