@@ -129,9 +129,6 @@ preferences, and Navigation Compose for screen flow.
 
 ## Permissions
 
-Fokus asks only for what it uses. Installed apps are listed via `LauncherApps`
-and `<queries>` in the manifest, not `QUERY_ALL_PACKAGES`.
-
 | Permission                             | Purpose                                                                           |
 | -------------------------------------- | --------------------------------------------------------------------------------- |
 | `REQUEST_DELETE_PACKAGES`              | Trigger uninstall flow from launcher actions                                      |
