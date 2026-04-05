@@ -119,7 +119,7 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
                         listOf(
                                 HomeShortcut(
                                         iconName = "call",
-                                        target = ShortcutTarget.App("com.google.android.dialer")
+                                        target = ShortcutTarget.DeepLink("tel:")
                                 )
                         )
                 prefs[RIGHT_SIDE_SHORTCUTS_KEY] = serializeRightSideShortcuts(defaultShortcuts)
