@@ -68,7 +68,13 @@ data class AppDrawerUiState(
         /** When true (default), the category rail is on the physical right; false = left rail. */
         val drawerCategorySidebarOnRight: Boolean = true,
         /** Normalized category key → MinimalIcons name for the vertical rail and chip affordances. */
-        val categoryDrawerIconOverrides: Map<String, String> = emptyMap()
+        val categoryDrawerIconOverrides: Map<String, String> = emptyMap(),
+        val drawerAppSortMode: DrawerAppSortMode = DrawerAppSortMode.ALPHABETICAL,
+        /**
+         * When true with [drawerAppSortMode] CUSTOM and sidebar layout, the list shows drag handles and
+         * can be reordered. Cleared when the drawer closes, search filters, or CUSTOM layout is unavailable.
+         */
+        val drawerReorderSessionActive: Boolean = false
 )
 
 sealed interface DrawerEvent {
@@ -111,6 +117,9 @@ constructor(
     private var latestDefinedCategories: List<String> = emptyList()
     private var latestDrawerSortMode: DrawerAppSortMode = DrawerAppSortMode.ALPHABETICAL
     private var latestOpenCounts: Map<String, Int> = emptyMap()
+    /** Profile key → ordered drawer open-count keys ([drawerOpenCountKey]); used when sort is CUSTOM. */
+    private var latestCustomOrderByProfile: Map<String, List<String>> = emptyMap()
+    private var latestUseSidebarCategoryDrawer: Boolean = false
 
 
     // --- Profile sections cache (invalidates when apps list identity or sort inputs change) ---
@@ -119,6 +128,7 @@ constructor(
     private var profileSectionsCacheApps: List<AppInfo>? = null
     private var profileSectionsCacheSortMode: DrawerAppSortMode? = null
     private var profileSectionsCacheCounts: Map<String, Int>? = null
+    private var profileSectionsCacheCustomOrder: Map<String, List<String>>? = null
 
     // --- Private space list cache (sorted order; raw list often new instance, same contents) ---
     private val privateSortCacheLock = Any()
@@ -156,7 +166,7 @@ constructor(
         observeFavorites()
         observeDrawerSidebarPreference()
         observeDrawerCategoryRailAndIcons()
-        observeDrawerSortAndOpenCounts()
+        observeDrawerSortOpenCountsAndCustomOrder()
         observeDrawerDotSearchPreferences()
         refreshPrivateSpaceState()
         observePrivateSpaceChanges()
@@ -204,6 +214,13 @@ constructor(
     private fun observeDrawerSidebarPreference() {
         viewModelScope.launch {
             preferencesManager.drawerSidebarCategoriesFlow.collect { sidebarEnabled ->
+                latestUseSidebarCategoryDrawer = sidebarEnabled
+                if (!sidebarEnabled) {
+                    val sortMode = preferencesManager.drawerAppSortModeFlow.first()
+                    if (sortMode == DrawerAppSortMode.CUSTOM) {
+                        preferencesManager.setDrawerAppSortMode(DrawerAppSortMode.ALPHABETICAL)
+                    }
+                }
                 val state = _uiState.value
                 val categories =
                         deriveCategories(
@@ -235,7 +252,9 @@ constructor(
                             selectedCategory = selectedCategory,
                             categories = categories,
                             filteredProfileSections = filteredContent.filteredProfileSections,
-                            filteredPrivateSpaceApps = filteredContent.filteredPrivateSpaceApps
+                            filteredPrivateSpaceApps = filteredContent.filteredPrivateSpaceApps,
+                            drawerReorderSessionActive =
+                                    if (!sidebarEnabled) false else it.drawerReorderSessionActive
                     )
                 }
                 scheduleDrawerCachePrewarm()
@@ -258,15 +277,17 @@ constructor(
         }
     }
 
-    private fun observeDrawerSortAndOpenCounts() {
+    private fun observeDrawerSortOpenCountsAndCustomOrder() {
         viewModelScope.launch {
             combine(
                             preferencesManager.drawerAppSortModeFlow,
-                            preferencesManager.drawerAppOpenCountsFlow
-                    ) { mode, counts -> mode to counts }
-                    .collect { (mode, counts) ->
+                            preferencesManager.drawerAppOpenCountsFlow,
+                            preferencesManager.drawerCustomAppOrderFlow
+                    ) { mode, counts, customOrder -> Triple(mode, counts, customOrder) }
+                    .collect { (mode, counts, customOrder) ->
                         latestDrawerSortMode = mode
                         latestOpenCounts = counts
+                        latestCustomOrderByProfile = customOrder
                         val state = _uiState.value
                         val reorderedPrivate =
                                 if (state.privateSpaceApps.isEmpty()) {
@@ -285,7 +306,14 @@ constructor(
                             it.copy(
                                     privateSpaceApps = reorderedPrivate,
                                     filteredProfileSections = filteredContent.filteredProfileSections,
-                                    filteredPrivateSpaceApps = filteredContent.filteredPrivateSpaceApps
+                                    filteredPrivateSpaceApps = filteredContent.filteredPrivateSpaceApps,
+                                    drawerAppSortMode = mode,
+                                    drawerReorderSessionActive =
+                                            if (mode != DrawerAppSortMode.CUSTOM) {
+                                                false
+                                            } else {
+                                                it.drawerReorderSessionActive
+                                            }
                             )
                         }
                         scheduleDrawerCachePrewarm()
@@ -496,11 +524,25 @@ constructor(
 
     // --- Search ---
 
+    private fun drawerSearchFilterActive(raw: String): Boolean {
+        val trimmed = raw.trimStart()
+        val q =
+                if (DotSearchSyntax.isPossibleDotSearchPrefix(trimmed)) "" else trimmed.trim()
+        return q.isNotBlank()
+    }
+
     fun onSearchQueryChanged(query: String) {
         searchQueryApplyJob?.cancel()
         searchQueryRequestId += 1
         val requestId = searchQueryRequestId
-        _uiState.update { it.copy(searchQuery = query) }
+        val exitReorder = drawerSearchFilterActive(query)
+        _uiState.update { state ->
+            state.copy(
+                    searchQuery = query,
+                    drawerReorderSessionActive =
+                            if (exitReorder) false else state.drawerReorderSessionActive
+            )
+        }
         searchQueryApplyJob =
                 viewModelScope.launch {
                     val snapshot = _uiState.value
@@ -530,7 +572,8 @@ constructor(
                     if (requestId == searchQueryRequestId &&
                                     !browseMode &&
                                     !trimmed.startsWith(".") &&
-                                    trimmed.isNotBlank()
+                                    trimmed.isNotBlank() &&
+                                    !_uiState.value.drawerReorderSessionActive
                     ) {
                         val mainFlat = filteredContent.filteredProfileSections.flatMap { it.apps }
                         val allMatches =
@@ -556,6 +599,7 @@ constructor(
      */
     fun tryLaunchFirstSearchResult(): Boolean {
         val state = _uiState.value
+        if (state.drawerReorderSessionActive) return false
         val raw = state.searchQuery
         if (raw.startsWith(" ")) return false
         val trimmed = raw.trimStart()
@@ -713,6 +757,98 @@ constructor(
         _uiState.update { it.copy(selectedApp = null) }
     }
 
+    fun reorderDrawerProfileSectionApps(sectionId: String, fromIndex: Int, toIndex: Int) {
+        viewModelScope.launch {
+            if (latestDrawerSortMode != DrawerAppSortMode.CUSTOM || !latestUseSidebarCategoryDrawer) {
+                return@launch
+            }
+            val state = _uiState.value
+            val trimmed = state.searchQuery.trimStart()
+            val filterQuery =
+                    if (DotSearchSyntax.isPossibleDotSearchPrefix(trimmed)) "" else trimmed.trim()
+            if (filterQuery.isNotBlank() || !state.drawerReorderSessionActive) return@launch
+            val section = state.filteredProfileSections.find { it.id == sectionId } ?: return@launch
+            val visible = section.apps
+            if (fromIndex !in visible.indices ||
+                            toIndex !in visible.indices ||
+                            fromIndex == toIndex
+            ) {
+                return@launch
+            }
+            val profileKey = appProfileKey(visible.first().userHandle)
+            val merged =
+                    mergeCustomOrderMaps(state.allApps, state.privateSpaceApps, latestCustomOrderByProfile)
+            val profileFullOrder = merged[profileKey] ?: return@launch
+            val subsetKeys =
+                    visible.map { drawerOpenCountKey(it.packageName, it.userHandle) }
+            val newProfileOrder =
+                    reorderSubsetInFullOrder(profileFullOrder, subsetKeys, fromIndex, toIndex)
+            val newMap = merged.toMutableMap()
+            newMap[profileKey] = newProfileOrder
+            latestCustomOrderByProfile = newMap
+            preferencesManager.setDrawerCustomAppOrder(newMap)
+            val filteredContent =
+                    buildFilteredDrawerContent(
+                            allApps = state.allApps,
+                            privateApps = state.privateSpaceApps,
+                            rawSearchQuery = state.searchQuery,
+                            category = state.selectedCategory
+                    )
+            _uiState.update {
+                it.copy(
+                        filteredProfileSections = filteredContent.filteredProfileSections,
+                        filteredPrivateSpaceApps = filteredContent.filteredPrivateSpaceApps
+                )
+            }
+        }
+    }
+
+    fun reorderPrivateDrawerApps(fromIndex: Int, toIndex: Int) {
+        viewModelScope.launch {
+            if (latestDrawerSortMode != DrawerAppSortMode.CUSTOM || !latestUseSidebarCategoryDrawer) {
+                return@launch
+            }
+            val state = _uiState.value
+            val trimmed = state.searchQuery.trimStart()
+            val filterQuery =
+                    if (DotSearchSyntax.isPossibleDotSearchPrefix(trimmed)) "" else trimmed.trim()
+            if (filterQuery.isNotBlank() || !state.drawerReorderSessionActive) return@launch
+            val visible = state.filteredPrivateSpaceApps
+            if (fromIndex !in visible.indices ||
+                            toIndex !in visible.indices ||
+                            fromIndex == toIndex ||
+                            visible.isEmpty()
+            ) {
+                return@launch
+            }
+            val profileKey = appProfileKey(visible.first().userHandle)
+            val merged =
+                    mergeCustomOrderMaps(state.allApps, state.privateSpaceApps, latestCustomOrderByProfile)
+            val profileFullOrder = merged[profileKey] ?: return@launch
+            val subsetKeys =
+                    visible.map { drawerOpenCountKey(it.packageName, it.userHandle) }
+            val newProfileOrder =
+                    reorderSubsetInFullOrder(profileFullOrder, subsetKeys, fromIndex, toIndex)
+            val newMap = merged.toMutableMap()
+            newMap[profileKey] = newProfileOrder
+            latestCustomOrderByProfile = newMap
+            preferencesManager.setDrawerCustomAppOrder(newMap)
+            val filteredContent =
+                    buildFilteredDrawerContent(
+                            allApps = state.allApps,
+                            privateApps = state.privateSpaceApps,
+                            rawSearchQuery = state.searchQuery,
+                            category = state.selectedCategory
+                    )
+            _uiState.update {
+                it.copy(
+                        filteredProfileSections = filteredContent.filteredProfileSections,
+                        filteredPrivateSpaceApps = filteredContent.filteredPrivateSpaceApps
+                )
+            }
+        }
+    }
+
     fun hideApp(app: AppInfo) {
         viewModelScope.launch {
             appRepository.hideApp(app.packageName)
@@ -752,6 +888,23 @@ constructor(
     }
     fun dismissMenu() {
         _uiState.update { it.copy(showMenu = false) }
+    }
+
+    fun toggleDrawerReorderSession() {
+        _uiState.update { state ->
+            val canReorder =
+                    state.useSidebarCategoryDrawer &&
+                            state.drawerAppSortMode == DrawerAppSortMode.CUSTOM &&
+                            !drawerSearchFilterActive(state.searchQuery)
+            if (!canReorder) {
+                state.copy(showMenu = false)
+            } else {
+                state.copy(
+                        drawerReorderSessionActive = !state.drawerReorderSessionActive,
+                        showMenu = false
+                )
+            }
+        }
     }
 
     // --- Private Space ---
@@ -862,7 +1015,8 @@ constructor(
                         searchQuery = "",
                         selectedCategory = defaultCategory,
                         filteredProfileSections = filteredContent.filteredProfileSections,
-                        filteredPrivateSpaceApps = filteredContent.filteredPrivateSpaceApps
+                        filteredPrivateSpaceApps = filteredContent.filteredPrivateSpaceApps,
+                        drawerReorderSessionActive = false
                 )
             }
         }
@@ -895,17 +1049,37 @@ constructor(
             mode: DrawerAppSortMode,
             counts: Map<String, Int>
     ): List<AppInfo> {
-        if (mode != DrawerAppSortMode.MOST_OPENED) {
-            return apps.sortedWith(alphabeticalAppComparatorForProfiles)
+        if (apps.isEmpty()) return apps
+        return when (mode) {
+            DrawerAppSortMode.MOST_OPENED -> {
+                if (counts.values.none { it > 0 }) {
+                    apps.sortedWith(alphabeticalAppComparatorForProfiles)
+                } else {
+                    apps.sortedWith(
+                            compareByDescending<AppInfo> { app ->
+                                counts[drawerOpenCountKey(app.packageName, app.userHandle)] ?: 0
+                            }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.label }
+                    )
+                }
+            }
+            DrawerAppSortMode.CUSTOM -> {
+                if (!latestUseSidebarCategoryDrawer) {
+                    apps.sortedWith(alphabeticalAppComparatorForProfiles)
+                } else {
+                    val profileKey = appProfileKey(apps.first().userHandle)
+                    val order = latestCustomOrderByProfile[profileKey].orEmpty()
+                    val index = order.withIndex().associate { it.value to it.index }
+                    apps.sortedWith(
+                            compareBy<AppInfo> { app ->
+                                val k = drawerOpenCountKey(app.packageName, app.userHandle)
+                                index[k] ?: Int.MAX_VALUE
+                            }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.label }
+                    )
+                }
+            }
+            DrawerAppSortMode.ALPHABETICAL ->
+                    apps.sortedWith(alphabeticalAppComparatorForProfiles)
         }
-        if (counts.values.none { it > 0 }) {
-            return apps.sortedWith(alphabeticalAppComparatorForProfiles)
-        }
-        return apps.sortedWith(
-                compareByDescending<AppInfo> { app ->
-                    counts[drawerOpenCountKey(app.packageName, app.userHandle)] ?: 0
-                }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.label }
-        )
     }
 
     private fun fingerprintPrivateApps(apps: List<AppInfo>): Int {
@@ -926,6 +1100,11 @@ constructor(
         if (raw.isEmpty()) return raw
         val sortMode = latestDrawerSortMode
         val counts = latestOpenCounts
+        if (sortMode == DrawerAppSortMode.CUSTOM) {
+            return withContext(drawerComputationDispatcher) {
+                sortDrawerAppsWith(raw, sortMode, counts)
+            }
+        }
         val fp = fingerprintPrivateApps(raw)
         synchronized(privateSortCacheLock) {
             if (privateSortCacheResult != null &&
@@ -959,7 +1138,13 @@ constructor(
             if (profileSectionsCache != null &&
                             profileSectionsCacheApps === apps &&
                             profileSectionsCacheSortMode == sortMode &&
-                            profileSectionsCacheCounts === counts
+                            profileSectionsCacheCounts === counts &&
+                            profileSectionsCacheCustomOrder ==
+                                    if (sortMode == DrawerAppSortMode.CUSTOM) {
+                                        latestCustomOrderByProfile
+                                    } else {
+                                        null
+                                    }
             ) {
                 return profileSectionsCache!!
             }
@@ -975,6 +1160,8 @@ constructor(
             profileSectionsCacheApps = apps
             profileSectionsCacheSortMode = sortMode
             profileSectionsCacheCounts = counts
+            profileSectionsCacheCustomOrder =
+                    if (sortMode == DrawerAppSortMode.CUSTOM) latestCustomOrderByProfile else null
         }
         return built
     }
@@ -1114,6 +1301,13 @@ constructor(
             rawSearchQuery: String,
             category: String
     ): FilteredDrawerContent {
+        if (latestDrawerSortMode == DrawerAppSortMode.CUSTOM && _uiState.value.useSidebarCategoryDrawer) {
+            val merged = mergeCustomOrderMaps(allApps, privateApps, latestCustomOrderByProfile)
+            if (merged != latestCustomOrderByProfile) {
+                latestCustomOrderByProfile = merged
+                preferencesManager.setDrawerCustomAppOrder(merged)
+            }
+        }
         val sections = buildProfileSectionsSuspend(allApps)
         val trimmed = rawSearchQuery.trimStart()
         val filterQuery =
@@ -1134,6 +1328,59 @@ constructor(
                             )
             )
         }
+    }
+
+    private fun mergeCustomOrderMaps(
+            mainApps: List<AppInfo>,
+            privateApps: List<AppInfo>,
+            stored: Map<String, List<String>>
+    ): Map<String, List<String>> {
+        val result = stored.toMutableMap()
+        val byProfile = mainApps.groupBy { appProfileKey(it.userHandle) }
+        for ((pk, list) in byProfile) {
+            result[pk] = mergeOrderListForProfile(pk, list, result)
+        }
+        if (privateApps.isNotEmpty()) {
+            val pk = appProfileKey(privateApps.first().userHandle)
+            result[pk] = mergeOrderListForProfile(pk, privateApps, result)
+        }
+        return result
+    }
+
+    private fun mergeOrderListForProfile(
+            profileKey: String,
+            appsInProfile: List<AppInfo>,
+            map: Map<String, List<String>>
+    ): List<String> {
+        val orderedKeys =
+                appsInProfile.map { drawerOpenCountKey(it.packageName, it.userHandle) }
+        val set = orderedKeys.toSet()
+        val prev = map[profileKey].orEmpty().filter { it in set }
+        val missing = set - prev.toSet()
+        val tail =
+                appsInProfile
+                        .filter { drawerOpenCountKey(it.packageName, it.userHandle) in missing }
+                        .sortedWith(alphabeticalAppComparatorForProfiles)
+                        .map { drawerOpenCountKey(it.packageName, it.userHandle) }
+        return prev + tail
+    }
+
+    private fun reorderSubsetInFullOrder(
+            fullOrder: List<String>,
+            visibleOrderedKeys: List<String>,
+            fromIndex: Int,
+            toIndex: Int,
+    ): List<String> {
+        if (fromIndex == toIndex) return fullOrder
+        if (fromIndex !in visibleOrderedKeys.indices || toIndex !in visibleOrderedKeys.indices) {
+            return fullOrder
+        }
+        val subsetSet = visibleOrderedKeys.toSet()
+        val reordered = visibleOrderedKeys.toMutableList()
+        val item = reordered.removeAt(fromIndex)
+        reordered.add(toIndex, item)
+        val queue = ArrayDeque(reordered)
+        return fullOrder.map { key -> if (key in subsetSet) queue.removeFirst() else key }
     }
 
     private data class CombinedCategoryState(

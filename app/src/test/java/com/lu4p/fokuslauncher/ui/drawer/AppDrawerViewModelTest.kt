@@ -16,6 +16,7 @@ import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.data.repository.RemovedApp
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
+import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -55,6 +56,8 @@ class AppDrawerViewModelTest {
     private val favoritesFlow = MutableStateFlow<List<FavoriteApp>>(emptyList())
     private val drawerAppSortModeFlow = MutableStateFlow(DrawerAppSortMode.ALPHABETICAL)
     private val drawerAppOpenCountsFlow = MutableStateFlow<Map<String, Int>>(emptyMap())
+    private val drawerCustomAppOrderFlow = MutableStateFlow<Map<String, List<String>>>(emptyMap())
+    private val drawerSidebarCategoriesFlow = MutableStateFlow(false)
     private val drawerDotSearchDefaultFlow = MutableStateFlow(DotSearchTargetPreference())
     private val drawerDotSearchAliasesFlow =
             MutableStateFlow<Map<Char, DotSearchTargetPreference>>(emptyMap())
@@ -106,6 +109,15 @@ class AppDrawerViewModelTest {
         every { preferencesManager.favoritesFlow } returns favoritesFlow
         every { preferencesManager.drawerAppSortModeFlow } returns drawerAppSortModeFlow
         every { preferencesManager.drawerAppOpenCountsFlow } returns drawerAppOpenCountsFlow
+        every { preferencesManager.drawerCustomAppOrderFlow } returns drawerCustomAppOrderFlow
+        every { preferencesManager.drawerSidebarCategoriesFlow } returns drawerSidebarCategoriesFlow
+        coEvery { preferencesManager.setDrawerAppSortMode(any()) } coAnswers {
+            drawerAppSortModeFlow.value = invocation.args[0] as DrawerAppSortMode
+        }
+        coEvery { preferencesManager.setDrawerCustomAppOrder(any()) } coAnswers {
+            @Suppress("UNCHECKED_CAST")
+            drawerCustomAppOrderFlow.value = invocation.args[0] as Map<String, List<String>>
+        }
         every { preferencesManager.drawerDotSearchDefaultFlow } returns drawerDotSearchDefaultFlow
         every { preferencesManager.drawerDotSearchAliasesFlow } returns drawerDotSearchAliasesFlow
         every { appRepository.launchDotSearch(any(), any(), any()) } returns true

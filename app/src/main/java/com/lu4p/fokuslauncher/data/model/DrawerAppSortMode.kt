@@ -4,7 +4,9 @@ import android.os.UserHandle
 
 enum class DrawerAppSortMode {
     ALPHABETICAL,
-    MOST_OPENED;
+    MOST_OPENED,
+    /** Manual order (drag in drawer). Only honored when the vertical category sidebar is enabled. */
+    CUSTOM;
 
     companion object {
         fun fromStorage(value: String?): DrawerAppSortMode =

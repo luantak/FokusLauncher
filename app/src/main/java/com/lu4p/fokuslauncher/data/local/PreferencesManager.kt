@@ -23,6 +23,7 @@ import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import org.json.JSONArray
 import org.json.JSONObject
 
 @Singleton
@@ -53,6 +54,8 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         /** JSON object: normalized category key → MinimalIcons name. */
         private val DRAWER_CATEGORY_ICONS_KEY = stringPreferencesKey("drawer_category_icons")
         private val DRAWER_APP_SORT_MODE_KEY = stringPreferencesKey("drawer_app_sort_mode")
+        /** JSON object: profile key string → JSON array of `drawerOpenCountKey` entries. */
+        private val DRAWER_CUSTOM_APP_ORDER_KEY = stringPreferencesKey("drawer_custom_app_order")
         private val DRAWER_APP_OPEN_COUNTS_KEY = stringPreferencesKey("drawer_app_open_counts")
         /** JSON: {"profileKey":"0","target":""} — empty/missing target = system default search. */
         private val DRAWER_DOT_SEARCH_DEFAULT_KEY = stringPreferencesKey("drawer_dot_search_default")
@@ -325,6 +328,18 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
     suspend fun setDrawerAppSortMode(mode: DrawerAppSortMode) {
         context.fokusLauncherPreferencesDataStore.edit { prefs ->
             prefs[DRAWER_APP_SORT_MODE_KEY] = mode.name
+        }
+    }
+
+    val drawerCustomAppOrderFlow: Flow<Map<String, List<String>>> =
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
+                parseDrawerCustomAppOrderJson(prefs[DRAWER_CUSTOM_APP_ORDER_KEY] ?: "")
+            }
+
+    suspend fun setDrawerCustomAppOrder(order: Map<String, List<String>>) {
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            if (order.isEmpty()) prefs.remove(DRAWER_CUSTOM_APP_ORDER_KEY)
+            else prefs[DRAWER_CUSTOM_APP_ORDER_KEY] = serializeDrawerCustomAppOrderJson(order)
         }
     }
 
@@ -680,6 +695,35 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
             inner.put("profileKey", pref.profileKey.ifBlank { "0" })
             inner.put("target", ShortcutTarget.encode(pref.target))
             o.put(ch.lowercaseChar().toString(), inner)
+        }
+        return o.toString()
+    }
+
+    private fun parseDrawerCustomAppOrderJson(raw: String): Map<String, List<String>> {
+        if (raw.isBlank()) return emptyMap()
+        return runCatching {
+            val o = JSONObject(raw)
+            buildMap {
+                val keys = o.keys()
+                while (keys.hasNext()) {
+                    val profileKey = keys.next()
+                    val arr = o.optJSONArray(profileKey) ?: continue
+                    val entries = buildList {
+                        for (i in 0 until arr.length()) {
+                            val s = arr.optString(i, "").ifBlank { continue }
+                            add(s)
+                        }
+                    }
+                    if (entries.isNotEmpty()) put(profileKey, entries)
+                }
+            }
+        }.getOrDefault(emptyMap())
+    }
+
+    private fun serializeDrawerCustomAppOrderJson(map: Map<String, List<String>>): String {
+        val o = JSONObject()
+        map.entries.sortedBy { it.key }.forEach { (profileKey, keys) ->
+            o.put(profileKey, JSONArray(keys))
         }
         return o.toString()
     }

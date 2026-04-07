@@ -417,6 +417,7 @@ fun SettingsScreen(
             item {
                 DrawerAppSortRow(
                         currentMode = uiState.drawerAppSortMode,
+                        showCustomSortOption = uiState.drawerSidebarCategories,
                         onModeChanged = { viewModel.setDrawerAppSortMode(it) }
                 )
             }
@@ -1427,8 +1428,22 @@ private fun DrawerCategoryRailSideRow(
 @Composable
 private fun DrawerAppSortRow(
         currentMode: DrawerAppSortMode,
+        showCustomSortOption: Boolean,
         onModeChanged: (DrawerAppSortMode) -> Unit
 ) {
+    val modes =
+            remember(showCustomSortOption) {
+                if (showCustomSortOption) DrawerAppSortMode.entries.toList()
+                else DrawerAppSortMode.entries.filterNot { it == DrawerAppSortMode.CUSTOM }
+            }
+    val coercedMode =
+            remember(currentMode, showCustomSortOption) {
+                if (!showCustomSortOption && currentMode == DrawerAppSortMode.CUSTOM) {
+                    DrawerAppSortMode.ALPHABETICAL
+                } else {
+                    currentMode
+                }
+            }
     Column(
             modifier = Modifier
                     .fillMaxWidth()
@@ -1447,14 +1462,14 @@ private fun DrawerAppSortRow(
         )
         Spacer(Modifier.height(12.dp))
         SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            DrawerAppSortMode.entries.forEachIndexed { index, mode ->
+            modes.forEachIndexed { index, mode ->
                 SegmentedButton(
-                        selected = currentMode == mode,
+                        selected = coercedMode == mode,
                         onClick = { onModeChanged(mode) },
                         shape =
                                 SegmentedButtonDefaults.itemShape(
                                         index = index,
-                                        count = DrawerAppSortMode.entries.size
+                                        count = modes.size
                                 )
                 ) {
                     Text(
@@ -1464,6 +1479,8 @@ private fun DrawerAppSortRow(
                                                 R.string.settings_drawer_app_sort_alphabetical
                                         DrawerAppSortMode.MOST_OPENED ->
                                                 R.string.settings_drawer_app_sort_most_opened
+                                        DrawerAppSortMode.CUSTOM ->
+                                                R.string.settings_drawer_app_sort_custom
                                     }
                             )
                     )

@@ -8,6 +8,8 @@
     <string name="drawer_filter_work">Work</string>
     <string name="drawer_filter_uncategorized">Uncategorized</string>
     <string name="drawer_menu_launcher_settings">Launcher settings</string>
+    <string name="drawer_reorder">Reorder</string>
+    <string name="drawer_reorder_done">Done</string>
     <string name="drawer_private_space_lock">Lock Private Space</string>
     <string name="drawer_private_space_unlock">Unlock Private Space</string>
 
@@ -189,6 +191,7 @@
     <string name="settings_drawer_app_sort_subtitle">Most opened counts launches from this launcher\'s app drawer. With no opens recorded, the list stays alphabetical.</string>
     <string name="settings_drawer_app_sort_alphabetical">A–Z</string>
     <string name="settings_drawer_app_sort_most_opened">Most opened</string>
+    <string name="settings_drawer_app_sort_custom">Custom</string>
     <string name="settings_dot_search_title">Dot search</string>
     <string name="settings_dot_search_subtitle">Type `. terms` or `.&lt;lowercase letter&gt; terms` in the drawer search bar</string>
     <string name="settings_dot_search_screen_title">Drawer dot search</string>

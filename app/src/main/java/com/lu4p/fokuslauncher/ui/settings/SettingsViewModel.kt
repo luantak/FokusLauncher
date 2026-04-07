@@ -34,6 +34,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.lu4p.fokuslauncher.R
@@ -424,7 +425,14 @@ constructor(
     }
 
     fun setDrawerSidebarCategories(enabled: Boolean) {
-        viewModelScope.launch { preferencesManager.setDrawerSidebarCategories(enabled) }
+        viewModelScope.launch {
+            if (!enabled) {
+                if (preferencesManager.drawerAppSortModeFlow.first() == DrawerAppSortMode.CUSTOM) {
+                    preferencesManager.setDrawerAppSortMode(DrawerAppSortMode.ALPHABETICAL)
+                }
+            }
+            preferencesManager.setDrawerSidebarCategories(enabled)
+        }
     }
 
     fun setDrawerCategorySidebarOnLeft(onLeft: Boolean) {
@@ -441,7 +449,14 @@ constructor(
     }
 
     fun setDrawerAppSortMode(mode: DrawerAppSortMode) {
-        viewModelScope.launch { preferencesManager.setDrawerAppSortMode(mode) }
+        viewModelScope.launch {
+            if (mode == DrawerAppSortMode.CUSTOM &&
+                            !preferencesManager.drawerSidebarCategoriesFlow.first()
+            ) {
+                return@launch
+            }
+            preferencesManager.setDrawerAppSortMode(mode)
+        }
     }
 
     // --- Home alignment ---
