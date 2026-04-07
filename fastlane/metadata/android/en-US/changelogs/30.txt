@@ -1,0 +1,6 @@
+Home clock respects the system 12- or 24-hour setting. Choose how the date appears on the home screen in Settings, with sizing tuned for both time formats.
+The clock refreshes if the device timezone changes.
+App drawer: arrange apps in your own order with drag-and-drop reordering.
+Search ignores punctuation and similar characters when matching app names.
+Phone shortcuts: open the default dialer with a number ready to edit; clearer shortcut picker flow.
+Latest translation updates from contributors on Hosted Weblate.
