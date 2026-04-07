@@ -56,6 +56,7 @@ import kotlinx.coroutines.launch
 import java.text.DateFormat as JavaDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 import javax.inject.Inject
 
 data class HomeUiState(
@@ -185,12 +186,33 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    /**
+     * JVM default timezone is fixed at process start and does not track system changes until we
+     * handle [Intent.ACTION_TIMEZONE_CHANGED] and refresh cached formatters.
+     */
+    @Volatile
+    private var clockFormatNeedsRefresh = false
+
+    private val timezoneChangedReceiver = object : BroadcastReceiver() {
+        override fun onReceive(ctx: Context?, intent: Intent?) {
+            if (intent?.action != Intent.ACTION_TIMEZONE_CHANGED) return
+            applySystemTimeZoneChange(intent.getStringExtra(Intent.EXTRA_TIMEZONE))
+        }
+    }
+
+    /** Apply Android system timezone to the JVM default and drop cached time formatters. */
+    internal fun applySystemTimeZoneChange(timeZoneId: String?) {
+        timeZoneId?.let { TimeZone.setDefault(TimeZone.getTimeZone(it)) }
+        clockFormatNeedsRefresh = true
+    }
+
     init {
         viewModelScope.launch {
             preferencesManager.ensureRightSideShortcutsInitialized()
         }
         startClockTicker()
         registerBatteryReceiver()
+        registerTimezoneChangedReceiver()
         updateBattery()
         startWeatherTicker()
         observeHomeAlignment()
@@ -209,6 +231,11 @@ class HomeViewModel @Inject constructor(
     override fun onCleared() {
         try {
             context.unregisterReceiver(batteryChangedReceiver)
+        } catch (_: IllegalArgumentException) {
+            // Not registered
+        }
+        try {
+            context.unregisterReceiver(timezoneChangedReceiver)
         } catch (_: IllegalArgumentException) {
             // Not registered
         }
@@ -511,6 +538,10 @@ class HomeViewModel @Inject constructor(
             var lastIs24Hour: Boolean? = null
             var timeFormat: JavaDateFormat? = null
             while (true) {
+                if (clockFormatNeedsRefresh) {
+                    clockFormatNeedsRefresh = false
+                    timeFormat = null
+                }
                 val now = Date()
                 val locale = Locale.getDefault()
                 val is24Hour = DateFormat.is24HourFormat(context)
@@ -550,6 +581,22 @@ class HomeViewModel @Inject constructor(
             } else {
                 @Suppress("DEPRECATION")
                 context.registerReceiver(batteryChangedReceiver, filter)
+            }
+        } catch (_: Exception) { }
+    }
+
+    private fun registerTimezoneChangedReceiver() {
+        val filter = IntentFilter(Intent.ACTION_TIMEZONE_CHANGED)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.registerReceiver(
+                    timezoneChangedReceiver,
+                    filter,
+                    Context.RECEIVER_NOT_EXPORTED
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                context.registerReceiver(timezoneChangedReceiver, filter)
             }
         } catch (_: Exception) { }
     }

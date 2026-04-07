@@ -60,6 +60,7 @@ class HomeViewModelTest {
     private lateinit var removedPackages: MutableSharedFlow<RemovedApp>
     private val testDispatcher = StandardTestDispatcher()
     private var originalLocale: Locale = Locale.getDefault()
+    private var originalTimeZone: TimeZone = TimeZone.getDefault()
 
     private val testFavorites = listOf(
         FavoriteApp(label = "Music", packageName = "com.lu4p.music", iconName = "music"),
@@ -71,6 +72,7 @@ class HomeViewModelTest {
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         originalLocale = Locale.getDefault()
+        originalTimeZone = TimeZone.getDefault()
 
         context = mockk(relaxed = true)
         appRepository = mockk(relaxed = true)
@@ -112,6 +114,7 @@ class HomeViewModelTest {
     @After
     fun tearDown() {
         Locale.setDefault(originalLocale)
+        TimeZone.setDefault(originalTimeZone)
         Dispatchers.resetMain()
     }
 
@@ -168,6 +171,21 @@ class HomeViewModelTest {
 
         val state = viewModel.clockUiState.value
         assertTrue(state.currentTime.isNotEmpty())
+    }
+
+    @Test
+    fun `applySystemTimeZoneChange updates JVM default timezone`() {
+        TimeZone.setDefault(TimeZone.getTimeZone("America/New_York"))
+        val viewModel = createViewModel(contextForClockAndBattery(mockBatteryStickyIntent()))
+        testDispatcher.scheduler.advanceTimeBy(1100)
+
+        // Same logic as ACTION_TIMEZONE_CHANGED; not asserted via sendBroadcast because that
+        // intent is system-sent and may not be delivered from test code on all runners.
+        viewModel.applySystemTimeZoneChange("Europe/Paris")
+        testDispatcher.scheduler.advanceTimeBy(1100)
+
+        assertEquals("Europe/Paris", TimeZone.getDefault().id)
+        assertTrue(viewModel.clockUiState.value.currentTime.isNotEmpty())
     }
 
     @Test
