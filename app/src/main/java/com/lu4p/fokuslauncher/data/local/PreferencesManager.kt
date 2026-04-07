@@ -12,6 +12,7 @@ import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.model.drawerOpenCountKey
 import com.lu4p.fokuslauncher.data.model.LauncherFontPreferences
 import com.lu4p.fokuslauncher.data.model.SystemCategoryKeys
+import com.lu4p.fokuslauncher.data.model.HomeDateFormatStyle
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.DotSearchTargetPreference
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
@@ -37,6 +38,7 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         private val SHOW_STATUS_BAR_KEY = booleanPreferencesKey("show_status_bar")
         private val SHOW_HOME_CLOCK_KEY = booleanPreferencesKey("show_home_clock")
         private val SHOW_HOME_DATE_KEY = booleanPreferencesKey("show_home_date")
+        private val HOME_DATE_FORMAT_STYLE_KEY = stringPreferencesKey("home_date_format_style")
         private val SHOW_HOME_WEATHER_KEY = booleanPreferencesKey("show_home_weather")
         private val SHOW_HOME_BATTERY_KEY = booleanPreferencesKey("show_home_battery")
         /** Vertical category sidebar in the drawer instead of chips + search bar. */
@@ -214,6 +216,17 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
     suspend fun setShowHomeDate(show: Boolean) {
         context.fokusLauncherPreferencesDataStore.edit { prefs ->
             prefs[SHOW_HOME_DATE_KEY] = show
+        }
+    }
+
+    val homeDateFormatStyleFlow: Flow<HomeDateFormatStyle> =
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
+                HomeDateFormatStyle.fromString(prefs[HOME_DATE_FORMAT_STYLE_KEY])
+            }
+
+    suspend fun setHomeDateFormatStyle(style: HomeDateFormatStyle) {
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            prefs[HOME_DATE_FORMAT_STYLE_KEY] = style.name
         }
     }
 

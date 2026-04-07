@@ -8,6 +8,7 @@ import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
 import com.lu4p.fokuslauncher.data.model.AppShortcutAction
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
+import com.lu4p.fokuslauncher.data.model.HomeDateFormatStyle
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.font.SystemFontFamiliesProvider
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
@@ -56,6 +57,7 @@ data class SettingsUiState(
         val showHomeDate: Boolean = true,
         val showHomeWeather: Boolean = true,
         val showHomeBattery: Boolean = true,
+        val homeDateFormatStyle: HomeDateFormatStyle = HomeDateFormatStyle.SYSTEM_DEFAULT,
         /** Vertical category sidebar in the app drawer. */
         val drawerSidebarCategories: Boolean = false,
         /** When true, category rail is on the left; default false places it on the right. */
@@ -120,15 +122,17 @@ constructor(
                     combine(
                             homeWidgetTogglesFlow,
                             preferencesManager.preferredClockAppFlow,
-                            preferencesManager.preferredCalendarAppFlow
-                    ) { toggles, clockPkg, calendarPkg ->
+                            preferencesManager.preferredCalendarAppFlow,
+                            preferencesManager.homeDateFormatStyleFlow
+                    ) { toggles, clockPkg, calendarPkg, dateFormatStyle ->
                         HomeWidgetItemSettings(
                                 showClock = toggles.showClock,
                                 showDate = toggles.showDate,
                                 showWeather = toggles.showWeather,
                                 showBattery = toggles.showBattery,
                                 preferredClockAppPackage = clockPkg,
-                                preferredCalendarAppPackage = calendarPkg
+                                preferredCalendarAppPackage = calendarPkg,
+                                homeDateFormatStyle = dateFormatStyle
                         )
                     }
             val favoritesQuintupleFlow =
@@ -276,6 +280,7 @@ constructor(
                                         showHomeDate = homeWidgetItems.showDate,
                                         showHomeWeather = homeWidgetItems.showWeather,
                                         showHomeBattery = homeWidgetItems.showBattery,
+                                        homeDateFormatStyle = homeWidgetItems.homeDateFormatStyle,
                                         drawerSidebarCategories = drawerSidebarCategories,
                                         drawerCategorySidebarOnLeft = drawerCategorySidebarOnLeft,
                                         categoryDrawerIconOverrides = categoryDrawerIconOverrides,
@@ -307,7 +312,8 @@ constructor(
             val showWeather: Boolean,
             val showBattery: Boolean,
             val preferredClockAppPackage: String,
-            val preferredCalendarAppPackage: String
+            val preferredCalendarAppPackage: String,
+            val homeDateFormatStyle: HomeDateFormatStyle
     )
 
     private data class Quintuple(
@@ -411,6 +417,10 @@ constructor(
 
     fun setShowHomeBattery(show: Boolean) {
         viewModelScope.launch { preferencesManager.setShowHomeBattery(show) }
+    }
+
+    fun setHomeDateFormatStyle(style: HomeDateFormatStyle) {
+        viewModelScope.launch { preferencesManager.setHomeDateFormatStyle(style) }
     }
 
     fun setDrawerSidebarCategories(enabled: Boolean) {

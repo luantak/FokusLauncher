@@ -25,6 +25,7 @@ import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.AppShortcutAction
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.model.appProfileKey
+import com.lu4p.fokuslauncher.data.model.HomeDateFormatStyle
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
@@ -53,7 +54,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.text.DateFormat as JavaDateFormat
-import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
@@ -94,6 +94,8 @@ class HomeViewModel @Inject constructor(
 
     private val _clockUiState = MutableStateFlow(HomeClockUiState())
     val clockUiState: StateFlow<HomeClockUiState> = _clockUiState.asStateFlow()
+
+    private val _homeDateFormatStyle = MutableStateFlow(HomeDateFormatStyle.SYSTEM_DEFAULT)
 
     private val _weatherUiState = MutableStateFlow(HomeWeatherUiState())
     val weatherUiState: StateFlow<HomeWeatherUiState> = _weatherUiState.asStateFlow()
@@ -192,6 +194,7 @@ class HomeViewModel @Inject constructor(
         updateBattery()
         startWeatherTicker()
         observeHomeAlignment()
+        observeHomeDateFormatStyle()
         observeHomeWidgetItemPreferences()
         observeWeatherRefreshTriggers()
         observeDoubleTapEmptyLock()
@@ -524,7 +527,8 @@ class HomeViewModel @Inject constructor(
                 val updated =
                     current.copy(
                         currentTime = timeFormat.format(now),
-                        currentDate = formatCompactDate(now, locale)
+                        currentDate =
+                                formatHomeDate(now, locale, _homeDateFormatStyle.value)
                     )
                 if (updated != current) {
                     _clockUiState.value = updated
@@ -586,6 +590,19 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             preferencesManager.homeAlignmentFlow.collect { alignment ->
                 _uiState.value = _uiState.value.copy(homeAlignment = alignment)
+            }
+        }
+    }
+
+    private fun observeHomeDateFormatStyle() {
+        viewModelScope.launch {
+            preferencesManager.homeDateFormatStyleFlow.collect { style ->
+                _homeDateFormatStyle.value = style
+                val now = Date()
+                val locale = Locale.getDefault()
+                val current = _clockUiState.value
+                _clockUiState.value =
+                        current.copy(currentDate = formatHomeDate(now, locale, style))
             }
         }
     }
@@ -909,13 +926,4 @@ class HomeViewModel @Inject constructor(
                         "com.android.deskclock",
                 )
     }
-}
-
-internal fun formatCompactDate(date: Date, locale: Locale): String {
-    val pattern = DateFormat.getBestDateTimePattern(locale, "EEE d MMM")
-    return SimpleDateFormat(pattern, locale)
-        .format(date)
-        .replace(",", "")
-        .replace(Regex("\\s+"), " ")
-        .trim()
 }

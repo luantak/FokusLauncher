@@ -150,6 +150,13 @@
     <string name="settings_home_widgets_dialog_title">What to show</string>
     <string name="settings_show_home_clock">Show clock</string>
     <string name="settings_show_home_date">Show date</string>
+    <string name="settings_home_date_format">Date format</string>
+    <string name="settings_home_date_format_system">Automatic (locale)</string>
+    <string name="settings_home_date_format_us_slashes">MM/DD/YYYY</string>
+    <string name="settings_home_date_format_eu_slashes">DD/MM/YYYY</string>
+    <string name="settings_home_date_format_eu_dots">DD.MM.YYYY</string>
+    <string name="settings_home_date_format_weekday_month">Mon DD, YYYY</string>
+    <string name="settings_home_date_format_month_long">Month DD, YYYY</string>
     <string name="settings_show_home_weather">Show weather</string>
     <string name="settings_show_home_battery">Show battery level</string>
     <string name="settings_widget_clock_app">Clock app</string>

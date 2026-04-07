@@ -91,6 +91,7 @@ import com.lu4p.fokuslauncher.ui.drawer.groupAppsIntoProfileSections
 import com.lu4p.fokuslauncher.ui.drawer.profileGroupedAppItems
 import com.lu4p.fokuslauncher.ui.drawer.sortAppsAlphabeticallyByProfileSection
 import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
+import com.lu4p.fokuslauncher.data.model.HomeDateFormatStyle
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.utils.BatteryOptimizationHelper
@@ -779,6 +780,13 @@ fun HomeWidgetsSettingsScreen(
                 )
             }
             item {
+                HomeDateFormatDropdown(
+                        currentStyle = uiState.homeDateFormatStyle,
+                        enabled = uiState.showHomeDate,
+                        onStyleSelected = { viewModel.setHomeDateFormatStyle(it) }
+                )
+            }
+            item {
                 SettingsToggleRow(
                         label = stringResource(R.string.settings_show_home_weather),
                         checked = uiState.showHomeWeather,
@@ -1085,6 +1093,115 @@ private fun languageAutonym(localeTag: String): String {
     if (raw.isBlank()) return localeTag
     return raw.replaceFirstChar { ch ->
         if (ch.isLowerCase()) ch.titlecase(locale) else ch.toString()
+    }
+}
+
+@Composable
+private fun homeDateFormatStyleLabel(style: HomeDateFormatStyle): String =
+        when (style) {
+            HomeDateFormatStyle.SYSTEM_DEFAULT ->
+                    stringResource(R.string.settings_home_date_format_system)
+            HomeDateFormatStyle.US_SLASHES ->
+                    stringResource(R.string.settings_home_date_format_us_slashes)
+            HomeDateFormatStyle.EU_SLASHES ->
+                    stringResource(R.string.settings_home_date_format_eu_slashes)
+            HomeDateFormatStyle.EU_DOTS ->
+                    stringResource(R.string.settings_home_date_format_eu_dots)
+            HomeDateFormatStyle.WEEKDAY_MONTH_ABBR ->
+                    stringResource(R.string.settings_home_date_format_weekday_month)
+            HomeDateFormatStyle.MONTH_LONG ->
+                    stringResource(R.string.settings_home_date_format_month_long)
+        }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun HomeDateFormatDropdown(
+        currentStyle: HomeDateFormatStyle,
+        enabled: Boolean,
+        onStyleSelected: (HomeDateFormatStyle) -> Unit
+) {
+    val options =
+            remember {
+                listOf(
+                        HomeDateFormatStyle.SYSTEM_DEFAULT,
+                        HomeDateFormatStyle.US_SLASHES,
+                        HomeDateFormatStyle.EU_SLASHES,
+                        HomeDateFormatStyle.EU_DOTS,
+                        HomeDateFormatStyle.WEEKDAY_MONTH_ABBR,
+                        HomeDateFormatStyle.MONTH_LONG
+                )
+            }
+    var expanded by remember { mutableStateOf(false) }
+    val selectedLabel = homeDateFormatStyleLabel(currentStyle)
+
+    Column(
+            modifier =
+                    Modifier.fillMaxWidth()
+                            .padding(horizontal = 24.dp, vertical = 12.dp)
+    ) {
+        Text(
+                text = stringResource(R.string.settings_home_date_format),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onBackground
+        )
+        Spacer(Modifier.height(12.dp))
+        ExposedDropdownMenuBox(
+                expanded = expanded && enabled,
+                onExpandedChange = { if (enabled) expanded = it }
+        ) {
+            OutlinedTextField(
+                    modifier =
+                            Modifier.menuAnchor(
+                                            ExposedDropdownMenuAnchorType.PrimaryNotEditable,
+                                            enabled = enabled
+                                    )
+                                    .fillMaxWidth(),
+                    value = selectedLabel,
+                    onValueChange = { _ -> },
+                    readOnly = true,
+                    enabled = enabled,
+                    singleLine = true,
+                    shape = SettingsPickerCorner,
+                    textStyle = MaterialTheme.typography.bodyLarge,
+                    trailingIcon = {
+                        ExposedDropdownMenuDefaults.TrailingIcon(
+                                expanded = expanded && enabled
+                        )
+                    },
+                    colors = settingsPickerOutlinedFieldColors()
+            )
+            ExposedDropdownMenu(
+                    expanded = expanded && enabled,
+                    onDismissRequest = { expanded = false },
+                    shape = SettingsPickerCorner,
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    tonalElevation = 0.dp,
+                    shadowElevation = 8.dp,
+                    border =
+                            BorderStroke(
+                                    width = 1.dp,
+                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.14f)
+                            ),
+            ) {
+                options.forEach { style ->
+                    DropdownMenuItem(
+                            text = {
+                                Text(
+                                        text = homeDateFormatStyleLabel(style),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onBackground,
+                                )
+                            },
+                            onClick = {
+                                onStyleSelected(style)
+                                expanded = false
+                            },
+                            colors = settingsPickerMenuItemColors(),
+                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                    )
+                }
+            }
+        }
     }
 }
 

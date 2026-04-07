@@ -13,6 +13,7 @@ import android.text.format.DateFormat
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.model.AppInfo
+import com.lu4p.fokuslauncher.data.model.HomeDateFormatStyle
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
@@ -43,8 +44,10 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -93,6 +96,8 @@ class HomeViewModelTest {
         every { preferencesManager.showHomeDateFlow } returns flowOf(true)
         every { preferencesManager.showHomeWeatherFlow } returns flowOf(true)
         every { preferencesManager.showHomeBatteryFlow } returns flowOf(true)
+        every { preferencesManager.homeDateFormatStyleFlow } returns
+                flowOf(HomeDateFormatStyle.SYSTEM_DEFAULT)
         every { preferencesManager.doubleTapEmptyLockFlow } returns flowOf(false)
         coEvery { preferencesManager.ensureRightSideShortcutsInitialized() } returns Unit
         coEvery { preferencesManager.setFavorites(any()) } returns Unit
@@ -236,6 +241,66 @@ class HomeViewModelTest {
         val formatted = formatCompactDate(Date(), Locale.ENGLISH)
 
         assertFalse(formatted.contains(","))
+    }
+
+    @Test
+    fun `formatHomeDate US slashes uses MM slash dd slash yyyy`() {
+        val cal =
+                Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+                    set(2026, Calendar.APRIL, 7, 12, 0, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+        val date = cal.time
+        val formatted = formatHomeDate(date, Locale.US, HomeDateFormatStyle.US_SLASHES)
+        assertEquals("04/07/2026", formatted)
+    }
+
+    @Test
+    fun `formatHomeDate EU slashes uses dd slash MM slash yyyy`() {
+        val cal =
+                Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+                    set(2026, Calendar.APRIL, 7, 12, 0, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+        val date = cal.time
+        val formatted = formatHomeDate(date, Locale.UK, HomeDateFormatStyle.EU_SLASHES)
+        assertEquals("07/04/2026", formatted)
+    }
+
+    @Test
+    fun `formatHomeDate EU dots uses dd dot MM dot yyyy`() {
+        val cal =
+                Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+                    set(2026, Calendar.APRIL, 7, 12, 0, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+        val date = cal.time
+        val formatted = formatHomeDate(date, Locale.GERMANY, HomeDateFormatStyle.EU_DOTS)
+        assertEquals("07.04.2026", formatted)
+    }
+
+    @Test
+    fun `formatHomeDate month long uses full month and comma`() {
+        val cal =
+                Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+                    set(2026, Calendar.APRIL, 7, 12, 0, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+        val date = cal.time
+        val formatted = formatHomeDate(date, Locale.US, HomeDateFormatStyle.MONTH_LONG)
+        assertEquals("April 7, 2026", formatted)
+    }
+
+    @Test
+    fun `formatHomeDate weekday abbrev matches fixed calendar US locale`() {
+        val cal =
+                Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+                    set(2026, Calendar.APRIL, 7, 12, 0, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+        val date = cal.time
+        val formatted = formatHomeDate(date, Locale.US, HomeDateFormatStyle.WEEKDAY_MONTH_ABBR)
+        assertEquals("Tue Apr 7, 2026", formatted)
     }
 
     @Test
