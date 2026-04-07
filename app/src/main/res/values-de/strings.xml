@@ -8,7 +8,6 @@
     <string name="drawer_menu_launcher_settings">Launcher-Einstellungen</string>
     <string name="drawer_private_space_lock">Privaten Bereich sperren</string>
     <string name="drawer_private_space_unlock">Privaten Bereich entsperren</string>
-
     <!-- App drawer: one section per Android user profile -->
     <string name="drawer_section_personal">Persönlich</string>
     <string name="drawer_section_work_profile">Arbeitsprofil</string>
@@ -16,13 +15,11 @@
     <string name="drawer_section_other_profile">Anderes Profil</string>
     <string name="drawer_section_clone_profile">Parallele Apps</string>
     <string name="drawer_section_private_space">Privater Bereich</string>
-
     <!-- Search -->
     <string name="search">Suchen</string>
     <string name="search_apps_hint">Apps suchen…</string>
     <string name="search_apps">Apps suchen</string>
     <string name="search_apps_and_actions">Apps und Aktionen suchen</string>
-
     <!-- Common actions -->
     <string name="action_back">Zurück</string>
     <string name="action_done">Fertig</string>
@@ -43,7 +40,6 @@
     <string name="cd_unhide_app">App einblenden</string>
     <string name="cd_remove_rename">Umbenennung entfernen</string>
     <string name="cd_delete_category">Kategorie löschen</string>
-
     <!-- Shortcut / target labels -->
     <string name="shortcut_target_not_set">Nicht festgelegt</string>
     <string name="shortcut_target_deep_link">Deep Link</string>
@@ -51,7 +47,6 @@
     <string name="shortcut_open_app">App öffnen</string>
     <string name="shortcut_generic_label">Schnellzugriff</string>
     <string name="toast_weather_app_launch_failed">Die ausgewählte Wetter-App konnte nicht gestartet werden</string>
-
     <!-- App & category sheets -->
     <string name="app_name_placeholder">App-Name</string>
     <string name="action_add_to_home">Zum Startbildschirm hinzufügen</string>
@@ -70,30 +65,25 @@
     <string name="category_settings_title">App-Kategorien</string>
     <string name="category_new_label">Neue Kategorie</string>
     <string name="category_edit_apps">Apps bearbeiten</string>
-
     <plurals name="category_app_count">
         <item quantity="one">%d App</item>
         <item quantity="other">%d Apps</item>
     </plurals>
-
     <!-- Inferred app categories (system metadata) -->
     <string name="inferred_category_utilities">Dienstprogramme</string>
     <string name="inferred_category_games">Spiele</string>
     <string name="inferred_category_productivity">Produktivität</string>
     <string name="inferred_category_social">Soziales</string>
     <string name="inferred_category_media">Medien</string>
-
     <!-- Home screen -->
     <string name="home_set_default_launcher">Als Standard-Launcher festlegen</string>
     <string name="home_weather_app_picker_title">Wetter-App auswählen</string>
-
     <!-- Home alignment -->
     <string name="home_alignment_title">Ausrichtung des Startbildschirms</string>
     <string name="home_alignment_subtitle">Position von App-Namen und Schnellzugriffssymbolen</string>
     <string name="home_alignment_left">Links</string>
     <string name="home_alignment_center">Mitte</string>
     <string name="home_alignment_right">Rechts</string>
-
     <!-- Edit home / shortcuts screens -->
     <string name="edit_home_title">Startbildschirm bearbeiten</string>
     <string name="edit_shortcuts_title">Schnellzugriffe bearbeiten</string>
@@ -123,7 +113,6 @@
     <string name="icon_cat_other">Sonstige</string>
     <string name="icon_cat_no_metadata">Weitere Symbole</string>
     <string name="icon_cat_search_results">Treffer</string>
-
     <!-- Settings -->
     <string name="settings_title">Einstellungen</string>
     <string name="settings_section_appearance">Darstellung</string>
@@ -189,22 +178,18 @@
     <string name="settings_reset_confirm_message">Dadurch werden Favoriten, Schnellzugriffe, ausgeblendete Apps, umbenannte Apps und alle anderen Einstellungen gelöscht. Die App wird in ihren Anfangszustand zurückgesetzt.</string>
     <string name="settings_app_picker_title">App auswählen</string>
     <string name="settings_font_label">Schriftart</string>
-
     <plurals name="settings_shortcuts_configured">
         <item quantity="one">%d Schnellzugriff konfiguriert</item>
         <item quantity="other">%d Schnellzugriffe konfiguriert</item>
     </plurals>
-
     <plurals name="settings_long_lock_duration_minutes">
         <item quantity="one">%d Minute</item>
         <item quantity="other">%d Minuten</item>
     </plurals>
-
     <plurals name="settings_categories_count">
         <item quantity="one">%d Kategorie</item>
         <item quantity="other">%d Kategorien</item>
     </plurals>
-
     <!-- Onboarding -->
     <string name="onboarding_welcome_title">Fokus Launcher</string>
     <string name="onboarding_welcome_subtitle">Ein minimalistischer Startbildschirm</string>
@@ -237,16 +222,13 @@
     <string name="onboarding_done">Fertig</string>
     <string name="onboarding_skip">Überspringen</string>
     <string name="onboarding_next">Weiter</string>
-
     <!-- Settings - Weather location (shown only when disabled) -->
     <string name="settings_weather_location_disabled">Standort für Wetter aktivieren</string>
     <string name="settings_weather_location_disabled_subtitle">Tippe hier, um den Standortzugriff zu erlauben</string>
     <string name="settings_weather_location_enable_button">Aktivieren</string>
-
     <!-- Settings - Weather app -->
     <string name="settings_weather_app_system_default">Systemstandard</string>
     <string name="settings_weather_app_not_configured">Nicht konfiguriert</string>
-
     <!-- Settings - Connect section -->
     <string name="settings_connect_section">Verbinden</string>
     <string name="settings_github_title">Stern auf GitHub geben</string>
@@ -255,4 +237,6 @@
     <string name="settings_weblate_subtitle">Übersetzungen auf Weblate beitragen</string>
     <string name="settings_matrix_title">Am Chat teilnehmen</string>
     <string name="settings_matrix_subtitle">Hilfe erhalten und Feedback geben</string>
+    <string name="edit_home_section_all_apps" translatable="false">\@string/drawer_filter_all_apps</string>
+    <string name="app_name" translatable="false">Fokus Launcher</string>
 </resources>

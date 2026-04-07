@@ -194,7 +194,7 @@
     <string name="settings_weblate_subtitle">Weblate üzerinden çeviriye katkıda bulunun</string>
     <string name="settings_matrix_title">Tartışmaya katılın</string>
     <string name="settings_matrix_subtitle">Yardım alın ve geri bildirim paylaşın</string>
-    <string name="drawer_filter_uncategorized">"Kategorize  edilmemiş"</string>
+    <string name="drawer_filter_uncategorized">Kategorize edilmemiş</string>
     <string name="category_icon_picker_title">Kategori simgesi</string>
     <string name="category_action_reset_icon">Simgeyi varsayılana sıfırla</string>
     <string name="settings_drawer_sidebar_categories">Yan kategori bölmesini göster</string>
@@ -203,4 +203,6 @@
     <string name="settings_drawer_category_rail_side_subtitle">Varsayılan olarak, kenar çubuğu sağda yer alır. Çekmecedeki bir kategoriye uzun süre basılı tutarak simgesini değiştirebilirsiniz.</string>
     <string name="settings_drawer_rail_position_left">Sol</string>
     <string name="settings_drawer_rail_position_right">Sağ</string>
+    <string name="edit_home_section_all_apps" translatable="false">\@string/drawer_filter_all_apps</string>
+    <string name="app_name" translatable="false">Fokus Launcher</string>
 </resources>

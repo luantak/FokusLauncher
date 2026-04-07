@@ -164,4 +164,5 @@
     <string name="inferred_category_productivity">生产力</string>
     <string name="inferred_category_social">社交</string>
     <string name="inferred_category_media">多媒体</string>
+    <string name="app_name" translatable="false">Fokus Launcher</string>
 </resources>
