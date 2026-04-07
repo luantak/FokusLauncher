@@ -6,12 +6,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
 val FokusTypography = Typography(
-    // Large clock display
+    // Home clock (12h + AM/PM needs horizontal room; 24h stays balanced at same size)
     displayLarge = TextStyle(
         fontWeight = FontWeight.Light,
-        fontSize = 80.sp,
-        lineHeight = 88.sp,
-        letterSpacing = (-0.5).sp,
+        fontSize = 58.sp,
+        lineHeight = 64.sp,
+        letterSpacing = (-0.3).sp,
         color = White
     ),
     // Date / Battery text

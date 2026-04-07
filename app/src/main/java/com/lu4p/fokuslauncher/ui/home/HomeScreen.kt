@@ -318,7 +318,7 @@ private fun HomeWidgetsSection(
                     weather = weatherUiState.weather,
                     useFahrenheit = weatherUiState.weatherUseFahrenheit,
                     onClick = onWeatherClick,
-                    modifier = Modifier.padding(top = 16.dp)
+                    modifier = Modifier.padding(top = 10.dp)
                 )
             }
         }
