@@ -14,6 +14,13 @@ class StringSearchTest {
     }
 
     @Test
+    fun `normalizedForSearch ignores punctuation and spaces for matching`() {
+        assertEquals("fdroid", "F-Droid".normalizedForSearch())
+        assertEquals("myapp", "My_App".normalizedForSearch())
+        assertEquals("one2", "One.2!".normalizedForSearch())
+    }
+
+    @Test
     fun `containsNormalizedSearch matches ascii query against accented label`() {
         assertTrue("càmera".containsNormalizedSearch("cam"))
         assertTrue("Càmera".containsNormalizedSearch("cam"))
@@ -32,5 +39,11 @@ class StringSearchTest {
     @Test
     fun `containsNormalizedSearch empty needle matches like String_contains`() {
         assertTrue("anything".containsNormalizedSearch(""))
+    }
+
+    @Test
+    fun `containsNormalizedSearch matches when label has separators query does not`() {
+        assertTrue("F-Droid".containsNormalizedSearch("fdroid"))
+        assertTrue("F-Droid".containsNormalizedSearch("fdr"))
     }
 }
