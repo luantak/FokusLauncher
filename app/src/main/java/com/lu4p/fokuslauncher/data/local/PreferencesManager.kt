@@ -33,6 +33,12 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         private val SWIPE_LEFT_KEY = stringPreferencesKey("swipe_left_app")
         private val SWIPE_RIGHT_KEY = stringPreferencesKey("swipe_right_app")
         private val RIGHT_SIDE_SHORTCUTS_KEY = stringPreferencesKey("right_side_shortcuts")
+        /**
+         * Stored when the user has zero right-side shortcuts. Non-empty so the preference key stays
+         * written: some DataStore backends omit empty strings, which made [RIGHT_SIDE_SHORTCUTS_KEY]
+         * disappear and [ensureRightSideShortcutsInitialized] re-seed the default phone shortcut.
+         */
+        private const val RIGHT_SIDE_SHORTCUTS_EMPTY_MARKER = "__empty__"
         private val PREFERRED_WEATHER_APP_KEY = stringPreferencesKey("preferred_weather_app")
         private val PREFERRED_CLOCK_APP_KEY = stringPreferencesKey("preferred_clock_app")
         private val PREFERRED_CALENDAR_APP_KEY = stringPreferencesKey("preferred_calendar_app")
@@ -89,7 +95,7 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
                         "Work;com.google.android.gm;work|" +
                         "Read;com.google.android.apps.docs;read|" +
                         "Social;com.google.android.apps.messaging;chat|" +
-                        "Health;com.google.android.dialer;call|" +
+                        "Health;${ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE};call;internal:phone|" +
                         "Finance;com.android.vending;finance"
     }
 
@@ -124,10 +130,59 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
                         listOf(
                                 HomeShortcut(
                                         iconName = "call",
-                                        target = ShortcutTarget.App("com.google.android.dialer")
+                                        target = ShortcutTarget.PhoneDial,
                                 )
                         )
                 prefs[RIGHT_SIDE_SHORTCUTS_KEY] = serializeRightSideShortcuts(defaultShortcuts)
+            }
+        }
+    }
+
+    /**
+     * Replaces hard-coded dialer package targets with [ShortcutTarget.PhoneDial] so the default
+     * dialer resolves via [android.content.Intent.ACTION_DIAL].
+     */
+    suspend fun migrateLegacyDialerShortcutTargets() {
+        val legacyDialerPackages =
+                setOf(
+                        "com.google.android.dialer",
+                        "com.android.dialer",
+                        "com.samsung.android.dialer",
+                        "com.oneplus.dialer",
+                )
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            prefs[RIGHT_SIDE_SHORTCUTS_KEY]?.let { raw ->
+                val list = parseRightSideShortcuts(raw)
+                val migrated =
+                        list.map { s ->
+                            if (s.target is ShortcutTarget.App &&
+                                            s.target.packageName in legacyDialerPackages
+                            ) {
+                                s.copy(target = ShortcutTarget.PhoneDial)
+                            } else s
+                        }
+                if (migrated != list) {
+                    prefs[RIGHT_SIDE_SHORTCUTS_KEY] = serializeRightSideShortcuts(migrated)
+                }
+            }
+
+            prefs[FAVORITES_KEY]?.let { raw ->
+                val favorites = parseFavorites(raw)
+                val migrated =
+                        favorites.map { fav ->
+                            if (fav.packageName in legacyDialerPackages && fav.iconPackage.isBlank()) {
+                                fav.copy(
+                                        packageName = ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE,
+                                        iconPackage = ShortcutTarget.encode(ShortcutTarget.PhoneDial),
+                                )
+                            } else fav
+                        }
+                if (migrated != favorites) {
+                    prefs[FAVORITES_KEY] =
+                            migrated.joinToString("|") {
+                                "${it.label};${it.packageName};${it.iconName};${it.iconPackage};${it.profileKey}"
+                            }
+                }
             }
         }
     }
@@ -589,7 +644,7 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
     }
 
     private fun parseRightSideShortcuts(raw: String): List<HomeShortcut> {
-        if (raw.isBlank()) return emptyList()
+        if (raw.isBlank() || raw == RIGHT_SIDE_SHORTCUTS_EMPTY_MARKER) return emptyList()
         return raw.split("|").mapNotNull { entry ->
             val parts = entry.split(";")
             if (parts.size < 2) return@mapNotNull null
@@ -601,6 +656,7 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
     }
 
     private fun serializeRightSideShortcuts(shortcuts: List<HomeShortcut>): String {
+        if (shortcuts.isEmpty()) return RIGHT_SIDE_SHORTCUTS_EMPTY_MARKER
         return shortcuts.joinToString("|") { shortcut ->
             "${shortcut.iconName};${ShortcutTarget.encode(shortcut.target)};${shortcut.profileKey}"
         }

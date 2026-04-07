@@ -54,7 +54,10 @@
     <string name="shortcut_target_deep_link">Deep link</string>
     <string name="shortcut_target_app_with_label">%1$s - %2$s</string>
     <string name="shortcut_open_app">Open app</string>
+    <string name="shortcut_open_dialer">Open dialer</string>
     <string name="shortcut_generic_label">Shortcut</string>
+    <!-- Right-shortcut target: ACTION_DIAL / system default, not a specific installed "Phone" app -->
+    <string name="shortcut_target_phone">Phone (default dialer)</string>
     <string name="toast_weather_app_launch_failed">Selected weather app could not be launched</string>
 
     <!-- App & category sheets -->

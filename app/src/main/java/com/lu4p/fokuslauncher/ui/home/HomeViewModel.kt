@@ -209,6 +209,7 @@ class HomeViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             preferencesManager.ensureRightSideShortcutsInitialized()
+            preferencesManager.migrateLegacyDialerShortcutTargets()
         }
         startClockTicker()
         registerBatteryReceiver()
@@ -317,7 +318,11 @@ class HomeViewModel @Inject constructor(
             _allInstalledApps.value = apps
             val installedPackages = apps.map { it.packageName }.toSet()
             val currentFavorites = rawFavorites.value
-            val updatedFavorites = currentFavorites.filter { it.packageName in installedPackages }
+            val updatedFavorites =
+                    currentFavorites.filter {
+                        it.packageName == ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE ||
+                                it.packageName in installedPackages
+                    }
             if (updatedFavorites.size != currentFavorites.size) {
                 preferencesManager.setFavorites(updatedFavorites)
             }
@@ -492,12 +497,28 @@ class HomeViewModel @Inject constructor(
 
     fun renameApp(packageName: String, newName: String) {
         viewModelScope.launch {
-            appRepository.renameApp(packageName, newName)
+            if (packageName == ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE) {
+                val current = preferencesManager.favoritesFlow.first().toMutableList()
+                val idx =
+                        current.indexOfFirst {
+                            it.packageName == packageName && it.profileKey == "0"
+                        }
+                if (idx >= 0) {
+                    current[idx] = current[idx].copy(label = newName.trim())
+                    preferencesManager.setFavorites(current)
+                }
+            } else {
+                appRepository.renameApp(packageName, newName)
+            }
             _appMenuTarget.value = null
         }
     }
 
     fun hideApp(packageName: String) {
+        if (packageName == ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE) {
+            _appMenuTarget.value = null
+            return
+        }
         viewModelScope.launch {
             appRepository.hideApp(packageName)
             // Also remove from home-screen favorites
@@ -509,6 +530,10 @@ class HomeViewModel @Inject constructor(
     }
 
     fun openAppInfo(packageName: String) {
+        if (packageName == ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE) {
+            _appMenuTarget.value = null
+            return
+        }
         try {
             val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                 data = "package:$packageName".toUri()
@@ -520,6 +545,10 @@ class HomeViewModel @Inject constructor(
     }
 
     fun uninstallApp(packageName: String) {
+        if (packageName == ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE) {
+            _appMenuTarget.value = null
+            return
+        }
         try {
             val intent = Intent(Intent.ACTION_DELETE).apply {
                 data = "package:$packageName".toUri()
@@ -760,16 +789,43 @@ class HomeViewModel @Inject constructor(
     }
 
     fun launchFavorite(fav: FavoriteApp) {
-        if (fav.profileKey != "0") {
-            val app =
-                    _allInstalledApps.value.firstOrNull {
-                        it.packageName == fav.packageName && appProfileKey(it.userHandle) == fav.profileKey
-                    }
-            val cn = app?.componentName
-            val uh = app?.userHandle
-            if (cn != null && uh != null && appRepository.launchMainActivity(cn, uh)) return
+        when (val target = fav.resolvedIconTarget) {
+            is ShortcutTarget.PhoneDial -> launchDefaultDialer()
+            is ShortcutTarget.DeepLink -> {
+                val intent =
+                        try {
+                            Intent.parseUri(target.intentUri, Intent.URI_INTENT_SCHEME)
+                        } catch (_: Exception) {
+                            Intent(Intent.ACTION_VIEW, target.intentUri.toUri())
+                        }
+                try {
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(intent)
+                } catch (_: Exception) { }
+            }
+            is ShortcutTarget.LauncherShortcut -> {
+                val user =
+                        resolveUserHandleForShortcut(fav.profileKey, target.packageName)
+                appRepository.launchLauncherShortcut(
+                        target.packageName,
+                        target.shortcutId,
+                        user,
+                )
+            }
+            is ShortcutTarget.App -> {
+                if (fav.profileKey != "0") {
+                    val app =
+                            _allInstalledApps.value.firstOrNull {
+                                it.packageName == target.packageName &&
+                                        appProfileKey(it.userHandle) == fav.profileKey
+                            }
+                    val cn = app?.componentName
+                    val uh = app?.userHandle
+                    if (cn != null && uh != null && appRepository.launchMainActivity(cn, uh)) return
+                }
+                appRepository.launchApp(target.packageName)
+            }
         }
-        appRepository.launchApp(fav.packageName)
     }
 
     fun launchShortcut(shortcut: HomeShortcut) {
@@ -809,7 +865,18 @@ class HomeViewModel @Inject constructor(
                     // ignore malformed/unresolvable deep links
                 }
             }
+            is ShortcutTarget.PhoneDial -> launchDefaultDialer()
         }
+    }
+
+    private fun launchDefaultDialer() {
+        try {
+            context.startActivity(
+                    Intent(Intent.ACTION_DIAL, "tel:".toUri()).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+            )
+        } catch (_: Exception) { }
     }
 
     private fun resolveUserHandleForShortcut(profileKey: String, packageName: String): UserHandle {
@@ -847,7 +914,7 @@ class HomeViewModel @Inject constructor(
             value.contains("music") -> "music"
             value.contains("work") || value.contains("mail") -> "work"
             value.contains("chat") || value.contains("message") -> "chat"
-            value.contains("call") || value.contains("dial") -> "call"
+            value.contains("call") || value.contains("dial") || value.contains("dialer") || value.contains("phone") -> "call"
             value.contains("camera") -> "camera"
             value.contains("photo") || value.contains("gallery") -> "gallery"
             value.contains("video") -> "video"

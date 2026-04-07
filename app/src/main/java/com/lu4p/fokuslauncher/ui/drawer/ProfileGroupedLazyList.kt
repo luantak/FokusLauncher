@@ -23,6 +23,16 @@ private fun appShortcutGroupKey(action: AppShortcutAction): String =
             is ShortcutTarget.App -> "pkg:${t.packageName}"
             is ShortcutTarget.LauncherShortcut -> "pkg:${t.packageName}"
             is ShortcutTarget.DeepLink -> "intent:${t.intentUri}"
+            is ShortcutTarget.PhoneDial -> "internal:phone"
+        }
+
+/** Package name shown when two apps share the same display label (e.g. two "Phone" apps). */
+private fun shortcutActionPackageForHeadlineDisambiguation(action: AppShortcutAction): String? =
+        when (val t = action.target) {
+            is ShortcutTarget.App -> t.packageName
+            is ShortcutTarget.LauncherShortcut -> t.packageName
+            is ShortcutTarget.DeepLink,
+            is ShortcutTarget.PhoneDial -> null
         }
 
 /**
@@ -110,8 +120,22 @@ fun LazyListScope.profileGroupedShortcutItems(
                 section.actions.groupBy { appShortcutGroupKey(it) }.entries.sortedBy { (_, acts) ->
                     acts.first().appLabel.lowercase(Locale.getDefault())
                 }
+        val headlineNormCounts =
+                byApp
+                        .map { (_, acts) -> acts.first().appLabel.trim().lowercase(Locale.getDefault()) }
+                        .groupingBy { it }
+                        .eachCount()
         for ((groupKey, actionsForApp) in byApp) {
-            val headline = actionsForApp.first().appLabel
+            val firstAction = actionsForApp.first()
+            val baseHeadline = firstAction.appLabel
+            val norm = baseHeadline.trim().lowercase(Locale.getDefault())
+            val headline =
+                    if ((headlineNormCounts[norm] ?: 0) > 1) {
+                        val pkg = shortcutActionPackageForHeadlineDisambiguation(firstAction)
+                        if (pkg != null) "$baseHeadline ($pkg)" else baseHeadline
+                    } else {
+                        baseHeadline
+                    }
             item(key = "${keyPrefix}_app_${section.id}_$groupKey") {
                 Text(
                         text = headline,
@@ -123,10 +147,17 @@ fun LazyListScope.profileGroupedShortcutItems(
             }
             val sortedForApp =
                     actionsForApp.sortedWith(
-                            compareBy<AppShortcutAction> { it.actionLabel != openAppLabelSort }
-                                    .thenBy {
-                                        it.actionLabel.lowercase(Locale.getDefault())
-                                    }
+                            compareBy<AppShortcutAction> {
+                                if (it.actionLabel == openAppLabelSort ||
+                                                it.target is ShortcutTarget.PhoneDial
+                                ) {
+                                    0
+                                } else {
+                                    1
+                                }
+                            }.thenBy {
+                                it.actionLabel.lowercase(Locale.getDefault())
+                            }
                     )
             items(
                     items = sortedForApp,

@@ -15,7 +15,9 @@ data class AppShortcutAction(
     val id: String get() = "$profileKey|${ShortcutTarget.encode(target)}"
 
     val displayLabel: String
-        get() = if (actionLabel == OPEN_APP_LABEL) appLabel else "$appLabel - $actionLabel"
+        get() =
+                if (actionLabel == OPEN_APP_LABEL || target is ShortcutTarget.PhoneDial) appLabel
+                else "$appLabel - $actionLabel"
 
     companion object {
         const val OPEN_APP_LABEL = "Open app"

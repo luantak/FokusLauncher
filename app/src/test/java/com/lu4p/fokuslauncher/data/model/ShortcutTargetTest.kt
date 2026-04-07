@@ -51,4 +51,11 @@ class ShortcutTargetTest {
         assertEquals(app, ShortcutTarget.decode(ShortcutTarget.encode(app)))
         assertEquals(deepLink, ShortcutTarget.decode(ShortcutTarget.encode(deepLink)))
     }
+
+    @Test
+    fun `encode and decode phone dial internal token`() {
+        val dial = ShortcutTarget.PhoneDial
+        assertEquals("internal:phone", ShortcutTarget.encode(dial))
+        assertEquals(dial, ShortcutTarget.decode("internal:phone"))
+    }
 }

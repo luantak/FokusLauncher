@@ -370,7 +370,7 @@ constructor(
                 }
                 return startDotSearchActivity(launchContext, intent)
             }
-            is ShortcutTarget.LauncherShortcut -> return false
+            is ShortcutTarget.LauncherShortcut, is ShortcutTarget.PhoneDial -> return false
         }
     }
 
@@ -394,7 +394,7 @@ constructor(
                 when (target) {
                     is ShortcutTarget.App -> target.packageName
                     is ShortcutTarget.LauncherShortcut -> target.packageName
-                    is ShortcutTarget.DeepLink -> null
+                    is ShortcutTarget.DeepLink, is ShortcutTarget.PhoneDial -> null
                     null -> null
                 } ?: return Process.myUserHandle()
         val app =
@@ -519,6 +519,14 @@ constructor(
             }
 
         val myUser = Process.myUserHandle()
+        actions.add(
+                AppShortcutAction(
+                        appLabel = context.getString(R.string.shortcut_target_phone),
+                        actionLabel = context.getString(R.string.shortcut_open_dialer),
+                        target = ShortcutTarget.PhoneDial,
+                        profileKey = "0",
+                )
+        )
         apps.forEach { app ->
             val profileKey = appProfileKey(app.userHandle)
             actions.add(

@@ -651,6 +651,8 @@ private fun Activity.launchWithBottomReveal(target: ShortcutTarget) {
     val intent = when (target) {
         is ShortcutTarget.App -> packageManager.getLaunchIntentForPackage(target.packageName)
         is ShortcutTarget.DeepLink -> parseDeepLinkIntent(target.intentUri)
+        is ShortcutTarget.PhoneDial ->
+            Intent(Intent.ACTION_DIAL, "tel:".toUri()).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
         is ShortcutTarget.LauncherShortcut -> null
     } ?: return
 

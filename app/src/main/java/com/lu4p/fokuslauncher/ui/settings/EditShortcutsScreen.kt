@@ -50,6 +50,7 @@ import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.AppShortcutAction
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
+import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.model.stableSelectionKey
 import com.lu4p.fokuslauncher.ui.components.MinimalIconPickerDialog
 import com.lu4p.fokuslauncher.ui.components.MinimalIcons
@@ -206,6 +207,7 @@ private fun ReorderableShortcutList(
     var dragOffset by remember { mutableFloatStateOf(0f) }
     val itemHeightPx = with(LocalDensity.current) { 56.dp.toPx() }
     val openAppLabel = stringResource(R.string.shortcut_open_app)
+    val openDialerLabel = stringResource(R.string.shortcut_open_dialer)
     val context = LocalContext.current
     val resetDragState = {
         draggedIndex = -1
@@ -337,10 +339,10 @@ private fun ReorderableShortcutList(
             horizontalPadding = 16.dp,
         ) { action ->
             val primaryText =
-                if (action.actionLabel == AppShortcutAction.OPEN_APP_LABEL) {
-                    openAppLabel
-                } else {
-                    action.actionLabel
+                when {
+                    action.target is ShortcutTarget.PhoneDial -> openDialerLabel
+                    action.actionLabel == AppShortcutAction.OPEN_APP_LABEL -> openAppLabel
+                    else -> action.actionLabel
                 }
             Row(
                 modifier =

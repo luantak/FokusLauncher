@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.AppShortcutAction
+import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.ui.drawer.groupShortcutActionsIntoProfileSections
 import com.lu4p.fokuslauncher.ui.drawer.profileGroupedShortcutItems
 import com.lu4p.fokuslauncher.utils.containsNormalizedSearch
@@ -76,10 +77,11 @@ fun ShortcutActionPickerDialog(
                                 horizontalPadding = 8.dp,
                         ) { action ->
                             val line =
-                                    if (action.actionLabel == AppShortcutAction.OPEN_APP_LABEL) {
-                                        action.appLabel
-                                    } else {
-                                        action.displayLabel
+                                    when {
+                                        action.actionLabel == AppShortcutAction.OPEN_APP_LABEL ->
+                                                action.appLabel
+                                        action.target is ShortcutTarget.PhoneDial -> action.appLabel
+                                        else -> action.displayLabel
                                     }
                             Text(
                                     text = line,
