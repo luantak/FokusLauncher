@@ -10,7 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 
 /**
- * Large clock display showing current time in "H:mm" format.
+ * Large clock display showing the current time using the system time format (12h with AM/PM or 24h).
  * Clicking opens the clock / alarm app.
  */
 @Composable

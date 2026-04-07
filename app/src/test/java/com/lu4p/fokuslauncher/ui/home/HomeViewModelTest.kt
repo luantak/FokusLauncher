@@ -1,8 +1,10 @@
 package com.lu4p.fokuslauncher.ui.home
 
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
@@ -116,6 +118,35 @@ class HomeViewModelTest {
         withContext, appRepository, preferencesManager, weatherRepository
     )
 
+    /** Real app context is required for [DateFormat.getTimeFormat]; battery sticky read is mocked. */
+    private fun contextForClockAndBattery(batterySticky: Intent): Context {
+        val base = RuntimeEnvironment.getApplication().applicationContext
+        return object : ContextWrapper(base) {
+            @Suppress("DEPRECATION")
+            override fun registerReceiver(
+                receiver: BroadcastReceiver?,
+                filter: IntentFilter
+            ): Intent? =
+                if (receiver == null) batterySticky
+                else super.registerReceiver(receiver, filter)
+
+            override fun registerReceiver(
+                receiver: BroadcastReceiver?,
+                filter: IntentFilter,
+                flags: Int
+            ): Intent? =
+                if (receiver == null) batterySticky
+                else super.registerReceiver(receiver, filter, flags)
+        }
+    }
+
+    private fun mockBatteryStickyIntent(level: Int = 75, scale: Int = 100): Intent {
+        val batteryIntent = mockk<Intent>(relaxed = true)
+        every { batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) } returns level
+        every { batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1) } returns scale
+        return batteryIntent
+    }
+
     @Test
     fun `initial state has battery percentage`() {
         val viewModel = createViewModel()
@@ -127,7 +158,7 @@ class HomeViewModelTest {
 
     @Test
     fun `initial state has formatted time`() {
-        val viewModel = createViewModel()
+        val viewModel = createViewModel(contextForClockAndBattery(mockBatteryStickyIntent()))
         testDispatcher.scheduler.advanceTimeBy(1100)
 
         val state = viewModel.clockUiState.value
@@ -158,7 +189,7 @@ class HomeViewModelTest {
 
     @Test
     fun `initial state has formatted date`() {
-        val viewModel = createViewModel()
+        val viewModel = createViewModel(contextForClockAndBattery(mockBatteryStickyIntent()))
         testDispatcher.scheduler.advanceTimeBy(1100)
 
         val state = viewModel.clockUiState.value

@@ -52,6 +52,7 @@ import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.text.DateFormat as JavaDateFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -504,13 +505,20 @@ class HomeViewModel @Inject constructor(
     private fun startClockTicker() {
         viewModelScope.launch {
             var lastLocale: Locale? = null
-            var timeFormat: SimpleDateFormat? = null
+            var lastIs24Hour: Boolean? = null
+            var timeFormat: JavaDateFormat? = null
             while (true) {
                 val now = Date()
                 val locale = Locale.getDefault()
-                if (locale != lastLocale || timeFormat == null) {
+                val is24Hour = DateFormat.is24HourFormat(context)
+                if (
+                    locale != lastLocale ||
+                        is24Hour != lastIs24Hour ||
+                        timeFormat == null
+                ) {
                     lastLocale = locale
-                    timeFormat = SimpleDateFormat("H:mm", locale)
+                    lastIs24Hour = is24Hour
+                    timeFormat = DateFormat.getTimeFormat(context)
                 }
                 val current = _clockUiState.value
                 val updated =
