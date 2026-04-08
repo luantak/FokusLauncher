@@ -272,6 +272,21 @@ private fun DrawerDropdownMenuItem(
 }
 
 @Composable
+private fun DrawerDropdownMenuItem(
+        text: @Composable () -> Unit,
+        onClick: () -> Unit,
+        leadingIcon: @Composable () -> Unit,
+        testTag: String,
+) {
+    DropdownMenuItem(
+            text = text,
+            onClick = rememberClickWithSystemSound(onClick),
+            leadingIcon = leadingIcon,
+            modifier = Modifier.testTag(testTag),
+    )
+}
+
+@Composable
 private fun DrawerOverflowMenu(
         uiState: AppDrawerUiState,
         onMenuToggle: () -> Unit,
@@ -604,6 +619,40 @@ private fun DrawerAppListColumn(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun ColumnScope.DrawerAppListBody(
+        listState: LazyListState,
+        categorySwipeModifier: Modifier,
+        uiState: AppDrawerUiState,
+        showProfileSections: Boolean,
+        anyProfileAppsVisible: Boolean,
+        focusManager: FocusManager,
+        onAppClick: (LaunchTarget) -> Unit,
+        onAppLongPress: (AppInfo) -> Unit,
+        allowCustomDragReorder: Boolean,
+        onReorderDrawerProfileSection: (sectionId: String, fromIndex: Int, toIndex: Int) -> Unit,
+        onReorderPrivateDrawerApps: (fromIndex: Int, toIndex: Int) -> Unit,
+) {
+    DrawerAppListColumn(
+            listState = listState,
+            modifier =
+                    Modifier.weight(1f)
+                            .fillMaxWidth()
+                            .then(categorySwipeModifier)
+                            .testTag("app_list"),
+            uiState = uiState,
+            showProfileSections = showProfileSections,
+            anyProfileAppsVisible = anyProfileAppsVisible,
+            focusManager = focusManager,
+            onAppClick = onAppClick,
+            onAppLongPress = onAppLongPress,
+            allowCustomDragReorder = allowCustomDragReorder,
+            onReorderProfileSection = onReorderDrawerProfileSection,
+            onReorderPrivateApps = onReorderPrivateDrawerApps,
+    )
+}
+
 @Composable
 fun AppDrawerScreen(
         modifier: Modifier = Modifier,
@@ -889,26 +938,6 @@ fun AppDrawerContent(
                 onToggleReorderApps = onToggleDrawerReorderApps,
         )
     }
-    val drawerAppList: @Composable ColumnScope.() -> Unit = {
-        DrawerAppListColumn(
-                listState = listState,
-                modifier =
-                        Modifier.weight(1f)
-                                .fillMaxWidth()
-                                .then(categorySwipeModifier)
-                                .testTag("app_list"),
-                uiState = uiState,
-                showProfileSections = showProfileSections,
-                anyProfileAppsVisible = anyProfileAppsVisible,
-                focusManager = focusManager,
-                onAppClick = onAppClick,
-                onAppLongPress = onAppLongPress,
-                allowCustomDragReorder = allowCustomDragReorder,
-                onReorderProfileSection = onReorderDrawerProfileSection,
-                onReorderPrivateApps = onReorderPrivateDrawerApps,
-        )
-    }
-
     Box(modifier = modifier.fillMaxSize()) {
         Column(
                 modifier =
@@ -987,7 +1016,20 @@ fun AppDrawerContent(
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                             }
-                            drawerAppList()
+                            DrawerAppListBody(
+                                    listState = listState,
+                                    categorySwipeModifier = categorySwipeModifier,
+                                    uiState = uiState,
+                                    showProfileSections = showProfileSections,
+                                    anyProfileAppsVisible = anyProfileAppsVisible,
+                                    focusManager = focusManager,
+                                    onAppClick = onAppClick,
+                                    onAppLongPress = onAppLongPress,
+                                    allowCustomDragReorder = allowCustomDragReorder,
+                                    onReorderDrawerProfileSection =
+                                            onReorderDrawerProfileSection,
+                                    onReorderPrivateDrawerApps = onReorderPrivateDrawerApps,
+                            )
                         }
                     }
                     if (drawerCategorySidebarOnRight) {
@@ -1027,7 +1069,19 @@ fun AppDrawerContent(
                                 modifier = Modifier.testTag("category_chips")
                         )
                     }
-                    drawerAppList()
+                    DrawerAppListBody(
+                            listState = listState,
+                            categorySwipeModifier = categorySwipeModifier,
+                            uiState = uiState,
+                            showProfileSections = showProfileSections,
+                            anyProfileAppsVisible = anyProfileAppsVisible,
+                            focusManager = focusManager,
+                            onAppClick = onAppClick,
+                            onAppLongPress = onAppLongPress,
+                            allowCustomDragReorder = allowCustomDragReorder,
+                            onReorderDrawerProfileSection = onReorderDrawerProfileSection,
+                            onReorderPrivateDrawerApps = onReorderPrivateDrawerApps,
+                    )
                 }
             }
         }
