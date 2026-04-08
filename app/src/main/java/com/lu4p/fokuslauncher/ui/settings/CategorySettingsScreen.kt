@@ -33,6 +33,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import com.lu4p.fokuslauncher.ui.util.applyVerticalSlotReorder
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import com.lu4p.fokuslauncher.ui.components.FokusIconButton
@@ -285,20 +286,17 @@ private fun ReorderableCategoryList(
                                                         change.consume()
                                                         if (draggedIndex in currentCategories.indices) {
                                                             dragOffset += amount
-                                                            while (dragOffset >= itemHeightPx && draggedIndex < currentCategories.size - 1) {
-                                                                val from = draggedIndex
-                                                                val to = draggedIndex + 1
-                                                                currentOnReorder(from, to)
-                                                                draggedIndex = to
-                                                                dragOffset -= itemHeightPx
-                                                            }
-                                                            while (dragOffset <= -itemHeightPx && draggedIndex > 0) {
-                                                                val from = draggedIndex
-                                                                val to = draggedIndex - 1
-                                                                currentOnReorder(from, to)
-                                                                draggedIndex = to
-                                                                dragOffset += itemHeightPx
-                                                            }
+                                                            val (newOff, newIdx) =
+                                                                    applyVerticalSlotReorder(
+                                                                            itemHeightPx,
+                                                                            dragOffset,
+                                                                            draggedIndex,
+                                                                            currentCategories.lastIndex,
+                                                                    ) { from, to ->
+                                                                        currentOnReorder(from, to)
+                                                                    }
+                                                            dragOffset = newOff
+                                                            draggedIndex = newIdx
                                                         }
                                                     },
                                                     onDragEnd = { resetDragState() },

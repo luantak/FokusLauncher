@@ -25,6 +25,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import com.lu4p.fokuslauncher.ui.components.FokusIconButton
+import com.lu4p.fokuslauncher.ui.util.applyVerticalSlotReorder
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -267,22 +268,15 @@ private fun ReorderableShortcutList(
                                     change.consume()
                                     if (draggedIndex in editShortcuts.indices) {
                                         dragOffset += amount
-                                        while (dragOffset >= itemHeightPx && draggedIndex < editShortcuts.size - 1) {
-                                            val from = draggedIndex
-                                            val to = (draggedIndex + 1).coerceAtMost(editShortcuts.lastIndex)
-                                            if (from == to) break
-                                            onReorder(from, to)
-                                            draggedIndex = to
-                                            dragOffset -= itemHeightPx
-                                        }
-                                        while (dragOffset <= -itemHeightPx && draggedIndex > 0) {
-                                            val from = draggedIndex
-                                            val to = (draggedIndex - 1).coerceAtLeast(0)
-                                            if (from == to) break
-                                            onReorder(from, to)
-                                            draggedIndex = to
-                                            dragOffset += itemHeightPx
-                                        }
+                                        val (newOff, newIdx) =
+                                                applyVerticalSlotReorder(
+                                                        itemHeightPx,
+                                                        dragOffset,
+                                                        draggedIndex,
+                                                        editShortcuts.lastIndex,
+                                                ) { from, to -> onReorder(from, to) }
+                                        dragOffset = newOff
+                                        draggedIndex = newIdx
                                     }
                                 },
                                 onDragEnd = { resetDragState() },

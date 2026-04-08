@@ -21,10 +21,18 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import org.json.JSONArray
 import org.json.JSONObject
+
+data class HomeWidgetVisibility(
+        val showClock: Boolean,
+        val showDate: Boolean,
+        val showWeather: Boolean,
+        val showBattery: Boolean,
+)
 
 @Singleton
 class PreferencesManager @Inject constructor(@param:ApplicationContext private val context: Context) {
@@ -309,6 +317,16 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
             prefs[SHOW_HOME_BATTERY_KEY] = show
         }
     }
+
+    val homeWidgetVisibilityFlow: Flow<HomeWidgetVisibility> =
+            combine(
+                    showHomeClockFlow,
+                    showHomeDateFlow,
+                    showHomeWeatherFlow,
+                    showHomeBatteryFlow,
+            ) { showClock, showDate, showWeather, showBattery ->
+                HomeWidgetVisibility(showClock, showDate, showWeather, showBattery)
+            }
 
     val drawerSidebarCategoriesFlow: Flow<Boolean> =
             context.fokusLauncherPreferencesDataStore.data.map { prefs ->

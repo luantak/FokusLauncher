@@ -22,10 +22,9 @@ import com.lu4p.fokuslauncher.utils.isDefaultHomeApp
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
+import com.lu4p.fokuslauncher.ui.util.stateWhileSubscribedIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
@@ -76,7 +75,7 @@ class OnboardingViewModel @Inject constructor(
             add(OnboardingStep.SWIPE_SHORTCUTS)
             add(OnboardingStep.QUICK_TIPS)
         }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    }.stateWhileSubscribedIn(viewModelScope, emptyList())
 
     // Swipe shortcuts state for SWIPE_SHORTCUTS step
     val swipeShortcutsState: StateFlow<SwipeShortcutsState> = combine(
@@ -90,7 +89,7 @@ class OnboardingViewModel @Inject constructor(
             swipeLeftTarget = swipeLeft,
             swipeRightTarget = swipeRight
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SwipeShortcutsState())
+    }.stateWhileSubscribedIn(viewModelScope, SwipeShortcutsState())
 
     fun setSwipeLeftTarget(target: ShortcutTarget?) {
         viewModelScope.launch { preferencesManager.setSwipeLeftTarget(target) }
@@ -130,14 +129,14 @@ class OnboardingViewModel @Inject constructor(
         _currentStepIndex
     ) { stepList, index ->
         stepList.getOrNull(index)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+    }.stateWhileSubscribedIn(viewModelScope, null)
 
     val isLastStep: StateFlow<Boolean> = combine(
         steps,
         _currentStepIndex
     ) { stepList, index ->
         index >= stepList.lastIndex
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+    }.stateWhileSubscribedIn(viewModelScope, false)
 
     init {
         // Always start at the first step when onboarding is shown

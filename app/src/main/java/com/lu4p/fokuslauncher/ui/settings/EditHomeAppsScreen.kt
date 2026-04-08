@@ -26,6 +26,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import com.lu4p.fokuslauncher.ui.components.FokusIconButton
+import com.lu4p.fokuslauncher.ui.util.applyVerticalSlotReorder
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -238,22 +239,15 @@ private fun ReorderableEditHomeAppsList(
                                     change.consume()
                                     if (draggedIndex in editFavorites.indices) {
                                         dragOffset += amount
-                                        while (dragOffset >= itemHeightPx && draggedIndex < editFavorites.size - 1) {
-                                            val from = draggedIndex
-                                            val to = (draggedIndex + 1).coerceAtMost(editFavorites.lastIndex)
-                                            if (from == to) break
-                                            onReorder(from, to)
-                                            draggedIndex = to
-                                            dragOffset -= itemHeightPx
-                                        }
-                                        while (dragOffset <= -itemHeightPx && draggedIndex > 0) {
-                                            val from = draggedIndex
-                                            val to = (draggedIndex - 1).coerceAtLeast(0)
-                                            if (from == to) break
-                                            onReorder(from, to)
-                                            draggedIndex = to
-                                            dragOffset += itemHeightPx
-                                        }
+                                        val (newOff, newIdx) =
+                                                applyVerticalSlotReorder(
+                                                        itemHeightPx,
+                                                        dragOffset,
+                                                        draggedIndex,
+                                                        editFavorites.lastIndex,
+                                                ) { from, to -> onReorder(from, to) }
+                                        dragOffset = newOff
+                                        draggedIndex = newIdx
                                     }
                                 },
                                 onDragEnd = { resetDragState() },

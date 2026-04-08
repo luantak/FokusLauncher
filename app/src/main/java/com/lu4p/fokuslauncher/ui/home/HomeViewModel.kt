@@ -37,6 +37,8 @@ import com.lu4p.fokuslauncher.data.repository.WeatherRepository
 import com.lu4p.fokuslauncher.utils.LockScreenHelper
 import com.lu4p.fokuslauncher.utils.isDefaultHomeApp
 import com.lu4p.fokuslauncher.ui.util.formatShortcutTargetDisplay
+import com.lu4p.fokuslauncher.ui.util.stateEagerlyIn
+import com.lu4p.fokuslauncher.ui.util.stateWhileSubscribedIn
 import com.lu4p.fokuslauncher.data.util.TemperatureUnitHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -45,7 +47,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -54,7 +55,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -111,7 +111,7 @@ class HomeViewModel @Inject constructor(
 
     // Raw favorites from DataStore
     private val rawFavorites: StateFlow<List<FavoriteApp>> =
-        preferencesManager.favoritesFlow.stateEagerly(emptyList())
+            preferencesManager.favoritesFlow.stateEagerlyIn(viewModelScope, emptyList())
 
     // Renames from Room
     private val _renameMap = MutableStateFlow<Map<String, String>>(emptyMap())
@@ -135,7 +135,7 @@ class HomeViewModel @Inject constructor(
                 ?: fav.label
             fav.copy(label = resolvedName)
         }
-    }.stateWhileSubscribed(emptyList())
+    }.stateWhileSubscribedIn(viewModelScope, emptyList())
 
     // ── Dialog state ────────────────────────────────────────────────
 
@@ -168,22 +168,25 @@ class HomeViewModel @Inject constructor(
     // ── Swipe gestures ──────────────────────────────────────────────
 
     val swipeLeftTarget: StateFlow<ShortcutTarget?> =
-        preferencesManager.swipeLeftTargetFlow.stateWhileSubscribed(null)
+            preferencesManager.swipeLeftTargetFlow.stateWhileSubscribedIn(viewModelScope, null)
 
     val swipeRightTarget: StateFlow<ShortcutTarget?> =
-        preferencesManager.swipeRightTargetFlow.stateWhileSubscribed(null)
+            preferencesManager.swipeRightTargetFlow.stateWhileSubscribedIn(viewModelScope, null)
 
     val rightSideShortcuts: StateFlow<List<HomeShortcut>> =
-        preferencesManager.rightSideShortcutsFlow.stateWhileSubscribed(emptyList())
+            preferencesManager.rightSideShortcutsFlow.stateWhileSubscribedIn(
+                    viewModelScope,
+                    emptyList(),
+            )
 
     private val preferredWeatherAppPackage: StateFlow<String> =
-        preferencesManager.preferredWeatherAppFlow.stateEagerly("")
+            preferencesManager.preferredWeatherAppFlow.stateEagerlyIn(viewModelScope, "")
 
     private val preferredClockAppPackage: StateFlow<String> =
-        preferencesManager.preferredClockAppFlow.stateEagerly("")
+            preferencesManager.preferredClockAppFlow.stateEagerlyIn(viewModelScope, "")
 
     private val preferredCalendarAppPackage: StateFlow<String> =
-        preferencesManager.preferredCalendarAppFlow.stateEagerly("")
+            preferencesManager.preferredCalendarAppFlow.stateEagerlyIn(viewModelScope, "")
 
     private var weatherTickerJob: Job? = null
 
@@ -701,21 +704,14 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun observeHomeWidgetItemPreferences() {
-        viewModelScope.launch {
-            combine(
-                    preferencesManager.showHomeClockFlow,
-                    preferencesManager.showHomeDateFlow,
-                    preferencesManager.showHomeWeatherFlow,
-                    preferencesManager.showHomeBatteryFlow,
-            ) { showClock, showDate, showWeather, showBattery ->
-                _uiState.value =
-                        _uiState.value.copy(
-                                showHomeClock = showClock,
-                                showHomeDate = showDate,
-                                showHomeWeather = showWeather,
-                                showHomeBattery = showBattery,
-                        )
-            }.collect { }
+        observeFlow(preferencesManager.homeWidgetVisibilityFlow) { v ->
+            _uiState.value =
+                    _uiState.value.copy(
+                            showHomeClock = v.showClock,
+                            showHomeDate = v.showDate,
+                            showHomeWeather = v.showWeather,
+                            showHomeBattery = v.showBattery,
+                    )
         }
     }
 
@@ -1003,12 +999,6 @@ class HomeViewModel @Inject constructor(
             _weatherUiState.value = updated
         }
     }
-
-    private fun <T> Flow<T>.stateWhileSubscribed(initial: T): StateFlow<T> =
-            stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), initial)
-
-    private fun <T> Flow<T>.stateEagerly(initial: T): StateFlow<T> =
-            stateIn(viewModelScope, SharingStarted.Eagerly, initial)
 
     private inline fun <T> observeFlow(
             flow: Flow<T>,

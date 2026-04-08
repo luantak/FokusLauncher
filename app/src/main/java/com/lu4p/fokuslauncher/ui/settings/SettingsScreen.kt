@@ -104,6 +104,89 @@ import com.lu4p.fokuslauncher.utils.LockScreenHelper
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
 import com.lu4p.fokuslauncher.ui.theme.composeFontFamilyFromStoredName
 import com.lu4p.fokuslauncher.ui.util.formatShortcutTargetDisplay
+import android.app.Activity
+import androidx.compose.ui.graphics.vector.ImageVector
+
+private data class CommunityLink(
+        val icon: ImageVector,
+        val titleRes: Int,
+        val subtitleRes: Int,
+        val url: String,
+)
+
+private val communityLinks =
+        listOf(
+                CommunityLink(
+                        Icons.Filled.Star,
+                        R.string.settings_github_title,
+                        R.string.settings_github_subtitle,
+                        "https://github.com/luantak/FokusLauncher",
+                ),
+                CommunityLink(
+                        Icons.Outlined.Translate,
+                        R.string.settings_weblate_title,
+                        R.string.settings_weblate_subtitle,
+                        "https://hosted.weblate.org/engage/fokus-launcher/",
+                ),
+                CommunityLink(
+                        Icons.Filled.ChatBubble,
+                        R.string.settings_matrix_title,
+                        R.string.settings_matrix_subtitle,
+                        "https://matrix.to/#/#fokus:matrix.org",
+                ),
+        )
+
+@Composable
+private fun rememberCoarseLocationPermission(context: Context, activity: Activity?): Pair<Boolean, () -> Unit> {
+    var granted by remember {
+        mutableStateOf(
+                ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.ACCESS_COARSE_LOCATION,
+                        ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                granted =
+                        ContextCompat.checkSelfPermission(
+                                        context,
+                                        Manifest.permission.ACCESS_COARSE_LOCATION,
+                                ) == PackageManager.PERMISSION_GRANTED
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+    val launcher =
+            rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.RequestPermission(),
+            ) {
+                granted =
+                        ContextCompat.checkSelfPermission(
+                                        context,
+                                        Manifest.permission.ACCESS_COARSE_LOCATION,
+                                ) == PackageManager.PERMISSION_GRANTED
+                if (!granted &&
+                                activity != null &&
+                                !ActivityCompat.shouldShowRequestPermissionRationale(
+                                        activity,
+                                        Manifest.permission.ACCESS_COARSE_LOCATION,
+                                )
+                ) {
+                    context.startActivity(
+                            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                data = Uri.fromParts("package", context.packageName, null)
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                    )
+                }
+            }
+    val request = remember(launcher) { { launcher.launch(Manifest.permission.ACCESS_COARSE_LOCATION) } }
+    return granted to request
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -124,29 +207,9 @@ fun SettingsScreen(
     val context = LocalContext.current
     val resources = LocalResources.current
     val activity = LocalActivity.current
-    val lifecycleOwner = LocalLifecycleOwner.current
 
-    var hasCoarseLocationPermission by remember {
-        mutableStateOf(
-            ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        )
-    }
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                hasCoarseLocationPermission =
-                    ContextCompat.checkSelfPermission(
-                        context,
-                        Manifest.permission.ACCESS_COARSE_LOCATION
-                    ) == PackageManager.PERMISSION_GRANTED
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
+    val (hasCoarseLocationPermission, requestCoarseLocation) =
+            rememberCoarseLocationPermission(context, activity)
 
     // Dialog states
     val showAppPickerFor = remember { mutableStateOf<String?>(null) } // swipeLeft/swipeRight/weather
@@ -160,36 +223,6 @@ fun SettingsScreen(
             onNavigateToHome()
         }
     }
-
-    val locationPermissionLauncher =
-            rememberLauncherForActivityResult(
-                    contract = ActivityResultContracts.RequestPermission()
-            ) {
-                hasCoarseLocationPermission =
-                        ContextCompat.checkSelfPermission(
-                                context,
-                                Manifest.permission.ACCESS_COARSE_LOCATION
-                        ) == PackageManager.PERMISSION_GRANTED
-                if (!hasCoarseLocationPermission &&
-                                activity != null &&
-                                !ActivityCompat.shouldShowRequestPermissionRationale(
-                                        activity,
-                                        Manifest.permission.ACCESS_COARSE_LOCATION
-                                )) {
-                        context.startActivity(
-                                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                                        .apply {
-                                                data =
-                                                        Uri.fromParts(
-                                                                "package",
-                                                                context.packageName,
-                                                                null
-                                                        )
-                                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                        }
-                        )
-                }
-            }
 
     Column(modifier = Modifier
         .fillMaxSize()
@@ -237,9 +270,7 @@ fun SettingsScreen(
                 onEditRightShortcuts = onEditRightShortcuts,
                 onEditCategories = onEditCategories,
                 onDrawerDotSearchSettings = onDrawerDotSearchSettings,
-                onRequestLocationPermission = {
-                    locationPermissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
-                },
+                onRequestLocationPermission = requestCoarseLocation,
                 onShowAppPicker = { showAppPickerFor.value = it },
                 onShowResetConfirm = { showResetConfirm.value = true },
                 onUnhideApp = viewModel::unhideApp,
@@ -314,18 +345,25 @@ private fun SettingsScreenContent(
 ) {
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         item { SectionHeader(stringResource(R.string.settings_section_appearance)) }
-        item {
+        items(
+                listOf(
+                        Triple(
+                                R.string.settings_show_status_bar,
+                                uiState.showStatusBar,
+                                onShowStatusBarChanged,
+                        ),
+                        Triple(
+                                R.string.settings_allow_landscape_rotation,
+                                uiState.allowLandscapeRotation,
+                                onAllowLandscapeRotationChanged,
+                        ),
+                ),
+                key = { it.first },
+        ) { (labelRes, checked, onChange) ->
             SettingsToggleRow(
-                    label = stringResource(R.string.settings_show_status_bar),
-                    checked = uiState.showStatusBar,
-                    onCheckedChange = onShowStatusBarChanged
-            )
-        }
-        item {
-            SettingsToggleRow(
-                    label = stringResource(R.string.settings_allow_landscape_rotation),
-                    checked = uiState.allowLandscapeRotation,
-                    onCheckedChange = onAllowLandscapeRotationChanged
+                    label = stringResource(labelRes),
+                    checked = checked,
+                    onCheckedChange = onChange,
             )
         }
         item {
@@ -525,46 +563,17 @@ private fun SettingsScreenContent(
         item { SettingsDivider() }
 
         item { SectionHeader(stringResource(R.string.settings_connect_section)) }
-        item {
+        items(communityLinks, key = { it.url }) { link ->
             ExternalLinkRow(
-                    icon = Icons.Filled.Star,
-                    title = stringResource(R.string.settings_github_title),
-                    subtitle = stringResource(R.string.settings_github_subtitle),
+                    icon = link.icon,
+                    title = stringResource(link.titleRes),
+                    subtitle = stringResource(link.subtitleRes),
                     onClick = {
                         context.startActivity(
-                                Intent(Intent.ACTION_VIEW, "https://github.com/luantak/FokusLauncher".toUri())
+                                Intent(Intent.ACTION_VIEW, link.url.toUri())
                                         .apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
                         )
-                    }
-            )
-        }
-        item {
-            ExternalLinkRow(
-                    icon = Icons.Outlined.Translate,
-                    title = stringResource(R.string.settings_weblate_title),
-                    subtitle = stringResource(R.string.settings_weblate_subtitle),
-                    onClick = {
-                        context.startActivity(
-                                Intent(
-                                                Intent.ACTION_VIEW,
-                                                "https://hosted.weblate.org/engage/fokus-launcher/".toUri()
-                                        )
-                                        .apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
-                        )
-                    }
-            )
-        }
-        item {
-            ExternalLinkRow(
-                    icon = Icons.Filled.ChatBubble,
-                    title = stringResource(R.string.settings_matrix_title),
-                    subtitle = stringResource(R.string.settings_matrix_subtitle),
-                    onClick = {
-                        context.startActivity(
-                                Intent(Intent.ACTION_VIEW, "https://matrix.to/#/#fokus:matrix.org".toUri())
-                                        .apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
-                        )
-                    }
+                    },
             )
         }
         item { SettingsDivider() }
@@ -669,54 +678,10 @@ fun HomeWidgetsSettingsScreen(
     val context = LocalContext.current
     val resources = LocalResources.current
     val activity = LocalActivity.current
-    val lifecycleOwner = LocalLifecycleOwner.current
     val showAppPickerFor = remember { mutableStateOf<String?>(null) }
 
-    var hasCoarseLocationPermission by remember {
-        mutableStateOf(
-                ContextCompat.checkSelfPermission(
-                        context,
-                        Manifest.permission.ACCESS_COARSE_LOCATION
-                ) == PackageManager.PERMISSION_GRANTED
-        )
-    }
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                hasCoarseLocationPermission =
-                        ContextCompat.checkSelfPermission(
-                                context,
-                                Manifest.permission.ACCESS_COARSE_LOCATION
-                        ) == PackageManager.PERMISSION_GRANTED
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
-
-    val locationPermissionLauncher =
-            rememberLauncherForActivityResult(
-                    contract = ActivityResultContracts.RequestPermission()
-            ) {
-                hasCoarseLocationPermission =
-                        ContextCompat.checkSelfPermission(
-                                context,
-                                Manifest.permission.ACCESS_COARSE_LOCATION
-                        ) == PackageManager.PERMISSION_GRANTED
-                if (!hasCoarseLocationPermission &&
-                                activity != null &&
-                                !ActivityCompat.shouldShowRequestPermissionRationale(
-                                        activity,
-                                        Manifest.permission.ACCESS_COARSE_LOCATION
-                                )) {
-                    context.startActivity(
-                            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                                data = Uri.fromParts("package", context.packageName, null)
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            }
-                    )
-                }
-            }
+    val (hasCoarseLocationPermission, requestCoarseLocation) =
+            rememberCoarseLocationPermission(context, activity)
 
     Column(
             modifier =
@@ -787,11 +752,7 @@ fun HomeWidgetsSettingsScreen(
             item {
                 Column {
                     if (!hasCoarseLocationPermission) {
-                        LocationWeatherRow(onEnableClick = {
-                            locationPermissionLauncher.launch(
-                                    Manifest.permission.ACCESS_COARSE_LOCATION
-                            )
-                        })
+                        LocationWeatherRow(onEnableClick = requestCoarseLocation)
                     } else {
                         val weatherAppLabel =
                                 formatWeatherAppLabel(

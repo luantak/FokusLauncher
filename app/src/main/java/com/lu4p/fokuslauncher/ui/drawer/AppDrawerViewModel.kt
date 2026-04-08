@@ -183,10 +183,13 @@ constructor(
 
     private fun observeDrawerDotSearchPreferences() {
         viewModelScope.launch {
-            preferencesManager.drawerDotSearchDefaultFlow.collect { drawerDotSearchDefault = it }
-        }
-        viewModelScope.launch {
-            preferencesManager.drawerDotSearchAliasesFlow.collect { drawerDotSearchAliases = it }
+            combine(
+                            preferencesManager.drawerDotSearchDefaultFlow,
+                            preferencesManager.drawerDotSearchAliasesFlow,
+                    ) { default, aliases ->
+                        drawerDotSearchDefault = default
+                        drawerDotSearchAliases = aliases
+                    }.collect { }
         }
     }
 
@@ -276,16 +279,17 @@ constructor(
 
     private fun observeDrawerCategoryRailAndIcons() {
         viewModelScope.launch {
-            preferencesManager.drawerCategorySidebarOnLeftFlow.collect { onLeft ->
-                _uiState.update { state ->
-                    state.copy(drawerCategorySidebarOnRight = !onLeft)
-                }
-            }
-        }
-        viewModelScope.launch {
-            preferencesManager.drawerCategoryIconsFlow.collect { icons ->
-                _uiState.update { state -> state.copy(categoryDrawerIconOverrides = icons) }
-            }
+            combine(
+                            preferencesManager.drawerCategorySidebarOnLeftFlow,
+                            preferencesManager.drawerCategoryIconsFlow,
+                    ) { onLeft, icons ->
+                        _uiState.update { state ->
+                            state.copy(
+                                    drawerCategorySidebarOnRight = !onLeft,
+                                    categoryDrawerIconOverrides = icons,
+                            )
+                        }
+                    }.collect { }
         }
     }
 
