@@ -33,6 +33,7 @@ import com.lu4p.fokuslauncher.data.model.appMetadataKey
 import com.lu4p.fokuslauncher.data.model.appProfileKey
 import com.lu4p.fokuslauncher.data.model.SystemCategoryKeys
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
+import com.lu4p.fokuslauncher.utils.registerBroadcastReceiverNotExported
 import com.lu4p.fokuslauncher.utils.ProfileHeuristics
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -812,12 +813,7 @@ constructor(
             addDataScheme("package")
         }
         try {
-            ContextCompat.registerReceiver(
-                    context,
-                    packageChangeReceiver,
-                    filter,
-                    ContextCompat.RECEIVER_NOT_EXPORTED
-            )
+            context.registerBroadcastReceiverNotExported(packageChangeReceiver, filter)
         } catch (_: Exception) {
             // Unit tests may provide a mock Context that cannot register real receivers.
         }
@@ -829,12 +825,7 @@ constructor(
             addAction(Intent.ACTION_MANAGED_PROFILE_REMOVED)
         }
         try {
-            ContextCompat.registerReceiver(
-                    context,
-                    profileChangeReceiver,
-                    filter,
-                    ContextCompat.RECEIVER_NOT_EXPORTED
-            )
+            context.registerBroadcastReceiverNotExported(profileChangeReceiver, filter)
         } catch (_: Exception) {
             // Unit tests may provide a mock Context that cannot register real receivers.
         }

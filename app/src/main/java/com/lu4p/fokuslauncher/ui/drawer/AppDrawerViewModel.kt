@@ -474,7 +474,7 @@ constructor(
                             appRepository.getAllAppCategories(),
                             appRepository.getAllCategoryDefinitions()
                     ) { hiddenApps, renamedApps, categories, categoryDefinitions ->
-                CombinedCategoryState(
+                DrawerMetadataSnapshot(
                         hiddenSet =
                                 hiddenApps.map { appMetadataKey(it.packageName, it.profileKey) }.toSet(),
                         renameMap =
@@ -485,22 +485,15 @@ constructor(
                                 categories.associate {
                                     appMetadataKey(it.packageName, it.profileKey) to it.category
                                 },
-                        definedCategories = categoryDefinitions.map { it.name }
+                        definedCategories = categoryDefinitions.map { it.name },
                 )
             }
-                    .collect { state ->
-                        latestHiddenSet = state.hiddenSet
-                        latestRenameMap = state.renameMap
-                        latestCategoryMap = state.categoryMap
-                        latestDefinedCategories = state.definedCategories
-                        rebuildVisibleApps(
-                                DrawerMetadataSnapshot(
-                                        state.hiddenSet,
-                                        state.renameMap,
-                                        state.categoryMap,
-                                        state.definedCategories,
-                                )
-                        )
+                    .collect { snapshot ->
+                        latestHiddenSet = snapshot.hiddenSet
+                        latestRenameMap = snapshot.renameMap
+                        latestCategoryMap = snapshot.categoryMap
+                        latestDefinedCategories = snapshot.definedCategories
+                        rebuildVisibleApps(snapshot)
                     }
         }
     }
@@ -1413,10 +1406,4 @@ constructor(
         return fullOrder.map { key -> if (key in subsetSet) queue.removeFirst() else key }
     }
 
-    private data class CombinedCategoryState(
-            val hiddenSet: Set<String>,
-            val renameMap: Map<String, String>,
-            val categoryMap: Map<String, String>,
-            val definedCategories: List<String>
-    )
 }

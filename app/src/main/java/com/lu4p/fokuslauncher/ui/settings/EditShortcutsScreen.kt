@@ -1,37 +1,28 @@
 package com.lu4p.fokuslauncher.ui.settings
 
-import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import com.lu4p.fokuslauncher.ui.components.FokusIconButton
-import com.lu4p.fokuslauncher.ui.util.applyVerticalSlotReorder
-import androidx.compose.material3.OutlinedTextField
+import com.lu4p.fokuslauncher.ui.components.EditorScreenScaffold
+import com.lu4p.fokuslauncher.ui.util.rememberVerticalSlotReorderState
+import com.lu4p.fokuslauncher.ui.util.verticalReorderDragHandle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -39,9 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -74,100 +63,62 @@ fun EditShortcutsScreen(
     val editShortcuts by viewModel.editRightShortcuts.collectAsStateWithLifecycle()
     val allActions by viewModel.allShortcutActions.collectAsStateWithLifecycle()
     val allApps by viewModel.allInstalledApps.collectAsStateWithLifecycle()
-    var searchQuery by remember { mutableStateOf("") }
     val iconPickerForIndex = remember { mutableStateOf<Int?>(null) }
 
-    val selectedIds = remember(editShortcuts) {
-        editShortcuts.map { it.stableSelectionKey() }.toSet()
-    }
-    val uncheckedActions = remember(allActions, selectedIds, searchQuery) {
-        allActions
-            .filter { it.id !in selectedIds }
-            .let { list ->
-                if (searchQuery.isBlank()) list
-                else list.filter { it.displayLabel.containsNormalizedSearch(searchQuery) }
-            }
-    }
-    val uncheckedShortcutSections = remember(uncheckedActions, allApps, context) {
-        groupShortcutActionsIntoProfileSections(context, uncheckedActions, allApps)
-    }
-
-    val listState = rememberLazyListState()
-    var didSnapListTop by remember { mutableStateOf(false) }
-    LaunchedEffect(allActions.isNotEmpty()) {
-        if (didSnapListTop || allActions.isEmpty()) return@LaunchedEffect
-        listState.scrollToItem(0, 0)
-        didSnapListTop = true
-    }
-
-    BackHandler {
+    val saveAndBack: () -> Unit = {
         viewModel.saveEditedRightShortcuts()
         onNavigateBack()
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(backgroundScrim)
-            .navigationBarsPadding()
-    ) {
-        FokusSettingsTopBar(
-            title = {
-                Text(
-                    stringResource(R.string.edit_shortcuts_title),
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-            },
-            onNavigateBack = {
-                viewModel.saveEditedRightShortcuts()
-                onNavigateBack()
-            },
-            containerColor = MaterialTheme.colorScheme.surface,
-            actions = {
-                FokusIconButton(onClick = {
-                    viewModel.saveEditedRightShortcuts()
-                    onNavigateBack()
-                }) {
-                    Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = stringResource(R.string.action_done),
-                        tint = MaterialTheme.colorScheme.onBackground,
-                    )
+    EditorScreenScaffold(
+            titleText = stringResource(R.string.edit_shortcuts_title),
+            searchPlaceholderResId = R.string.search_apps_and_actions,
+            backgroundScrim = backgroundScrim,
+            listReadyToScroll = allActions.isNotEmpty(),
+            onNavigateBack = saveAndBack,
+            onDone = saveAndBack,
+    ) { searchQuery, listState ->
+        val selectedIds = remember(editShortcuts) {
+            editShortcuts.map { it.stableSelectionKey() }.toSet()
+        }
+        val uncheckedActions = remember(allActions, selectedIds, searchQuery) {
+            allActions
+                    .filter { it.id !in selectedIds }
+                    .let { list ->
+                        if (searchQuery.isBlank()) list
+                        else list.filter { it.displayLabel.containsNormalizedSearch(searchQuery) }
+                    }
+        }
+        val uncheckedShortcutSections =
+                remember(uncheckedActions, allApps, context) {
+                    groupShortcutActionsIntoProfileSections(context, uncheckedActions, allApps)
                 }
-            },
-        )
-
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { searchQuery = it },
-            placeholder = { Text(stringResource(R.string.search_apps_and_actions)) },
-            singleLine = true,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 4.dp)
-        )
 
         ReorderableShortcutList(
-            listState = listState,
-            editShortcuts = editShortcuts,
-            allApps = allApps,
-            uncheckedShortcutSections = uncheckedShortcutSections,
-            onToggleChecked = { shortcut ->
-                viewModel.toggleRightShortcut(
-                    AppShortcutAction(
-                        appLabel = viewModel.formatShortcutTarget(shortcut.target, shortcut.profileKey),
-                        actionLabel = AppShortcutAction.OPEN_APP_LABEL,
-                        target = shortcut.target,
-                        profileKey = shortcut.profileKey,
+                listState = listState,
+                editShortcuts = editShortcuts,
+                allApps = allApps,
+                uncheckedShortcutSections = uncheckedShortcutSections,
+                onToggleChecked = { shortcut ->
+                    viewModel.toggleRightShortcut(
+                            AppShortcutAction(
+                                    appLabel =
+                                            viewModel.formatShortcutTarget(
+                                                    shortcut.target,
+                                                    shortcut.profileKey
+                                            ),
+                                    actionLabel = AppShortcutAction.OPEN_APP_LABEL,
+                                    target = shortcut.target,
+                                    profileKey = shortcut.profileKey,
+                            )
                     )
-                )
-            },
-            onToggleUnchecked = { action -> viewModel.toggleRightShortcut(action) },
-            onReorder = { from, to -> viewModel.reorderRightShortcut(from, to) },
-            onOpenIconPicker = { index -> iconPickerForIndex.value = index },
-            formatCheckedLabel = { shortcut ->
-                viewModel.formatShortcutTarget(shortcut.target, shortcut.profileKey)
-            }
+                },
+                onToggleUnchecked = { action -> viewModel.toggleRightShortcut(action) },
+                onReorder = { from, to -> viewModel.reorderRightShortcut(from, to) },
+                onOpenIconPicker = { index -> iconPickerForIndex.value = index },
+                formatCheckedLabel = { shortcut ->
+                    viewModel.formatShortcutTarget(shortcut.target, shortcut.profileKey)
+                }
         )
     }
 
@@ -201,16 +152,10 @@ private fun ReorderableShortcutList(
     onOpenIconPicker: (Int) -> Unit,
     formatCheckedLabel: (HomeShortcut) -> String
 ) {
-    var draggedIndex by remember { mutableIntStateOf(-1) }
-    var dragOffset by remember { mutableFloatStateOf(0f) }
-    val itemHeightPx = with(LocalDensity.current) { 56.dp.toPx() }
+    val reorderState = rememberVerticalSlotReorderState()
     val openAppLabel = stringResource(R.string.shortcut_open_app)
     val openDialerLabel = stringResource(R.string.shortcut_open_dialer)
     val context = LocalContext.current
-    val resetDragState = {
-        draggedIndex = -1
-        dragOffset = 0f
-    }
 
     LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
         if (editShortcuts.isNotEmpty()) {
@@ -233,17 +178,11 @@ private fun ReorderableShortcutList(
                 remember(shortcut, allApps, context) {
                     profileOriginLabelForHomeShortcut(context, shortcut, allApps)
                 }
-            val offset = if (index == draggedIndex) {
-                dragOffset.coerceIn(-itemHeightPx, itemHeightPx)
-            } else {
-                0f
-            }
-
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 56.dp)
-                    .graphicsLayer { translationY = offset }
+                    .graphicsLayer { translationY = reorderState.translationYForIndex(index) }
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -253,30 +192,16 @@ private fun ReorderableShortcutList(
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier
                         .size(24.dp)
-                        .pointerInput(shortcut.target, shortcut.profileKey, editShortcuts.size) {
-                            detectVerticalDragGestures(
-                                onDragStart = {
-                                    draggedIndex = index
-                                },
-                                onVerticalDrag = { change, amount ->
-                                    change.consume()
-                                    if (draggedIndex in editShortcuts.indices) {
-                                        dragOffset += amount
-                                        val (newOff, newIdx) =
-                                                applyVerticalSlotReorder(
-                                                        itemHeightPx,
-                                                        dragOffset,
-                                                        draggedIndex,
-                                                        editShortcuts.lastIndex,
-                                                ) { from, to -> onReorder(from, to) }
-                                        dragOffset = newOff
-                                        draggedIndex = newIdx
-                                    }
-                                },
-                                onDragEnd = { resetDragState() },
-                                onDragCancel = { resetDragState() }
-                            )
-                        }
+                        .verticalReorderDragHandle(
+                                reorderState,
+                                index,
+                                editShortcuts.lastIndex,
+                                onReorder,
+                                { reorderState.reset() },
+                                shortcut.target,
+                                shortcut.profileKey,
+                                editShortcuts.size,
+                        )
                 )
 
                 Spacer(modifier = Modifier.width(8.dp))

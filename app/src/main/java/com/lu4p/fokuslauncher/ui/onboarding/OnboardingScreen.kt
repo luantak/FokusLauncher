@@ -174,16 +174,22 @@ fun OnboardingScreen(
 }
 
 @Composable
+private fun OnboardingStepTitle(text: String) {
+    Text(
+            text = text,
+            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.onBackground,
+            textAlign = TextAlign.Center,
+    )
+}
+
+@Composable
 private fun WelcomeStep(onGetStarted: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = stringResource(R.string.onboarding_welcome_title),
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onBackground
-        )
+        OnboardingStepTitle(stringResource(R.string.onboarding_welcome_title))
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = stringResource(R.string.onboarding_welcome_subtitle),
@@ -213,11 +219,7 @@ private fun BackgroundStep(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = stringResource(R.string.onboarding_background_title),
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onBackground
-        )
+        OnboardingStepTitle(stringResource(R.string.onboarding_background_title))
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = stringResource(R.string.onboarding_background_subtitle),
@@ -306,11 +308,7 @@ private fun LocationStep(
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(48.dp).padding(bottom = 16.dp)
         )
-        Text(
-            text = stringResource(R.string.onboarding_location_title),
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onBackground
-        )
+        OnboardingStepTitle(stringResource(R.string.onboarding_location_title))
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = stringResource(R.string.onboarding_location_subtitle),
@@ -348,11 +346,7 @@ private fun SetDefaultStep(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = stringResource(R.string.onboarding_set_default_title),
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onBackground
-        )
+        OnboardingStepTitle(stringResource(R.string.onboarding_set_default_title))
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = stringResource(R.string.onboarding_set_default_subtitle),
@@ -390,11 +384,7 @@ private fun CustomizeStep(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = stringResource(R.string.onboarding_customize_title),
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onBackground
-        )
+        OnboardingStepTitle(stringResource(R.string.onboarding_customize_title))
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = stringResource(R.string.onboarding_customize_subtitle),
@@ -438,11 +428,7 @@ private fun SwipeShortcutsStep(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = stringResource(R.string.onboarding_swipe_title),
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onBackground
-        )
+        OnboardingStepTitle(stringResource(R.string.onboarding_swipe_title))
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = stringResource(R.string.onboarding_swipe_subtitle),
@@ -561,11 +547,7 @@ private fun QuickTipsStep(onDone: () -> Unit) {
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = stringResource(R.string.onboarding_tips_title),
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onBackground
-        )
+        OnboardingStepTitle(stringResource(R.string.onboarding_tips_title))
         Spacer(modifier = Modifier.height(24.dp))
         TipRow(
             icon = Icons.Default.ArrowUpward,

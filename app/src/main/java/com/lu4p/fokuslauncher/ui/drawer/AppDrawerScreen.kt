@@ -48,7 +48,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -1048,7 +1047,6 @@ fun CategoryActionSheet(
         onResetCategoryIcon: () -> Unit
 ) {
     val context = LocalContext.current
-    val sheetState = rememberModalBottomSheetState()
     var showIconPickerDialog by remember(category) { mutableStateOf(false) }
     var renameMode by remember(category) { mutableStateOf(false) }
     var renameValue by remember(category) {
@@ -1065,7 +1063,6 @@ fun CategoryActionSheet(
 
     FokusBottomSheet(
             onDismissRequest = onDismiss,
-            sheetState = sheetState,
             modifier = Modifier.testTag("category_action_sheet"),
     ) {
             SheetInlineRenameTitleRow(

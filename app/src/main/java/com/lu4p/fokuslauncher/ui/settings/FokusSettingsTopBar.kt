@@ -6,6 +6,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -38,5 +39,28 @@ fun FokusSettingsTopBar(
             },
             actions = actions,
             colors = TopAppBarDefaults.topAppBarColors(containerColor = containerColor),
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun FokusSettingsTopBar(
+        titleText: String,
+        onNavigateBack: () -> Unit,
+        containerColor: Color,
+        modifier: Modifier = Modifier,
+        actions: @Composable RowScope.() -> Unit = {},
+) {
+    FokusSettingsTopBar(
+            title = {
+                Text(
+                        text = titleText,
+                        color = MaterialTheme.colorScheme.onBackground,
+                )
+            },
+            onNavigateBack = onNavigateBack,
+            containerColor = containerColor,
+            modifier = modifier,
+            actions = actions,
     )
 }

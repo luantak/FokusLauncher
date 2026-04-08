@@ -102,12 +102,7 @@ fun DrawerDotSearchSettingsScreen(
             containerColor = backgroundScrim,
             topBar = {
                 FokusSettingsTopBar(
-                        title = {
-                            Text(
-                                    stringResource(R.string.settings_dot_search_screen_title),
-                                    color = MaterialTheme.colorScheme.onBackground,
-                            )
-                        },
+                        titleText = stringResource(R.string.settings_dot_search_screen_title),
                         onNavigateBack = onNavigateBack,
                         containerColor = Color.Transparent,
                 )

@@ -35,6 +35,8 @@ import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.data.repository.WeatherRepository
 import com.lu4p.fokuslauncher.utils.LockScreenHelper
+import com.lu4p.fokuslauncher.utils.registerBroadcastReceiverNotExported
+import com.lu4p.fokuslauncher.utils.registerStickyBroadcastReceiverNotExported
 import com.lu4p.fokuslauncher.utils.isDefaultHomeApp
 import com.lu4p.fokuslauncher.utils.openDefaultLauncherSettings
 import com.lu4p.fokuslauncher.ui.util.formatShortcutTargetDisplay
@@ -582,16 +584,7 @@ class HomeViewModel @Inject constructor(
         filter: IntentFilter
     ) {
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                context.registerReceiver(
-                    receiver,
-                    filter,
-                    Context.RECEIVER_NOT_EXPORTED
-                )
-            } else {
-                @Suppress("DEPRECATION")
-                context.registerReceiver(receiver, filter)
-            }
+            context.registerBroadcastReceiverNotExported(receiver, filter)
         } catch (_: Exception) { }
     }
 
@@ -622,11 +615,8 @@ class HomeViewModel @Inject constructor(
     private fun updateBattery() {
         try {
             val batteryIntent =
-                    ContextCompat.registerReceiver(
-                            context,
-                            null,
-                            IntentFilter(Intent.ACTION_BATTERY_CHANGED),
-                            ContextCompat.RECEIVER_NOT_EXPORTED
+                    context.registerStickyBroadcastReceiverNotExported(
+                            IntentFilter(Intent.ACTION_BATTERY_CHANGED)
                     )
             if (batteryIntent != null) {
                 setBatteryPercentFromIntent(batteryIntent)

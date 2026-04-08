@@ -2,29 +2,22 @@ package com.lu4p.fokuslauncher.ui.drawer
 
 import android.content.Intent
 import android.provider.Settings
-import com.lu4p.fokuslauncher.ui.components.SheetActionRow
-import com.lu4p.fokuslauncher.ui.components.SheetInlineRenameTitleRow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
-import com.lu4p.fokuslauncher.ui.components.FokusBottomSheet
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import com.lu4p.fokuslauncher.R
 import androidx.core.net.toUri
+import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.model.AppInfo
+import com.lu4p.fokuslauncher.ui.components.RenameableBottomSheet
+import com.lu4p.fokuslauncher.ui.components.SheetActionRow
 
 /**
  * Bottom sheet shown on long-press of an app in the drawer.
@@ -41,37 +34,19 @@ fun AppActionSheet(
     isOnHomeScreen: Boolean = false
 ) {
     val context = LocalContext.current
-    val sheetState = rememberModalBottomSheetState()
-    var renameMode by remember(app.packageName) { mutableStateOf(false) }
-    var renameValue by remember(app.packageName) { mutableStateOf(app.label) }
 
-    FokusBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        modifier = Modifier.testTag("app_action_sheet"),
+    RenameableBottomSheet(
+            initialLabel = app.label,
+            renameKey = app.packageName,
+            onDismiss = onDismiss,
+            onRename = onRename,
+            editIconContentDescription = stringResource(R.string.action_rename),
+            modifier = Modifier.testTag("app_action_sheet"),
+            textFieldTestTag = "rename_inline_input",
+            editButtonTestTag = "action_rename",
     ) {
-            SheetInlineRenameTitleRow(
-                    renameMode = renameMode,
-                    renameValue = renameValue,
-                    onRenameValueChange = { renameValue = it },
-                    idleTitle = app.label,
-                    placeholder = { Text(stringResource(R.string.app_name_placeholder)) },
-                    onStartRename = { renameMode = true },
-                    onCancelRename = { renameMode = false },
-                    onSave = {
-                        val trimmed = renameValue.trim()
-                        if (trimmed.isNotEmpty()) {
-                            onRename(trimmed)
-                            onDismiss()
-                        }
-                    },
-                    editIconContentDescription = stringResource(R.string.action_rename),
-                    textFieldTestTag = "rename_inline_input",
-                    editButtonTestTag = "action_rename",
-            )
-
-            if (!isOnHomeScreen) {
-                SheetActionRow(
+        if (!isOnHomeScreen) {
+            SheetActionRow(
                     label = stringResource(R.string.action_add_to_home),
                     onClick = {
                         onAddToHome(app)
@@ -79,10 +54,10 @@ fun AppActionSheet(
                     },
                     icon = Icons.Default.Home,
                     testTag = "action_add_to_home",
-                )
-            }
+            )
+        }
 
-            SheetActionRow(
+        SheetActionRow(
                 label = stringResource(R.string.action_app_info),
                 onClick = {
                     val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
@@ -94,9 +69,9 @@ fun AppActionSheet(
                 },
                 icon = Icons.Default.Info,
                 testTag = "action_app_info",
-            )
+        )
 
-            SheetActionRow(
+        SheetActionRow(
                 label = stringResource(R.string.action_hide),
                 onClick = {
                     onHide(app)
@@ -104,9 +79,9 @@ fun AppActionSheet(
                 },
                 icon = Icons.Default.VisibilityOff,
                 testTag = "action_hide",
-            )
+        )
 
-            SheetActionRow(
+        SheetActionRow(
                 label = stringResource(R.string.action_uninstall),
                 onClick = {
                     val intent = Intent(Intent.ACTION_DELETE).apply {
@@ -118,6 +93,6 @@ fun AppActionSheet(
                 },
                 icon = Icons.Default.Delete,
                 testTag = "action_uninstall",
-            )
+        )
     }
 }

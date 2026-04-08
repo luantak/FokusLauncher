@@ -349,6 +349,18 @@ fun FokusNavGraph(
                                                 minSlidePx,
                                                 maxSlidePxVal
                                             ) {
+                                                val snapHorizontalHome: () -> Unit = {
+                                                    if (!launchTriggered) {
+                                                        coroutineScope.launch {
+                                                            Animatable(horizontalOffsetPx).animateTo(
+                                                                    targetValue = 0f,
+                                                                    animationSpec = snapBackSpec
+                                                            ) {
+                                                                horizontalOffsetPx = value
+                                                            }
+                                                        }
+                                                    }
+                                                }
                                                 detectHorizontalDragGestures(
                                                     onDragStart = { launchTriggered = false },
                                                     onHorizontalDrag = { change, dragAmount ->
@@ -371,30 +383,8 @@ fun FokusNavGraph(
                                                             }
                                                         }
                                                     },
-                                                    onDragEnd = {
-                                                        if (!launchTriggered) {
-                                                            coroutineScope.launch {
-                                                                Animatable(horizontalOffsetPx).animateTo(
-                                                                    targetValue = 0f,
-                                                                    animationSpec = snapBackSpec
-                                                                ) {
-                                                                    horizontalOffsetPx = value
-                                                                }
-                                                            }
-                                                        }
-                                                    },
-                                                    onDragCancel = {
-                                                        if (!launchTriggered) {
-                                                            coroutineScope.launch {
-                                                                Animatable(horizontalOffsetPx).animateTo(
-                                                                    targetValue = 0f,
-                                                                    animationSpec = snapBackSpec
-                                                                ) {
-                                                                    horizontalOffsetPx = value
-                                                                }
-                                                            }
-                                                        }
-                                                    }
+                                                    onDragEnd = snapHorizontalHome,
+                                                    onDragCancel = snapHorizontalHome
                                                 )
                                             }
                                         } else Modifier
@@ -412,13 +402,13 @@ fun FokusNavGraph(
                             HomeScreen(
                                 viewModel = homeViewModel,
                                 onOpenSettings = {
-                                    navController.navigate(Routes.SETTINGS) { launchSingleTop = true }
+                                    navController.navigateSingleTop(Routes.SETTINGS)
                                 },
                                 onOpenEditHomeApps = {
-                                    navController.navigate(Routes.SETTINGS_EDIT_HOME_APPS) { launchSingleTop = true }
+                                    navController.navigateSingleTop(Routes.SETTINGS_EDIT_HOME_APPS)
                                 },
                                 onOpenEditShortcuts = {
-                                    navController.navigate(Routes.SETTINGS_EDIT_SHORTCUTS) { launchSingleTop = true }
+                                    navController.navigateSingleTop(Routes.SETTINGS_EDIT_SHORTCUTS)
                                 },
                                 modifier = Modifier.fillMaxSize()
                             )
@@ -456,14 +446,12 @@ fun FokusNavGraph(
                         AppDrawerScreen(
                             viewModel = appDrawerViewModel,
                             onSettingsClick = {
-                                navController.navigate(Routes.SETTINGS) { launchSingleTop = true }
+                                navController.navigateSingleTop(Routes.SETTINGS)
                             },
                             onEditCategoryApps = { category ->
-                                navController.navigate(
-                                    "${Routes.SETTINGS_CATEGORY_APPS}/${Uri.encode(category)}"
-                                ) {
-                                    launchSingleTop = true
-                                }
+                                navController.navigateSingleTop(
+                                        "${Routes.SETTINGS_CATEGORY_APPS}/${Uri.encode(category)}"
+                                )
                             },
                             onClose = { showDrawer = false }
                         )
@@ -482,22 +470,22 @@ fun FokusNavGraph(
                         navController.popBackStack(Routes.HOME, inclusive = false)
                     },
                     onEditHomeScreen = {
-                        navController.navigate(Routes.SETTINGS_EDIT_HOME_APPS) { launchSingleTop = true }
+                        navController.navigateSingleTop(Routes.SETTINGS_EDIT_HOME_APPS)
                     },
                     onEditRightShortcuts = {
-                        navController.navigate(Routes.SETTINGS_EDIT_SHORTCUTS) { launchSingleTop = true }
+                        navController.navigateSingleTop(Routes.SETTINGS_EDIT_SHORTCUTS)
                     },
                     onOpenDeviceControlSettings = {
-                        navController.navigate(Routes.SETTINGS_DEVICE_CONTROL) { launchSingleTop = true }
+                        navController.navigateSingleTop(Routes.SETTINGS_DEVICE_CONTROL)
                     },
                     onEditCategories = {
-                        navController.navigate(Routes.SETTINGS_CATEGORIES) { launchSingleTop = true }
+                        navController.navigateSingleTop(Routes.SETTINGS_CATEGORIES)
                     },
                     onDrawerDotSearchSettings = {
-                        navController.navigate(Routes.SETTINGS_DRAWER_DOT_SEARCH) { launchSingleTop = true }
+                        navController.navigateSingleTop(Routes.SETTINGS_DRAWER_DOT_SEARCH)
                     },
                     onOpenHomeWidgetsSettings = {
-                        navController.navigate(Routes.SETTINGS_HOME_WIDGETS) { launchSingleTop = true }
+                        navController.navigateSingleTop(Routes.SETTINGS_HOME_WIDGETS)
                     },
                     backgroundScrim = Color.Black
                 )
@@ -531,11 +519,9 @@ fun FokusNavGraph(
                         viewModel = settingsViewModel(componentActivity),
                         onNavigateBack = { navController.popBackStack() },
                         onEditCategoryApps = { category ->
-                            navController.navigate(
+                            navController.navigateSingleTop(
                                     "${Routes.SETTINGS_CATEGORY_APPS}/${Uri.encode(category)}"
-                            ) {
-                                launchSingleTop = true
-                            }
+                            )
                         },
                         backgroundScrim = Color.Black
                 )

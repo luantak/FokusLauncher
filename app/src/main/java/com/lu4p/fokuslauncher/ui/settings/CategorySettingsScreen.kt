@@ -1,9 +1,7 @@
 package com.lu4p.fokuslauncher.ui.settings
 
 import android.content.Context
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,9 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.Restore
@@ -32,7 +28,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import com.lu4p.fokuslauncher.ui.util.applyVerticalSlotReorder
+import com.lu4p.fokuslauncher.ui.util.rememberVerticalSlotReorderState
+import com.lu4p.fokuslauncher.ui.util.verticalReorderDragHandle
 import com.lu4p.fokuslauncher.ui.components.FokusIconButton
 import com.lu4p.fokuslauncher.ui.util.clickableWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.rememberBooleanChangeWithSystemSound
@@ -40,8 +37,6 @@ import com.lu4p.fokuslauncher.ui.components.FokusTextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -50,9 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -67,6 +60,7 @@ import com.lu4p.fokuslauncher.ui.drawer.profileGroupedAppItems
 import com.lu4p.fokuslauncher.ui.drawer.sortAppsAlphabeticallyByProfileSection
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.ui.components.CategoryIconPickerDialog
+import com.lu4p.fokuslauncher.ui.components.EditorScreenScaffold
 import com.lu4p.fokuslauncher.ui.components.MinimalIcons
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
 import com.lu4p.fokuslauncher.ui.util.categoryChipDisplayLabel
@@ -116,12 +110,7 @@ fun CategorySettingsScreen(
             snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {
                 FokusSettingsTopBar(
-                        title = {
-                            Text(
-                                    stringResource(R.string.category_settings_title),
-                                    color = MaterialTheme.colorScheme.onBackground,
-                            )
-                        },
+                        titleText = stringResource(R.string.category_settings_title),
                         onNavigateBack = onNavigateBack,
                         containerColor = Color.Transparent,
                 )
@@ -227,32 +216,26 @@ private fun ReorderableCategoryList(
         onDelete: (String) -> Unit
 ) {
     val context = LocalContext.current
-    var draggedIndex by remember { mutableIntStateOf(-1) }
-    var dragOffset by remember { mutableFloatStateOf(0f) }
-    val itemHeightPx = with(LocalDensity.current) { 56.dp.toPx() }
+    val reorderState = rememberVerticalSlotReorderState()
     val currentCategories by rememberUpdatedState(categories)
     val currentOnReorder by rememberUpdatedState(onReorder)
     val currentOnReorderFinished by rememberUpdatedState(onReorderFinished)
-    val resetDragState = {
-        if (draggedIndex != -1) {
-            currentOnReorderFinished(currentCategories)
+    val onReorderReset = {
+        reorderState.reset { idx ->
+            if (idx != -1) currentOnReorderFinished(currentCategories)
         }
-        draggedIndex = -1
-        dragOffset = 0f
     }
 
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         items(count = categories.size, key = { categories[it] }) { index ->
             val category = categories[index]
             val count = counts[category] ?: 0
-            val currentIndex by rememberUpdatedState(index)
-            val offset = if (index == draggedIndex) dragOffset.coerceIn(-itemHeightPx, itemHeightPx) else 0f
             Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier =
                             Modifier.fillMaxWidth()
                                     .heightIn(min = 56.dp)
-                                    .graphicsLayer { translationY = offset }
+                                    .graphicsLayer { translationY = reorderState.translationYForIndex(index) }
                                     .clickableWithSystemSound { onEditCategoryApps(category) }
                                     .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
@@ -262,33 +245,15 @@ private fun ReorderableCategoryList(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier =
                                 Modifier.size(24.dp)
-                                        .pointerInput(category, categories.size) {
-                                            detectVerticalDragGestures(
-                                                    onDragStart = {
-                                                        draggedIndex = currentIndex
-                                                        dragOffset = 0f
-                                                    },
-                                                    onVerticalDrag = { change, amount ->
-                                                        change.consume()
-                                                        if (draggedIndex in currentCategories.indices) {
-                                                            dragOffset += amount
-                                                            val (newOff, newIdx) =
-                                                                    applyVerticalSlotReorder(
-                                                                            itemHeightPx,
-                                                                            dragOffset,
-                                                                            draggedIndex,
-                                                                            currentCategories.lastIndex,
-                                                                    ) { from, to ->
-                                                                        currentOnReorder(from, to)
-                                                                    }
-                                                            dragOffset = newOff
-                                                            draggedIndex = newIdx
-                                                        }
-                                                    },
-                                                    onDragEnd = { resetDragState() },
-                                                    onDragCancel = { resetDragState() }
-                                            )
-                                        }
+                                        .verticalReorderDragHandle(
+                                                reorderState,
+                                                index,
+                                                categories.lastIndex,
+                                                { from, to -> currentOnReorder(from, to) },
+                                                onReorderReset,
+                                                category,
+                                                categories.size,
+                                        )
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 if (showDrawerCategoryIcons) {
@@ -360,140 +325,121 @@ fun CategoryAppsScreen(
             category.equals(ReservedCategoryNames.UNCATEGORIZED, ignoreCase = true)
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    var searchQuery by remember { mutableStateOf("") }
     LaunchedEffect(isUncategorizedBucket) {
         if (isUncategorizedBucket) onNavigateBack()
     }
-    val checkedPackages = remember(uiState.allApps, category) {
-        uiState.allApps
-                .filter { app -> app.category.equals(category, ignoreCase = true) }
-                .map { it.packageName }
-                .toSet()
-    }
-    val checkedApps = remember(uiState.allApps, checkedPackages) {
-        uiState.allApps.filter { it.packageName in checkedPackages }
-    }
-    val checkedSections = remember(checkedApps, context) {
-        groupAppsIntoProfileSections(context, checkedApps, ::sortAppsAlphabeticallyByProfileSection)
-    }
-    val uncheckedApps = remember(uiState.allApps, checkedPackages, searchQuery) {
-        uiState.allApps.filter { it.packageName !in checkedPackages }
-                .let { apps ->
-                    if (searchQuery.isBlank()) apps
-                    else apps.filter { it.label.containsNormalizedSearch(searchQuery) }
-                }
-    }
-    val uncheckedSections = remember(uncheckedApps, context) {
-        groupAppsIntoProfileSections(context, uncheckedApps, ::sortAppsAlphabeticallyByProfileSection)
-    }
-
-    val listState = rememberLazyListState()
-    var didSnapListTop by remember { mutableStateOf(false) }
-    LaunchedEffect(uiState.allApps.isNotEmpty()) {
-        if (didSnapListTop || uiState.allApps.isEmpty()) return@LaunchedEffect
-        listState.scrollToItem(0, 0)
-        didSnapListTop = true
-    }
-
-    BackHandler { onNavigateBack() }
 
     if (isUncategorizedBucket) {
-        Box(
-                modifier = Modifier.fillMaxSize().background(backgroundScrim)
-        )
+        Box(modifier = Modifier.fillMaxSize().background(backgroundScrim))
     } else {
-        Column(
-                modifier = Modifier
-                        .fillMaxSize()
-                        .background(backgroundScrim)
-                        .navigationBarsPadding()
-        ) {
-        FokusSettingsTopBar(
+        EditorScreenScaffold(
                 title = {
                     Text(
                             categoryChipDisplayLabel(context, category),
                             color = MaterialTheme.colorScheme.onBackground,
                     )
                 },
+                searchPlaceholderResId = R.string.search_apps,
+                backgroundScrim = backgroundScrim,
+                listReadyToScroll = uiState.allApps.isNotEmpty(),
                 onNavigateBack = onNavigateBack,
-                containerColor = MaterialTheme.colorScheme.surface,
-                actions = {
-                    FokusIconButton(onClick = onNavigateBack) {
-                        Icon(
-                                imageVector = Icons.Default.Check,
-                                contentDescription = stringResource(R.string.action_done),
-                                tint = MaterialTheme.colorScheme.onBackground,
+                onDone = onNavigateBack,
+        ) { searchQuery, listState ->
+            val checkedPackages = remember(uiState.allApps, category) {
+                uiState.allApps
+                        .filter { app -> app.category.equals(category, ignoreCase = true) }
+                        .map { it.packageName }
+                        .toSet()
+            }
+            val checkedApps = remember(uiState.allApps, checkedPackages) {
+                uiState.allApps.filter { it.packageName in checkedPackages }
+            }
+            val checkedSections = remember(checkedApps, context) {
+                groupAppsIntoProfileSections(
+                        context,
+                        checkedApps,
+                        ::sortAppsAlphabeticallyByProfileSection
+                )
+            }
+            val uncheckedApps = remember(uiState.allApps, checkedPackages, searchQuery) {
+                uiState.allApps.filter { it.packageName !in checkedPackages }
+                        .let { apps ->
+                            if (searchQuery.isBlank()) apps
+                            else apps.filter { it.label.containsNormalizedSearch(searchQuery) }
+                        }
+            }
+            val uncheckedSections = remember(uncheckedApps, context) {
+                groupAppsIntoProfileSections(
+                        context,
+                        uncheckedApps,
+                        ::sortAppsAlphabeticallyByProfileSection
+                )
+            }
+
+            LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+                if (checkedApps.isNotEmpty()) {
+                    item {
+                        Text(
+                                text =
+                                        stringResource(
+                                                R.string.category_apps_screen_section_in_category
+                                        ),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                         )
                     }
-                },
-        )
-        OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                placeholder = { Text(stringResource(R.string.search_apps)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
-        )
-        LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
-            if (checkedApps.isNotEmpty()) {
+                }
+                profileGroupedAppItems(
+                        sections = checkedSections,
+                        keyPrefix = "cat_checked",
+                        horizontalPadding = 16.dp,
+                ) { app ->
+                    CategoryAppRow(
+                            label = app.label,
+                            checked = true,
+                            secondary = categoryChipDisplayLabel(context, category),
+                            onToggle = {
+                                viewModel.setAppCategory(
+                                        app.packageName,
+                                        appProfileKey(app.userHandle),
+                                        ""
+                                )
+                            }
+                    )
+                }
                 item {
                     Text(
-                            text = stringResource(R.string.category_apps_screen_section_in_category),
+                            text = stringResource(R.string.edit_home_section_all_apps),
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                     )
                 }
+                profileGroupedAppItems(
+                        sections = uncheckedSections,
+                        keyPrefix = "cat_unchecked",
+                        horizontalPadding = 16.dp,
+                ) { app ->
+                    val currentCategory = app.category
+                    CategoryAppRow(
+                            label = app.label,
+                            checked = false,
+                            secondary =
+                                    currentCategory.ifBlank {
+                                                stringResource(R.string.category_no_category)
+                                            }
+                                            .let { categoryChipDisplayLabel(context, it) },
+                            onToggle = {
+                                viewModel.setAppCategory(
+                                        app.packageName,
+                                        appProfileKey(app.userHandle),
+                                        category
+                                )
+                            }
+                    )
+                }
             }
-            profileGroupedAppItems(
-                    sections = checkedSections,
-                    keyPrefix = "cat_checked",
-                    horizontalPadding = 16.dp,
-            ) { app ->
-                CategoryAppRow(
-                        label = app.label,
-                        checked = true,
-                        secondary = categoryChipDisplayLabel(context, category),
-                        onToggle = {
-                            viewModel.setAppCategory(
-                                app.packageName,
-                                appProfileKey(app.userHandle),
-                                ""
-                            )
-                        }
-                )
-            }
-            item {
-                Text(
-                        text = stringResource(R.string.edit_home_section_all_apps),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
-            }
-            profileGroupedAppItems(
-                    sections = uncheckedSections,
-                    keyPrefix = "cat_unchecked",
-                    horizontalPadding = 16.dp,
-            ) { app ->
-                val currentCategory = app.category
-                CategoryAppRow(
-                        label = app.label,
-                        checked = false,
-                        secondary =
-                                currentCategory.ifBlank {
-                                    stringResource(R.string.category_no_category)
-                                }.let { categoryChipDisplayLabel(context, it) },
-                        onToggle = {
-                            viewModel.setAppCategory(
-                                app.packageName,
-                                appProfileKey(app.userHandle),
-                                category
-                            )
-                        }
-                )
-            }
-        }
         }
     }
 }
