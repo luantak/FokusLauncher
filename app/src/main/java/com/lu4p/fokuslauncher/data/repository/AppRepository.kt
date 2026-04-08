@@ -120,6 +120,59 @@ constructor(
             withContext(Dispatchers.IO) { getInstalledApps() }
 
     /**
+     * True when [packageName] still has at least one launchable activity in [profileKey] (owner =
+     * `"0"`). Used to avoid pruning home favorites when [getInstalledApps] returns a partial list
+     * but the app is still installed.
+     */
+    fun hasLaunchableActivities(packageName: String, profileKey: String): Boolean {
+        if (packageName == ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE) {
+            return true
+        }
+        val launcherApps =
+                try {
+                    context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as? LauncherApps
+                } catch (_: Exception) {
+                    null
+                }
+        val userManager =
+                try {
+                    context.getSystemService(Context.USER_SERVICE) as? UserManager
+                } catch (_: Exception) {
+                    null
+                }
+        val user = resolveUserHandleForProfileKey(profileKey, userManager) ?: return false
+        if (launcherApps == null) {
+            if (user != Process.myUserHandle()) {
+                return false
+            }
+            return context.packageManager.getLaunchIntentForPackage(packageName) != null
+        }
+        return try {
+            launcherApps.getActivityList(packageName, user).isNotEmpty()
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    private fun resolveUserHandleForProfileKey(
+            profileKey: String,
+            userManager: UserManager?
+    ): UserHandle? {
+        val normalized = profileKey.ifBlank { "0" }
+        if (normalized == "0") {
+            return Process.myUserHandle()
+        }
+        val profiles = userManager?.userProfiles ?: return null
+        for (profile in profiles) {
+            if (privateSpaceManager.isPrivateSpaceProfile(profile)) continue
+            if (appProfileKey(profile) == normalized) {
+                return profile
+            }
+        }
+        return null
+    }
+
+    /**
      * Loads launchable activities per [UserManager.userProfiles] via [LauncherApps.getActivityList],
      * so cloned / parallel / work-profile installs (same package as the primary user) still
      * appear. Private Space is skipped here; those apps stay in the dedicated Private drawer

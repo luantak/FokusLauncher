@@ -53,6 +53,8 @@ import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.text.DateFormat as JavaDateFormat
 import java.util.Date
 import java.util.Locale
@@ -100,6 +102,9 @@ class HomeViewModel @Inject constructor(
 
     private val _weatherUiState = MutableStateFlow(HomeWeatherUiState())
     val weatherUiState: StateFlow<HomeWeatherUiState> = _weatherUiState.asStateFlow()
+
+    /** Serializes home app-list refresh so concurrent loads cannot race and prune favorites. */
+    private val installedAppsRefreshMutex = Mutex()
 
     // Raw favorites from DataStore
     private val rawFavorites: StateFlow<List<FavoriteApp>> = preferencesManager.favoritesFlow
@@ -307,26 +312,53 @@ class HomeViewModel @Inject constructor(
      */
     fun refreshInstalledApps(forceReload: Boolean = true) {
         viewModelScope.launch(Dispatchers.IO) {
-            if (forceReload) {
-                appRepository.invalidateCache()
-            }
-            val apps = appRepository.getInstalledApps()
-            if (apps.isEmpty() && (rawFavorites.value.isNotEmpty() || _allInstalledApps.value.isNotEmpty())) {
-                return@launch
-            }
-            _appNameMap.value = apps.associate { it.packageName to it.label }
-            _allInstalledApps.value = apps
-            val installedPackages = apps.map { it.packageName }.toSet()
-            val currentFavorites = rawFavorites.value
-            val updatedFavorites =
-                    currentFavorites.filter {
-                        it.packageName == ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE ||
-                                it.packageName in installedPackages
-                    }
-            if (updatedFavorites.size != currentFavorites.size) {
-                preferencesManager.setFavorites(updatedFavorites)
+            installedAppsRefreshMutex.withLock {
+                val recoveredAfterFirstPass = runInstalledAppsRefreshPass(forceReload)
+                if (recoveredAfterFirstPass) {
+                    appRepository.invalidateCache()
+                    runInstalledAppsRefreshPass(forceReload = false)
+                }
             }
         }
+    }
+
+    /**
+     * Reloads installed apps and syncs persisted favorites. Returns true when at least one current
+     * favorite was missing from the snapshot but still resolves via [AppRepository.hasLaunchableActivities]
+     * (partial [LauncherApps] enumeration); callers may invalidate and run another pass.
+     */
+    private suspend fun runInstalledAppsRefreshPass(forceReload: Boolean): Boolean {
+        if (forceReload) {
+            appRepository.invalidateCache()
+        }
+        val apps = appRepository.getInstalledApps()
+        if (apps.isEmpty() &&
+                        (rawFavorites.value.isNotEmpty() || _allInstalledApps.value.isNotEmpty())
+        ) {
+            return false
+        }
+        _appNameMap.value = apps.associate { it.packageName to it.label }
+        _allInstalledApps.value = apps
+        val installedPackages = apps.map { it.packageName }.toSet()
+        val currentFavorites = rawFavorites.value
+        val updatedFavorites =
+                currentFavorites.filter {
+                    it.packageName == ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE ||
+                            it.packageName in installedPackages ||
+                            appRepository.hasLaunchableActivities(
+                                    it.packageName,
+                                    it.profileKey
+                            )
+                }
+        if (updatedFavorites.size != currentFavorites.size) {
+            preferencesManager.setFavorites(updatedFavorites)
+        }
+        val recoveredViaLaunchCheck =
+                updatedFavorites.any {
+                    it.packageName != ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE &&
+                            it.packageName !in installedPackages
+                }
+        return recoveredViaLaunchCheck
     }
 
     private fun loadShortcutActions() {

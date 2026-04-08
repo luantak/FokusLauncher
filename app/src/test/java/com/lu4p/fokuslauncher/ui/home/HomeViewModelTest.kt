@@ -463,6 +463,37 @@ class HomeViewModelTest {
     }
 
     @Test
+    fun `refreshInstalledApps keeps favorites absent from partial snapshot when still launchable`() {
+        every { appRepository.getInstalledApps() } returns listOf(
+            AppInfo(packageName = "com.lu4p.music", label = "Music", icon = null)
+        )
+        every {
+            appRepository.hasLaunchableActivities(
+                match { it == "com.lu4p.work" || it == "com.lu4p.social" },
+                any()
+            )
+        } returns true
+        every {
+            appRepository.hasLaunchableActivities(
+                match { it != "com.lu4p.work" && it != "com.lu4p.social" },
+                any()
+            )
+        } returns false
+        val viewModel = createViewModel()
+        val collectJob = CoroutineScope(testDispatcher).launch {
+            viewModel.favorites.collect { }
+        }
+        testDispatcher.scheduler.runCurrent()
+
+        viewModel.refreshInstalledApps()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 0) { preferencesManager.setFavorites(any()) }
+        verify(atLeast = 1) { appRepository.invalidateCache() }
+        collectJob.cancel()
+    }
+
+    @Test
     fun `removed package disappears from favorites immediately`() {
         val viewModel = createViewModel()
         testDispatcher.scheduler.runCurrent()
