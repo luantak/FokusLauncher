@@ -407,6 +407,29 @@ constructor(
                         )
             }
 
+    private inline fun <T, R> mapEntitiesForSettings(
+            entities: List<T>,
+            hiddenLabels: Map<String, AppInfo>,
+            privateSpaceUnlocked: Boolean,
+            privateProfileKey: String?,
+            packageName: (T) -> String,
+            profileKey: (T) -> String,
+            transform: (T, AppInfo?, String?) -> R,
+    ): List<R> =
+            entities.mapNotNull { entity ->
+                val pkg = packageName(entity)
+                val prof = profileKey(entity)
+                val key = appMetadataKey(pkg, prof)
+                val matchingApp = hiddenLabels[key]
+                if (!privateSpaceUnlocked && prof == privateProfileKey) null
+                else
+                        transform(
+                                entity,
+                                matchingApp,
+                                profileLabelForSettings(prof, matchingApp, privateProfileKey),
+                        )
+            }
+
     private fun hiddenInfosForSettings(
             hiddenApps: List<HiddenAppEntity>,
             hiddenLabels: Map<String, AppInfo>,
