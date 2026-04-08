@@ -6,6 +6,7 @@ import android.os.UserHandle
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryDefinitionEntity
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryEntity
+import com.lu4p.fokuslauncher.data.database.entity.HiddenAppEntity
 import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.AppInfo
@@ -14,6 +15,8 @@ import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
+import com.lu4p.fokuslauncher.data.model.appMetadataKey
+import com.lu4p.fokuslauncher.data.model.appProfileKey
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.data.repository.RemovedApp
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
@@ -50,7 +53,7 @@ class AppDrawerViewModelTest {
     private lateinit var viewModel: AppDrawerViewModel
     private val testDispatcher = UnconfinedTestDispatcher()
 
-    private val hiddenFlow = MutableStateFlow<List<String>>(emptyList())
+    private val hiddenFlow = MutableStateFlow<List<HiddenAppEntity>>(emptyList())
     private val renamedFlow = MutableStateFlow<List<RenamedAppEntity>>(emptyList())
     private val categoriesFlow = MutableStateFlow<List<AppCategoryEntity>>(emptyList())
     private val categoryDefinitionsFlow = MutableStateFlow<List<AppCategoryDefinitionEntity>>(emptyList())
@@ -102,7 +105,7 @@ class AppDrawerViewModelTest {
         every { appRepository.invalidateCache() } answers { installedAppsVersion.value += 1L }
         installedApps = testApps
         every { appRepository.getInstalledApps() } answers { installedApps }
-        every { appRepository.getHiddenPackageNames() } returns hiddenFlow
+        every { appRepository.getHiddenApps() } returns hiddenFlow
         every { appRepository.getAllRenamedApps() } returns renamedFlow
         every { appRepository.getAllAppCategories() } returns categoriesFlow
         every { appRepository.getAllCategoryDefinitions() } returns categoryDefinitionsFlow
@@ -511,13 +514,13 @@ class AppDrawerViewModelTest {
         val app = testApps[0]
         viewModel.hideApp(app)
 
-        coVerify { appRepository.hideApp(app.packageName) }
+        coVerify { appRepository.hideApp(app.packageName, appProfileKey(app.userHandle)) }
     }
 
     @Test
     fun `hidden apps are filtered from visible list`() {
         // Simulate hiding an app via the Flow
-        hiddenFlow.value = listOf("com.lu4p.atom")
+        hiddenFlow.value = listOf(HiddenAppEntity("com.lu4p.atom", "0"))
         awaitState("hidden app to be removed") { state ->
             state.allApps.none { it.packageName == "com.lu4p.atom" } &&
                 flatFiltered(state).none { it.packageName == "com.lu4p.atom" }
@@ -530,7 +533,7 @@ class AppDrawerViewModelTest {
 
     @Test
     fun `renamed apps show custom names in list`() {
-        renamedFlow.value = listOf(RenamedAppEntity("com.lu4p.chrome", "My Browser"))
+        renamedFlow.value = listOf(RenamedAppEntity("com.lu4p.chrome", "0", "My Browser"))
         awaitState("rename to be reflected") { state ->
             state.allApps.any {
                 it.packageName == "com.lu4p.chrome" && it.label == "My Browser"
@@ -545,9 +548,24 @@ class AppDrawerViewModelTest {
 
     @Test
     fun `renameApp calls repository`() {
-        viewModel.renameApp("com.lu4p.atom", "My Atom")
+        viewModel.renameApp(testApps[0], "My Atom")
 
-        coVerify { appRepository.renameApp("com.lu4p.atom", "My Atom") }
+        coVerify { appRepository.renameApp("com.lu4p.atom", "0", "My Atom") }
+    }
+
+    @Test
+    fun `favorite app keys stay profile aware`() {
+        favoritesFlow.value =
+            listOf(
+                FavoriteApp(label = "Chrome", packageName = "com.lu4p.chrome", profileKey = "0"),
+                FavoriteApp(label = "Chrome Work", packageName = "com.lu4p.chrome", profileKey = "42")
+            )
+
+        val state = viewModel.uiState.value
+
+        assertTrue(appMetadataKey("com.lu4p.chrome", "0") in state.favoriteAppKeys)
+        assertTrue(appMetadataKey("com.lu4p.chrome", "42") in state.favoriteAppKeys)
+        assertEquals(2, state.favoriteAppKeys.size)
     }
 
     // --- Menu tests ---
@@ -582,8 +600,18 @@ class AppDrawerViewModelTest {
     fun `refreshPrivateSpaceState reads from manager`() {
         every { privateSpaceManager.isSupported } returns true
         every { privateSpaceManager.isPrivateSpaceUnlocked() } returns true
+        val privateUser = mockk<UserHandle>()
+        every { privateUser.hashCode() } returns 77
         every { privateSpaceManager.getPrivateSpaceApps() } returns
-                listOf(AppInfo("com.private.app", "Private App", null))
+                listOf(
+                    AppInfo(
+                        "com.private.app",
+                        "Private App",
+                        null,
+                        userHandle = privateUser,
+                        componentName = ComponentName("com.private.app", "Main")
+                    )
+                )
 
         viewModel.refreshPrivateSpaceState()
 
@@ -591,6 +619,35 @@ class AppDrawerViewModelTest {
         assertTrue(state.isPrivateSpaceSupported)
         assertTrue(state.isPrivateSpaceUnlocked)
         assertEquals(1, state.privateSpaceApps.size)
+    }
+
+    @Test
+    fun `refreshPrivateSpaceState applies rename overlay to private apps`() {
+        val privateUser = mockk<UserHandle>()
+        every { privateUser.hashCode() } returns 77
+        every { privateSpaceManager.isSupported } returns true
+        every { privateSpaceManager.isPrivateSpaceUnlocked() } returns true
+        every { privateSpaceManager.getPrivateSpaceApps() } returns
+            listOf(
+                AppInfo(
+                    "com.private.app",
+                    "Private App",
+                    null,
+                    userHandle = privateUser,
+                    componentName = ComponentName("com.private.app", "Main")
+                )
+            )
+        renamedFlow.value = listOf(RenamedAppEntity("com.private.app", "77", "Secret App"))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.refreshPrivateSpaceState()
+        testDispatcher.scheduler.advanceUntilIdle()
+        awaitState("private app rename to be reflected") { state ->
+            state.privateSpaceApps.any { it.packageName == "com.private.app" && it.label == "Secret App" }
+        }
+
+        val state = viewModel.uiState.value
+        assertEquals("Secret App", state.privateSpaceApps.single().label)
     }
 
     @Test

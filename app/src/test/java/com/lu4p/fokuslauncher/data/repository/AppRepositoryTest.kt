@@ -370,60 +370,63 @@ class AppRepositoryTest {
 
     @Test
     fun `hideApp delegates to DAO`() = runTest {
-        repository.hideApp("com.lu4p.app1")
+        repository.hideApp("com.lu4p.app1", "0")
 
-        coVerify { appDao.hideApp(HiddenAppEntity("com.lu4p.app1")) }
+        coVerify { appDao.hideApp(HiddenAppEntity("com.lu4p.app1", "0")) }
     }
 
     @Test
     fun `unhideApp delegates to DAO`() = runTest {
-        repository.unhideApp("com.lu4p.app1")
+        repository.unhideApp("com.lu4p.app1", "0")
 
-        coVerify { appDao.unhideApp(HiddenAppEntity("com.lu4p.app1")) }
+        coVerify { appDao.unhideApp(HiddenAppEntity("com.lu4p.app1", "0")) }
     }
 
     @Test
     fun `isAppHidden delegates to DAO`() = runTest {
-        coEvery { appDao.isAppHidden("com.lu4p.app1") } returns true
+        coEvery { appDao.isAppHidden("com.lu4p.app1", "0") } returns true
 
-        val result = repository.isAppHidden("com.lu4p.app1")
+        val result = repository.isAppHidden("com.lu4p.app1", "0")
 
         assertTrue(result)
     }
 
     @Test
-    fun `getHiddenPackageNames returns flow from DAO`() {
-        every { appDao.getHiddenPackageNames() } returns flowOf(listOf("com.lu4p.hidden"))
+    fun `getHiddenApps returns flow from DAO`() {
+        every { appDao.getHiddenApps() } returns
+            flowOf(listOf(HiddenAppEntity("com.lu4p.hidden", "0")))
 
-        val result = repository.getHiddenPackageNames()
+        val result = repository.getHiddenApps()
 
         // Flow is returned directly from DAO
-        assertEquals(appDao.getHiddenPackageNames(), result)
+        assertEquals(appDao.getHiddenApps(), result)
     }
 
     // --- Renamed Apps Tests ---
 
     @Test
     fun `renameApp delegates to DAO`() = runTest {
-        repository.renameApp("com.lu4p.app1", "My Custom Name")
+        repository.renameApp("com.lu4p.app1", "0", "My Custom Name")
 
-        coVerify { appDao.renameApp(RenamedAppEntity("com.lu4p.app1", "My Custom Name")) }
+        coVerify {
+            appDao.renameApp(RenamedAppEntity("com.lu4p.app1", "0", "My Custom Name"))
+        }
     }
 
     @Test
     fun `getCustomName returns name from DAO`() = runTest {
-        coEvery { appDao.getCustomName("com.lu4p.app1") } returns "Custom"
+        coEvery { appDao.getCustomName("com.lu4p.app1", "0") } returns "Custom"
 
-        val result = repository.getCustomName("com.lu4p.app1")
+        val result = repository.getCustomName("com.lu4p.app1", "0")
 
         assertEquals("Custom", result)
     }
 
     @Test
     fun `getCustomName returns null when not renamed`() = runTest {
-        coEvery { appDao.getCustomName("com.lu4p.app1") } returns null
+        coEvery { appDao.getCustomName("com.lu4p.app1", "0") } returns null
 
-        val result = repository.getCustomName("com.lu4p.app1")
+        val result = repository.getCustomName("com.lu4p.app1", "0")
 
         assertNull(result)
     }
@@ -432,12 +435,13 @@ class AppRepositoryTest {
 
     @Test
     fun `setAppCategory delegates to DAO`() = runTest {
-        repository.setAppCategory("com.lu4p.app1", "Productivity")
+        repository.setAppCategory("com.lu4p.app1", "0", "Productivity")
 
         coVerify {
             appDao.setAppCategory(
                     AppCategoryEntity(
                             "com.lu4p.app1",
+                            "0",
                             "Productivity"
                     )
             )
@@ -449,12 +453,13 @@ class AppRepositoryTest {
         val realContext = RuntimeEnvironment.getApplication().applicationContext as Context
         val realRepository = AppRepository(realContext, appDao, PrivateSpaceManager(realContext))
 
-        realRepository.setAppCategory("com.lu4p.app1", "Produktivität")
+        realRepository.setAppCategory("com.lu4p.app1", "0", "Produktivität")
 
         coVerify {
             appDao.setAppCategory(
                     AppCategoryEntity(
                             "com.lu4p.app1",
+                            "0",
                             "Productivity"
                     )
             )
@@ -463,9 +468,9 @@ class AppRepositoryTest {
 
     @Test
     fun `getAppCategory returns category from DAO`() = runTest {
-        coEvery { appDao.getAppCategory("com.lu4p.app1") } returns "Social"
+        coEvery { appDao.getAppCategory("com.lu4p.app1", "0") } returns "Social"
 
-        val result = repository.getAppCategory("com.lu4p.app1")
+        val result = repository.getAppCategory("com.lu4p.app1", "0")
 
         assertEquals("Social", result)
     }
@@ -474,7 +479,7 @@ class AppRepositoryTest {
     fun `getAllAppCategories normalizes legacy localized inferred categories`() = runTest {
         val realContext = RuntimeEnvironment.getApplication().applicationContext as Context
         every { appDao.getAllAppCategories() } returns
-                flowOf(listOf(AppCategoryEntity("com.lu4p.app1", "Spiele")))
+                flowOf(listOf(AppCategoryEntity("com.lu4p.app1", "0", "Spiele")))
         val realRepository = AppRepository(realContext, appDao, PrivateSpaceManager(realContext))
 
         val result = realRepository.getAllAppCategories().first()
@@ -568,7 +573,7 @@ class AppRepositoryTest {
 
         coVerify {
             appDao.deleteCategoryWithAppResets(
-                    listOf(AppCategoryEntity("com.lu4p.game", "")),
+                    listOf(AppCategoryEntity("com.lu4p.game", "0", "")),
                     "Games"
             )
         }
@@ -587,14 +592,14 @@ class AppRepositoryTest {
                         )
                 )
         every { appDao.getAllAppCategories() } returns
-                flowOf(listOf(AppCategoryEntity("com.lu4p.app1", "Games")))
+                flowOf(listOf(AppCategoryEntity("com.lu4p.app1", "0", "Games")))
 
         repository.invalidateCache()
         repository.deleteCategory("Games")
 
         coVerify {
             appDao.deleteCategoryWithAppResets(
-                    listOf(AppCategoryEntity("com.lu4p.app1", "")),
+                    listOf(AppCategoryEntity("com.lu4p.app1", "0", "")),
                     "Games"
             )
         }

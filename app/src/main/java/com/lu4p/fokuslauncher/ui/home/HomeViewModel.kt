@@ -24,6 +24,7 @@ import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.AppShortcutAction
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
+import com.lu4p.fokuslauncher.data.model.appMetadataKey
 import com.lu4p.fokuslauncher.data.model.appProfileKey
 import com.lu4p.fokuslauncher.data.model.HomeDateFormatStyle
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
@@ -113,7 +114,7 @@ class HomeViewModel @Inject constructor(
     // Renames from Room
     private val _renameMap = MutableStateFlow<Map<String, String>>(emptyMap())
 
-    // App name lookup (packageName -> real label from PackageManager)
+    // App name lookup keyed by package and profile.
     private val _appNameMap = MutableStateFlow<Map<String, String>>(emptyMap())
 
     /**
@@ -126,8 +127,9 @@ class HomeViewModel @Inject constructor(
         _appNameMap
     ) { favs, renames, appNames ->
         favs.map { fav ->
-            val resolvedName = renames[fav.packageName]
-                ?: appNames[fav.packageName]
+            val appKey = appMetadataKey(fav.packageName, fav.profileKey)
+            val resolvedName = renames[appKey]
+                ?: appNames[appKey]
                 ?: fav.label
             fav.copy(label = resolvedName)
         }
@@ -253,7 +255,10 @@ class HomeViewModel @Inject constructor(
     private fun observeRenames() {
         viewModelScope.launch {
             appRepository.getAllRenamedApps().collect { renamedApps ->
-                _renameMap.value = renamedApps.associate { it.packageName to it.customName }
+                _renameMap.value =
+                    renamedApps.associate {
+                        appMetadataKey(it.packageName, it.profileKey) to it.customName
+                    }
             }
         }
     }
@@ -279,12 +284,15 @@ class HomeViewModel @Inject constructor(
                     _appNameMap.value
                         .toMutableMap()
                         .apply {
+                            val removedKey =
+                                appMetadataKey(removedApp.packageName, removedApp.profileKey)
+                            remove(removedKey)
                             val hasPrimaryInstall =
                                 _allInstalledApps.value.any {
                                     it.packageName == removedApp.packageName && it.userHandle == null
                                 }
-                            if (!hasPrimaryInstall) {
-                                remove(removedApp.packageName)
+                            if (!hasPrimaryInstall && removedApp.profileKey == "0") {
+                                remove(appMetadataKey(removedApp.packageName, "0"))
                             }
                         }
                 _editFavorites.value =
@@ -337,7 +345,7 @@ class HomeViewModel @Inject constructor(
         ) {
             return false
         }
-        _appNameMap.value = apps.associate { it.packageName to it.label }
+        _appNameMap.value = apps.associate { appMetadataKey(it.packageName, it.userHandle) to it.label }
         _allInstalledApps.value = apps
         val installedPackages = apps.map { it.packageName }.toSet()
         val currentFavorites = rawFavorites.value
@@ -389,7 +397,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             val apps = appRepository.getInstalledApps()
             _allInstalledApps.value = apps
-            _appNameMap.value = apps.associate { it.packageName to it.label }
+            _appNameMap.value = apps.associate { appMetadataKey(it.packageName, it.userHandle) to it.label }
         }
     }
 
@@ -399,7 +407,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             val apps = appRepository.getInstalledApps()
             _allInstalledApps.value = apps
-            _appNameMap.value = apps.associate { it.packageName to it.label }
+            _appNameMap.value = apps.associate { appMetadataKey(it.packageName, it.userHandle) to it.label }
             _allShortcutActions.value = appRepository.getAllShortcutActions()
         }
     }
@@ -527,48 +535,51 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun renameApp(packageName: String, newName: String) {
+    fun renameApp(favorite: FavoriteApp, newName: String) {
         viewModelScope.launch {
-            if (packageName == ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE) {
+            if (favorite.packageName == ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE) {
                 val current = preferencesManager.favoritesFlow.first().toMutableList()
                 val idx =
                         current.indexOfFirst {
-                            it.packageName == packageName && it.profileKey == "0"
+                            it.packageName == favorite.packageName &&
+                                it.profileKey == favorite.profileKey
                         }
                 if (idx >= 0) {
                     current[idx] = current[idx].copy(label = newName.trim())
                     preferencesManager.setFavorites(current)
                 }
             } else {
-                appRepository.renameApp(packageName, newName)
+                appRepository.renameApp(favorite.packageName, favorite.profileKey, newName)
             }
             _appMenuTarget.value = null
         }
     }
 
-    fun hideApp(packageName: String) {
-        if (packageName == ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE) {
+    fun hideApp(favorite: FavoriteApp) {
+        if (favorite.packageName == ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE) {
             _appMenuTarget.value = null
             return
         }
         viewModelScope.launch {
-            appRepository.hideApp(packageName)
+            appRepository.hideApp(favorite.packageName, favorite.profileKey)
             // Also remove from home-screen favorites
             val current = rawFavorites.value.toMutableList()
-            current.removeAll { it.packageName == packageName }
+            current.removeAll {
+                it.packageName == favorite.packageName && it.profileKey == favorite.profileKey
+            }
             preferencesManager.setFavorites(current)
         }
         _appMenuTarget.value = null
     }
 
-    fun openAppInfo(packageName: String) {
-        if (packageName == ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE) {
+    fun openAppInfo(favorite: FavoriteApp) {
+        if (favorite.packageName == ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE) {
             _appMenuTarget.value = null
             return
         }
         try {
             val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                data = "package:$packageName".toUri()
+                data = "package:${favorite.packageName}".toUri()
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             context.startActivity(intent)
@@ -576,14 +587,14 @@ class HomeViewModel @Inject constructor(
         _appMenuTarget.value = null
     }
 
-    fun uninstallApp(packageName: String) {
-        if (packageName == ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE) {
+    fun uninstallApp(favorite: FavoriteApp) {
+        if (favorite.packageName == ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE) {
             _appMenuTarget.value = null
             return
         }
         try {
             val intent = Intent(Intent.ACTION_DELETE).apply {
-                data = "package:$packageName".toUri()
+                data = "package:${favorite.packageName}".toUri()
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             context.startActivity(intent)

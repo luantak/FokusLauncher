@@ -465,7 +465,7 @@ fun SettingsScreen(
                 items(uiState.hiddenApps) { hiddenApp ->
                     HiddenAppRow(
                             app = hiddenApp,
-                            onUnhide = { viewModel.unhideApp(hiddenApp.packageName) }
+                            onUnhide = { viewModel.unhideApp(hiddenApp.packageName, hiddenApp.profileKey) }
                     )
                 }
             }
@@ -488,8 +488,11 @@ fun SettingsScreen(
                 items(uiState.renamedApps) { renamedApp ->
                     RenamedAppRow(
                             packageName = renamedApp.packageName,
+                            profileLabel = renamedApp.profileLabel,
                             customName = renamedApp.customName,
-                            onRemoveRename = { viewModel.removeRename(renamedApp.packageName) }
+                            onRemoveRename = {
+                                viewModel.removeRename(renamedApp.packageName, renamedApp.profileKey)
+                            }
                     )
                 }
             }
@@ -1784,12 +1787,20 @@ private fun HiddenAppRow(app: HiddenAppInfo, onUnhide: () -> Unit) {
                             .clickableWithSystemSound(onClick = onUnhide)
                             .padding(horizontal = 24.dp, vertical = 12.dp)
     ) {
-        Text(
-                app.label,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.weight(1f)
-        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                    app.label,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onBackground
+            )
+            val secondary =
+                    app.profileLabel?.let { "$it • ${app.packageName}" } ?: app.packageName
+            Text(
+                    secondary,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.secondary
+            )
+        }
         Spacer(Modifier.width(8.dp))
         Icon(
                 Icons.Default.Visibility,
@@ -1800,7 +1811,12 @@ private fun HiddenAppRow(app: HiddenAppInfo, onUnhide: () -> Unit) {
 }
 
 @Composable
-private fun RenamedAppRow(packageName: String, customName: String, onRemoveRename: () -> Unit) {
+private fun RenamedAppRow(
+        packageName: String,
+        profileLabel: String?,
+        customName: String,
+        onRemoveRename: () -> Unit
+) {
     Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier =
@@ -1815,7 +1831,7 @@ private fun RenamedAppRow(packageName: String, customName: String, onRemoveRenam
                     color = MaterialTheme.colorScheme.onBackground
             )
             Text(
-                    packageName,
+                    profileLabel?.let { "$it • $packageName" } ?: packageName,
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.secondary
             )

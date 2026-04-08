@@ -13,6 +13,7 @@ import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.model.appProfileKey
+import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
 import com.lu4p.fokuslauncher.utils.ProfileHeuristics
 
 /** Case-insensitive label order (matches drawer alphabetical mode). */
@@ -124,6 +125,9 @@ private fun buildProfileSectionsWithoutUserManager(
 /** Profile subtitle for an [AppInfo] row (null = personal / owner). Drawer-style naming. */
 fun profileOriginLabelForApp(context: Context, app: AppInfo): String? {
     val user = app.userHandle ?: return null
+    if (PrivateSpaceManager(context).isPrivateSpaceProfile(user)) {
+        return context.getString(R.string.drawer_section_private_space)
+    }
     val userManager =
             try {
                 context.getSystemService(Context.USER_SERVICE) as? UserManager

@@ -233,6 +233,26 @@ class HomeViewModelTest {
     }
 
     @Test
+    fun `hideApp removes only matching profile favorite`() {
+        val workFavorite =
+            FavoriteApp(label = "Chrome Work", packageName = "com.lu4p.chrome", profileKey = "42")
+        val personalFavorite =
+            FavoriteApp(label = "Chrome", packageName = "com.lu4p.chrome", profileKey = "0")
+        val favoritesFlow = kotlinx.coroutines.flow.MutableStateFlow(listOf(personalFavorite, workFavorite))
+        every { preferencesManager.favoritesFlow } returns favoritesFlow
+
+        val viewModel = createViewModel()
+        CoroutineScope(testDispatcher).launch { viewModel.favorites.collect { } }
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.hideApp(workFavorite)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify { appRepository.hideApp("com.lu4p.chrome", "42") }
+        coVerify { preferencesManager.setFavorites(listOf(personalFavorite)) }
+    }
+
+    @Test
     fun `initial state has formatted date`() {
         val viewModel = createViewModel(contextForClockAndBattery(mockBatteryStickyIntent()))
         testDispatcher.scheduler.advanceTimeBy(1100)

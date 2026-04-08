@@ -1,14 +1,13 @@
 package com.lu4p.fokuslauncher.data.database.entity
 
 import androidx.room.Entity
-import androidx.room.PrimaryKey
 
 /**
  * Represents an app that has been renamed by the user.
  */
-@Entity(tableName = "renamed_apps")
+@Entity(tableName = "renamed_apps", primaryKeys = ["packageName", "profileKey"])
 data class RenamedAppEntity(
-    @PrimaryKey
     val packageName: String,
+    val profileKey: String,
     val customName: String
 )

@@ -29,6 +29,7 @@ import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import com.lu4p.fokuslauncher.data.model.AppShortcutAction
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
+import com.lu4p.fokuslauncher.data.model.appMetadataKey
 import com.lu4p.fokuslauncher.data.model.appProfileKey
 import com.lu4p.fokuslauncher.data.model.SystemCategoryKeys
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
@@ -668,20 +669,21 @@ constructor(
     // --- Hidden Apps (Room) ---
 
     /** Returns a Flow of all hidden package names. */
-    fun getHiddenPackageNames(): Flow<List<String>> = appDao.getHiddenPackageNames()
+    fun getHiddenApps(): Flow<List<HiddenAppEntity>> = appDao.getHiddenApps()
 
     /** Hides an app by package name. */
-    suspend fun hideApp(packageName: String) {
-        appDao.hideApp(HiddenAppEntity(packageName))
+    suspend fun hideApp(packageName: String, profileKey: String) {
+        appDao.hideApp(HiddenAppEntity(packageName, profileKey))
     }
 
     /** Unhides an app by package name. */
-    suspend fun unhideApp(packageName: String) {
-        appDao.unhideApp(HiddenAppEntity(packageName))
+    suspend fun unhideApp(packageName: String, profileKey: String) {
+        appDao.unhideApp(HiddenAppEntity(packageName, profileKey))
     }
 
     /** Checks if an app is hidden. */
-    suspend fun isAppHidden(packageName: String): Boolean = appDao.isAppHidden(packageName)
+    suspend fun isAppHidden(packageName: String, profileKey: String): Boolean =
+            appDao.isAppHidden(packageName, profileKey)
 
     // --- Renamed Apps (Room) ---
 
@@ -689,17 +691,18 @@ constructor(
     fun getAllRenamedApps(): Flow<List<RenamedAppEntity>> = appDao.getAllRenamedApps()
 
     /** Renames an app with a custom display name. */
-    suspend fun renameApp(packageName: String, customName: String) {
-        appDao.renameApp(RenamedAppEntity(packageName, customName))
+    suspend fun renameApp(packageName: String, profileKey: String, customName: String) {
+        appDao.renameApp(RenamedAppEntity(packageName, profileKey, customName))
     }
 
     /** Removes a custom app name (reverts to system name). */
-    suspend fun removeRename(packageName: String) {
-        appDao.removeRename(packageName)
+    suspend fun removeRename(packageName: String, profileKey: String) {
+        appDao.removeRename(packageName, profileKey)
     }
 
     /** Returns the custom name for an app, or null if not renamed. */
-    suspend fun getCustomName(packageName: String): String? = appDao.getCustomName(packageName)
+    suspend fun getCustomName(packageName: String, profileKey: String): String? =
+            appDao.getCustomName(packageName, profileKey)
 
     // --- App Categories (Room) ---
 
@@ -712,9 +715,9 @@ constructor(
             }
 
     /** Assigns a category to an app. */
-    suspend fun setAppCategory(packageName: String, category: String) {
+    suspend fun setAppCategory(packageName: String, profileKey: String, category: String) {
         appDao.setAppCategory(
-                AppCategoryEntity(packageName, normalizeCategory(category))
+                AppCategoryEntity(packageName, profileKey, normalizeCategory(category))
         )
     }
 
@@ -760,7 +763,13 @@ constructor(
         val rawAssignments = appDao.getAllAppCategories().first()
         rawAssignments.forEach { assignment ->
             if (normalizeCategory(assignment.category).equals(oldNormalized, ignoreCase = true)) {
-                appDao.setAppCategory(AppCategoryEntity(assignment.packageName, newNormalized))
+                appDao.setAppCategory(
+                    AppCategoryEntity(
+                        packageName = assignment.packageName,
+                        profileKey = assignment.profileKey,
+                        category = newNormalized
+                    )
+                )
             }
         }
 
@@ -786,13 +795,16 @@ constructor(
         if (normalized.equals(ReservedCategoryNames.UNCATEGORIZED, ignoreCase = true)) return
 
         val assignmentsByPackage =
-                appDao.getAllAppCategories().first().associateBy { it.packageName }
+                appDao.getAllAppCategories().first().associateBy {
+                    appMetadataKey(it.packageName, it.profileKey)
+                }
 
         // Include apps whose category is only from system inference (no Room row); otherwise the
         // chip/list entry comes back immediately after removing the definition.
         val appsToUncategorize =
                 getInstalledApps().mapNotNull { app ->
-                    val stored = assignmentsByPackage[app.packageName]
+                    val stored =
+                            assignmentsByPackage[appMetadataKey(app.packageName, app.userHandle)]
                     val effective =
                             if (stored != null) {
                                 normalizeCategory(stored.category)
@@ -800,7 +812,11 @@ constructor(
                                 normalizeCategory(app.category)
                             }
                     if (effective.equals(normalized, ignoreCase = true)) {
-                        AppCategoryEntity(app.packageName, "")
+                        AppCategoryEntity(
+                            packageName = app.packageName,
+                            profileKey = appProfileKey(app.userHandle),
+                            category = ""
+                        )
                     } else {
                         null
                     }
@@ -827,8 +843,8 @@ constructor(
     }
 
     /** Returns the assigned category for an app, or null. */
-    suspend fun getAppCategory(packageName: String): String? =
-            appDao.getAppCategory(packageName)?.let(::normalizeCategory)
+    suspend fun getAppCategory(packageName: String, profileKey: String): String? =
+            appDao.getAppCategory(packageName, profileKey)?.let(::normalizeCategory)
 
     /** Clears all app-specific data (hidden apps, renamed apps, categories). */
     suspend fun clearAllAppData() {

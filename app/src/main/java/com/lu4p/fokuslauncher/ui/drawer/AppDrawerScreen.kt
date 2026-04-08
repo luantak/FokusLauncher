@@ -86,6 +86,7 @@ import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
 import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
+import com.lu4p.fokuslauncher.data.model.appMetadataKey
 import com.lu4p.fokuslauncher.data.model.appListStableKey
 import com.lu4p.fokuslauncher.utils.DotSearchSyntax
 import com.lu4p.fokuslauncher.ui.components.CategoryChips
@@ -703,9 +704,10 @@ fun AppDrawerScreen(
                     viewModel.addToHomeScreen(it)
                     closeAndReset()
                 },
-                onRename = { newName -> viewModel.renameApp(app.packageName, newName) },
+                onRename = { newName -> viewModel.renameApp(app, newName) },
                 onHide = { viewModel.hideApp(it) },
-                isOnHomeScreen = app.packageName in uiState.favoritePackageNames
+                isOnHomeScreen =
+                        appMetadataKey(app.packageName, app.userHandle) in uiState.favoriteAppKeys
         )
     }
 

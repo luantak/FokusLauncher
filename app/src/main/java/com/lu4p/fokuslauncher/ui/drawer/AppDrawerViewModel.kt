@@ -11,6 +11,7 @@ import com.lu4p.fokuslauncher.data.model.DotSearchTargetPreference
 import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
 import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
+import com.lu4p.fokuslauncher.data.model.appMetadataKey
 import com.lu4p.fokuslauncher.data.model.appProfileKey
 import com.lu4p.fokuslauncher.data.model.drawerOpenCountKey
 import com.lu4p.fokuslauncher.data.repository.AppRepository
@@ -56,8 +57,8 @@ data class AppDrawerUiState(
         val privateSpaceApps: List<AppInfo> = emptyList(),
         /** Private space apps filtered by the current search query – used for display. */
         val filteredPrivateSpaceApps: List<AppInfo> = emptyList(),
-        /** Package names of apps already on the home screen. */
-        val favoritePackageNames: Set<String> = emptySet(),
+        /** Profile-aware app keys of apps already on the home screen. */
+        val favoriteAppKeys: Set<String> = emptySet(),
         val selectedCategoryForActions: String? = null,
         /**
          * Vertical category sidebar layout (optional setting). When true, the drawer omits the
@@ -203,7 +204,8 @@ constructor(
             preferencesManager.favoritesFlow.collect { favorites ->
                 _uiState.update { state ->
                     state.copy(
-                        favoritePackageNames = favorites.map { it.packageName }.toSet()
+                        favoriteAppKeys =
+                            favorites.map { appMetadataKey(it.packageName, it.profileKey) }.toSet()
                     )
                 }
             }
@@ -342,15 +344,22 @@ constructor(
     private fun observeHiddenAndRenamed() {
         viewModelScope.launch {
             combine(
-                            appRepository.getHiddenPackageNames(),
+                            appRepository.getHiddenApps(),
                             appRepository.getAllRenamedApps(),
                             appRepository.getAllAppCategories(),
                             appRepository.getAllCategoryDefinitions()
-                    ) { hiddenNames, renamedApps, categories, categoryDefinitions ->
+                    ) { hiddenApps, renamedApps, categories, categoryDefinitions ->
                 CombinedCategoryState(
-                        hiddenSet = hiddenNames.toSet(),
-                        renameMap = renamedApps.associate { it.packageName to it.customName },
-                        categoryMap = categories.associate { it.packageName to it.category },
+                        hiddenSet =
+                                hiddenApps.map { appMetadataKey(it.packageName, it.profileKey) }.toSet(),
+                        renameMap =
+                                renamedApps.associate {
+                                    appMetadataKey(it.packageName, it.profileKey) to it.customName
+                                },
+                        categoryMap =
+                                categories.associate {
+                                    appMetadataKey(it.packageName, it.profileKey) to it.category
+                                },
                         definedCategories = categoryDefinitions.map { it.name }
                 )
             }
@@ -406,16 +415,12 @@ constructor(
             val removedSnapshot =
                     synchronized(optimisticallyRemovedKeys) { optimisticallyRemovedKeys.toSet() }
             val visible =
-                    base
-                            .filter { it.packageName !in hiddenSet }
-                            .map { app ->
-                                val customName = renameMap[app.packageName]
-                                val customCategory = categoryMap[app.packageName]
-                                app.copy(
-                                        label = customName ?: app.label,
-                                        category = customCategory ?: app.category
-                                )
-                            }
+                    applyMetadataOverlays(
+                                    apps = base,
+                                    hiddenSet = hiddenSet,
+                                    renameMap = renameMap,
+                                    categoryMap = categoryMap
+                            )
                             .filterNot { app ->
                                 drawerOpenCountKey(app.packageName, app.userHandle) in
                                         removedSnapshot
@@ -423,9 +428,15 @@ constructor(
 
             val stateSnapshot = _uiState.value
             val privateAppsFiltered =
-                    stateSnapshot.privateSpaceApps.filterNot { app ->
-                        drawerOpenCountKey(app.packageName, app.userHandle) in removedSnapshot
-                    }
+                    applyMetadataOverlays(
+                                    apps = stateSnapshot.privateSpaceApps,
+                                    hiddenSet = hiddenSet,
+                                    renameMap = renameMap,
+                                    categoryMap = categoryMap
+                            )
+                            .filterNot { app ->
+                                drawerOpenCountKey(app.packageName, app.userHandle) in removedSnapshot
+                            }
             val categories =
                     deriveCategories(
                             apps = visible,
@@ -850,7 +861,7 @@ constructor(
 
     fun hideApp(app: AppInfo) {
         viewModelScope.launch {
-            appRepository.hideApp(app.packageName)
+            appRepository.hideApp(app.packageName, appProfileKey(app.userHandle))
             // The Flow observer in observeHiddenAndRenamed will rebuild the list
         }
     }
@@ -859,23 +870,26 @@ constructor(
         viewModelScope.launch {
             if (app.userHandle != null) return@launch
             val current = preferencesManager.favoritesFlow.first().toMutableList()
-            if (current.any { it.packageName == app.packageName }) return@launch
+            if (current.any { appMetadataKey(it.packageName, it.profileKey) == appMetadataKey(app.packageName, app.userHandle) }) {
+                return@launch
+            }
             current.add(
                     0,
                     FavoriteApp(
                             label = app.label,
                             packageName = app.packageName,
                             iconName = "circle",
-                            iconPackage = app.packageName
+                            iconPackage = app.packageName,
+                            profileKey = appProfileKey(app.userHandle)
                     )
             )
             preferencesManager.setFavorites(current)
         }
     }
 
-    fun renameApp(packageName: String, newName: String) {
+    fun renameApp(app: AppInfo, newName: String) {
         viewModelScope.launch {
-            appRepository.renameApp(packageName, newName)
+            appRepository.renameApp(app.packageName, appProfileKey(app.userHandle), newName)
             // The Flow observer in observeHiddenAndRenamed will rebuild the list
         }
     }
@@ -926,7 +940,12 @@ constructor(
             val apps =
                     if (unlocked) {
                         sortPrivateSpaceAppsCachedSuspend(
-                                privateSpaceManager.getPrivateSpaceApps()
+                                applyMetadataOverlays(
+                                        apps = privateSpaceManager.getPrivateSpaceApps(),
+                                        hiddenSet = latestHiddenSet,
+                                        renameMap = latestRenameMap,
+                                        categoryMap = latestCategoryMap
+                                )
                         )
                     } else {
                         emptyList()
@@ -1085,9 +1104,28 @@ constructor(
         var h = apps.size
         for (a in apps) {
             h = 31 * h + a.packageName.hashCode()
+            h = 31 * h + a.label.hashCode()
+            h = 31 * h + a.category.hashCode()
             h = 31 * h + (a.userHandle?.hashCode() ?: 0)
         }
         return h
+    }
+
+    private fun applyMetadataOverlays(
+            apps: List<AppInfo>,
+            hiddenSet: Set<String>,
+            renameMap: Map<String, String>,
+            categoryMap: Map<String, String>
+    ): List<AppInfo> {
+        return apps
+                .filterNot { app -> appMetadataKey(app.packageName, app.userHandle) in hiddenSet }
+                .map { app ->
+                    val metadataKey = appMetadataKey(app.packageName, app.userHandle)
+                    app.copy(
+                            label = renameMap[metadataKey] ?: app.label,
+                            category = categoryMap[metadataKey] ?: app.category
+                    )
+                }
     }
 
     /**
