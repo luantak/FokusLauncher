@@ -8,6 +8,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
@@ -45,49 +46,23 @@ fun HomeAppMenuSheet(
             onRename = onRename,
             editIconContentDescription = stringResource(R.string.action_rename),
     ) {
-        SheetActionRow(
-                label = stringResource(R.string.action_remove_from_home),
-                onClick = {
-                    onRemoveFromHome()
-                    onDismiss()
-                },
-                icon = Icons.Default.Close,
-        )
-
-        SheetActionRow(
-                label = stringResource(R.string.settings_edit_home_screen),
-                onClick = {
-                    onEditHomeScreen()
-                    onDismiss()
-                },
-                icon = Icons.Default.Home,
-        )
-
-        SheetActionRow(
-                label = stringResource(R.string.action_app_info),
-                onClick = {
-                    onAppInfo()
-                    onDismiss()
-                },
-                icon = Icons.Default.Info,
-        )
-
-        SheetActionRow(
-                label = stringResource(R.string.action_hide),
-                onClick = {
-                    onHide()
-                    onDismiss()
-                },
-                icon = Icons.Default.VisibilityOff,
-        )
-
-        SheetActionRow(
-                label = stringResource(R.string.action_uninstall),
-                onClick = {
-                    onUninstall()
-                    onDismiss()
-                },
-                icon = Icons.Default.Delete,
-        )
+        val actions: List<Triple<Int, ImageVector, () -> Unit>> =
+                listOf(
+                        Triple(R.string.action_remove_from_home, Icons.Default.Close, onRemoveFromHome),
+                        Triple(R.string.settings_edit_home_screen, Icons.Default.Home, onEditHomeScreen),
+                        Triple(R.string.action_app_info, Icons.Default.Info, onAppInfo),
+                        Triple(R.string.action_hide, Icons.Default.VisibilityOff, onHide),
+                        Triple(R.string.action_uninstall, Icons.Default.Delete, onUninstall),
+                )
+        actions.forEach { (labelRes, icon, action) ->
+            SheetActionRow(
+                    label = stringResource(labelRes),
+                    onClick = {
+                        action()
+                        onDismiss()
+                    },
+                    icon = icon,
+            )
+        }
     }
 }

@@ -239,100 +239,97 @@ constructor(
                                 categoryDrawerIconOverrides = iconOverrides,
                         )
                     }
-            combine(
-                            categoryStateFlow,
-                            homeWidgetItemsFlow,
-                            drawerPrefsFlow,
-                            lookPrefsFlow,
-                            lockRailPrefsFlow,
-                    ) { left, homeWidgetItems, drawer, look, lockRail ->
-                        CombinedSettingsInputs(left, homeWidgetItems, drawer, look, lockRail)
-                    }.collectLatest { (left, homeWidgetItems, drawer, look, lockRail) ->
-                        val privateSpaceUnlocked = privateSpaceManager.isPrivateSpaceUnlocked()
-                        val privateProfileKey =
-                                privateSpaceManager
-                                        .getPrivateSpaceProfile()
-                                        ?.takeIf { it != Process.myUserHandle() }
-                                        ?.let(::appProfileKey)
-                        val categoryMap = left.appCategories
-                        val installedApps =
-                                appRepository.getInstalledAppsOnBackground().map { app ->
-                                    app.copy(
-                                            category =
-                                                    categoryMap[
-                                                                    appMetadataKey(
-                                                                            app.packageName,
-                                                                            app.userHandle,
-                                                                    )
-                                                            ]
-                                                            ?: app.category,
-                                    )
-                                }
-                        val privateApps =
-                                if (privateSpaceUnlocked) {
-                                    privateSpaceManager.getPrivateSpaceApps()
-                                } else {
-                                    emptyList()
-                                }
-                        val metadataLookupApps = installedApps + privateApps
-                        val allShortcutActions = appRepository.getAllShortcutActionsOnBackground()
-                        val hiddenLabels =
-                                metadataLookupApps.associate {
-                                    appMetadataKey(it.packageName, it.userHandle) to it
-                                }
-                        _uiState.value =
-                                SettingsUiState(
-                                        hiddenApps =
-                                                hiddenInfosForSettings(
-                                                        left.hiddenApps,
-                                                        hiddenLabels,
-                                                        privateSpaceUnlocked,
-                                                        privateProfileKey,
-                                                ),
-                                        renamedApps =
-                                                renamedInfosForSettings(
-                                                        left.renamedApps,
-                                                        hiddenLabels,
-                                                        privateSpaceUnlocked,
-                                                        privateProfileKey,
-                                                ),
-                                        appCategories = left.appCategories,
-                                        categoryDefinitions = left.categoryDefinitions,
-                                        favorites = left.favorites,
-                                        rightSideShortcuts = left.rightSideShortcuts,
-                                        swipeLeftTarget = left.swipeLeft,
-                                        swipeRightTarget = drawer.swipeRightTarget,
-                                        preferredWeatherAppPackage =
-                                                drawer.preferredWeatherAppPackage,
-                                        preferredClockAppPackage =
-                                                homeWidgetItems.preferredClockAppPackage,
-                                        preferredCalendarAppPackage =
-                                                homeWidgetItems.preferredCalendarAppPackage,
-                                        showStatusBar = drawer.showStatusBar,
-                                        showHomeClock = homeWidgetItems.showClock,
-                                        showHomeDate = homeWidgetItems.showDate,
-                                        showHomeWeather = homeWidgetItems.showWeather,
-                                        showHomeBattery = homeWidgetItems.showBattery,
-                                        homeDateFormatStyle = homeWidgetItems.homeDateFormatStyle,
-                                        drawerSidebarCategories =
-                                                drawer.drawerSidebarCategories,
-                                        drawerCategorySidebarOnLeft =
-                                                lockRail.drawerCategorySidebarOnLeft,
-                                        categoryDrawerIconOverrides =
-                                                lockRail.categoryDrawerIconOverrides,
-                                        drawerAppSortMode = drawer.drawerAppSortMode,
-                                        homeAlignment = look.homeAlignment,
-                                        launcherFontFamilyName = look.launcherFontFamilyName,
-                                        appLocaleTag = look.appLocaleTag,
-                                        allowLandscapeRotation = look.allowLandscapeRotation,
-                                        doubleTapEmptyLock = lockRail.doubleTapEmptyLock,
-                                        longLockReturnHome = lockRail.longLockReturnHome,
-                                        longLockReturnHomeThresholdMinutes =
-                                                lockRail.longLockReturnHomeThresholdMinutes,
-                                        allApps = installedApps,
-                                        allShortcutActions = allShortcutActions,
-                                )
+            val drawerLookLockFlow =
+                    combine(drawerPrefsFlow, lookPrefsFlow, lockRailPrefsFlow) {
+                            drawer,
+                            look,
+                            lockRail ->
+                        Triple(drawer, look, lockRail)
                     }
+            combine(categoryStateFlow, homeWidgetItemsFlow, drawerLookLockFlow) {
+                    left,
+                    homeWidgetItems,
+                    drawerLookLock ->
+                val (drawer, look, lockRail) = drawerLookLock
+                val privateSpaceUnlocked = privateSpaceManager.isPrivateSpaceUnlocked()
+                val privateProfileKey =
+                        privateSpaceManager
+                                .getPrivateSpaceProfile()
+                                ?.takeIf { it != Process.myUserHandle() }
+                                ?.let(::appProfileKey)
+                val categoryMap = left.appCategories
+                val installedApps =
+                        appRepository.getInstalledAppsOnBackground().map { app ->
+                            app.copy(
+                                    category =
+                                            categoryMap[
+                                                            appMetadataKey(
+                                                                    app.packageName,
+                                                                    app.userHandle,
+                                                            )
+                                                    ]
+                                                    ?: app.category,
+                            )
+                        }
+                val privateApps =
+                        if (privateSpaceUnlocked) {
+                            privateSpaceManager.getPrivateSpaceApps()
+                        } else {
+                            emptyList()
+                        }
+                val metadataLookupApps = installedApps + privateApps
+                val allShortcutActions = appRepository.getAllShortcutActionsOnBackground()
+                val hiddenLabels =
+                        metadataLookupApps.associate {
+                            appMetadataKey(it.packageName, it.userHandle) to it
+                        }
+                SettingsUiState(
+                        hiddenApps =
+                                hiddenInfosForSettings(
+                                        left.hiddenApps,
+                                        hiddenLabels,
+                                        privateSpaceUnlocked,
+                                        privateProfileKey,
+                                ),
+                        renamedApps =
+                                renamedInfosForSettings(
+                                        left.renamedApps,
+                                        hiddenLabels,
+                                        privateSpaceUnlocked,
+                                        privateProfileKey,
+                                ),
+                        appCategories = left.appCategories,
+                        categoryDefinitions = left.categoryDefinitions,
+                        favorites = left.favorites,
+                        rightSideShortcuts = left.rightSideShortcuts,
+                        swipeLeftTarget = left.swipeLeft,
+                        swipeRightTarget = drawer.swipeRightTarget,
+                        preferredWeatherAppPackage = drawer.preferredWeatherAppPackage,
+                        preferredClockAppPackage = homeWidgetItems.preferredClockAppPackage,
+                        preferredCalendarAppPackage =
+                                homeWidgetItems.preferredCalendarAppPackage,
+                        showStatusBar = drawer.showStatusBar,
+                        showHomeClock = homeWidgetItems.showClock,
+                        showHomeDate = homeWidgetItems.showDate,
+                        showHomeWeather = homeWidgetItems.showWeather,
+                        showHomeBattery = homeWidgetItems.showBattery,
+                        homeDateFormatStyle = homeWidgetItems.homeDateFormatStyle,
+                        drawerSidebarCategories = drawer.drawerSidebarCategories,
+                        drawerCategorySidebarOnLeft = lockRail.drawerCategorySidebarOnLeft,
+                        categoryDrawerIconOverrides = lockRail.categoryDrawerIconOverrides,
+                        drawerAppSortMode = drawer.drawerAppSortMode,
+                        homeAlignment = look.homeAlignment,
+                        launcherFontFamilyName = look.launcherFontFamilyName,
+                        appLocaleTag = look.appLocaleTag,
+                        allowLandscapeRotation = look.allowLandscapeRotation,
+                        doubleTapEmptyLock = lockRail.doubleTapEmptyLock,
+                        longLockReturnHome = lockRail.longLockReturnHome,
+                        longLockReturnHomeThresholdMinutes =
+                                lockRail.longLockReturnHomeThresholdMinutes,
+                        allApps = installedApps,
+                        allShortcutActions = allShortcutActions,
+                )
+            }.collectLatest { _uiState.value = it }
         }
     }
 
@@ -385,14 +382,6 @@ constructor(
             val longLockReturnHomeThresholdMinutes: Int,
             val drawerCategorySidebarOnLeft: Boolean,
             val categoryDrawerIconOverrides: Map<String, String>,
-    )
-
-    private data class CombinedSettingsInputs(
-            val categoryState: CategoryState,
-            val homeWidgetItems: HomeWidgetItemSettings,
-            val drawer: DrawerPrefs,
-            val look: LookPrefs,
-            val lockRail: LockRailPrefs,
     )
 
     private inline fun <T, R> mapEntitiesForSettings(

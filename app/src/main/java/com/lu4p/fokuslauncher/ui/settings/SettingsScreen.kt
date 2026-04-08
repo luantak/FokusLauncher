@@ -98,7 +98,35 @@ import com.lu4p.fokuslauncher.ui.theme.composeFontFamilyFromStoredName
 import com.lu4p.fokuslauncher.ui.util.OnResumeEffect
 import com.lu4p.fokuslauncher.ui.util.formatShortcutTargetDisplay
 import android.app.Activity
+import androidx.annotation.StringRes
 import androidx.compose.ui.graphics.vector.ImageVector
+
+private data class SubpageNavRow(
+        @param:StringRes val labelRes: Int,
+        val subtitle: String? = null,
+        val onClick: () -> Unit,
+)
+
+private data class SwipeTargetPick(
+        val pickerKey: String,
+        @param:StringRes val labelRes: Int,
+        val target: ShortcutTarget?,
+        val onClear: () -> Unit,
+)
+
+private data class PreferredAppPickerRow(
+        @param:StringRes val labelRes: Int,
+        val packageName: String,
+        val pickerKey: String,
+        val onClear: () -> Unit,
+)
+
+private data class DeviceControlToggleRow(
+        @param:StringRes val labelRes: Int,
+        val subtitle: String,
+        val checked: Boolean,
+        val onCheckedChange: (Boolean) -> Unit,
+)
 
 private data class CommunityLink(
         val icon: ImageVector,
@@ -304,6 +332,49 @@ private fun SettingsScreenContent(
         onShowAppPicker: (String) -> Unit,
         onShowResetConfirm: () -> Unit,
 ) {
+    val homeScreenSubpageRows =
+            listOf(
+                    SubpageNavRow(
+                            R.string.settings_home_widgets,
+                            stringResource(R.string.settings_home_widgets_subtitle),
+                            onOpenHomeWidgetsSettings,
+                    ),
+                    SubpageNavRow(
+                            R.string.settings_accessibility,
+                            stringResource(R.string.settings_accessibility_subtitle),
+                            onOpenDeviceControlSettings,
+                    ),
+                    SubpageNavRow(
+                            R.string.settings_edit_home_screen,
+                            onClick = onEditHomeScreen,
+                    ),
+                    SubpageNavRow(
+                            R.string.settings_edit_shortcuts,
+                            pluralStringResource(
+                                    R.plurals.settings_shortcuts_configured,
+                                    uiState.rightSideShortcuts.size,
+                                    uiState.rightSideShortcuts.size
+                            ),
+                            onEditRightShortcuts,
+                    ),
+            )
+    val drawerSubpageRows =
+            listOf(
+                    SubpageNavRow(
+                            R.string.settings_edit_app_categories,
+                            pluralStringResource(
+                                    R.plurals.settings_categories_count,
+                                    uiState.categoryDefinitions.size,
+                                    uiState.categoryDefinitions.size
+                            ),
+                            onEditCategories,
+                    ),
+                    SubpageNavRow(
+                            R.string.settings_dot_search_title,
+                            stringResource(R.string.settings_dot_search_subtitle),
+                            onDrawerDotSearchSettings,
+                    ),
+            )
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         item { SectionHeader(stringResource(R.string.settings_section_appearance)) }
         items(
@@ -357,43 +428,15 @@ private fun SettingsScreenContent(
         item { SettingsDivider() }
 
         item { SectionHeader(stringResource(R.string.settings_section_home_screen)) }
-        item {
+        items(
+                homeScreenSubpageRows,
+                key = { it.labelRes },
+        ) { row ->
             SettingsRow(
-                    label = stringResource(R.string.settings_home_widgets),
-                    subtitle = stringResource(R.string.settings_home_widgets_subtitle),
+                    label = stringResource(row.labelRes),
+                    subtitle = row.subtitle,
                     verticalPadding = 14.dp,
-                    onClick = onOpenHomeWidgetsSettings,
-                    trailing = { SubpageChevron() },
-            )
-        }
-        item {
-            SettingsRow(
-                    label = stringResource(R.string.settings_accessibility),
-                    subtitle = stringResource(R.string.settings_accessibility_subtitle),
-                    verticalPadding = 14.dp,
-                    onClick = onOpenDeviceControlSettings,
-                    trailing = { SubpageChevron() },
-            )
-        }
-        item {
-            SettingsRow(
-                    label = stringResource(R.string.settings_edit_home_screen),
-                    verticalPadding = 14.dp,
-                    onClick = onEditHomeScreen,
-                    trailing = { SubpageChevron() },
-            )
-        }
-        item {
-            SettingsRow(
-                    label = stringResource(R.string.settings_edit_shortcuts),
-                    subtitle =
-                            pluralStringResource(
-                                    R.plurals.settings_shortcuts_configured,
-                                    uiState.rightSideShortcuts.size,
-                                    uiState.rightSideShortcuts.size
-                            ),
-                    verticalPadding = 14.dp,
-                    onClick = onEditRightShortcuts,
+                    onClick = row.onClick,
                     trailing = { SubpageChevron() },
             )
         }
@@ -415,48 +458,48 @@ private fun SettingsScreenContent(
                     onClear = { viewModel.setPreferredWeatherApp("") },
             )
         }
-        item {
+        items(
+                listOf(
+                        SwipeTargetPick(
+                                "swipeLeft",
+                                R.string.settings_swipe_left,
+                                uiState.swipeLeftTarget,
+                                { viewModel.setSwipeLeftTarget(null) },
+                        ),
+                        SwipeTargetPick(
+                                "swipeRight",
+                                R.string.settings_swipe_right,
+                                uiState.swipeRightTarget,
+                                { viewModel.setSwipeRightTarget(null) },
+                        ),
+                ),
+                key = { it.pickerKey },
+        ) { row ->
             ShortcutTargetRow(
-                    label = stringResource(R.string.settings_swipe_left),
+                    label = stringResource(row.labelRes),
                     currentTarget =
                             formatShortcutTarget(
                                     context,
                                     resources,
-                                    uiState.swipeLeftTarget,
+                                    row.target,
                                     uiState.allApps
                             ),
-                    onPickApp = { onShowAppPicker("swipeLeft") },
-                    onClear = { viewModel.setSwipeLeftTarget(null) }
-            )
-        }
-        item {
-            ShortcutTargetRow(
-                    label = stringResource(R.string.settings_swipe_right),
-                    currentTarget =
-                            formatShortcutTarget(
-                                    context,
-                                    resources,
-                                    uiState.swipeRightTarget,
-                                    uiState.allApps
-                            ),
-                    onPickApp = { onShowAppPicker("swipeRight") },
-                    onClear = { viewModel.setSwipeRightTarget(null) }
+                    onPickApp = { onShowAppPicker(row.pickerKey) },
+                    onClear = row.onClear,
             )
         }
         item { SettingsDivider() }
 
         item { SectionHeader(stringResource(R.string.settings_section_app_drawer)) }
-        item {
+        items(
+                drawerSubpageRows,
+                key = { it.labelRes },
+        ) { row ->
             SettingsRow(
-                    label = stringResource(R.string.settings_edit_app_categories),
-                    subtitle =
-                            pluralStringResource(
-                                    R.plurals.settings_categories_count,
-                                    uiState.categoryDefinitions.size,
-                                    uiState.categoryDefinitions.size
-                            ),
+                    label = stringResource(row.labelRes),
+                    subtitle = row.subtitle,
                     verticalPadding = 14.dp,
-                    onClick = onEditCategories,
+                    onClick = row.onClick,
                     trailing = { SubpageChevron() },
             )
         }
@@ -481,15 +524,6 @@ private fun SettingsScreenContent(
                     currentMode = uiState.drawerAppSortMode,
                     showCustomSortOption = uiState.drawerSidebarCategories,
                     onModeChanged = viewModel::setDrawerAppSortMode
-            )
-        }
-        item {
-            SettingsRow(
-                    label = stringResource(R.string.settings_dot_search_title),
-                    subtitle = stringResource(R.string.settings_dot_search_subtitle),
-                    verticalPadding = 14.dp,
-                    onClick = onDrawerDotSearchSettings,
-                    trailing = { SubpageChevron() },
             )
         }
         item { SettingsDivider() }
@@ -699,39 +733,37 @@ fun HomeWidgetsSettingsScreen(
         )
 
         LazyColumn(modifier = Modifier.fillMaxSize()) {
-            item {
+            items(
+                    listOf(
+                            Triple(R.string.settings_show_home_clock, uiState.showHomeClock, viewModel::setShowHomeClock),
+                            Triple(R.string.settings_show_home_date, uiState.showHomeDate, viewModel::setShowHomeDate),
+                    ),
+                    key = { it.first },
+            ) { (labelRes, checked, onChange) ->
                 SettingsToggleRow(
-                        label = stringResource(R.string.settings_show_home_clock),
-                        checked = uiState.showHomeClock,
-                        onCheckedChange = { viewModel.setShowHomeClock(it) }
-                )
-            }
-            item {
-                SettingsToggleRow(
-                        label = stringResource(R.string.settings_show_home_date),
-                        checked = uiState.showHomeDate,
-                        onCheckedChange = { viewModel.setShowHomeDate(it) }
+                        label = stringResource(labelRes),
+                        checked = checked,
+                        onCheckedChange = onChange,
                 )
             }
             item {
                 HomeDateFormatDropdown(
                         currentStyle = uiState.homeDateFormatStyle,
                         enabled = uiState.showHomeDate,
-                        onStyleSelected = { viewModel.setHomeDateFormatStyle(it) }
+                        onStyleSelected = viewModel::setHomeDateFormatStyle,
                 )
             }
-            item {
+            items(
+                    listOf(
+                            Triple(R.string.settings_show_home_weather, uiState.showHomeWeather, viewModel::setShowHomeWeather),
+                            Triple(R.string.settings_show_home_battery, uiState.showHomeBattery, viewModel::setShowHomeBattery),
+                    ),
+                    key = { it.first },
+            ) { (labelRes, checked, onChange) ->
                 SettingsToggleRow(
-                        label = stringResource(R.string.settings_show_home_weather),
-                        checked = uiState.showHomeWeather,
-                        onCheckedChange = { viewModel.setShowHomeWeather(it) }
-                )
-            }
-            item {
-                SettingsToggleRow(
-                        label = stringResource(R.string.settings_show_home_battery),
-                        checked = uiState.showHomeBattery,
-                        onCheckedChange = { viewModel.setShowHomeBattery(it) }
+                        label = stringResource(labelRes),
+                        checked = checked,
+                        onCheckedChange = onChange,
                 )
             }
             item { SettingsDivider() }
@@ -747,36 +779,35 @@ fun HomeWidgetsSettingsScreen(
                         onClear = { viewModel.setPreferredWeatherApp("") },
                 )
             }
-            item {
-                val clockLabel =
-                        formatPreferredAppLabel(
-                                context,
-                                resources,
-                                uiState.preferredClockAppPackage,
-                                uiState.allApps,
-                                ::formatWidgetAppEmptyLabel,
-                        )
+            items(
+                    listOf(
+                            PreferredAppPickerRow(
+                                    R.string.settings_widget_clock_app,
+                                    uiState.preferredClockAppPackage,
+                                    "clock",
+                                    { viewModel.setPreferredClockApp("") },
+                            ),
+                            PreferredAppPickerRow(
+                                    R.string.settings_widget_calendar_app,
+                                    uiState.preferredCalendarAppPackage,
+                                    "calendar",
+                                    { viewModel.setPreferredCalendarApp("") },
+                            ),
+                    ),
+                    key = { it.labelRes },
+            ) { row ->
                 ShortcutTargetRow(
-                        label = stringResource(R.string.settings_widget_clock_app),
-                        currentTarget = clockLabel,
-                        onPickApp = { showAppPickerFor.value = "clock" },
-                        onClear = { viewModel.setPreferredClockApp("") }
-                )
-            }
-            item {
-                val calendarLabel =
-                        formatPreferredAppLabel(
-                                context,
-                                resources,
-                                uiState.preferredCalendarAppPackage,
-                                uiState.allApps,
-                                ::formatWidgetAppEmptyLabel,
-                        )
-                ShortcutTargetRow(
-                        label = stringResource(R.string.settings_widget_calendar_app),
-                        currentTarget = calendarLabel,
-                        onPickApp = { showAppPickerFor.value = "calendar" },
-                        onClear = { viewModel.setPreferredCalendarApp("") }
+                        label = stringResource(row.labelRes),
+                        currentTarget =
+                                formatPreferredAppLabel(
+                                        context,
+                                        resources,
+                                        row.packageName,
+                                        uiState.allApps,
+                                        ::formatWidgetAppEmptyLabel,
+                                ),
+                        onPickApp = { showAppPickerFor.value = row.pickerKey },
+                        onClear = row.onClear,
                 )
             }
         }
@@ -824,6 +855,22 @@ fun DeviceControlSettingsScreen(
         }
     }
 
+    val deviceControlToggleRows =
+            listOf(
+                    DeviceControlToggleRow(
+                            R.string.settings_double_tap_to_lock,
+                            stringResource(R.string.settings_double_tap_to_lock_subtitle),
+                            uiState.doubleTapEmptyLock,
+                            viewModel::setDoubleTapEmptyLock,
+                    ),
+                    DeviceControlToggleRow(
+                            R.string.settings_return_home_after_long_lock,
+                            stringResource(R.string.settings_return_home_after_long_lock_subtitle),
+                            uiState.longLockReturnHome,
+                            viewModel::setLongLockReturnHome,
+                    ),
+            )
+
     Column(
             modifier = Modifier
                     .fillMaxSize()
@@ -854,27 +901,16 @@ fun DeviceControlSettingsScreen(
                 )
             }
 
-            item {
+            items(
+                    deviceControlToggleRows,
+                    key = { it.labelRes },
+            ) { row ->
                 SettingsToggleRow(
-                        label = stringResource(R.string.settings_double_tap_to_lock),
-                        subtitle =
-                                stringResource(R.string.settings_double_tap_to_lock_subtitle),
-                        checked = uiState.doubleTapEmptyLock,
-                        onCheckedChange = { enabled -> viewModel.setDoubleTapEmptyLock(enabled) },
-                        enabled = lockAccessibilityOn
-                )
-            }
-
-            item {
-                SettingsToggleRow(
-                        label = stringResource(R.string.settings_return_home_after_long_lock),
-                        subtitle =
-                                stringResource(
-                                        R.string.settings_return_home_after_long_lock_subtitle
-                                ),
-                        checked = uiState.longLockReturnHome,
-                        onCheckedChange = { enabled -> viewModel.setLongLockReturnHome(enabled) },
-                        enabled = lockAccessibilityOn
+                        label = stringResource(row.labelRes),
+                        subtitle = row.subtitle,
+                        checked = row.checked,
+                        onCheckedChange = row.onCheckedChange,
+                        enabled = lockAccessibilityOn,
                 )
             }
 
@@ -903,23 +939,6 @@ private fun languageAutonym(localeTag: String): String {
     }
 }
 
-@Composable
-private fun homeDateFormatStyleLabel(style: HomeDateFormatStyle): String =
-        when (style) {
-            HomeDateFormatStyle.SYSTEM_DEFAULT ->
-                    stringResource(R.string.settings_home_date_format_system)
-            HomeDateFormatStyle.US_SLASHES ->
-                    stringResource(R.string.settings_home_date_format_us_slashes)
-            HomeDateFormatStyle.EU_SLASHES ->
-                    stringResource(R.string.settings_home_date_format_eu_slashes)
-            HomeDateFormatStyle.EU_DOTS ->
-                    stringResource(R.string.settings_home_date_format_eu_dots)
-            HomeDateFormatStyle.WEEKDAY_MONTH_ABBR ->
-                    stringResource(R.string.settings_home_date_format_weekday_month)
-            HomeDateFormatStyle.MONTH_LONG ->
-                    stringResource(R.string.settings_home_date_format_month_long)
-        }
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HomeDateFormatDropdown(
@@ -927,17 +946,7 @@ private fun HomeDateFormatDropdown(
         enabled: Boolean,
         onStyleSelected: (HomeDateFormatStyle) -> Unit
 ) {
-    val options =
-            remember {
-                listOf(
-                        HomeDateFormatStyle.SYSTEM_DEFAULT,
-                        HomeDateFormatStyle.US_SLASHES,
-                        HomeDateFormatStyle.EU_SLASHES,
-                        HomeDateFormatStyle.EU_DOTS,
-                        HomeDateFormatStyle.WEEKDAY_MONTH_ABBR,
-                        HomeDateFormatStyle.MONTH_LONG
-                )
-            }
+    val options = remember { HomeDateFormatStyle.entries }
     var expanded by remember { mutableStateOf(false) }
     val onDateFormatExpandedChange =
             rememberBooleanChangeWithSystemSound { newExpanded ->
@@ -948,12 +957,12 @@ private fun HomeDateFormatDropdown(
             options = options,
             expanded = expanded,
             onExpandedChange = onDateFormatExpandedChange,
-            selectedDisplayText = homeDateFormatStyleLabel(currentStyle),
+            selectedDisplayText = stringResource(currentStyle.labelRes),
             fieldEnabled = enabled,
             menuExpanded = expanded && enabled,
             itemContent = { style ->
                 Text(
-                        text = homeDateFormatStyleLabel(style),
+                        text = stringResource(style.labelRes),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onBackground,
                 )
@@ -1109,6 +1118,7 @@ private fun DrawerCategoryRailSideRow(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DrawerAppSortRow(
         currentMode: DrawerAppSortMode,
@@ -1121,7 +1131,7 @@ private fun DrawerAppSortRow(
                 else DrawerAppSortMode.entries.filterNot { it == DrawerAppSortMode.CUSTOM }
             }
     val coercedMode =
-            remember(currentMode, showCustomSortOption) {
+            remember(currentMode, showCustomSortOption, modes) {
                 if (!showCustomSortOption && currentMode == DrawerAppSortMode.CUSTOM) {
                     DrawerAppSortMode.ALPHABETICAL
                 } else {
@@ -1143,18 +1153,7 @@ private fun DrawerAppSortRow(
                                         count = modes.size
                                 )
                 ) {
-                    Text(
-                            stringResource(
-                                    when (mode) {
-                                        DrawerAppSortMode.ALPHABETICAL ->
-                                                R.string.settings_drawer_app_sort_alphabetical
-                                        DrawerAppSortMode.MOST_OPENED ->
-                                                R.string.settings_drawer_app_sort_most_opened
-                                        DrawerAppSortMode.CUSTOM ->
-                                                R.string.settings_drawer_app_sort_custom
-                                    }
-                            )
-                    )
+                    Text(stringResource(mode.labelRes))
                 }
             }
         }
@@ -1199,6 +1198,7 @@ private fun LongLockThresholdRow(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HomeAlignmentRow(
         currentAlignment: HomeAlignment,
@@ -1221,15 +1221,7 @@ private fun HomeAlignmentRow(
                                 count = HomeAlignment.entries.size
                         )
                 ) {
-                    Text(
-                            stringResource(
-                                    when (alignment) {
-                                        HomeAlignment.LEFT -> R.string.home_alignment_left
-                                        HomeAlignment.CENTER -> R.string.home_alignment_center
-                                        HomeAlignment.RIGHT -> R.string.home_alignment_right
-                                    }
-                            )
-                    )
+                    Text(stringResource(alignment.labelRes))
                 }
             }
         }
