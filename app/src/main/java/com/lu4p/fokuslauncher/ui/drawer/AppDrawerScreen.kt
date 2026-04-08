@@ -153,6 +153,33 @@ private fun applyOptimisticPrivateSwap(
     return apps
 }
 
+/** Coerces vertical drag into ±[itemHeightPx] steps; [swap] runs for each adjacent move. */
+private inline fun applyVerticalSlotReorder(
+        itemHeightPx: Float,
+        dragOffset: Float,
+        draggedIndex: Int,
+        lastIndex: Int,
+        crossinline swap: (from: Int, to: Int) -> Unit,
+): Pair<Float, Int> {
+    var off = dragOffset
+    var idx = draggedIndex
+    while (off >= itemHeightPx && idx < lastIndex) {
+        val from = idx
+        val to = idx + 1
+        swap(from, to)
+        idx = to
+        off -= itemHeightPx
+    }
+    while (off <= -itemHeightPx && idx > 0) {
+        val from = idx
+        val to = idx - 1
+        swap(from, to)
+        idx = to
+        off += itemHeightPx
+    }
+    return off to idx
+}
+
 private fun profileSectionsOrderKey(sections: List<DrawerProfileSectionUi>): String =
         sections.joinToString(separator = "|") { section ->
             buildString {
@@ -938,6 +965,22 @@ fun AppDrawerContent(
                 onToggleReorderApps = onToggleDrawerReorderApps,
         )
     }
+    val drawerAppList: @Composable ColumnScope.() -> Unit = {
+        DrawerAppListBody(
+                listState = listState,
+                categorySwipeModifier = categorySwipeModifier,
+                uiState = uiState,
+                showProfileSections = showProfileSections,
+                anyProfileAppsVisible = anyProfileAppsVisible,
+                focusManager = focusManager,
+                onAppClick = onAppClick,
+                onAppLongPress = onAppLongPress,
+                allowCustomDragReorder = allowCustomDragReorder,
+                onReorderDrawerProfileSection = onReorderDrawerProfileSection,
+                onReorderPrivateDrawerApps = onReorderPrivateDrawerApps,
+        )
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
         Column(
                 modifier =
@@ -1016,20 +1059,7 @@ fun AppDrawerContent(
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                             }
-                            DrawerAppListBody(
-                                    listState = listState,
-                                    categorySwipeModifier = categorySwipeModifier,
-                                    uiState = uiState,
-                                    showProfileSections = showProfileSections,
-                                    anyProfileAppsVisible = anyProfileAppsVisible,
-                                    focusManager = focusManager,
-                                    onAppClick = onAppClick,
-                                    onAppLongPress = onAppLongPress,
-                                    allowCustomDragReorder = allowCustomDragReorder,
-                                    onReorderDrawerProfileSection =
-                                            onReorderDrawerProfileSection,
-                                    onReorderPrivateDrawerApps = onReorderPrivateDrawerApps,
-                            )
+                            drawerAppList()
                         }
                     }
                     if (drawerCategorySidebarOnRight) {
@@ -1069,19 +1099,7 @@ fun AppDrawerContent(
                                 modifier = Modifier.testTag("category_chips")
                         )
                     }
-                    DrawerAppListBody(
-                            listState = listState,
-                            categorySwipeModifier = categorySwipeModifier,
-                            uiState = uiState,
-                            showProfileSections = showProfileSections,
-                            anyProfileAppsVisible = anyProfileAppsVisible,
-                            focusManager = focusManager,
-                            onAppClick = onAppClick,
-                            onAppLongPress = onAppLongPress,
-                            allowCustomDragReorder = allowCustomDragReorder,
-                            onReorderDrawerProfileSection = onReorderDrawerProfileSection,
-                            onReorderPrivateDrawerApps = onReorderPrivateDrawerApps,
-                    )
+                    drawerAppList()
                 }
             }
         }
