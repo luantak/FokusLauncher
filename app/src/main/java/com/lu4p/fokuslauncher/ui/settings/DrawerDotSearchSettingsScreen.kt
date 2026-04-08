@@ -1,5 +1,6 @@
 package com.lu4p.fokuslauncher.ui.settings
 
+import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -293,33 +294,14 @@ fun DrawerDotSearchSettingsScreen(
     pendingAliasApp?.let { app ->
         AliasCharDialog(
                 onConfirm = { raw ->
-                    val c = raw.trim().firstOrNull()?.lowercaseChar()
-                    when {
-                        c == null ->
-                                Toast.makeText(
-                                                context,
-                                                toastInvalidAlias,
-                                                Toast.LENGTH_SHORT
-                                        )
-                                        .show()
-                        !DrawerDotSearchSettingsViewModel.isValidAliasChar(c) ->
-                                Toast.makeText(
-                                                context,
-                                                toastInvalidAlias,
-                                                Toast.LENGTH_SHORT
-                                        )
-                                        .show()
-                        viewModel.aliasCharTaken(c) ->
-                                Toast.makeText(
-                                                context,
-                                                toastAliasTaken,
-                                                Toast.LENGTH_SHORT
-                                        )
-                                        .show()
-                        else -> {
-                            viewModel.setAlias(c, app)
-                        }
-                    }
+                    parseDotSearchAliasCharOrToast(
+                                    context,
+                                    raw,
+                                    toastInvalidAlias,
+                                    toastAliasTaken,
+                                    viewModel,
+                            )
+                            ?.let { c -> viewModel.setAlias(c, app) }
                 },
                 onDismiss = { }
         )
@@ -328,33 +310,14 @@ fun DrawerDotSearchSettingsScreen(
     if (showAliasCharForUrlTemplate) {
         AliasCharDialog(
                 onConfirm = { raw ->
-                    val c = raw.trim().firstOrNull()?.lowercaseChar()
-                    when {
-                        c == null ->
-                                Toast.makeText(
-                                                context,
-                                                toastInvalidAlias,
-                                                Toast.LENGTH_SHORT
-                                        )
-                                        .show()
-                        !DrawerDotSearchSettingsViewModel.isValidAliasChar(c) ->
-                                Toast.makeText(
-                                                context,
-                                                toastInvalidAlias,
-                                                Toast.LENGTH_SHORT
-                                        )
-                                        .show()
-                        viewModel.aliasCharTaken(c) ->
-                                Toast.makeText(
-                                                context,
-                                                toastAliasTaken,
-                                                Toast.LENGTH_SHORT
-                                        )
-                                        .show()
-                        else -> {
-                            pendingUrlAliasChar = c
-                        }
-                    }
+                    parseDotSearchAliasCharOrToast(
+                                    context,
+                                    raw,
+                                    toastInvalidAlias,
+                                    toastAliasTaken,
+                                    viewModel,
+                            )
+                            ?.let { c -> pendingUrlAliasChar = c }
                 },
                 onDismiss = { }
         )
@@ -370,6 +333,27 @@ fun DrawerDotSearchSettingsScreen(
                 },
                 onDismiss = { }
         )
+    }
+}
+
+private fun parseDotSearchAliasCharOrToast(
+        context: Context,
+        raw: String,
+        toastInvalidAlias: String,
+        toastAliasTaken: String,
+        viewModel: DrawerDotSearchSettingsViewModel,
+): Char? {
+    val c = raw.trim().firstOrNull()?.lowercaseChar()
+    return when {
+        c == null || !DrawerDotSearchSettingsViewModel.isValidAliasChar(c) -> {
+            Toast.makeText(context, toastInvalidAlias, Toast.LENGTH_SHORT).show()
+            null
+        }
+        viewModel.aliasCharTaken(c) -> {
+            Toast.makeText(context, toastAliasTaken, Toast.LENGTH_SHORT).show()
+            null
+        }
+        else -> c
     }
 }
 

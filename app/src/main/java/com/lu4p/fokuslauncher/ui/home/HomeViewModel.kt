@@ -271,41 +271,7 @@ class HomeViewModel @Inject constructor(
     private fun observeRemovedPackages() {
         viewModelScope.launch {
             appRepository.getRemovedPackages().collect { removedApp ->
-                _allInstalledApps.value =
-                    _allInstalledApps.value.filterNot {
-                        it.packageName == removedApp.packageName &&
-                            appProfileKey(it.userHandle) == removedApp.profileKey
-                    }
-                _appNameMap.value =
-                    _appNameMap.value
-                        .toMutableMap()
-                        .apply {
-                            val removedKey =
-                                appMetadataKey(removedApp.packageName, removedApp.profileKey)
-                            remove(removedKey)
-                            val hasPrimaryInstall =
-                                _allInstalledApps.value.any {
-                                    it.packageName == removedApp.packageName && it.userHandle == null
-                                }
-                            if (!hasPrimaryInstall && removedApp.profileKey == "0") {
-                                remove(appMetadataKey(removedApp.packageName, "0"))
-                            }
-                        }
-                _editFavorites.value =
-                    _editFavorites.value.filterNot {
-                        it.packageName == removedApp.packageName &&
-                            it.profileKey == removedApp.profileKey
-                    }
-
-                val currentFavorites = rawFavorites.value
-                val updatedFavorites =
-                    currentFavorites.filterNot {
-                        it.packageName == removedApp.packageName &&
-                            it.profileKey == removedApp.profileKey
-                    }
-                if (updatedFavorites.size != currentFavorites.size) {
-                    preferencesManager.setFavorites(updatedFavorites)
-                }
+                pruneStateAfterPackageRemoved(removedApp.packageName, removedApp.profileKey)
             }
         }
     }
@@ -355,41 +321,25 @@ class HomeViewModel @Inject constructor(
         applyInstalledAppsSnapshot(apps)
         val installedAppKeys = apps.map { appMetadataKey(it.packageName, it.userHandle) }.toSet()
         val currentFavorites = rawFavorites.value
-        val nonSentinelFavorites =
-                currentFavorites.filterNot { it.isPhoneFavoriteSentinel() }
+        val nonSentinel = currentFavorites.filterNot { it.isPhoneFavoriteSentinel() }
         val missingFavoriteKeys =
-                nonSentinelFavorites
+                nonSentinel
                         .asSequence()
                         .map { appMetadataKey(it.packageName, it.profileKey) }
                         .filterNot(installedAppKeys::contains)
                         .toSet()
-        val launchableMissingFavoriteKeys =
-                if (missingFavoriteKeys.isEmpty()) {
-                    emptySet()
-                } else {
-                    appRepository.getLaunchableAppKeys(
-                            nonSentinelFavorites
-                                    .asSequence()
-                                    .filter {
-                                        appMetadataKey(it.packageName, it.profileKey) in
-                                                missingFavoriteKeys
-                                    }
-                                    .map(FavoriteApp::profileKey)
-                                    .toSet()
-                    ).intersect(missingFavoriteKeys)
-                }
+        val launchableMissing =
+                launchableMissingFavoriteKeysSubset(nonSentinel, missingFavoriteKeys)
         val updatedFavorites =
                 currentFavorites.filter {
                     it.packageName == ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE ||
                             appMetadataKey(it.packageName, it.profileKey) in installedAppKeys ||
-                            appMetadataKey(it.packageName, it.profileKey) in
-                                    launchableMissingFavoriteKeys
+                            appMetadataKey(it.packageName, it.profileKey) in launchableMissing
                 }
         if (updatedFavorites.size != currentFavorites.size) {
             preferencesManager.setFavorites(updatedFavorites)
         }
-        val recoveredViaLaunchCheck = launchableMissingFavoriteKeys.isNotEmpty()
-        return recoveredViaLaunchCheck
+        return launchableMissing.isNotEmpty()
     }
 
     private fun applyInstalledAppsSnapshot(apps: List<AppInfo>) {
@@ -582,10 +532,7 @@ class HomeViewModel @Inject constructor(
     }
 
     fun hideApp(favorite: FavoriteApp) {
-        if (favorite.isPhoneFavoriteSentinel()) {
-            _appMenuTarget.value = null
-            return
-        }
+        if (endAppMenuIfPhoneFavoriteSentinel(favorite)) return
         viewModelScope.launch {
             appRepository.hideApp(favorite.packageName, favorite.profileKey)
             // Also remove from home-screen favorites
@@ -599,10 +546,7 @@ class HomeViewModel @Inject constructor(
     }
 
     fun openAppInfo(favorite: FavoriteApp) {
-        if (favorite.isPhoneFavoriteSentinel()) {
-            _appMenuTarget.value = null
-            return
-        }
+        if (endAppMenuIfPhoneFavoriteSentinel(favorite)) return
         try {
             val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                 data = "package:${favorite.packageName}".toUri()
@@ -614,10 +558,7 @@ class HomeViewModel @Inject constructor(
     }
 
     fun uninstallApp(favorite: FavoriteApp) {
-        if (favorite.isPhoneFavoriteSentinel()) {
-            _appMenuTarget.value = null
-            return
-        }
+        if (endAppMenuIfPhoneFavoriteSentinel(favorite)) return
         try {
             val intent = Intent(Intent.ACTION_DELETE).apply {
                 data = "package:${favorite.packageName}".toUri()
@@ -967,10 +908,7 @@ class HomeViewModel @Inject constructor(
      * Opens the default clock / alarm app.
      */
     fun openClockApp() {
-        val overridePkg = preferredClockAppPackage.value
-        if (overridePkg.isNotBlank() && appRepository.launchApp(overridePkg)) {
-            return
-        }
+        if (tryLaunchPreferredPackage(preferredClockAppPackage.value)) return
         val showAlarms =
                 Intent(AlarmClock.ACTION_SHOW_ALARMS).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -995,10 +933,7 @@ class HomeViewModel @Inject constructor(
      * Opens the default calendar app.
      */
     fun openCalendarApp() {
-        val overridePkg = preferredCalendarAppPackage.value
-        if (overridePkg.isNotBlank() && appRepository.launchApp(overridePkg)) {
-            return
-        }
+        if (tryLaunchPreferredPackage(preferredCalendarAppPackage.value)) return
         try {
             val intent = Intent(Intent.ACTION_VIEW).apply {
                 data = CalendarContract.CONTENT_URI.buildUpon()
@@ -1083,6 +1018,65 @@ class HomeViewModel @Inject constructor(
             flow.collect { onEach(it) }
         }
     }
+
+    private suspend fun pruneStateAfterPackageRemoved(removedPkg: String, removedProfileKey: String) {
+        _allInstalledApps.value =
+                _allInstalledApps.value.filterNot {
+                    it.packageName == removedPkg &&
+                            appProfileKey(it.userHandle) == removedProfileKey
+                }
+        _appNameMap.value =
+                _appNameMap.value.toMutableMap().apply {
+                    remove(appMetadataKey(removedPkg, removedProfileKey))
+                    val hasPrimaryInstall =
+                            _allInstalledApps.value.any {
+                                it.packageName == removedPkg && it.userHandle == null
+                            }
+                    if (!hasPrimaryInstall && removedProfileKey == "0") {
+                        remove(appMetadataKey(removedPkg, "0"))
+                    }
+                }
+        _editFavorites.value =
+                _editFavorites.value.filterNot {
+                    it.packageName == removedPkg && it.profileKey == removedProfileKey
+                }
+        val currentFavorites = rawFavorites.value
+        val updatedFavorites =
+                currentFavorites.filterNot {
+                    it.packageName == removedPkg && it.profileKey == removedProfileKey
+                }
+        if (updatedFavorites.size != currentFavorites.size) {
+            preferencesManager.setFavorites(updatedFavorites)
+        }
+    }
+
+    private suspend fun launchableMissingFavoriteKeysSubset(
+            nonSentinelFavorites: List<FavoriteApp>,
+            missingFavoriteKeys: Set<String>,
+    ): Set<String> {
+        if (missingFavoriteKeys.isEmpty()) return emptySet()
+        return appRepository
+                .getLaunchableAppKeys(
+                        nonSentinelFavorites
+                                .asSequence()
+                                .filter {
+                                    appMetadataKey(it.packageName, it.profileKey) in
+                                            missingFavoriteKeys
+                                }
+                                .map(FavoriteApp::profileKey)
+                                .toSet()
+                )
+                .intersect(missingFavoriteKeys)
+    }
+
+    private fun endAppMenuIfPhoneFavoriteSentinel(favorite: FavoriteApp): Boolean {
+        if (!favorite.isPhoneFavoriteSentinel()) return false
+        _appMenuTarget.value = null
+        return true
+    }
+
+    private fun tryLaunchPreferredPackage(packageName: String): Boolean =
+            packageName.isNotBlank() && appRepository.launchApp(packageName)
 
     private fun FavoriteApp.isPhoneFavoriteSentinel(): Boolean =
             packageName == ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE

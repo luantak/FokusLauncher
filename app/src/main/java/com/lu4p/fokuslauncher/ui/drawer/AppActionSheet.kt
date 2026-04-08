@@ -2,27 +2,19 @@ package com.lu4p.fokuslauncher.ui.drawer
 
 import android.content.Intent
 import android.provider.Settings
-import com.lu4p.fokuslauncher.ui.components.FokusIconButton
-import com.lu4p.fokuslauncher.ui.components.FokusTextButton
 import com.lu4p.fokuslauncher.ui.components.SheetActionRow
-import com.lu4p.fokuslauncher.ui.util.clickableWithSystemSound
+import com.lu4p.fokuslauncher.ui.components.SheetInlineRenameTitleRow
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -30,7 +22,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -70,52 +61,25 @@ fun AppActionSheet(
                 .fillMaxWidth()
                 .padding(bottom = 32.dp)
         ) {
-            // App name (or text field in rename mode) + pencil icon (same as homepage)
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)
-            ) {
-                if (renameMode) {
-                    OutlinedTextField(
-                        value = renameValue,
-                        onValueChange = { renameValue = it },
-                        placeholder = { Text(stringResource(R.string.app_name_placeholder)) },
-                        singleLine = true,
-                        modifier = Modifier
-                            .weight(1f)
-                            .testTag("rename_inline_input")
-                    )
-                    FokusTextButton(onClick = { renameMode = false }) {
-                        Text(stringResource(R.string.action_cancel))
-                    }
-                    FokusTextButton(
-                        onClick = {
-                            val trimmed = renameValue.trim()
-                            if (trimmed.isNotEmpty()) {
-                                onRename(trimmed)
-                                onDismiss()
-                            }
+            SheetInlineRenameTitleRow(
+                    renameMode = renameMode,
+                    renameValue = renameValue,
+                    onRenameValueChange = { renameValue = it },
+                    idleTitle = app.label,
+                    placeholder = { Text(stringResource(R.string.app_name_placeholder)) },
+                    onStartRename = { renameMode = true },
+                    onCancelRename = { renameMode = false },
+                    onSave = {
+                        val trimmed = renameValue.trim()
+                        if (trimmed.isNotEmpty()) {
+                            onRename(trimmed)
+                            onDismiss()
                         }
-                    ) { Text(stringResource(R.string.action_save)) }
-                } else {
-                    Text(
-                        text = app.label,
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.weight(1f)
-                    )
-                    FokusIconButton(
-                        onClick = { renameMode = true },
-                        modifier = Modifier.testTag("action_rename")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = stringResource(R.string.action_rename),
-                            tint = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
-                }
-            }
+                    },
+                    editIconContentDescription = stringResource(R.string.action_rename),
+                    textFieldTestTag = "rename_inline_input",
+                    editButtonTestTag = "action_rename",
+            )
 
             if (!isOnHomeScreen) {
                 SheetActionRow(

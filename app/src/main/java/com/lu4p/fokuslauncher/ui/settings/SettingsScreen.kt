@@ -19,6 +19,7 @@ import com.lu4p.fokuslauncher.ui.util.rememberBooleanChangeWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.rememberClickWithSystemSound
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -73,6 +74,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
@@ -1043,6 +1045,60 @@ private fun settingsPickerMenuItemColors() =
                 trailingIconColor = MaterialTheme.colorScheme.onBackground,
         )
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SettingsReadOnlyExposedDropdown(
+        expanded: Boolean,
+        onExpandedChange: (Boolean) -> Unit,
+        selectedDisplayText: String,
+        fieldEnabled: Boolean = true,
+        menuExpanded: Boolean = expanded,
+        textStyle: TextStyle = MaterialTheme.typography.bodyLarge,
+        textFieldModifier: Modifier = Modifier,
+        menuContent: @Composable ColumnScope.() -> Unit
+) {
+    ExposedDropdownMenuBox(
+            expanded = menuExpanded,
+            onExpandedChange = onExpandedChange
+    ) {
+        OutlinedTextField(
+                modifier =
+                        textFieldModifier
+                                .menuAnchor(
+                                        ExposedDropdownMenuAnchorType.PrimaryNotEditable,
+                                        enabled = fieldEnabled
+                                )
+                                .fillMaxWidth(),
+                value = selectedDisplayText,
+                onValueChange = { _ -> },
+                readOnly = true,
+                enabled = fieldEnabled,
+                singleLine = true,
+                shape = SettingsPickerCorner,
+                textStyle = textStyle,
+                trailingIcon = {
+                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = menuExpanded)
+                },
+                colors = settingsPickerOutlinedFieldColors()
+        )
+        ExposedDropdownMenu(
+                expanded = menuExpanded,
+                onDismissRequest = { onExpandedChange(false) },
+                shape = SettingsPickerCorner,
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                tonalElevation = 0.dp,
+                shadowElevation = 8.dp,
+                border =
+                        BorderStroke(
+                                width = 1.dp,
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.14f)
+                        ),
+        ) {
+            menuContent()
+        }
+    }
+}
+
 /**
  * Endonym: name of the language written in that language (e.g. English, Polski), independent of
  * app UI locale.
@@ -1108,62 +1164,30 @@ private fun HomeDateFormatDropdown(
                 color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(Modifier.height(12.dp))
-        ExposedDropdownMenuBox(
-                expanded = expanded && enabled,
-                onExpandedChange = onDateFormatExpandedChange
+        SettingsReadOnlyExposedDropdown(
+                expanded = expanded,
+                onExpandedChange = onDateFormatExpandedChange,
+                selectedDisplayText = selectedLabel,
+                fieldEnabled = enabled,
+                menuExpanded = expanded && enabled,
         ) {
-            OutlinedTextField(
-                    modifier =
-                            Modifier.menuAnchor(
-                                            ExposedDropdownMenuAnchorType.PrimaryNotEditable,
-                                            enabled = enabled
-                                    )
-                                    .fillMaxWidth(),
-                    value = selectedLabel,
-                    onValueChange = { _ -> },
-                    readOnly = true,
-                    enabled = enabled,
-                    singleLine = true,
-                    shape = SettingsPickerCorner,
-                    textStyle = MaterialTheme.typography.bodyLarge,
-                    trailingIcon = {
-                        ExposedDropdownMenuDefaults.TrailingIcon(
-                                expanded = expanded && enabled
-                        )
-                    },
-                    colors = settingsPickerOutlinedFieldColors()
-            )
-            ExposedDropdownMenu(
-                    expanded = expanded && enabled,
-                    onDismissRequest = { expanded = false },
-                    shape = SettingsPickerCorner,
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    tonalElevation = 0.dp,
-                    shadowElevation = 8.dp,
-                    border =
-                            BorderStroke(
-                                    width = 1.dp,
-                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.14f)
-                            ),
-            ) {
-                options.forEach { style ->
-                    DropdownMenuItem(
-                            text = {
-                                Text(
-                                        text = homeDateFormatStyleLabel(style),
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.onBackground,
-                                )
-                            },
-                            onClick =
-                                    rememberClickWithSystemSound {
-                                        onStyleSelected(style)
-                                        expanded = false
-                                    },
-                            colors = settingsPickerMenuItemColors(),
-                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
-                    )
-                }
+            options.forEach { style ->
+                DropdownMenuItem(
+                        text = {
+                            Text(
+                                    text = homeDateFormatStyleLabel(style),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onBackground,
+                            )
+                        },
+                        onClick =
+                                rememberClickWithSystemSound {
+                                    onStyleSelected(style)
+                                    expanded = false
+                                },
+                        colors = settingsPickerMenuItemColors(),
+                        contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                )
             }
         }
     }
@@ -1204,51 +1228,28 @@ private fun AppLanguageDropdown(
                 color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(Modifier.height(12.dp))
-        ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = onLanguageExpandedChange) {
-            OutlinedTextField(
-                    modifier =
-                            Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
-                                    .fillMaxWidth(),
-                    value = selectedDisplayText,
-                    onValueChange = { _ -> },
-                    readOnly = true,
-                    singleLine = true,
-                    shape = SettingsPickerCorner,
-                    textStyle = MaterialTheme.typography.bodyLarge,
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                    colors = settingsPickerOutlinedFieldColors()
-            )
-            ExposedDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false },
-                    shape = SettingsPickerCorner,
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    tonalElevation = 0.dp,
-                    shadowElevation = 8.dp,
-                    border =
-                            BorderStroke(
-                                    width = 1.dp,
-                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.14f)
-                            ),
-            ) {
-                options.forEach { (storageTag, label) ->
-                    DropdownMenuItem(
-                            text = {
-                                Text(
-                                        text = label,
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.onBackground,
-                                )
-                            },
-                            onClick =
-                                    rememberClickWithSystemSound {
-                                        onTagSelected(storageTag)
-                                        expanded = false
-                                    },
-                            colors = settingsPickerMenuItemColors(),
-                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
-                    )
-                }
+        SettingsReadOnlyExposedDropdown(
+                expanded = expanded,
+                onExpandedChange = onLanguageExpandedChange,
+                selectedDisplayText = selectedDisplayText,
+        ) {
+            options.forEach { (storageTag, label) ->
+                DropdownMenuItem(
+                        text = {
+                            Text(
+                                    text = label,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onBackground,
+                            )
+                        },
+                        onClick =
+                                rememberClickWithSystemSound {
+                                    onTagSelected(storageTag)
+                                    expanded = false
+                                },
+                        colors = settingsPickerMenuItemColors(),
+                        contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                )
             }
         }
     }
@@ -1290,63 +1291,65 @@ private fun LauncherFontFamilyDropdown(
                 color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(Modifier.height(12.dp))
-        ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = onFontExpandedChange) {
-            OutlinedTextField(
-                    modifier =
-                            Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
-                                    .fillMaxWidth(),
-                    value = selectedLabel,
-                    onValueChange = { _ -> },
-                    readOnly = true,
-                    singleLine = true,
-                    shape = SettingsPickerCorner,
-                    textStyle =
-                            MaterialTheme.typography.bodyLarge.copy(
-                                    fontFamily =
-                                            composeFontFamilyFromStoredName(currentFamilyName)
-                            ),
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                    colors = settingsPickerOutlinedFieldColors()
-            )
-            ExposedDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false },
-                    shape = SettingsPickerCorner,
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    tonalElevation = 0.dp,
-                    shadowElevation = 8.dp,
-                    border =
-                            BorderStroke(
-                                    width = 1.dp,
-                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.14f)
-                            ),
-            ) {
-                options.forEach { (storageValue, label) ->
-                    DropdownMenuItem(
-                            text = {
-                                Text(
-                                        text = label,
-                                        style =
-                                                MaterialTheme.typography.bodyLarge.copy(
-                                                        fontFamily =
-                                                                composeFontFamilyFromStoredName(
-                                                                        storageValue
-                                                                )
-                                                ),
-                                        color = MaterialTheme.colorScheme.onBackground,
-                                )
-                            },
-                            onClick =
-                                    rememberClickWithSystemSound {
-                                        onFamilySelected(storageValue)
-                                        expanded = false
-                                    },
-                            colors = settingsPickerMenuItemColors(),
-                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
-                    )
-                }
+        SettingsReadOnlyExposedDropdown(
+                expanded = expanded,
+                onExpandedChange = onFontExpandedChange,
+                selectedDisplayText = selectedLabel,
+                textStyle =
+                        MaterialTheme.typography.bodyLarge.copy(
+                                fontFamily = composeFontFamilyFromStoredName(currentFamilyName)
+                        ),
+        ) {
+            options.forEach { (storageValue, label) ->
+                DropdownMenuItem(
+                        text = {
+                            Text(
+                                    text = label,
+                                    style =
+                                            MaterialTheme.typography.bodyLarge.copy(
+                                                    fontFamily =
+                                                            composeFontFamilyFromStoredName(
+                                                                    storageValue
+                                                            )
+                                            ),
+                                    color = MaterialTheme.colorScheme.onBackground,
+                            )
+                        },
+                        onClick =
+                                rememberClickWithSystemSound {
+                                    onFamilySelected(storageValue)
+                                    expanded = false
+                                },
+                        colors = settingsPickerMenuItemColors(),
+                        contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                )
             }
         }
+    }
+}
+
+@Composable
+private fun SettingsLabeledSegmentedSection(
+        title: String,
+        subtitle: String?,
+        content: @Composable () -> Unit
+) {
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp)) {
+        Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onBackground
+        )
+        if (subtitle != null) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.secondary
+            )
+        }
+        Spacer(Modifier.height(12.dp))
+        content()
     }
 }
 
@@ -1356,21 +1359,10 @@ private fun DrawerCategoryRailSideRow(
         railOnLeft: Boolean,
         onRailOnLeftChanged: (Boolean) -> Unit
 ) {
-    Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp)
+    SettingsLabeledSegmentedSection(
+            title = stringResource(R.string.settings_drawer_category_rail_side),
+            subtitle = stringResource(R.string.settings_drawer_category_rail_side_subtitle),
     ) {
-        Text(
-                text = stringResource(R.string.settings_drawer_category_rail_side),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onBackground
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-                text = stringResource(R.string.settings_drawer_category_rail_side_subtitle),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.secondary
-        )
-        Spacer(Modifier.height(12.dp))
         SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
             SegmentedButton(
                     selected = railOnLeft,
@@ -1411,23 +1403,10 @@ private fun DrawerAppSortRow(
                     currentMode
                 }
             }
-    Column(
-            modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 12.dp)
+    SettingsLabeledSegmentedSection(
+            title = stringResource(R.string.settings_drawer_app_sort),
+            subtitle = stringResource(R.string.settings_drawer_app_sort_subtitle),
     ) {
-        Text(
-                text = stringResource(R.string.settings_drawer_app_sort),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onBackground
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-                text = stringResource(R.string.settings_drawer_app_sort_subtitle),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.secondary
-        )
-        Spacer(Modifier.height(12.dp))
         SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
             modes.forEachIndexed { index, mode ->
                 SegmentedButton(
@@ -1489,59 +1468,33 @@ private fun LongLockThresholdRow(
                 color = MaterialTheme.colorScheme.secondary
         )
         Spacer(Modifier.height(12.dp))
-        ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = onLongLockExpandedChange) {
-            OutlinedTextField(
-                    modifier =
-                            Modifier.menuAnchor(
-                                            ExposedDropdownMenuAnchorType.PrimaryNotEditable,
-                                            enabled = true
-                                    )
-                                    .fillMaxWidth(),
-                    value = selectedLabel,
-                    onValueChange = { _ -> },
-                    readOnly = true,
-                    singleLine = true,
-                    shape = SettingsPickerCorner,
-                    textStyle = MaterialTheme.typography.bodyLarge,
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                    colors = settingsPickerOutlinedFieldColors()
-            )
-            ExposedDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false },
-                    shape = SettingsPickerCorner,
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    tonalElevation = 0.dp,
-                    shadowElevation = 8.dp,
-                    border =
-                            BorderStroke(
-                                    width = 1.dp,
-                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.14f)
-                            ),
-            ) {
-                options.forEach { minutes ->
-                    DropdownMenuItem(
-                            text = {
-                                Text(
-                                        text =
-                                                pluralStringResource(
-                                                        R.plurals.settings_long_lock_duration_minutes,
-                                                        minutes,
-                                                        minutes
-                                                ),
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.onBackground
-                                )
-                            },
-                            onClick =
-                                    rememberClickWithSystemSound {
-                                        onMinutesSelected(minutes)
-                                        expanded = false
-                                    },
-                            colors = settingsPickerMenuItemColors(),
-                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
-                    )
-                }
+        SettingsReadOnlyExposedDropdown(
+                expanded = expanded,
+                onExpandedChange = onLongLockExpandedChange,
+                selectedDisplayText = selectedLabel,
+        ) {
+            options.forEach { minutes ->
+                DropdownMenuItem(
+                        text = {
+                            Text(
+                                    text =
+                                            pluralStringResource(
+                                                    R.plurals.settings_long_lock_duration_minutes,
+                                                    minutes,
+                                                    minutes
+                                            ),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onBackground
+                            )
+                        },
+                        onClick =
+                                rememberClickWithSystemSound {
+                                    onMinutesSelected(minutes)
+                                    expanded = false
+                                },
+                        colors = settingsPickerMenuItemColors(),
+                        contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                )
             }
         }
     }
@@ -1552,23 +1505,10 @@ private fun HomeAlignmentRow(
         currentAlignment: HomeAlignment,
         onAlignmentChanged: (HomeAlignment) -> Unit
 ) {
-    Column(
-            modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 12.dp)
+    SettingsLabeledSegmentedSection(
+            title = stringResource(R.string.home_alignment_title),
+            subtitle = stringResource(R.string.home_alignment_subtitle),
     ) {
-        Text(
-                text = stringResource(R.string.home_alignment_title),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onBackground
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-                text = stringResource(R.string.home_alignment_subtitle),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.secondary
-        )
-        Spacer(Modifier.height(12.dp))
         SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
             HomeAlignment.entries.forEachIndexed { index, alignment ->
                 SegmentedButton(

@@ -100,6 +100,7 @@ import com.lu4p.fokuslauncher.ui.components.FokusTextButton
 import com.lu4p.fokuslauncher.ui.components.MinimalIcons
 import com.lu4p.fokuslauncher.ui.components.SearchBar
 import com.lu4p.fokuslauncher.ui.components.SheetActionRow
+import com.lu4p.fokuslauncher.ui.components.SheetInlineRenameTitleRow
 import com.lu4p.fokuslauncher.ui.util.categoryChipDisplayLabel
 import com.lu4p.fokuslauncher.ui.util.clickableWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.combinedClickableWithSystemSound
@@ -250,6 +251,37 @@ private fun LazyItemScope.ReorderableDrawerAppRow(
             Spacer(modifier = Modifier.width(4.dp))
         }
         content()
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun LazyItemScope.ReorderableDrawerAppListItem(
+        app: AppInfo,
+        allowCustomDragReorder: Boolean,
+        isDraggedRow: Boolean,
+        offsetY: Float,
+        dragHandleModifier: Modifier,
+        onLaunchWhenNotReordering: () -> Unit,
+        onLongPressWhenNotReordering: () -> Unit,
+) {
+    ReorderableDrawerAppRow(
+            allowCustomDragReorder = allowCustomDragReorder,
+            placementAnimationEnabled = !isDraggedRow,
+            offsetY = offsetY,
+            dragHandleModifier = dragHandleModifier,
+    ) {
+        AppListItem(
+                app = app,
+                onClick = {
+                    if (allowCustomDragReorder) return@AppListItem
+                    onLaunchWhenNotReordering()
+                },
+                onLongClick = {
+                    if (!allowCustomDragReorder) onLongPressWhenNotReordering()
+                },
+                modifier = Modifier.weight(1f),
+        )
     }
 }
 
@@ -462,9 +494,10 @@ private fun DrawerAppListColumn(
                             } else {
                                 0f
                             }
-                    ReorderableDrawerAppRow(
+                    ReorderableDrawerAppListItem(
+                            app = app,
                             allowCustomDragReorder = allowCustomDragReorder,
-                            placementAnimationEnabled = !isDraggedRow,
+                            isDraggedRow = isDraggedRow,
                             offsetY = offsetY,
                             dragHandleModifier =
                                     Modifier.pointerInput(
@@ -513,32 +546,24 @@ private fun DrawerAppListColumn(
                                                 onDragCancel = { resetProfileDrag() }
                                         )
                                     },
-                    ) {
-                        AppListItem(
-                                app = app,
-                                onClick = {
-                                    if (allowCustomDragReorder) return@AppListItem
-                                    focusManager.clearFocus(force = true)
-                                    val cn = app.componentName
-                                    val uh = app.userHandle
-                                    if (cn != null && uh != null) {
-                                        onAppClick(
-                                                LaunchTarget.PrivateApp(
-                                                        packageName = app.packageName,
-                                                        componentName = cn,
-                                                        userHandle = uh
-                                                )
-                                        )
-                                    } else {
-                                        onAppClick(LaunchTarget.MainApp(app.packageName))
-                                    }
-                                },
-                                onLongClick = {
-                                    if (!allowCustomDragReorder) onAppLongPress(app)
-                                },
-                                modifier = Modifier.weight(1f)
-                        )
-                    }
+                            onLaunchWhenNotReordering = {
+                                focusManager.clearFocus(force = true)
+                                val cn = app.componentName
+                                val uh = app.userHandle
+                                if (cn != null && uh != null) {
+                                    onAppClick(
+                                            LaunchTarget.PrivateApp(
+                                                    packageName = app.packageName,
+                                                    componentName = cn,
+                                                    userHandle = uh
+                                            )
+                                    )
+                                } else {
+                                    onAppClick(LaunchTarget.MainApp(app.packageName))
+                                }
+                            },
+                            onLongPressWhenNotReordering = { onAppLongPress(app) },
+                    )
                 }
             }
         }
@@ -577,9 +602,10 @@ private fun DrawerAppListColumn(
                         } else {
                             0f
                         }
-                ReorderableDrawerAppRow(
+                ReorderableDrawerAppListItem(
+                        app = app,
                         allowCustomDragReorder = allowCustomDragReorder,
-                        placementAnimationEnabled = !isDraggedRow,
+                        isDraggedRow = isDraggedRow,
                         offsetY = offsetY,
                         dragHandleModifier =
                                 Modifier.pointerInput(
@@ -619,30 +645,22 @@ private fun DrawerAppListColumn(
                                             onDragCancel = { resetPrivateDrag() }
                                     )
                                 },
-                ) {
-                    AppListItem(
-                            app = app,
-                            onClick = {
-                                if (allowCustomDragReorder) return@AppListItem
-                                val componentName = app.componentName
-                                val userHandle = app.userHandle
-                                if (componentName != null && userHandle != null) {
-                                    focusManager.clearFocus(force = true)
-                                    onAppClick(
-                                            LaunchTarget.PrivateApp(
-                                                    packageName = app.packageName,
-                                                    componentName = componentName,
-                                                    userHandle = userHandle
-                                            )
-                                    )
-                                }
-                            },
-                            onLongClick = {
-                                if (!allowCustomDragReorder) onAppLongPress(app)
-                            },
-                            modifier = Modifier.weight(1f)
-                    )
-                }
+                        onLaunchWhenNotReordering = {
+                            val componentName = app.componentName
+                            val userHandle = app.userHandle
+                            if (componentName != null && userHandle != null) {
+                                focusManager.clearFocus(force = true)
+                                onAppClick(
+                                        LaunchTarget.PrivateApp(
+                                                packageName = app.packageName,
+                                                componentName = componentName,
+                                                userHandle = userHandle
+                                        )
+                                )
+                            }
+                        },
+                        onLongPressWhenNotReordering = { onAppLongPress(app) },
+                )
             }
         }
     }
@@ -1147,52 +1165,24 @@ fun CategoryActionSheet(
                         Modifier.fillMaxWidth()
                                 .padding(bottom = 32.dp)
         ) {
-            Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)
-            ) {
-                if (renameMode) {
-                    OutlinedTextField(
-                            value = renameValue,
-                            onValueChange = { renameValue = it },
-                            placeholder = { Text(stringResource(R.string.category_name_label)) },
-                            singleLine = true,
-                            modifier =
-                                    Modifier.weight(1f)
-                                            .testTag("category_rename_inline_input")
-                    )
-                    FokusTextButton(onClick = { renameMode = false }) {
-                        Text(stringResource(R.string.action_cancel))
-                    }
-                    FokusTextButton(
-                            enabled = canSaveRename,
-                            onClick = {
-                                onRename(normalized)
-                                onDismiss()
-                            }
-                    ) { Text(stringResource(R.string.action_save)) }
-                } else {
-                    Text(
-                            text = displayTitle,
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = MaterialTheme.colorScheme.onBackground,
-                            modifier = Modifier.weight(1f)
-                    )
-                    if (!isReservedDrawerCategory) {
-                        FokusIconButton(
-                                onClick = { renameMode = true },
-                                modifier = Modifier.testTag("category_action_rename")
-                        ) {
-                            Icon(
-                                    imageVector = Icons.Default.Edit,
-                                    contentDescription =
-                                            stringResource(R.string.category_action_rename),
-                                    tint = MaterialTheme.colorScheme.onBackground
-                            )
-                        }
-                    }
-                }
-            }
+            SheetInlineRenameTitleRow(
+                    renameMode = renameMode,
+                    renameValue = renameValue,
+                    onRenameValueChange = { renameValue = it },
+                    idleTitle = displayTitle,
+                    placeholder = { Text(stringResource(R.string.category_name_label)) },
+                    onStartRename = { renameMode = true },
+                    onCancelRename = { renameMode = false },
+                    onSave = {
+                        onRename(normalized)
+                        onDismiss()
+                    },
+                    saveEnabled = canSaveRename,
+                    showEditButton = !isReservedDrawerCategory,
+                    editIconContentDescription = stringResource(R.string.category_action_rename),
+                    textFieldTestTag = "category_rename_inline_input",
+                    editButtonTestTag = "category_action_rename",
+            )
 
             if (showEditApps) {
                 SheetActionRow(
