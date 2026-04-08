@@ -20,6 +20,7 @@ import com.lu4p.fokuslauncher.data.model.appProfileKey
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.data.repository.RemovedApp
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
+import io.mockk.clearMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -463,6 +464,20 @@ class AppDrawerViewModelTest {
     fun `dot search typing shows unfiltered app list`() {
         viewModel.onSearchQueryChanged(". zz")
         assertEquals(testApps.size, flatFiltered(viewModel.uiState.value).size)
+    }
+
+    @Test
+    fun `search filtering does not persist merged custom order`() {
+        drawerSidebarCategoriesFlow.value = true
+        drawerAppSortModeFlow.value = DrawerAppSortMode.CUSTOM
+        awaitState("custom sidebar mode") {
+            it.useSidebarCategoryDrawer && it.drawerAppSortMode == DrawerAppSortMode.CUSTOM
+        }
+        clearMocks(preferencesManager, recordedCalls = true)
+
+        viewModel.onSearchQueryChanged("ca")
+
+        coVerify(exactly = 0) { preferencesManager.setDrawerCustomAppOrder(any()) }
     }
 
     @Test
