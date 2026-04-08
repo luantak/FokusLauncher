@@ -1,5 +1,6 @@
 package com.lu4p.fokuslauncher.ui.settings
 
+import android.os.Process
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
@@ -11,6 +12,9 @@ import com.lu4p.fokuslauncher.data.model.AppShortcutAction
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.model.HomeDateFormatStyle
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
+import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
+import com.lu4p.fokuslauncher.data.model.appMetadataKey
+import com.lu4p.fokuslauncher.data.model.appProfileKey
 import com.lu4p.fokuslauncher.data.font.SystemFontFamiliesProvider
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
@@ -43,11 +47,15 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.ui.components.MinimalIcons
+import com.lu4p.fokuslauncher.ui.drawer.isDrawerWorkProfileApp
+import com.lu4p.fokuslauncher.ui.drawer.profileOriginLabelForApp
+import com.lu4p.fokuslauncher.ui.util.categoryChipDisplayLabel
 import com.lu4p.fokuslauncher.utils.AppDiagnosticLogExporter
+import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
 
 data class SettingsUiState(
         val hiddenApps: List<HiddenAppInfo> = emptyList(),
-        val renamedApps: List<RenamedAppEntity> = emptyList(),
+        val renamedApps: List<RenamedAppInfo> = emptyList(),
         val appCategories: Map<String, String> = emptyMap(),
         val categoryDefinitions: List<String> = emptyList(),
         val favorites: List<FavoriteApp> = emptyList(),
@@ -83,7 +91,19 @@ data class SettingsUiState(
         val allShortcutActions: List<AppShortcutAction> = emptyList(),
 )
 
-data class HiddenAppInfo(val packageName: String, val label: String)
+data class HiddenAppInfo(
+        val packageName: String,
+        val profileKey: String,
+        val label: String,
+        val profileLabel: String?
+)
+
+data class RenamedAppInfo(
+        val packageName: String,
+        val profileKey: String,
+        val customName: String,
+        val profileLabel: String?
+)
 
 @HiltViewModel
 class SettingsViewModel
@@ -91,7 +111,8 @@ class SettingsViewModel
 constructor(
         @param:ApplicationContext private val context: Context,
         private val appRepository: AppRepository,
-        private val preferencesManager: PreferencesManager
+        private val preferencesManager: PreferencesManager,
+        private val privateSpaceManager: PrivateSpaceManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -102,9 +123,15 @@ constructor(
 
     private val _installedFontFamilies = MutableStateFlow<List<String>>(emptyList())
     val installedFontFamilies: StateFlow<List<String>> = _installedFontFamilies.asStateFlow()
+    private val privateSpaceRefreshTick = MutableStateFlow(0)
 
     init {
         observeState()
+        viewModelScope.launch {
+            privateSpaceManager.profileStateChanged.collect {
+                privateSpaceRefreshTick.value += 1
+            }
+        }
         viewModelScope.launch(Dispatchers.IO) {
             _installedFontFamilies.value = SystemFontFamiliesProvider.loadSortedDistinct()
         }
@@ -145,25 +172,31 @@ constructor(
                     }
             val favoritesQuintupleFlow =
                     combine(
-                            appRepository.getHiddenPackageNames(),
+                            appRepository.getHiddenApps(),
                             appRepository.getAllRenamedApps(),
                             preferencesManager.favoritesFlow,
                             preferencesManager.rightSideShortcutsFlow,
                             preferencesManager.swipeLeftTargetFlow
-                    ) { hiddenNames, renamedApps, favorites, rightSideShortcuts, swipeLeft ->
+                    ) { hiddenApps, renamedApps, favorites, rightSideShortcuts, swipeLeft ->
                         Quintuple(
-                                hiddenNames = hiddenNames,
+                                hiddenApps = hiddenApps,
                                 renamedApps = renamedApps,
                                 favorites = favorites,
                                 rightSideShortcuts = rightSideShortcuts,
                                 swipeLeft = swipeLeft
                         )
                     }
-            combine(appRepository.getInstalledAppsVersion(), favoritesQuintupleFlow) { _, base ->
-                base
-            }
+            combine(
+                            appRepository.getInstalledAppsVersion(),
+                            favoritesQuintupleFlow,
+                            privateSpaceRefreshTick
+                    ) { _, base, _ ->
+                        base
+                    }
                     .combine(appRepository.getAllAppCategories()) { leftState, appCategories ->
-                        leftState to appCategories.associate { it.packageName to it.category }
+                        leftState to appCategories.associate {
+                            appMetadataKey(it.packageName, it.profileKey) to it.category
+                        }
                     }
                     .combine(appRepository.getAllCategoryDefinitions()) { stateWithCategories, definitions ->
                         val (leftState, appCategories) = stateWithCategories
@@ -259,21 +292,95 @@ constructor(
                         val (weatherState, showStatusBar) = weatherWithStatusBar
                         val (swipeState, preferredWeatherApp) = weatherState
                         val (leftState, swipeRight) = swipeState
+                        val privateSpaceUnlocked = privateSpaceManager.isPrivateSpaceUnlocked()
+                        val privateProfileKey =
+                                privateSpaceManager
+                                        .getPrivateSpaceProfile()
+                                        ?.takeIf { it != Process.myUserHandle() }
+                                        ?.let(::appProfileKey)
                         val categoryMap = leftState.appCategories
-                        val allApps =
+                        val installedApps =
                                 appRepository.getInstalledAppsOnBackground().map { app ->
-                                    app.copy(category = categoryMap[app.packageName] ?: app.category)
+                                    app.copy(
+                                        category =
+                                            categoryMap[appMetadataKey(app.packageName, app.userHandle)]
+                                                ?: app.category
+                                    )
                                 }
+                        val privateApps =
+                                if (privateSpaceUnlocked) {
+                                    privateSpaceManager.getPrivateSpaceApps()
+                                } else {
+                                    emptyList()
+                                }
+                        val metadataLookupApps = installedApps + privateApps
                         val allShortcutActions = appRepository.getAllShortcutActionsOnBackground()
-                        val hiddenLabels = allApps.associate { it.packageName to it.label }
+                        val hiddenLabels =
+                            metadataLookupApps.associate {
+                                appMetadataKey(it.packageName, it.userHandle) to it
+                            }
                         val hiddenInfos =
-                                leftState.base.hiddenNames.map { pkg ->
-                                    HiddenAppInfo(packageName = pkg, label = hiddenLabels[pkg] ?: pkg)
+                                leftState.base.hiddenApps.map { hiddenApp ->
+                                    val key = appMetadataKey(hiddenApp.packageName, hiddenApp.profileKey)
+                                    val matchingApp = hiddenLabels[key]
+                                    if (!privateSpaceUnlocked && hiddenApp.profileKey == privateProfileKey) {
+                                        null
+                                    } else {
+                                    HiddenAppInfo(
+                                        packageName = hiddenApp.packageName,
+                                        profileKey = hiddenApp.profileKey,
+                                        label = matchingApp?.label ?: hiddenApp.packageName,
+                                        profileLabel =
+                                                profileLabelForSettings(
+                                                        profileKey = hiddenApp.profileKey,
+                                                        matchingApp = matchingApp,
+                                                        privateProfileKey = privateProfileKey
+                                        )
+                                    )
+                                    }
                                 }
+                                        .filterNotNull()
+                                        .sortedWith(
+                                                compareBy<HiddenAppInfo>(
+                                                        { profileSortBucket(it.profileLabel) },
+                                                        { it.profileLabel ?: "" },
+                                                        { it.label.lowercase() },
+                                                        { it.packageName.lowercase() }
+                                                )
+                                        )
+                        val renamedInfos =
+                                leftState.base.renamedApps.map { renamedApp ->
+                                    val key = appMetadataKey(renamedApp.packageName, renamedApp.profileKey)
+                                    val matchingApp = hiddenLabels[key]
+                                    if (!privateSpaceUnlocked && renamedApp.profileKey == privateProfileKey) {
+                                        null
+                                    } else {
+                                        RenamedAppInfo(
+                                                packageName = renamedApp.packageName,
+                                                profileKey = renamedApp.profileKey,
+                                                customName = renamedApp.customName,
+                                                profileLabel =
+                                                        profileLabelForSettings(
+                                                                profileKey = renamedApp.profileKey,
+                                                                matchingApp = matchingApp,
+                                                                privateProfileKey = privateProfileKey
+                                                )
+                                        )
+                                    }
+                                }
+                                        .filterNotNull()
+                                        .sortedWith(
+                                                compareBy<RenamedAppInfo>(
+                                                        { profileSortBucket(it.profileLabel) },
+                                                        { it.profileLabel ?: "" },
+                                                        { it.customName.lowercase() },
+                                                        { it.packageName.lowercase() }
+                                                )
+                                        )
                         _uiState.value =
                                 SettingsUiState(
                                         hiddenApps = hiddenInfos,
-                                        renamedApps = leftState.base.renamedApps,
+                                        renamedApps = renamedInfos,
                                         appCategories = leftState.appCategories,
                                         categoryDefinitions = leftState.categoryDefinitions,
                                         favorites = leftState.base.favorites,
@@ -300,7 +407,7 @@ constructor(
                                         doubleTapEmptyLock = doubleTapEmptyLock,
                                         longLockReturnHome = longLockReturnHome,
                                         longLockReturnHomeThresholdMinutes = longLockThresholdMinutes,
-                                        allApps = allApps,
+                                        allApps = installedApps,
                                         allShortcutActions = allShortcutActions
                                 )
                     }
@@ -325,11 +432,11 @@ constructor(
     )
 
     private data class Quintuple(
-            val hiddenNames: List<String>,
+            val hiddenApps: List<com.lu4p.fokuslauncher.data.database.entity.HiddenAppEntity>,
             val renamedApps: List<RenamedAppEntity>,
-            val favorites: List<FavoriteApp>,
-            val rightSideShortcuts: List<HomeShortcut>,
-            val swipeLeft: ShortcutTarget?
+        val favorites: List<FavoriteApp>,
+        val rightSideShortcuts: List<HomeShortcut>,
+        val swipeLeft: ShortcutTarget?
     )
 
     private data class CategoryState(
@@ -338,16 +445,44 @@ constructor(
             val categoryDefinitions: List<String>
     )
 
+    private fun profileLabelForSettings(
+            profileKey: String,
+            matchingApp: AppInfo?,
+            privateProfileKey: String?
+    ): String? {
+        matchingApp?.let { app ->
+            val userHandle = app.userHandle
+            if (userHandle != null && privateSpaceManager.isPrivateSpaceProfile(userHandle)) {
+                return categoryChipDisplayLabel(context, ReservedCategoryNames.PRIVATE)
+            }
+            if (isDrawerWorkProfileApp(context, app)) {
+                return categoryChipDisplayLabel(context, ReservedCategoryNames.WORK)
+            }
+            return profileOriginLabelForApp(context, app)
+        }
+        if (profileKey == privateProfileKey) {
+            return categoryChipDisplayLabel(context, ReservedCategoryNames.PRIVATE)
+        }
+        return if (profileKey == "0") {
+            null
+        } else {
+            categoryChipDisplayLabel(context, ReservedCategoryNames.WORK)
+        }
+    }
+
+    private fun profileSortBucket(profileLabel: String?): Int =
+            if (profileLabel == null) 0 else 1
+
     // --- Hidden Apps ---
 
-    fun unhideApp(packageName: String) {
-        viewModelScope.launch { appRepository.unhideApp(packageName) }
+    fun unhideApp(packageName: String, profileKey: String) {
+        viewModelScope.launch { appRepository.unhideApp(packageName, profileKey) }
     }
 
     // --- Renamed Apps ---
 
-    fun removeRename(packageName: String) {
-        viewModelScope.launch { appRepository.removeRename(packageName) }
+    fun removeRename(packageName: String, profileKey: String) {
+        viewModelScope.launch { appRepository.removeRename(packageName, profileKey) }
     }
 
     fun addCategoryDefinition(name: String) {
@@ -361,8 +496,8 @@ constructor(
         }
     }
 
-    fun setAppCategory(packageName: String, category: String) {
-        viewModelScope.launch { appRepository.setAppCategory(packageName, category) }
+    fun setAppCategory(packageName: String, profileKey: String, category: String) {
+        viewModelScope.launch { appRepository.setAppCategory(packageName, profileKey, category) }
     }
 
     fun reorderCategories(categories: List<String>) {

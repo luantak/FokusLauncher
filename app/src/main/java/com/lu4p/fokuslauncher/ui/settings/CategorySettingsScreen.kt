@@ -62,6 +62,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.model.AddCategoryResult
 import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
+import com.lu4p.fokuslauncher.data.model.appProfileKey
 import com.lu4p.fokuslauncher.data.model.categoryAddFieldFailure
 import com.lu4p.fokuslauncher.ui.drawer.groupAppsIntoProfileSections
 import com.lu4p.fokuslauncher.ui.drawer.profileGroupedAppItems
@@ -476,7 +477,13 @@ fun CategoryAppsScreen(
                         label = app.label,
                         checked = true,
                         secondary = categoryChipDisplayLabel(context, category),
-                        onToggle = { viewModel.setAppCategory(app.packageName, "") }
+                        onToggle = {
+                            viewModel.setAppCategory(
+                                app.packageName,
+                                appProfileKey(app.userHandle),
+                                ""
+                            )
+                        }
                 )
             }
             item {
@@ -500,7 +507,13 @@ fun CategoryAppsScreen(
                                 currentCategory.ifBlank {
                                     stringResource(R.string.category_no_category)
                                 }.let { categoryChipDisplayLabel(context, it) },
-                        onToggle = { viewModel.setAppCategory(app.packageName, category) }
+                        onToggle = {
+                            viewModel.setAppCategory(
+                                app.packageName,
+                                appProfileKey(app.userHandle),
+                                category
+                            )
+                        }
                 )
             }
         }

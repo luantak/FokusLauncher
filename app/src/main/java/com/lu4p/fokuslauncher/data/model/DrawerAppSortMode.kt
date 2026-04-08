@@ -25,3 +25,11 @@ fun drawerOpenCountKey(packageName: String, profileKey: String): String =
 /** Stable key for open counts (owner profile and per-[UserHandle] for work / private space). */
 fun drawerOpenCountKey(packageName: String, userHandle: UserHandle?): String =
         drawerOpenCountKey(packageName, appProfileKey(userHandle))
+
+/** Stable identity for app-specific launcher metadata persisted across UI/database layers. */
+fun appMetadataKey(packageName: String, profileKey: String): String =
+        drawerOpenCountKey(packageName, profileKey)
+
+/** Stable identity for app-specific launcher metadata using [AppInfo.userHandle]. */
+fun appMetadataKey(packageName: String, userHandle: UserHandle?): String =
+        appMetadataKey(packageName, appProfileKey(userHandle))

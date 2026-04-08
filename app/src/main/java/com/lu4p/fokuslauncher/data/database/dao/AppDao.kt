@@ -17,8 +17,8 @@ interface AppDao {
 
     // --- Hidden Apps ---
 
-    @Query("SELECT packageName FROM hidden_apps")
-    fun getHiddenPackageNames(): Flow<List<String>>
+    @Query("SELECT * FROM hidden_apps")
+    fun getHiddenApps(): Flow<List<HiddenAppEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun hideApp(entity: HiddenAppEntity)
@@ -26,8 +26,10 @@ interface AppDao {
     @Delete
     suspend fun unhideApp(entity: HiddenAppEntity)
 
-    @Query("SELECT EXISTS(SELECT 1 FROM hidden_apps WHERE packageName = :packageName)")
-    suspend fun isAppHidden(packageName: String): Boolean
+    @Query(
+        "SELECT EXISTS(SELECT 1 FROM hidden_apps WHERE packageName = :packageName AND profileKey = :profileKey)"
+    )
+    suspend fun isAppHidden(packageName: String, profileKey: String): Boolean
 
     // --- Renamed Apps ---
 
@@ -37,11 +39,13 @@ interface AppDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun renameApp(entity: RenamedAppEntity)
 
-    @Query("DELETE FROM renamed_apps WHERE packageName = :packageName")
-    suspend fun removeRename(packageName: String)
+    @Query("DELETE FROM renamed_apps WHERE packageName = :packageName AND profileKey = :profileKey")
+    suspend fun removeRename(packageName: String, profileKey: String)
 
-    @Query("SELECT customName FROM renamed_apps WHERE packageName = :packageName")
-    suspend fun getCustomName(packageName: String): String?
+    @Query(
+        "SELECT customName FROM renamed_apps WHERE packageName = :packageName AND profileKey = :profileKey"
+    )
+    suspend fun getCustomName(packageName: String, profileKey: String): String?
 
     // --- App Categories ---
 
@@ -54,11 +58,13 @@ interface AppDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAppCategories(entities: List<AppCategoryEntity>)
 
-    @Query("DELETE FROM app_categories WHERE packageName = :packageName")
-    suspend fun removeAppCategory(packageName: String)
+    @Query("DELETE FROM app_categories WHERE packageName = :packageName AND profileKey = :profileKey")
+    suspend fun removeAppCategory(packageName: String, profileKey: String)
 
-    @Query("SELECT category FROM app_categories WHERE packageName = :packageName")
-    suspend fun getAppCategory(packageName: String): String?
+    @Query(
+        "SELECT category FROM app_categories WHERE packageName = :packageName AND profileKey = :profileKey"
+    )
+    suspend fun getAppCategory(packageName: String, profileKey: String): String?
 
     @Query("SELECT * FROM app_categories WHERE category = :category")
     fun getAppsByCategory(category: String): Flow<List<AppCategoryEntity>>

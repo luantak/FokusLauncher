@@ -159,15 +159,15 @@ fun HomeScreen(
         HomeAppMenuSheet(
             fav = fav,
             onDismiss = { viewModel.dismissAppMenu() },
-            onRename = { newName -> viewModel.renameApp(fav.packageName, newName) },
+            onRename = { newName -> viewModel.renameApp(fav, newName) },
             onRemoveFromHome = { viewModel.removeFavorite(fav) },
             onEditHomeScreen = {
                 viewModel.dismissAppMenu()
                 onOpenEditHomeApps()
             },
-            onAppInfo = { viewModel.openAppInfo(fav.packageName) },
-            onHide = { viewModel.hideApp(fav.packageName) },
-            onUninstall = { viewModel.uninstallApp(fav.packageName) }
+            onAppInfo = { viewModel.openAppInfo(fav) },
+            onHide = { viewModel.hideApp(fav) },
+            onUninstall = { viewModel.uninstallApp(fav) }
         )
     }
 
