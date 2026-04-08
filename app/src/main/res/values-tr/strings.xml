@@ -89,7 +89,6 @@
     <string name="settings_accessibility_permission_disabled">Çift tıklama kilidi ve uzun kilit sonrası ana ekrana dönme için gereklidir</string>
     <string name="settings_home_widgets">Widget\'ları düzenle</string>
     <string name="settings_home_widgets_subtitle">Hangi widget\'ların gösterileceğini ve dokununca hangi uygulamaların açılacağını seçin</string>
-    <string name="settings_home_widgets_dialog_title">Gosterilecekler</string>
     <string name="settings_show_home_clock">Saati göster</string>
     <string name="settings_show_home_date">Tarihi göster</string>
     <string name="settings_show_home_weather">Hava durumunu göster</string>
@@ -102,9 +101,6 @@
     <string name="settings_return_home_after_long_lock_subtitle">Kilidi açtıktan sonra, cihaz yeterince uzun süre kilitli kaldıysa launcher\'ı gösterin</string>
     <string name="settings_long_lock_duration">Uzun kilit süresi</string>
     <string name="settings_long_lock_duration_subtitle">Cihazın kilidi açıldığında Fokus\'un ana ekrana dönmesi için cihazın ne kadar süre kilitli kalması gerekiyor.</string>
-    <string name="settings_long_lock_battery_optimization">Pil optimizasyonu</string>
-    <string name="settings_long_lock_battery_optimization_enabled">Launcher hala pil ömrü açısından optimize edilmiş durumda. Eğer ana ekrana dönüş özelliği güvenilir bir şekilde çalışmayı durdurursa, agresif OEM yazılımlarında bu özelliği kapatın.</string>
-    <string name="settings_long_lock_battery_optimization_disabled">Pil optimizasyonu Fokus Launcher için zaten kapalı.</string>
     <string name="accessibility_lock_service_description">Fokus Launcher\'ın ekranı kilitlemesine ve uzun süreli kilitlenmelerden sonra launcher\'a geri dönmesine olanak tanır.</string>
     <string name="double_tap_lock_failed">Cihaz kilitlenemedi</string>
     <string name="settings_edit_home_screen">Ana ekranı düzenle</string>
@@ -174,8 +170,6 @@
     <string name="onboarding_swipe_right">Sağa kaydır</string>
     <string name="onboarding_swipe_change">Değiştir</string>
     <string name="onboarding_swipe_not_set">Seçilmedi</string>
-    <string name="onboarding_swipe_pick_app">Uygulama seç</string>
-    <string name="onboarding_swipe_cancel">İptal</string>
     <string name="onboarding_tips_title">Hızlı ipuçları</string>
     <string name="onboarding_tip_swipe">Uygulama menüsünü açmak için yukarı kaydır</string>
     <string name="onboarding_tip_longpress">Düzenlemek için ya da ayarları açmak için ana ekrana uzun basın</string>
@@ -203,6 +197,4 @@
     <string name="settings_drawer_category_rail_side_subtitle">Varsayılan olarak, kenar çubuğu sağda yer alır. Çekmecedeki bir kategoriye uzun süre basılı tutarak simgesini değiştirebilirsiniz.</string>
     <string name="settings_drawer_rail_position_left">Sol</string>
     <string name="settings_drawer_rail_position_right">Sağ</string>
-    <string name="edit_home_section_all_apps" translatable="false">\@string/drawer_filter_all_apps</string>
-    <string name="app_name" translatable="false">Fokus Launcher</string>
 </resources>

@@ -98,7 +98,6 @@
     <string name="settings_accessibility_permission_disabled">Kræves til dobbelttryk for at låse og vende tilbage til startskærmen efter langtidslås</string>
     <string name="settings_home_widgets">Konfigurer widgets</string>
     <string name="settings_home_widgets_subtitle">Vælg hvilke widgets der vises, og hvilke apps der åbnes, når du trykker på dem</string>
-    <string name="settings_home_widgets_dialog_title">Hvad skal der vises</string>
     <string name="settings_show_home_clock">Vis ur</string>
     <string name="settings_show_home_date">Vis dato</string>
     <string name="settings_show_home_weather">Vis vejr</string>
@@ -111,9 +110,6 @@
     <string name="settings_return_home_after_long_lock_subtitle">Efter oplåsning: Vis startskærmen, hvis enheden har været låst i længere tid</string>
     <string name="settings_long_lock_duration">Varighed for Langtidslås</string>
     <string name="settings_long_lock_duration_subtitle">Hvor længe enheden skal forblive låst, før Fokus vender tilbage til startskærmen ved oplåsning.</string>
-    <string name="settings_long_lock_battery_optimization">Batteri optimering</string>
-    <string name="settings_long_lock_battery_optimization_enabled">Startskærmen er stadig batterioptimeret. Deaktivér dette på aggressiv OEM-firmware, hvis \"vend tilbage til startskærm\" holder op med at fungere pålideligt.</string>
-    <string name="settings_long_lock_battery_optimization_disabled">Batterioptimering er allerede deaktiveret for Fokus startskærm.</string>
     <string name="accessibility_lock_service_description">Giver Fokus Launcher tilladelse til at låse skærmen og vende tilbage til startskærmen efter længere tids lås.</string>
     <string name="double_tap_lock_failed">Kunne ikke låse enheden</string>
     <string name="settings_edit_home_screen">Tilpas startskærm</string>
@@ -183,8 +179,6 @@
     <string name="onboarding_swipe_right">Stryg til højre</string>
     <string name="onboarding_swipe_change">Skift</string>
     <string name="onboarding_swipe_not_set">Ikke indstillet</string>
-    <string name="onboarding_swipe_pick_app">Vælg app</string>
-    <string name="onboarding_swipe_cancel">Annuller</string>
     <string name="onboarding_tips_title">Gode råd</string>
     <string name="onboarding_tip_swipe">Stryg op for at åbne appskuffen</string>
     <string name="onboarding_tip_longpress">Langt-tryk på startskærmen for at ændre eller åbne indstillinger</string>
@@ -203,8 +197,6 @@
     <string name="settings_weblate_subtitle">Bidrag med oversættelser på Weblate</string>
     <string name="settings_matrix_title">Tag del i samtalen</string>
     <string name="settings_matrix_subtitle">Få hjælp og del din tilbagemelding</string>
-    <string name="edit_home_section_all_apps" translatable="false">\@string/skuffe_filter_alle_apps</string>
-    <string name="app_name" translatable="false">Fokus Startskærm</string>
     <string name="cd_open_subpage">Åbner en anden skærm</string>
     <string name="search_icons">Søg efter ikoner</string>
     <string name="icon_picker_current_icon">Valgt ikon</string>
@@ -226,7 +218,6 @@
     <string name="icon_cat_household">Bolig</string>
     <string name="icon_cat_privacy">Privatliv</string>
     <string name="icon_cat_other">Andre</string>
-    <string name="icon_cat_no_metadata">Alle andre ikoner</string>
     <string name="icon_cat_search_results">Lignende ikoner</string>
     <string name="settings_dot_search_title">Dot søgning</string>
     <string name="settings_dot_search_subtitle">Skriv `. termer` eller `.&lt;lille bogstav&gt; termer` i søgefeltet i appskuffen.</string>

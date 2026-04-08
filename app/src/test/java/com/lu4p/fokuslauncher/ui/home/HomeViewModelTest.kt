@@ -1,5 +1,6 @@
 package com.lu4p.fokuslauncher.ui.home
 
+import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.ContextWrapper
@@ -9,6 +10,7 @@ import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.os.BatteryManager
+import android.os.Build
 import android.text.format.DateFormat
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
@@ -84,7 +86,7 @@ class HomeViewModelTest {
         val batteryIntent = mockk<Intent>(relaxed = true)
         every { batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) } returns 75
         every { batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1) } returns 100
-        every { context.registerReceiver(null, any()) } returns batteryIntent
+        stubNullReceiverBatterySticky(batteryIntent)
 
         // Mock preferences using Fake
         preferencesManager = mockk(relaxed = true)
@@ -126,17 +128,37 @@ class HomeViewModelTest {
         withContext, appRepository, preferencesManager, weatherRepository
     )
 
+    /**
+     * Sticky battery read uses [androidx.core.content.ContextCompat.registerReceiver], which maps
+     * to different [Context.registerReceiver] overloads by API (including the 5-arg form on API 33+).
+     */
+    private fun stubNullReceiverBatterySticky(intent: Intent?) {
+        every { context.registerReceiver(null, any()) } returns intent
+        every { context.registerReceiver(null, any(), any()) } returns intent
+        every { context.registerReceiver(null, any(), any(), any()) } returns intent
+        every { context.registerReceiver(null, any(), any(), any(), any()) } returns intent
+    }
+
     /** Real app context is required for [DateFormat.getTimeFormat]; battery sticky read is mocked. */
     private fun contextForClockAndBattery(batterySticky: Intent): Context {
         val base = RuntimeEnvironment.getApplication().applicationContext
         return object : ContextWrapper(base) {
-            @Suppress("DEPRECATION")
+            @SuppressLint("UnspecifiedRegisterReceiverFlag")
             override fun registerReceiver(
                 receiver: BroadcastReceiver?,
                 filter: IntentFilter
             ): Intent? =
                 if (receiver == null) batterySticky
-                else super.registerReceiver(receiver, filter)
+                else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    super.registerReceiver(
+                        receiver,
+                        filter,
+                        RECEIVER_NOT_EXPORTED
+                    )
+                } else {
+                    @Suppress("DEPRECATION")
+                    super.registerReceiver(receiver, filter)
+                }
 
             override fun registerReceiver(
                 receiver: BroadcastReceiver?,
@@ -192,7 +214,7 @@ class HomeViewModelTest {
     fun `refreshBattery handles invalid battery intent gracefully`() {
         val batteryIntent = Intent(Intent.ACTION_BATTERY_CHANGED)
         // Missing EXTRAS will cause getIntExtra to return default (-1)
-        every { context.registerReceiver(null, any()) } returns batteryIntent
+        stubNullReceiverBatterySticky(batteryIntent)
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceTimeBy(100)
@@ -352,7 +374,7 @@ class HomeViewModelTest {
         val batteryIntent = mockk<Intent>(relaxed = true)
         every { batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) } returns 50
         every { batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1) } returns 100
-        every { context.registerReceiver(null, any()) } returns batteryIntent
+        stubNullReceiverBatterySticky(batteryIntent)
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceTimeBy(100)
@@ -365,7 +387,7 @@ class HomeViewModelTest {
 
     @Test
     fun `battery handles missing intent gracefully`() {
-        every { context.registerReceiver(null, any()) } returns null
+        stubNullReceiverBatterySticky(null)
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceTimeBy(100)
@@ -495,7 +517,7 @@ class HomeViewModelTest {
 
     @Test
     fun `removed package disappears from favorites immediately`() {
-        val viewModel = createViewModel()
+        createViewModel()
         testDispatcher.scheduler.runCurrent()
 
         removedPackages.tryEmit(RemovedApp(packageName = "com.lu4p.music", profileKey = "0"))
@@ -519,7 +541,7 @@ class HomeViewModelTest {
                 FavoriteApp(label = "Music Work", packageName = "com.lu4p.music", iconName = "music", profileKey = "42")
             )
         )
-        val viewModel = createViewModel()
+        createViewModel()
         testDispatcher.scheduler.runCurrent()
 
         removedPackages.tryEmit(RemovedApp(packageName = "com.lu4p.music", profileKey = "42"))

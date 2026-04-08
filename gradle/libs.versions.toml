@@ -2,7 +2,7 @@
 agp = "9.1.0"
 ksp = "2.3.5"
 hilt = "2.59.2"
-composeBom = "2026.03.00"
+composeBom = "2026.03.01"
 mockwebserver = "5.3.2"
 room = "2.8.4"
 lifecycle = "2.10.0"
@@ -73,7 +73,7 @@ robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
-androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest", version = "1.10.5" }
+androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest", version = "1.10.6" }
 hilt-android-testing = { group = "com.google.dagger", name = "hilt-android-testing", version.ref = "hilt" }
 
 [plugins]

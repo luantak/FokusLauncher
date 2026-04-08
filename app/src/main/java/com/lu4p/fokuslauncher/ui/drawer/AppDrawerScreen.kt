@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Apps
@@ -377,7 +376,6 @@ private fun DrawerAppListColumn(
                                                     .pointerInput(
                                                             section.id,
                                                             appListStableKey(app),
-                                                            allowCustomDragReorder
                                                     ) {
                                                         detectVerticalDragGestures(
                                                                 onDragStart = {
@@ -547,7 +545,6 @@ private fun DrawerAppListColumn(
                                                 .pointerInput(
                                                         appListStableKey(app),
                                                         latestDisplayPrivateApps.size,
-                                                        allowCustomDragReorder
                                                 ) {
                                                     detectVerticalDragGestures(
                                                             onDragStart = {
@@ -631,6 +628,7 @@ private fun DrawerAppListColumn(
 
 @Composable
 fun AppDrawerScreen(
+        modifier: Modifier = Modifier,
         viewModel: AppDrawerViewModel = hiltViewModel(),
         onSettingsClick: () -> Unit = {},
         onEditCategoryApps: (String) -> Unit = {},
@@ -668,29 +666,30 @@ fun AppDrawerScreen(
     AppDrawerContent(
             uiState = uiState,
             onSearchQueryChanged = viewModel::onSearchQueryChanged,
-            onSearchImeAction = {
-                if (viewModel.tryLaunchFirstSearchResult()) closeAndResetAfterLaunch()
-            },
             onCategorySelected = viewModel::onCategorySelected,
-            onCategoryLongPress = viewModel::onCategoryLongPress,
             onAppClick = { target ->
                 if (viewModel.launchTarget(target)) {
                     closeAndResetAfterLaunch()
                 }
             },
-            onAppLongPress = viewModel::onAppLongPress,
-            onMenuToggle = viewModel::toggleMenu,
-            onMenuDismiss = viewModel::dismissMenu,
             onSettingsClick = {
                 viewModel.dismissMenu()
                 onSettingsClick()
             },
-            onPrivateSpaceToggle = viewModel::togglePrivateSpace,
-            onToggleDrawerReorderApps = viewModel::toggleDrawerReorderSession,
-            onClose = closeAndReset,
+            modifier = modifier,
+            onSearchImeAction = {
+                if (viewModel.tryLaunchFirstSearchResult()) closeAndResetAfterLaunch()
+            },
             useSidebarCategoryDrawer = uiState.useSidebarCategoryDrawer,
             drawerCategorySidebarOnRight = uiState.drawerCategorySidebarOnRight,
             categoryDrawerIconOverrides = uiState.categoryDrawerIconOverrides,
+            onCategoryLongPress = viewModel::onCategoryLongPress,
+            onAppLongPress = viewModel::onAppLongPress,
+            onMenuToggle = viewModel::toggleMenu,
+            onMenuDismiss = viewModel::dismissMenu,
+            onPrivateSpaceToggle = viewModel::togglePrivateSpace,
+            onToggleDrawerReorderApps = viewModel::toggleDrawerReorderSession,
+            onClose = closeAndReset,
             onReorderDrawerProfileSection = viewModel::reorderDrawerProfileSectionApps,
             onReorderPrivateDrawerApps = viewModel::reorderPrivateDrawerApps
     )
@@ -733,11 +732,11 @@ fun AppDrawerScreen(
 fun AppDrawerContent(
         uiState: AppDrawerUiState,
         onSearchQueryChanged: (String) -> Unit,
-        onSearchImeAction: () -> Unit = {},
         onCategorySelected: (String) -> Unit,
         onAppClick: (LaunchTarget) -> Unit,
         onSettingsClick: () -> Unit,
         modifier: Modifier = Modifier,
+        onSearchImeAction: () -> Unit = {},
         useSidebarCategoryDrawer: Boolean = false,
         drawerCategorySidebarOnRight: Boolean = true,
         categoryDrawerIconOverrides: Map<String, String> = emptyMap(),
@@ -1096,7 +1095,6 @@ fun CategoryActionSheet(
                     category.equals(ReservedCategoryNames.UNCATEGORIZED, ignoreCase = true)
     val canSaveRename = !isReservedDrawerCategory && normalized.isNotBlank()
     val showEditApps = !isReservedDrawerCategory
-    val canDelete = showEditApps
     val displayTitle = categoryChipDisplayLabel(context, category)
     val drawerRailIconKey =
             resolvedCategoryDrawerIconName(context, category, categoryDrawerIconOverrides)
@@ -1196,7 +1194,7 @@ fun CategoryActionSheet(
                     testTag = "category_action_reset_icon",
                     onClick = onResetCategoryIcon
             )
-            if (canDelete) {
+            if (showEditApps) {
                 DrawerSheetActionRow(
                         icon = Icons.Default.Delete,
                         label = stringResource(R.string.category_action_remove),
@@ -1214,9 +1212,8 @@ fun CategoryActionSheet(
                 iconOverrides = categoryDrawerIconOverrides,
                 onSelect = { name ->
                     onSetCategoryIcon(name)
-                    showIconPickerDialog = false
                 },
-                onDismiss = { showIconPickerDialog = false }
+                onDismiss = { }
         )
     }
 }

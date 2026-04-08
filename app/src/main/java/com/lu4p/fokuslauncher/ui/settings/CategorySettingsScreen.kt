@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
@@ -197,9 +196,8 @@ fun CategorySettingsScreen(
                 iconOverrides = uiState.categoryDrawerIconOverrides,
                 onSelect = { name ->
                     viewModel.setCategoryDrawerIcon(pickerCategory, name)
-                    categoryIconPickerFor = null
                 },
-                onDismiss = { categoryIconPickerFor = null }
+                onDismiss = { }
         )
     }
 }

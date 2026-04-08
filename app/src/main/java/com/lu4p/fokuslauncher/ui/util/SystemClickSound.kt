@@ -13,7 +13,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.Role
 
@@ -26,7 +25,7 @@ fun View.playSystemClickSound() {
 }
 
 /** Invoked for taps that should respect system touch sounds. Provided by [ProvideSystemClickSound]. */
-val LocalSystemClickSound = compositionLocalOf<() -> Unit> { { } }
+val LocalSystemClickSound = compositionLocalOf { { } }
 
 @Composable
 fun ProvideSystemClickSound(content: @Composable () -> Unit) {
@@ -59,16 +58,17 @@ fun rememberBooleanChangeWithSystemSound(onChange: (Boolean) -> Unit): (Boolean)
     }
 }
 
+@Composable
 fun Modifier.clickableWithSystemSound(
         enabled: Boolean = true,
         onClickLabel: String? = null,
         role: Role? = null,
         onClick: () -> Unit,
-): Modifier =
-        composed {
-            val play = LocalSystemClickSound.current
-            val interactionSource = remember { MutableInteractionSource() }
-            clickable(
+): Modifier {
+    val play = LocalSystemClickSound.current
+    val interactionSource = remember { MutableInteractionSource() }
+    return then(
+            Modifier.clickable(
                     interactionSource = interactionSource,
                     indication = LocalIndication.current,
                     enabled = enabled,
@@ -79,8 +79,10 @@ fun Modifier.clickableWithSystemSound(
                         onClick()
                     },
             )
-        }
+    )
+}
 
+@Composable
 fun Modifier.clickableWithSystemSound(
         interactionSource: MutableInteractionSource,
         indication: Indication?,
@@ -88,10 +90,10 @@ fun Modifier.clickableWithSystemSound(
         onClickLabel: String? = null,
         role: Role? = null,
         onClick: () -> Unit,
-): Modifier =
-        composed {
-            val play = LocalSystemClickSound.current
-            clickable(
+): Modifier {
+    val play = LocalSystemClickSound.current
+    return then(
+            Modifier.clickable(
                     interactionSource = interactionSource,
                     indication = indication,
                     enabled = enabled,
@@ -102,9 +104,11 @@ fun Modifier.clickableWithSystemSound(
                         onClick()
                     },
             )
-        }
+    )
+}
 
 @OptIn(ExperimentalFoundationApi::class)
+@Composable
 fun Modifier.combinedClickableWithSystemSound(
         enabled: Boolean = true,
         onClickLabel: String? = null,
@@ -113,11 +117,11 @@ fun Modifier.combinedClickableWithSystemSound(
         onLongClick: (() -> Unit)? = null,
         onDoubleClick: (() -> Unit)? = null,
         onClick: () -> Unit,
-): Modifier =
-        composed {
-            val play = LocalSystemClickSound.current
-            val interactionSource = remember { MutableInteractionSource() }
-            combinedClickable(
+): Modifier {
+    val play = LocalSystemClickSound.current
+    val interactionSource = remember { MutableInteractionSource() }
+    return then(
+            Modifier.combinedClickable(
                     interactionSource = interactionSource,
                     indication = LocalIndication.current,
                     enabled = enabled,
@@ -131,9 +135,11 @@ fun Modifier.combinedClickableWithSystemSound(
                         onClick()
                     },
             )
-        }
+    )
+}
 
 @OptIn(ExperimentalFoundationApi::class)
+@Composable
 fun Modifier.combinedClickableWithSystemSound(
         interactionSource: MutableInteractionSource,
         indication: Indication?,
@@ -144,10 +150,10 @@ fun Modifier.combinedClickableWithSystemSound(
         onLongClick: (() -> Unit)? = null,
         onDoubleClick: (() -> Unit)? = null,
         onClick: () -> Unit,
-): Modifier =
-        composed {
-            val play = LocalSystemClickSound.current
-            combinedClickable(
+): Modifier {
+    val play = LocalSystemClickSound.current
+    return then(
+            Modifier.combinedClickable(
                     interactionSource = interactionSource,
                     indication = indication,
                     enabled = enabled,
@@ -161,4 +167,5 @@ fun Modifier.combinedClickableWithSystemSound(
                         onClick()
                     },
             )
-        }
+    )
+}

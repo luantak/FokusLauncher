@@ -201,7 +201,7 @@ class HomeViewModel @Inject constructor(
     private val timezoneChangedReceiver = object : BroadcastReceiver() {
         override fun onReceive(ctx: Context?, intent: Intent?) {
             if (intent?.action != Intent.ACTION_TIMEZONE_CHANGED) return
-            applySystemTimeZoneChange(intent.getStringExtra(Intent.EXTRA_TIMEZONE))
+            applySystemTimeZoneChange(intent.getStringExtra(TIMEZONE_CHANGED_EXTRA_ID))
         }
     }
 
@@ -674,7 +674,13 @@ class HomeViewModel @Inject constructor(
 
     private fun updateBattery() {
         try {
-            val batteryIntent = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+            val batteryIntent =
+                    ContextCompat.registerReceiver(
+                            context,
+                            null,
+                            IntentFilter(Intent.ACTION_BATTERY_CHANGED),
+                            ContextCompat.RECEIVER_NOT_EXPORTED
+                    )
             if (batteryIntent != null) {
                 setBatteryPercentFromIntent(batteryIntent)
             } else {
@@ -1028,8 +1034,7 @@ class HomeViewModel @Inject constructor(
             val hasCoarsePermission = ContextCompat.checkSelfPermission(
                 context, Manifest.permission.ACCESS_COARSE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
-            val shouldShow = hasCoarsePermission
-            if (!shouldShow) {
+            if (!hasCoarsePermission) {
                 val hiddenState = HomeWeatherUiState(
                     weather = null,
                     weatherUseFahrenheit = useFahrenheit,
@@ -1064,6 +1069,12 @@ class HomeViewModel @Inject constructor(
     }
 
     private companion object {
+        /**
+         * [Intent.EXTRA_TIMEZONE] documents this key but the constant is not inlined below API 30;
+         * [Intent.ACTION_TIMEZONE_CHANGED] has used `"time-zone"` since early Android.
+         */
+        private const val TIMEZONE_CHANGED_EXTRA_ID = "time-zone"
+
         /** OEM / AOSP clock packages as fallback when [AlarmClock.ACTION_SHOW_ALARMS] is unavailable. */
         val CLOCK_LAUNCH_PACKAGES =
                 listOf(

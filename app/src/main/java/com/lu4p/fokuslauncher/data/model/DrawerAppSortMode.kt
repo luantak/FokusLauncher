@@ -16,7 +16,7 @@ enum class DrawerAppSortMode {
 
 /** Stable profile segment for [userHandle]: owner user is `"0"`. */
 fun appProfileKey(userHandle: UserHandle?): String =
-        if (userHandle == null) "0" else userHandle.hashCode().toString()
+    userHandle?.hashCode()?.toString() ?: "0"
 
 /** Stable key for open counts, list rows, and matching [FavoriteApp.profileKey]. */
 fun drawerOpenCountKey(packageName: String, profileKey: String): String =

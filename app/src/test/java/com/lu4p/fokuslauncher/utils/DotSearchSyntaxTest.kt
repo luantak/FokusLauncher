@@ -66,7 +66,7 @@ class DotSearchSyntaxTest {
     }
 
     @Test
-    fun `isPossibleDotSearchPrefix`() {
+    fun isPossibleDotSearchPrefix() {
         assertTrue(DotSearchSyntax.isPossibleDotSearchPrefix("."))
         assertTrue(DotSearchSyntax.isPossibleDotSearchPrefix(".a"))
     }

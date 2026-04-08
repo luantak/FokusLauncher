@@ -41,6 +41,7 @@
         <service
             android:name=".accessibility.LockScreenAccessibilityService"
             android:exported="true"
+            android:label="@string/accessibility_lock_service_label"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />

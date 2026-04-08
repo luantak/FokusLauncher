@@ -7,5 +7,4 @@ val White = Color(0xFFFFFFFF)
 val LightGray = Color(0xFFB0B0B0)
 val DarkGray = Color(0xFF1A1A1A)
 val ChipBackground = Color(0xFF2A2A2A)
-val ChipSelectedBackground = Color(0xFF404040)
 val Transparent = Color.Transparent

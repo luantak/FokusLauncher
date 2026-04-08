@@ -65,6 +65,9 @@ fun DrawerDotSearchSettingsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val defaultSystemLabel = stringResource(R.string.settings_dot_search_default_system)
+    val toastInvalidAlias = stringResource(R.string.settings_dot_search_invalid_alias)
+    val toastAliasTaken = stringResource(R.string.settings_dot_search_alias_taken)
     var showAddShortcutChoice by remember { mutableStateOf(false) }
     var showDefaultPicker by remember { mutableStateOf(false) }
     var showDefaultUrlTemplate by remember { mutableStateOf(false) }
@@ -74,10 +77,10 @@ fun DrawerDotSearchSettingsScreen(
     var pendingUrlAliasChar by remember { mutableStateOf<Char?>(null) }
 
     val defaultSummary =
-            remember(uiState.defaultTarget, uiState.allApps, context) {
+            remember(uiState.defaultTarget, uiState.allApps, defaultSystemLabel) {
                 val pref = uiState.defaultTarget
                 if (pref.target == null) {
-                    context.getString(R.string.settings_dot_search_default_system)
+                    defaultSystemLabel
                 } else {
                     formatShortcutTargetDisplay(
                             context = context,
@@ -177,14 +180,14 @@ fun DrawerDotSearchSettingsScreen(
                 )
             }
             val sortedAliases = uiState.aliases.entries.sortedBy { it.key }
-            items(sortedAliases, key = { it.key }) { (ch, pref) ->
+            items(sortedAliases, key = { it.key }) { entry ->
                 val label =
                         formatShortcutTargetDisplay(
                                 context = context,
-                                target = pref.target,
+                                target = entry.value.target,
                                 allApps = uiState.allApps,
                                 notSetLabel = "",
-                                profileKey = pref.profileKey
+                                profileKey = entry.value.profileKey
                         )
                 Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -194,7 +197,7 @@ fun DrawerDotSearchSettingsScreen(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                                ".${ch} …",
+                                ".${entry.key} …",
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onBackground
                         )
@@ -204,7 +207,7 @@ fun DrawerDotSearchSettingsScreen(
                                 color = MaterialTheme.colorScheme.secondary
                         )
                     }
-                    FokusIconButton(onClick = { viewModel.removeAlias(ch) }) {
+                    FokusIconButton(onClick = { viewModel.removeAlias(entry.key) }) {
                         Icon(
                                 Icons.Default.Close,
                                 stringResource(R.string.cd_remove_alias),
@@ -218,7 +221,7 @@ fun DrawerDotSearchSettingsScreen(
 
     if (showAddShortcutChoice) {
         AlertDialog(
-                onDismissRequest = { showAddShortcutChoice = false },
+                onDismissRequest = { },
                 title = {
                     Text(
                             stringResource(R.string.settings_dot_search_add_shortcut_title),
@@ -229,7 +232,6 @@ fun DrawerDotSearchSettingsScreen(
                     Column {
                         FokusTextButton(
                                 onClick = {
-                                    showAddShortcutChoice = false
                                     showAliasAppPicker = true
                                 }
                         ) {
@@ -237,7 +239,6 @@ fun DrawerDotSearchSettingsScreen(
                         }
                         FokusTextButton(
                                 onClick = {
-                                    showAddShortcutChoice = false
                                     showAliasCharForUrlTemplate = true
                                 }
                         ) {
@@ -247,7 +248,7 @@ fun DrawerDotSearchSettingsScreen(
                 },
                 confirmButton = {},
                 dismissButton = {
-                    FokusTextButton(onClick = { showAddShortcutChoice = false }) {
+                    FokusTextButton(onClick = { }) {
                         Text(stringResource(R.string.action_cancel))
                     }
                 },
@@ -261,9 +262,8 @@ fun DrawerDotSearchSettingsScreen(
                 title = stringResource(R.string.settings_dot_search_pick_default_app),
                 onSelect = { app ->
                     viewModel.setDefaultFromApp(app)
-                    showDefaultPicker = false
                 },
-                onDismiss = { showDefaultPicker = false }
+                onDismiss = { }
         )
     }
 
@@ -274,9 +274,8 @@ fun DrawerDotSearchSettingsScreen(
                 validationErrorText = urlTemplateError,
                 onConfirm = { url ->
                     viewModel.setDefaultFromUrlTemplate(url)
-                    showDefaultUrlTemplate = false
                 },
-                onDismiss = { showDefaultUrlTemplate = false }
+                onDismiss = { }
         )
     }
 
@@ -285,10 +284,9 @@ fun DrawerDotSearchSettingsScreen(
                 apps = uiState.webSearchCapableApps,
                 title = stringResource(R.string.settings_dot_search_pick_alias_app),
                 onSelect = { app ->
-                    showAliasAppPicker = false
                     pendingAliasApp = app
                 },
-                onDismiss = { showAliasAppPicker = false }
+                onDismiss = { }
         )
     }
 
@@ -300,31 +298,30 @@ fun DrawerDotSearchSettingsScreen(
                         c == null ->
                                 Toast.makeText(
                                                 context,
-                                                context.getString(R.string.settings_dot_search_invalid_alias),
+                                                toastInvalidAlias,
                                                 Toast.LENGTH_SHORT
                                         )
                                         .show()
                         !DrawerDotSearchSettingsViewModel.isValidAliasChar(c) ->
                                 Toast.makeText(
                                                 context,
-                                                context.getString(R.string.settings_dot_search_invalid_alias),
+                                                toastInvalidAlias,
                                                 Toast.LENGTH_SHORT
                                         )
                                         .show()
                         viewModel.aliasCharTaken(c) ->
                                 Toast.makeText(
                                                 context,
-                                                context.getString(R.string.settings_dot_search_alias_taken),
+                                                toastAliasTaken,
                                                 Toast.LENGTH_SHORT
                                         )
                                         .show()
                         else -> {
                             viewModel.setAlias(c, app)
-                            pendingAliasApp = null
                         }
                     }
                 },
-                onDismiss = { pendingAliasApp = null }
+                onDismiss = { }
         )
     }
 
@@ -336,31 +333,30 @@ fun DrawerDotSearchSettingsScreen(
                         c == null ->
                                 Toast.makeText(
                                                 context,
-                                                context.getString(R.string.settings_dot_search_invalid_alias),
+                                                toastInvalidAlias,
                                                 Toast.LENGTH_SHORT
                                         )
                                         .show()
                         !DrawerDotSearchSettingsViewModel.isValidAliasChar(c) ->
                                 Toast.makeText(
                                                 context,
-                                                context.getString(R.string.settings_dot_search_invalid_alias),
+                                                toastInvalidAlias,
                                                 Toast.LENGTH_SHORT
                                         )
                                         .show()
                         viewModel.aliasCharTaken(c) ->
                                 Toast.makeText(
                                                 context,
-                                                context.getString(R.string.settings_dot_search_alias_taken),
+                                                toastAliasTaken,
                                                 Toast.LENGTH_SHORT
                                         )
                                         .show()
                         else -> {
-                            showAliasCharForUrlTemplate = false
                             pendingUrlAliasChar = c
                         }
                     }
                 },
-                onDismiss = { showAliasCharForUrlTemplate = false }
+                onDismiss = { }
         )
     }
 
@@ -371,9 +367,8 @@ fun DrawerDotSearchSettingsScreen(
                 validationErrorText = urlTemplateError,
                 onConfirm = { url ->
                     viewModel.setAliasFromUrlTemplate(ch, url)
-                    pendingUrlAliasChar = null
                 },
-                onDismiss = { pendingUrlAliasChar = null }
+                onDismiss = { }
         )
     }
 }
@@ -513,9 +508,8 @@ private fun DotSearchUrlTemplateDialog(
                             maxLines = 4,
                             isError = error != null,
                             supportingText = {
-                                val e = error
-                                if (e != null) {
-                                    Text(e, color = MaterialTheme.colorScheme.error)
+                                error?.let { err ->
+                                    Text(err, color = MaterialTheme.colorScheme.error)
                                 }
                             },
                             modifier = Modifier.fillMaxWidth()
@@ -526,7 +520,6 @@ private fun DotSearchUrlTemplateDialog(
                 FokusTextButton(
                         onClick = {
                             if (!DrawerDotSearchSettingsViewModel.isValidDotSearchUrlTemplate(value)) {
-                                error = validationErrorText
                             } else {
                                 onConfirm(value.trim())
                             }

@@ -47,6 +47,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import androidx.core.net.toUri
 
 /**
  * Repository responsible for loading and caching installed apps from the system, and managing
@@ -417,7 +418,7 @@ constructor(
                                 addFlags(flags)
                             }
                         } catch (_: Exception) {
-                            Intent(Intent.ACTION_VIEW, Uri.parse(expanded)).apply { addFlags(flags) }
+                            Intent(Intent.ACTION_VIEW, expanded.toUri()).apply { addFlags(flags) }
                         }
                 if (!intentUriContainsQueryPlaceholder(target.intentUri)) {
                     intent.putExtra(SearchManager.QUERY, query)
@@ -462,7 +463,6 @@ constructor(
     private fun dotSearchLaunchContext(profileKey: String, target: ShortcutTarget?): Context {
         val user = resolveDotSearchUserHandle(profileKey, target)
         if (user == Process.myUserHandle()) return context
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return context
         return runCatching {
             val m =
                     Context::class.java.getMethod(
@@ -514,7 +514,6 @@ constructor(
         val uh = app.userHandle
                 ?: return context
         if (uh == Process.myUserHandle()) return context
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return context
         return runCatching {
             val m =
                     Context::class.java.getMethod(
@@ -896,13 +895,11 @@ constructor(
 
     private fun extractUserHandle(intent: Intent): UserHandle? {
         val extraUser =
-                try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     intent.getParcelableExtra(Intent.EXTRA_USER, UserHandle::class.java)
-                } catch (_: NoSuchMethodError) {
+                } else {
                     @Suppress("DEPRECATION")
                     intent.getParcelableExtra(Intent.EXTRA_USER) as? UserHandle
-                } catch (_: Exception) {
-                    null
                 }
         if (extraUser != null) return extraUser
 

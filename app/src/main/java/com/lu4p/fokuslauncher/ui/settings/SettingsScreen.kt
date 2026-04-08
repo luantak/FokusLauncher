@@ -3,6 +3,7 @@ package com.lu4p.fokuslauncher.ui.settings
 import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.res.Resources
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.widget.Toast
@@ -73,6 +74,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -121,6 +123,7 @@ fun SettingsScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val installedFontFamilies by viewModel.installedFontFamilies.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val resources = LocalResources.current
     val activity = LocalActivity.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -349,6 +352,7 @@ fun SettingsScreen(
                         val weatherAppLabel =
                                 formatWeatherAppLabel(
                                         context,
+                                        resources,
                                         uiState.preferredWeatherAppPackage,
                                         uiState.allApps
                                 )
@@ -366,7 +370,12 @@ fun SettingsScreen(
                 ShortcutTargetRow(
                         label = stringResource(R.string.settings_swipe_left),
                         currentTarget =
-                                formatShortcutTarget(context, uiState.swipeLeftTarget, uiState.allApps),
+                                formatShortcutTarget(
+                                        context,
+                                        resources,
+                                        uiState.swipeLeftTarget,
+                                        uiState.allApps
+                                ),
                         onPickApp = { showAppPickerFor.value = "swipeLeft" },
                         onClear = { viewModel.setSwipeLeftTarget(null) }
                 )
@@ -376,7 +385,12 @@ fun SettingsScreen(
                 ShortcutTargetRow(
                         label = stringResource(R.string.settings_swipe_right),
                         currentTarget =
-                                formatShortcutTarget(context, uiState.swipeRightTarget, uiState.allApps),
+                                formatShortcutTarget(
+                                        context,
+                                        resources,
+                                        uiState.swipeRightTarget,
+                                        uiState.allApps
+                                ),
                         onPickApp = { showAppPickerFor.value = "swipeRight" },
                         onClear = { viewModel.setSwipeRightTarget(null) }
                 )
@@ -539,6 +553,9 @@ fun SettingsScreen(
             item {
                 val scope = rememberCoroutineScope()
                 val activity = LocalActivity.current
+                val shareChooserTitle =
+                        stringResource(R.string.settings_export_logs_share_chooser)
+                val exportLogsFailedToast = stringResource(R.string.toast_export_logs_failed)
                 Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier =
@@ -550,17 +567,13 @@ fun SettingsScreen(
                                                     activity.startActivity(
                                                             Intent.createChooser(
                                                                     shareIntent,
-                                                                    context.getString(
-                                                                            R.string.settings_export_logs_share_chooser
-                                                                    )
+                                                                    shareChooserTitle
                                                             )
                                                     )
                                                 } else {
                                                     Toast.makeText(
                                                                     context,
-                                                                    context.getString(
-                                                                            R.string.toast_export_logs_failed
-                                                                    ),
+                                                                    exportLogsFailedToast,
                                                                     Toast.LENGTH_SHORT
                                                             )
                                                             .show()
@@ -691,6 +704,7 @@ fun HomeWidgetsSettingsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val resources = LocalResources.current
     val activity = LocalActivity.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val showAppPickerFor = remember { mutableStateOf<String?>(null) }
@@ -819,6 +833,7 @@ fun HomeWidgetsSettingsScreen(
                         val weatherAppLabel =
                                 formatWeatherAppLabel(
                                         context,
+                                        resources,
                                         uiState.preferredWeatherAppPackage,
                                         uiState.allApps
                                 )
@@ -834,7 +849,7 @@ fun HomeWidgetsSettingsScreen(
             item {
                 val clockLabel =
                         formatWidgetAppOverrideLabel(
-                                context,
+                                resources,
                                 uiState.preferredClockAppPackage,
                                 uiState.allApps
                         )
@@ -848,7 +863,7 @@ fun HomeWidgetsSettingsScreen(
             item {
                 val calendarLabel =
                         formatWidgetAppOverrideLabel(
-                                context,
+                                resources,
                                 uiState.preferredCalendarAppPackage,
                                 uiState.allApps
                         )
@@ -1947,18 +1962,19 @@ private fun AppPickerDialog(
 }
 
 private fun formatWidgetAppOverrideLabel(
-        context: Context,
+        resources: Resources,
         packageName: String,
         allApps: List<AppInfo>
 ): String {
     if (packageName.isNotBlank()) {
         return allApps.find { it.packageName == packageName }?.label ?: packageName
     }
-    return context.getString(R.string.settings_weather_app_system_default)
+    return resources.getString(R.string.settings_weather_app_system_default)
 }
 
 private fun formatWeatherAppLabel(
         context: Context,
+        resources: Resources,
         packageName: String,
         allApps: List<AppInfo>
 ): String {
@@ -1974,14 +1990,15 @@ private fun formatWeatherAppLabel(
         false
     }
     return if (hasSystemWeatherApp) {
-        context.getString(R.string.settings_weather_app_system_default)
+        resources.getString(R.string.settings_weather_app_system_default)
     } else {
-        context.getString(R.string.settings_weather_app_not_configured)
+        resources.getString(R.string.settings_weather_app_not_configured)
     }
 }
 
 private fun formatShortcutTarget(
         context: Context,
+        resources: Resources,
         target: ShortcutTarget?,
         allApps: List<AppInfo>
 ): String {
@@ -1989,7 +2006,7 @@ private fun formatShortcutTarget(
             context = context,
             target = target,
             allApps = allApps,
-            notSetLabel = context.getString(R.string.shortcut_target_not_set),
+            notSetLabel = resources.getString(R.string.shortcut_target_not_set),
             resolvedLauncherActionLabel = null
     )
 }

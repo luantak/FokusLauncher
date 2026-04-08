@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.PowerManager
 import android.provider.Settings
+import androidx.core.net.toUri
 
 object BatteryOptimizationHelper {
     fun isIgnoringBatteryOptimizations(context: Context): Boolean {
@@ -15,7 +16,7 @@ object BatteryOptimizationHelper {
     fun openBatteryOptimizationSettings(context: Context) {
         val requestIntent =
                 Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                    data = Uri.parse("package:${context.packageName}")
+                    data = "package:${context.packageName}".toUri()
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
         val settingsIntent =

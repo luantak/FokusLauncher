@@ -20,10 +20,14 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-/** Minimal service used only for [performGlobalAction] lock screen from double-tap. */
+/**
+ * Runs only when the user enables this app in system accessibility settings. Uses
+ * [performGlobalAction] for lock/home and optional return-home-after-long-lock, driven by
+ * screen off / user present broadcasts. It does not read other apps' UI (window content is
+ * disabled in XML and the service config limits events to this package only).
+ */
 class LockScreenAccessibilityService : AccessibilityService() {
     private val tag = "FokusLockA11y"
-    private val transientLockStateGraceMs = 2_000L
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private lateinit var preferencesManager: PreferencesManager
     private var screenStateReceiverRegistered = false
@@ -40,9 +44,8 @@ class LockScreenAccessibilityService : AccessibilityService() {
             }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        if (event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
-        val packageName = event.packageName?.toString().orEmpty()
-        serviceScope.launch { handleWindowStateChanged(packageName) }
+        // Events are scoped to this app in lock_screen_accessibility_config.xml; behavior uses
+        // screen broadcasts and scheduling instead of observing other packages.
     }
 
     override fun onInterrupt() {}
@@ -73,22 +76,6 @@ class LockScreenAccessibilityService : AccessibilityService() {
     private suspend fun handleUserPresent() {
         clearPendingLockTracking("user_present")
         maybeReturnHome(trigger = "user_present")
-    }
-
-    private suspend fun handleWindowStateChanged(packageName: String) {
-        if (packageName == this.packageName) return
-        if (!isDeviceCurrentlyLocked()) {
-            val lockedAt = preferencesManager.getLongLockLastScreenOffAtMs()
-            val withinTransientGrace =
-                    lockedAt > 0L && (System.currentTimeMillis() - lockedAt) < transientLockStateGraceMs
-            if (withinTransientGrace) {
-                Log.d(tag, "Ignoring transient unlocked window event from $packageName")
-                return
-            }
-            clearPendingLockTracking("window:$packageName")
-            return
-        }
-        maybeReturnHome(trigger = "window:$packageName")
     }
 
     private suspend fun maybeReturnHome(trigger: String) {
@@ -191,7 +178,7 @@ class LockScreenAccessibilityService : AccessibilityService() {
                     addAction(Intent.ACTION_USER_PRESENT)
                 }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(screenStateReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+            registerReceiver(screenStateReceiver, filter, RECEIVER_NOT_EXPORTED)
         } else {
             @Suppress("DEPRECATION")
             registerReceiver(screenStateReceiver, filter)
@@ -210,6 +197,7 @@ class LockScreenAccessibilityService : AccessibilityService() {
 
         fun lockScreenNow(): Boolean {
             val svc = instance ?: return false
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return false
             return svc.performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN)
         }
     }

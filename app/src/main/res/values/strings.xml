@@ -137,7 +137,6 @@
     <string name="icon_cat_household">Household</string>
     <string name="icon_cat_privacy">Privacy</string>
     <string name="icon_cat_other">Other</string>
-    <string name="icon_cat_no_metadata">All other icons</string>
     <string name="icon_cat_search_results">Matching icons</string>
 
     <!-- Settings -->
@@ -158,7 +157,6 @@
     <string name="settings_accessibility_permission_disabled">Required for double tap to lock and return home after long lock</string>
     <string name="settings_home_widgets">Configure widgets</string>
     <string name="settings_home_widgets_subtitle">Choose which widgets to show and which apps to open when you tap them</string>
-    <string name="settings_home_widgets_dialog_title">What to show</string>
     <string name="settings_show_home_clock">Show clock</string>
     <string name="settings_show_home_date">Show date</string>
     <string name="settings_home_date_format">Date format</string>
@@ -178,10 +176,8 @@
     <string name="settings_return_home_after_long_lock_subtitle">After unlock, show the launcher if the device stayed locked long enough</string>
     <string name="settings_long_lock_duration">Long lock duration</string>
     <string name="settings_long_lock_duration_subtitle">How long the device must stay locked before Fokus returns to your home screen on unlock.</string>
-    <string name="settings_long_lock_battery_optimization">Battery optimization</string>
-    <string name="settings_long_lock_battery_optimization_enabled">Launcher is still battery optimized. Turn this off on aggressive OEM firmware if return-home stops working reliably.</string>
-    <string name="settings_long_lock_battery_optimization_disabled">Battery optimization is already disabled for Fokus Launcher.</string>
-    <string name="accessibility_lock_service_description">Allows Fokus Launcher to lock the screen and return to the launcher after long locks.</string>
+    <string name="accessibility_lock_service_label">Fokus device control</string>
+    <string name="accessibility_lock_service_description">Optional feature you turn on in Android accessibility settings. Used only to lock the screen (double-tap) and return to this launcher after long locks if you enable that. Does not read screen content or collect data from other apps.</string>
     <string name="double_tap_lock_failed">Could not lock the device</string>
     <string name="settings_edit_home_screen">Edit home screen</string>
     <string name="settings_edit_shortcuts">Edit shortcuts</string>
@@ -279,8 +275,6 @@
     <string name="onboarding_swipe_right">Swipe right</string>
     <string name="onboarding_swipe_change">Change</string>
     <string name="onboarding_swipe_not_set">Not set</string>
-    <string name="onboarding_swipe_pick_app">Select app</string>
-    <string name="onboarding_swipe_cancel">Cancel</string>
     <string name="onboarding_tips_title">Quick tips</string>
     <string name="onboarding_tip_swipe">Swipe up to open app drawer</string>
     <string name="onboarding_tip_longpress">Long-press on home to edit or open settings</string>
