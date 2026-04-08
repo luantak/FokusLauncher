@@ -41,6 +41,7 @@ import com.lu4p.fokuslauncher.data.util.TemperatureUnitHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -109,7 +110,7 @@ class HomeViewModel @Inject constructor(
 
     // Raw favorites from DataStore
     private val rawFavorites: StateFlow<List<FavoriteApp>> = preferencesManager.favoritesFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     // Renames from Room
     private val _renameMap = MutableStateFlow<Map<String, String>>(emptyMap())
@@ -186,6 +187,8 @@ class HomeViewModel @Inject constructor(
         preferencesManager.preferredCalendarAppFlow
             .stateIn(viewModelScope, SharingStarted.Eagerly, "")
 
+    private var weatherTickerJob: Job? = null
+
     private val batteryChangedReceiver = object : BroadcastReceiver() {
         override fun onReceive(ctx: Context?, intent: Intent?) {
             if (intent?.action != Intent.ACTION_BATTERY_CHANGED) return
@@ -222,15 +225,13 @@ class HomeViewModel @Inject constructor(
         registerBatteryReceiver()
         registerTimezoneChangedReceiver()
         updateBattery()
-        startWeatherTicker()
         observeHomeAlignment()
         observeHomeDateFormatStyle()
         observeHomeWidgetItemPreferences()
         observeWeatherRefreshTriggers()
         observeDoubleTapEmptyLock()
         checkDefaultLauncher()
-        refreshInstalledApps()
-        loadShortcutActions()
+        refreshInstalledAppsAndShortcutActions()
         observeRenames()
         observeInstalledApps()
         observeRemovedPackages()
@@ -247,6 +248,7 @@ class HomeViewModel @Inject constructor(
         } catch (_: IllegalArgumentException) {
             // Not registered
         }
+        weatherTickerJob?.cancel()
         super.onCleared()
     }
 
@@ -266,8 +268,7 @@ class HomeViewModel @Inject constructor(
     private fun observeInstalledApps() {
         viewModelScope.launch {
             appRepository.getInstalledAppsVersion().drop(1).collect {
-                refreshInstalledApps(forceReload = false)
-                loadShortcutActions()
+                refreshInstalledAppsAndShortcutActions(forceReloadApps = false)
             }
         }
     }
@@ -301,7 +302,7 @@ class HomeViewModel @Inject constructor(
                             it.profileKey == removedApp.profileKey
                     }
 
-                val currentFavorites = preferencesManager.favoritesFlow.first()
+                val currentFavorites = rawFavorites.value
                 val updatedFavorites =
                     currentFavorites.filterNot {
                         it.packageName == removedApp.packageName &&
@@ -320,19 +321,30 @@ class HomeViewModel @Inject constructor(
      */
     fun refreshInstalledApps(forceReload: Boolean = true) {
         viewModelScope.launch(Dispatchers.IO) {
-            installedAppsRefreshMutex.withLock {
-                val recoveredAfterFirstPass = runInstalledAppsRefreshPass(forceReload)
-                if (recoveredAfterFirstPass) {
-                    appRepository.invalidateCache()
-                    runInstalledAppsRefreshPass(forceReload = false)
-                }
+            refreshInstalledAppsLocked(forceReload)
+        }
+    }
+
+    private fun refreshInstalledAppsAndShortcutActions(forceReloadApps: Boolean = true) {
+        viewModelScope.launch(Dispatchers.IO) {
+            refreshInstalledAppsLocked(forceReloadApps)
+            _allShortcutActions.value = appRepository.getAllShortcutActions()
+        }
+    }
+
+    private suspend fun refreshInstalledAppsLocked(forceReload: Boolean) {
+        installedAppsRefreshMutex.withLock {
+            val recoveredAfterFirstPass = runInstalledAppsRefreshPass(forceReload)
+            if (recoveredAfterFirstPass) {
+                appRepository.invalidateCache()
+                runInstalledAppsRefreshPass(forceReload = false)
             }
         }
     }
 
     /**
      * Reloads installed apps and syncs persisted favorites. Returns true when at least one current
-     * favorite was missing from the snapshot but still resolves via [AppRepository.hasLaunchableActivities]
+     * favorite was missing from the snapshot but still resolves via a batched launchability scan
      * (partial [LauncherApps] enumeration); callers may invalidate and run another pass.
      */
     private suspend fun runInstalledAppsRefreshPass(forceReload: Boolean): Boolean {
@@ -348,30 +360,46 @@ class HomeViewModel @Inject constructor(
         applyInstalledAppsSnapshot(apps)
         val installedAppKeys = apps.map { appMetadataKey(it.packageName, it.userHandle) }.toSet()
         val currentFavorites = rawFavorites.value
+        val missingFavoriteKeys =
+                currentFavorites
+                        .asSequence()
+                        .filterNot {
+                            it.packageName == ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE
+                        }
+                        .map { appMetadataKey(it.packageName, it.profileKey) }
+                        .filterNot(installedAppKeys::contains)
+                        .toSet()
+        val launchableMissingFavoriteKeys =
+                if (missingFavoriteKeys.isEmpty()) {
+                    emptySet()
+                } else {
+                    appRepository.getLaunchableAppKeys(
+                            currentFavorites
+                                    .asSequence()
+                                    .filterNot {
+                                        it.packageName ==
+                                                ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE
+                                    }
+                                    .filter {
+                                        appMetadataKey(it.packageName, it.profileKey) in
+                                                missingFavoriteKeys
+                                    }
+                                    .map(FavoriteApp::profileKey)
+                                    .toSet()
+                    ).intersect(missingFavoriteKeys)
+                }
         val updatedFavorites =
                 currentFavorites.filter {
                     it.packageName == ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE ||
                             appMetadataKey(it.packageName, it.profileKey) in installedAppKeys ||
-                            appRepository.hasLaunchableActivities(
-                                    it.packageName,
-                                    it.profileKey
-                            )
+                            appMetadataKey(it.packageName, it.profileKey) in
+                                    launchableMissingFavoriteKeys
                 }
         if (updatedFavorites.size != currentFavorites.size) {
             preferencesManager.setFavorites(updatedFavorites)
         }
-        val recoveredViaLaunchCheck =
-                updatedFavorites.any {
-                    it.packageName != ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE &&
-                            appMetadataKey(it.packageName, it.profileKey) !in installedAppKeys
-                }
+        val recoveredViaLaunchCheck = launchableMissingFavoriteKeys.isNotEmpty()
         return recoveredViaLaunchCheck
-    }
-
-    private fun loadShortcutActions() {
-        viewModelScope.launch(Dispatchers.IO) {
-            _allShortcutActions.value = appRepository.getAllShortcutActions()
-        }
     }
 
     private fun applyInstalledAppsSnapshot(apps: List<AppInfo>) {
@@ -713,12 +741,18 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun startWeatherTicker() {
-        viewModelScope.launch(Dispatchers.IO) {
+        if (weatherTickerJob?.isActive == true) return
+        weatherTickerJob = viewModelScope.launch(Dispatchers.IO) {
             while (true) {
                 fetchWeatherOnce()
                 delay(30 * 60 * 1000L)
             }
         }
+    }
+
+    private fun stopWeatherTicker() {
+        weatherTickerJob?.cancel()
+        weatherTickerJob = null
     }
 
     private fun observeHomeAlignment() {
@@ -779,7 +813,15 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             preferencesManager.showHomeWeatherFlow
                     .distinctUntilChanged()
-                    .collect { refreshWeather() }
+                    .collect { showWeather ->
+                        if (showWeather) {
+                            refreshWeather()
+                            startWeatherTicker()
+                        } else {
+                            stopWeatherTicker()
+                            applyWeatherUiState(hiddenWeatherState())
+                        }
+                    }
         }
     }
 
@@ -850,18 +892,7 @@ class HomeViewModel @Inject constructor(
     fun launchFavorite(fav: FavoriteApp) {
         when (val target = fav.resolvedIconTarget) {
             is ShortcutTarget.PhoneDial -> launchDefaultDialer()
-            is ShortcutTarget.DeepLink -> {
-                val intent =
-                        try {
-                            Intent.parseUri(target.intentUri, Intent.URI_INTENT_SCHEME)
-                        } catch (_: Exception) {
-                            Intent(Intent.ACTION_VIEW, target.intentUri.toUri())
-                        }
-                try {
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    context.startActivity(intent)
-                } catch (_: Exception) { }
-            }
+            is ShortcutTarget.DeepLink -> launchDeepLink(target.intentUri)
             is ShortcutTarget.LauncherShortcut -> {
                 val user =
                         resolveUserHandleForShortcut(fav.profileKey, target.packageName)
@@ -871,37 +902,13 @@ class HomeViewModel @Inject constructor(
                         user,
                 )
             }
-            is ShortcutTarget.App -> {
-                if (fav.profileKey != "0") {
-                    val app =
-                            _allInstalledApps.value.firstOrNull {
-                                it.packageName == target.packageName &&
-                                        appProfileKey(it.userHandle) == fav.profileKey
-                            }
-                    val cn = app?.componentName
-                    val uh = app?.userHandle
-                    if (cn != null && uh != null && appRepository.launchMainActivity(cn, uh)) return
-                }
-                appRepository.launchApp(target.packageName)
-            }
+            is ShortcutTarget.App -> launchAppTarget(target.packageName, fav.profileKey)
         }
     }
 
     fun launchShortcut(shortcut: HomeShortcut) {
         when (val target = shortcut.target) {
-            is ShortcutTarget.App -> {
-                if (shortcut.profileKey != "0") {
-                    val app =
-                            _allInstalledApps.value.firstOrNull {
-                                it.packageName == target.packageName &&
-                                        appProfileKey(it.userHandle) == shortcut.profileKey
-                            }
-                    val cn = app?.componentName
-                    val uh = app?.userHandle
-                    if (cn != null && uh != null && appRepository.launchMainActivity(cn, uh)) return
-                }
-                launchApp(target.packageName)
-            }
+            is ShortcutTarget.App -> launchAppTarget(target.packageName, shortcut.profileKey)
             is ShortcutTarget.LauncherShortcut -> {
                 val user =
                         resolveUserHandleForShortcut(shortcut.profileKey, target.packageName)
@@ -911,20 +918,42 @@ class HomeViewModel @Inject constructor(
                         user,
                 )
             }
-            is ShortcutTarget.DeepLink -> {
-                val intent = try {
-                    Intent.parseUri(target.intentUri, Intent.URI_INTENT_SCHEME)
-                } catch (_: Exception) {
-                    Intent(Intent.ACTION_VIEW, target.intentUri.toUri())
-                }
-                try {
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    context.startActivity(intent)
-                } catch (_: Exception) {
-                    // ignore malformed/unresolvable deep links
-                }
-            }
+            is ShortcutTarget.DeepLink -> launchDeepLink(target.intentUri)
             is ShortcutTarget.PhoneDial -> launchDefaultDialer()
+        }
+    }
+
+    private fun launchAppTarget(packageName: String, profileKey: String): Boolean {
+        if (profileKey != "0") {
+            val app =
+                    _allInstalledApps.value.firstOrNull {
+                        it.packageName == packageName &&
+                                appProfileKey(it.userHandle) == profileKey
+                    }
+            val componentName = app?.componentName
+            val userHandle = app?.userHandle
+            if (componentName != null &&
+                            userHandle != null &&
+                            appRepository.launchMainActivity(componentName, userHandle)
+            ) {
+                return true
+            }
+        }
+        return appRepository.launchApp(packageName)
+    }
+
+    private fun launchDeepLink(intentUri: String) {
+        val intent =
+                try {
+                    Intent.parseUri(intentUri, Intent.URI_INTENT_SCHEME)
+                } catch (_: Exception) {
+                    Intent(Intent.ACTION_VIEW, intentUri.toUri())
+                }
+        try {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intent)
+        } catch (_: Exception) {
+            // ignore malformed/unresolvable deep links
         }
     }
 
@@ -1040,30 +1069,16 @@ class HomeViewModel @Inject constructor(
 
     private suspend fun fetchWeatherOnce() {
         try {
-            val useFahrenheit = TemperatureUnitHelper.useFahrenheit(context)
-            if (!preferencesManager.showHomeWeatherFlow.first()) {
-                val hiddenState = HomeWeatherUiState(
-                        weather = null,
-                        weatherUseFahrenheit = useFahrenheit,
-                        showWeatherWidget = false
-                )
-                if (_weatherUiState.value != hiddenState) {
-                    _weatherUiState.value = hiddenState
-                }
+            if (!_uiState.value.showHomeWeather) {
+                applyWeatherUiState(hiddenWeatherState())
                 return
             }
+            val useFahrenheit = TemperatureUnitHelper.useFahrenheit(context)
             val hasCoarsePermission = ContextCompat.checkSelfPermission(
                 context, Manifest.permission.ACCESS_COARSE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
             if (!hasCoarsePermission) {
-                val hiddenState = HomeWeatherUiState(
-                    weather = null,
-                    weatherUseFahrenheit = useFahrenheit,
-                    showWeatherWidget = false
-                )
-                if (_weatherUiState.value != hiddenState) {
-                    _weatherUiState.value = hiddenState
-                }
+                applyWeatherUiState(hiddenWeatherState(useFahrenheit))
                 return
             }
             val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
@@ -1083,10 +1098,23 @@ class HomeViewModel @Inject constructor(
                 weatherUseFahrenheit = useFahrenheit,
                 showWeatherWidget = true
             )
-            if (_weatherUiState.value != updated) {
-                _weatherUiState.value = updated
-            }
+            applyWeatherUiState(updated)
         } catch (_: Exception) { }
+    }
+
+    private fun hiddenWeatherState(
+        useFahrenheit: Boolean = TemperatureUnitHelper.useFahrenheit(context)
+    ): HomeWeatherUiState =
+        HomeWeatherUiState(
+            weather = null,
+            weatherUseFahrenheit = useFahrenheit,
+            showWeatherWidget = false
+        )
+
+    private fun applyWeatherUiState(updated: HomeWeatherUiState) {
+        if (_weatherUiState.value != updated) {
+            _weatherUiState.value = updated
+        }
     }
 
     private companion object {

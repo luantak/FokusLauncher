@@ -19,6 +19,7 @@ import com.lu4p.fokuslauncher.data.model.HomeDateFormatStyle
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
+import com.lu4p.fokuslauncher.data.model.appMetadataKey
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.data.repository.RemovedApp
 import com.lu4p.fokuslauncher.data.repository.WeatherRepository
@@ -110,6 +111,7 @@ class HomeViewModelTest {
         every { appRepository.getAllRenamedApps() } returns flowOf(emptyList())
         every { appRepository.getInstalledApps() } returns emptyList()
         every { appRepository.getAllShortcutActions() } returns emptyList()
+        every { appRepository.getLaunchableAppKeys(any()) } returns emptySet()
         every { appRepository.getRemovedPackages() } returns removedPackages
     }
 
@@ -509,18 +511,10 @@ class HomeViewModelTest {
         every { appRepository.getInstalledApps() } returns listOf(
             AppInfo(packageName = "com.lu4p.music", label = "Music", icon = null)
         )
-        every {
-            appRepository.hasLaunchableActivities(
-                match { it == "com.lu4p.work" || it == "com.lu4p.social" },
-                any()
-            )
-        } returns true
-        every {
-            appRepository.hasLaunchableActivities(
-                match { it != "com.lu4p.work" && it != "com.lu4p.social" },
-                any()
-            )
-        } returns false
+        every { appRepository.getLaunchableAppKeys(setOf("0")) } returns setOf(
+            appMetadataKey("com.lu4p.work", "0"),
+            appMetadataKey("com.lu4p.social", "0")
+        )
         val viewModel = createViewModel()
         val collectJob = CoroutineScope(testDispatcher).launch {
             viewModel.favorites.collect { }
@@ -532,6 +526,7 @@ class HomeViewModelTest {
 
         coVerify(exactly = 0) { preferencesManager.setFavorites(any()) }
         verify(atLeast = 1) { appRepository.invalidateCache() }
+        verify { appRepository.getLaunchableAppKeys(setOf("0")) }
         collectJob.cancel()
     }
 
@@ -615,7 +610,7 @@ class HomeViewModelTest {
         )
         every { appRepository.getInstalledApps() } returns
             listOf(AppInfo(packageName = "com.lu4p.chrome", label = "Chrome", icon = null))
-        every { appRepository.hasLaunchableActivities("com.lu4p.chrome", "42") } returns false
+        every { appRepository.getLaunchableAppKeys(setOf("42")) } returns emptySet()
 
         val viewModel = createViewModel()
         val collectJob = CoroutineScope(testDispatcher).launch { viewModel.favorites.collect { } }
