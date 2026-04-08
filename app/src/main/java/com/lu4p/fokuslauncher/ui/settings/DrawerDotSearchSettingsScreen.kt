@@ -1,7 +1,6 @@
 package com.lu4p.fokuslauncher.ui.settings
 
 import android.widget.Toast
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -45,13 +44,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
-import com.lu4p.fokuslauncher.ui.drawer.groupAppsIntoProfileSections
-import com.lu4p.fokuslauncher.ui.drawer.profileGroupedAppItems
-import com.lu4p.fokuslauncher.ui.drawer.sortAppsAlphabeticallyByProfileSection
+import com.lu4p.fokuslauncher.ui.drawer.GroupedAppPickerDialog
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
 import com.lu4p.fokuslauncher.ui.util.formatShortcutTargetDisplay
 import com.lu4p.fokuslauncher.ui.util.rememberClickWithSystemSound
-import com.lu4p.fokuslauncher.utils.containsNormalizedSearch
 
 /** Token stored in URL templates; validated by [DrawerDotSearchSettingsViewModel.isValidDotSearchUrlTemplate]. */
 private const val DotSearchUrlQueryPlaceholder = "%q"
@@ -257,13 +253,15 @@ fun DrawerDotSearchSettingsScreen(
     }
 
     if (showDefaultPicker) {
-        DotSearchAppPickerDialog(
+        GroupedAppPickerDialog(
                 apps = uiState.webSearchCapableApps,
                 title = stringResource(R.string.settings_dot_search_pick_default_app),
-                onSelect = { app ->
-                    viewModel.setDefaultFromApp(app)
-                },
-                onDismiss = { }
+                keyPrefix = "dot_search_pick",
+                onSelect = { app -> viewModel.setDefaultFromApp(app) },
+                onDismiss = { },
+                searchLabel = null,
+                emptyStateText = stringResource(R.string.settings_dot_search_no_web_search_apps),
+                useSystemSoundOnItemClick = false,
         )
     }
 
@@ -280,13 +278,15 @@ fun DrawerDotSearchSettingsScreen(
     }
 
     if (showAliasAppPicker) {
-        DotSearchAppPickerDialog(
+        GroupedAppPickerDialog(
                 apps = uiState.webSearchCapableApps,
                 title = stringResource(R.string.settings_dot_search_pick_alias_app),
-                onSelect = { app ->
-                    pendingAliasApp = app
-                },
-                onDismiss = { }
+                keyPrefix = "dot_search_pick_alias",
+                onSelect = { app -> pendingAliasApp = app },
+                onDismiss = { },
+                searchLabel = null,
+                emptyStateText = stringResource(R.string.settings_dot_search_no_web_search_apps),
+                useSystemSoundOnItemClick = false,
         )
     }
 
@@ -410,71 +410,6 @@ private fun DotSearchTargetSettingsRow(
             }
         }
     }
-}
-
-@Composable
-private fun DotSearchAppPickerDialog(
-        apps: List<AppInfo>,
-        title: String,
-        onSelect: (AppInfo) -> Unit,
-        onDismiss: () -> Unit
-) {
-    var filter by remember { mutableStateOf("") }
-    val context = LocalContext.current
-    val emptyLabel = stringResource(R.string.settings_dot_search_no_web_search_apps)
-    val filtered =
-            remember(filter, apps) {
-                if (filter.isBlank()) apps
-                else apps.filter { it.label.containsNormalizedSearch(filter) }
-            }
-    val filteredSections =
-            remember(filtered, context) {
-                groupAppsIntoProfileSections(context, filtered, ::sortAppsAlphabeticallyByProfileSection)
-            }
-
-    AlertDialog(
-            onDismissRequest = onDismiss,
-            title = { Text(title, color = MaterialTheme.colorScheme.onBackground) },
-            text = {
-                Column {
-                    if (apps.isEmpty()) {
-                        Text(
-                                emptyLabel,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.secondary
-                        )
-                    } else {
-                    OutlinedTextField(
-                            value = filter,
-                            onValueChange = { filter = it },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    LazyColumn(modifier = Modifier.height(300.dp)) {
-                        profileGroupedAppItems(
-                                sections = filteredSections,
-                                keyPrefix = "dot_search_pick",
-                                horizontalPadding = 8.dp,
-                        ) { app ->
-                            Text(
-                                    text = app.label,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                    modifier =
-                                            Modifier.fillMaxWidth()
-                                                    .clickable { onSelect(app) }
-                                                    .padding(vertical = 10.dp, horizontal = 8.dp)
-                            )
-                        }
-                    }
-                    }
-                }
-            },
-            confirmButton = {},
-            dismissButton = { FokusTextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-    )
 }
 
 @Composable

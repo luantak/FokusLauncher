@@ -93,15 +93,12 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.AppShortcutAction
-import com.lu4p.fokuslauncher.ui.drawer.groupAppsIntoProfileSections
-import com.lu4p.fokuslauncher.ui.drawer.profileGroupedAppItems
-import com.lu4p.fokuslauncher.ui.drawer.sortAppsAlphabeticallyByProfileSection
+import com.lu4p.fokuslauncher.ui.drawer.GroupedAppPickerDialog
 import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
 import com.lu4p.fokuslauncher.data.model.HomeDateFormatStyle
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.utils.LockScreenHelper
-import com.lu4p.fokuslauncher.utils.containsNormalizedSearch
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
 import com.lu4p.fokuslauncher.ui.theme.composeFontFamilyFromStoredName
 import com.lu4p.fokuslauncher.ui.util.formatShortcutTargetDisplay
@@ -644,13 +641,15 @@ private fun SettingsScreenDialogs(
                 )
             }
             else -> {
-                AppPickerDialog(
-                        allApps = uiState.allApps,
-                        onSelect = { packageName ->
-                            onAppPicked(target, packageName)
+                GroupedAppPickerDialog(
+                        apps = uiState.allApps,
+                        title = stringResource(R.string.settings_app_picker_title),
+                        keyPrefix = "settings_app_pick",
+                        onSelect = { app ->
+                            onAppPicked(target, app.packageName)
                             onDismissPicker()
                         },
-                        onDismiss = onDismissPicker
+                        onDismiss = onDismissPicker,
                 )
             }
         }
@@ -840,17 +839,19 @@ fun HomeWidgetsSettingsScreen(
     }
 
     showAppPickerFor.value?.let { pickerTarget ->
-        AppPickerDialog(
-                allApps = uiState.allApps,
-                onSelect = { packageName ->
+        GroupedAppPickerDialog(
+                apps = uiState.allApps,
+                title = stringResource(R.string.settings_app_picker_title),
+                keyPrefix = "settings_app_pick",
+                onSelect = { app ->
                     when (pickerTarget) {
-                        "weather" -> viewModel.setPreferredWeatherApp(packageName)
-                        "clock" -> viewModel.setPreferredClockApp(packageName)
-                        "calendar" -> viewModel.setPreferredCalendarApp(packageName)
+                        "weather" -> viewModel.setPreferredWeatherApp(app.packageName)
+                        "clock" -> viewModel.setPreferredClockApp(app.packageName)
+                        "calendar" -> viewModel.setPreferredCalendarApp(app.packageName)
                     }
                     showAppPickerFor.value = null
                 },
-                onDismiss = { showAppPickerFor.value = null }
+                onDismiss = { showAppPickerFor.value = null },
         )
     }
 }
@@ -1956,66 +1957,6 @@ private fun ExternalLinkRow(
 }
 
 // =====================  DIALOGS  =====================
-
-@Composable
-private fun AppPickerDialog(
-        allApps: List<AppInfo>,
-        onSelect: (String) -> Unit,
-        onDismiss: () -> Unit
-) {
-    var filter by remember { mutableStateOf("") }
-    val context = LocalContext.current
-    val filtered =
-            remember(filter, allApps) {
-                if (filter.isBlank()) allApps
-                else allApps.filter { it.label.containsNormalizedSearch(filter) }
-            }
-    val filteredSections =
-            remember(filtered, context) {
-                groupAppsIntoProfileSections(context, filtered, ::sortAppsAlphabeticallyByProfileSection)
-            }
-
-    AlertDialog(
-            onDismissRequest = onDismiss,
-            title = {
-                Text(stringResource(R.string.settings_app_picker_title), color = MaterialTheme.colorScheme.onBackground)
-            },
-            text = {
-                Column {
-                    OutlinedTextField(
-                            value = filter,
-                            onValueChange = { filter = it },
-                            label = { Text(stringResource(R.string.search)) },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    LazyColumn(modifier = Modifier.height(300.dp)) {
-                        profileGroupedAppItems(
-                                sections = filteredSections,
-                                keyPrefix = "settings_app_pick",
-                                horizontalPadding = 8.dp,
-                        ) { app ->
-                            Text(
-                                    text = app.label,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                    modifier =
-                                            Modifier.fillMaxWidth()
-                                                    .clickableWithSystemSound { onSelect(app.packageName) }
-                                                    .padding(vertical = 10.dp, horizontal = 8.dp)
-                            )
-                        }
-                    }
-                }
-            },
-            confirmButton = {},
-            dismissButton = {
-                FokusTextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
-            },
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-    )
-}
 
 private fun formatWidgetAppOverrideLabel(
         resources: Resources,

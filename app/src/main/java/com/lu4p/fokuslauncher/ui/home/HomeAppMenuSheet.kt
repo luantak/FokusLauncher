@@ -2,13 +2,11 @@ package com.lu4p.fokuslauncher.ui.home
 
 import com.lu4p.fokuslauncher.ui.components.FokusIconButton
 import com.lu4p.fokuslauncher.ui.components.FokusTextButton
-import com.lu4p.fokuslauncher.ui.util.clickableWithSystemSound
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import com.lu4p.fokuslauncher.ui.components.SheetActionRow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
@@ -30,7 +28,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.lu4p.fokuslauncher.R
@@ -117,7 +114,7 @@ fun HomeAppMenuSheet(
             }
 
             // ── Action rows ────────────────────────────────────────
-            MenuActionRow(
+            SheetActionRow(
                 icon = Icons.Default.Close,
                 label = stringResource(R.string.action_remove_from_home),
                 onClick = {
@@ -126,7 +123,7 @@ fun HomeAppMenuSheet(
                 }
             )
 
-            MenuActionRow(
+            SheetActionRow(
                 icon = Icons.Default.Home,
                 label = stringResource(R.string.settings_edit_home_screen),
                 onClick = {
@@ -135,7 +132,7 @@ fun HomeAppMenuSheet(
                 }
             )
 
-            MenuActionRow(
+            SheetActionRow(
                 icon = Icons.Default.Info,
                 label = stringResource(R.string.action_app_info),
                 onClick = {
@@ -144,7 +141,7 @@ fun HomeAppMenuSheet(
                 }
             )
 
-            MenuActionRow(
+            SheetActionRow(
                 icon = Icons.Default.VisibilityOff,
                 label = stringResource(R.string.action_hide),
                 onClick = {
@@ -153,7 +150,7 @@ fun HomeAppMenuSheet(
                 }
             )
 
-            MenuActionRow(
+            SheetActionRow(
                 icon = Icons.Default.Delete,
                 label = stringResource(R.string.action_uninstall),
                 onClick = {
@@ -162,32 +159,5 @@ fun HomeAppMenuSheet(
                 }
             )
         }
-    }
-}
-
-@Composable
-private fun MenuActionRow(
-    icon: ImageVector,
-    label: String,
-    onClick: () -> Unit
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickableWithSystemSound(onClick = onClick)
-            .padding(horizontal = 24.dp, vertical = 16.dp)
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = label,
-            tint = MaterialTheme.colorScheme.onBackground
-        )
-        Spacer(modifier = Modifier.width(16.dp))
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onBackground
-        )
     }
 }
