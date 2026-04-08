@@ -509,7 +509,7 @@ private fun DrawerAppListColumn(
                                     },
                             onLaunchWhenNotReordering = {
                                 focusManager.clearFocus(force = true)
-                                onAppClick(drawerLaunchTargetForDrawerListApp(app))
+                                onAppClick(launchTargetFromAppInfo(app))
                             },
                             onLongPressWhenNotReordering = { onAppLongPress(app) },
                     )
@@ -602,20 +602,6 @@ private fun DrawerAppListColumn(
                 )
             }
         }
-    }
-}
-
-private fun drawerLaunchTargetForDrawerListApp(app: AppInfo): LaunchTarget {
-    val cn = app.componentName
-    val uh = app.userHandle
-    return if (cn != null && uh != null) {
-        LaunchTarget.PrivateApp(
-                packageName = app.packageName,
-                componentName = cn,
-                userHandle = uh,
-        )
-    } else {
-        LaunchTarget.MainApp(app.packageName)
     }
 }
 

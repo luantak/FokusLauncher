@@ -26,11 +26,7 @@ import android.app.WallpaperManager
 import android.content.ClipData
 import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
 import androidx.core.content.FileProvider
-import android.graphics.Canvas
-import androidx.core.graphics.createBitmap
-import android.graphics.Color as AndroidColor
 import android.net.Uri
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -53,6 +49,7 @@ import com.lu4p.fokuslauncher.ui.drawer.profileOriginLabelForApp
 import com.lu4p.fokuslauncher.ui.util.categoryChipDisplayLabel
 import com.lu4p.fokuslauncher.utils.AppDiagnosticLogExporter
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
+import com.lu4p.fokuslauncher.utils.WallpaperHelper
 
 data class SettingsUiState(
         val hiddenApps: List<HiddenAppInfo> = emptyList(),
@@ -683,27 +680,6 @@ constructor(
     }
 
     fun setBlackWallpaper() {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                // Create a full-screen black bitmap
-                val width = context.resources.displayMetrics.widthPixels
-                val height = context.resources.displayMetrics.heightPixels
-                val bitmap = createBitmap(width, height, Bitmap.Config.ARGB_8888)
-                val canvas = Canvas(bitmap)
-                canvas.drawColor(AndroidColor.BLACK)
-
-                val wallpaperManager = WallpaperManager.getInstance(context)
-                // Set for home screen
-                wallpaperManager.setBitmap(bitmap, null, true, WallpaperManager.FLAG_SYSTEM)
-                // Try to set for lock screen too
-                try {
-                    wallpaperManager.setBitmap(bitmap, null, true, WallpaperManager.FLAG_LOCK)
-                } catch (_: Exception) {
-                    // Lock screen wallpaper may fail on some devices, ignore
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
+        viewModelScope.launch { WallpaperHelper.setBlackWallpaper(context) }
     }
 }

@@ -36,6 +36,7 @@ import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.data.repository.WeatherRepository
 import com.lu4p.fokuslauncher.utils.LockScreenHelper
 import com.lu4p.fokuslauncher.utils.isDefaultHomeApp
+import com.lu4p.fokuslauncher.utils.openDefaultLauncherSettings
 import com.lu4p.fokuslauncher.ui.util.formatShortcutTargetDisplay
 import com.lu4p.fokuslauncher.ui.util.stateEagerlyIn
 import com.lu4p.fokuslauncher.ui.util.stateWhileSubscribedIn
@@ -731,17 +732,7 @@ class HomeViewModel @Inject constructor(
     }
 
     fun openDefaultLauncherSettings() {
-        try {
-            context.startActivity(Intent(Settings.ACTION_HOME_SETTINGS).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            })
-        } catch (_: Exception) {
-            try {
-                context.startActivity(Intent(Settings.ACTION_SETTINGS).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                })
-            } catch (_: Exception) { }
-        }
+        context.openDefaultLauncherSettings()
     }
 
     fun refreshBattery() = updateBattery()

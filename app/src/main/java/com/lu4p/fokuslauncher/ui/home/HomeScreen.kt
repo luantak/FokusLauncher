@@ -420,47 +420,41 @@ private fun HomeFavoritesSection(
                 }
             }
 
-        HomeAlignment.RIGHT ->
+        HomeAlignment.LEFT, HomeAlignment.RIGHT -> {
+            val favAlign =
+                    if (homeAlignment == HomeAlignment.LEFT) Alignment.Start else Alignment.End
             Row(
-                modifier = listModifier,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Bottom,
+                    modifier = listModifier,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Bottom,
             ) {
-                ShortcutIconsColumn(
-                    shortcuts = rightSideShortcuts,
-                    onIconClick = onIconClick,
-                )
-                Spacer(modifier = Modifier.width(24.dp))
-                FavoritesList(
-                    favorites = favorites,
-                    installedApps = installedApps,
-                    horizontalAlignment = Alignment.End,
-                    onLabelClick = onLabelClick,
-                    onLabelLongPress = onLabelLongPress,
-                    modifier = Modifier.weight(1f),
-                )
+                val favs: @Composable () -> Unit = {
+                    FavoritesList(
+                            favorites = favorites,
+                            installedApps = installedApps,
+                            horizontalAlignment = favAlign,
+                            onLabelClick = onLabelClick,
+                            onLabelLongPress = onLabelLongPress,
+                            modifier = Modifier.weight(1f),
+                    )
+                }
+                val icons: @Composable () -> Unit = {
+                    ShortcutIconsColumn(
+                            shortcuts = rightSideShortcuts,
+                            onIconClick = onIconClick,
+                    )
+                }
+                if (homeAlignment == HomeAlignment.LEFT) {
+                    favs()
+                    Spacer(modifier = Modifier.width(24.dp))
+                    icons()
+                } else {
+                    icons()
+                    Spacer(modifier = Modifier.width(24.dp))
+                    favs()
+                }
             }
-
-        HomeAlignment.LEFT ->
-            Row(
-                modifier = listModifier,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Bottom,
-            ) {
-                FavoritesList(
-                    favorites = favorites,
-                    installedApps = installedApps,
-                    horizontalAlignment = Alignment.Start,
-                    onLabelClick = onLabelClick,
-                    onLabelLongPress = onLabelLongPress,
-                    modifier = Modifier.weight(1f),
-                )
-                Spacer(modifier = Modifier.width(24.dp))
-                ShortcutIconsColumn(
-                    shortcuts = rightSideShortcuts,
-                    onIconClick = onIconClick,
-                )
-            }
+        }
     }
 }
 

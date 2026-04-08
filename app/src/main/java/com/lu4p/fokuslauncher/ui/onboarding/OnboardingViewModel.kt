@@ -1,15 +1,8 @@
 package com.lu4p.fokuslauncher.ui.onboarding
 
 import android.Manifest
-import android.app.WallpaperManager
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import androidx.core.graphics.createBitmap
-import android.graphics.Color as AndroidColor
-import android.provider.Settings
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -18,7 +11,9 @@ import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.AppShortcutAction
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.repository.AppRepository
+import com.lu4p.fokuslauncher.utils.WallpaperHelper
 import com.lu4p.fokuslauncher.utils.isDefaultHomeApp
+import com.lu4p.fokuslauncher.utils.openDefaultLauncherSettings
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -100,28 +95,7 @@ class OnboardingViewModel @Inject constructor(
     }
 
     fun setBlackWallpaper() {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                // Create a full-screen black bitmap
-                val width = context.resources.displayMetrics.widthPixels
-                val height = context.resources.displayMetrics.heightPixels
-                val bitmap = createBitmap(width, height, Bitmap.Config.ARGB_8888)
-                val canvas = Canvas(bitmap)
-                canvas.drawColor(AndroidColor.BLACK)
-
-                val wallpaperManager = WallpaperManager.getInstance(context)
-                // Set for home screen
-                wallpaperManager.setBitmap(bitmap, null, true, WallpaperManager.FLAG_SYSTEM)
-                // Try to set for lock screen too
-                try {
-                    wallpaperManager.setBitmap(bitmap, null, true, WallpaperManager.FLAG_LOCK)
-                } catch (_: Exception) {
-                    // Lock screen wallpaper may fail on some devices, ignore
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
+        viewModelScope.launch { WallpaperHelper.setBlackWallpaper(context) }
     }
 
     val currentStep: StateFlow<OnboardingStep?> = combine(
@@ -174,14 +148,6 @@ class OnboardingViewModel @Inject constructor(
         }
     }
 
-    fun onSkip() {
-        onNext()
-    }
-
-    fun onSkipLocation() {
-        onNext()
-    }
-
     private val _showEditHomeApps = MutableStateFlow(false)
     val showEditHomeApps: StateFlow<Boolean> = _showEditHomeApps
 
@@ -204,19 +170,7 @@ class OnboardingViewModel @Inject constructor(
     fun openDefaultLauncherSettings() {
         viewModelScope.launch {
             preferencesManager.setOnboardingReachedSetDefault(true)
-            withContext(Dispatchers.Main.immediate) {
-                try {
-                    context.startActivity(Intent(Settings.ACTION_HOME_SETTINGS).apply {
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    })
-                } catch (_: Exception) {
-                    try {
-                        context.startActivity(Intent(Settings.ACTION_SETTINGS).apply {
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        })
-                    } catch (_: Exception) { }
-                }
-            }
+            withContext(Dispatchers.Main.immediate) { context.openDefaultLauncherSettings() }
         }
     }
 

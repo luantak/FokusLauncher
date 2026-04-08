@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.res.Resources
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.widget.Toast
 import android.provider.Settings
 import androidx.activity.compose.LocalActivity
@@ -21,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -77,6 +79,7 @@ import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.background
 import com.lu4p.fokuslauncher.R
@@ -239,15 +242,12 @@ fun SettingsScreen(
         )
 
         SettingsScreenContent(
+                viewModel = viewModel,
                 uiState = uiState,
                 installedFontFamilies = installedFontFamilies,
                 context = context,
                 resources = resources,
                 hasCoarseLocationPermission = hasCoarseLocationPermission,
-                onShowStatusBarChanged = viewModel::setShowStatusBar,
-                onAllowLandscapeRotationChanged = viewModel::setAllowLandscapeRotation,
-                onAppLocaleTagChanged = viewModel::setAppLocaleTag,
-                onLauncherFontFamilyChanged = viewModel::setLauncherFontFamilyName,
                 onPickWallpaper = { wallpaperPickerLauncher.launch("image/*") },
                 onSetBlackWallpaper = {
                     viewModel.setBlackWallpaper()
@@ -262,16 +262,6 @@ fun SettingsScreen(
                 onRequestLocationPermission = requestCoarseLocation,
                 onShowAppPicker = { showAppPickerFor.value = it },
                 onShowResetConfirm = { showResetConfirm.value = true },
-                onUnhideApp = viewModel::unhideApp,
-                onRemoveRename = viewModel::removeRename,
-                onDrawerSidebarCategoriesChanged = viewModel::setDrawerSidebarCategories,
-                onDrawerCategorySidebarOnLeftChanged = viewModel::setDrawerCategorySidebarOnLeft,
-                onDrawerAppSortModeChanged = viewModel::setDrawerAppSortMode,
-                onHomeAlignmentChanged = viewModel::setHomeAlignment,
-                onClearWeatherApp = { viewModel.setPreferredWeatherApp("") },
-                onClearSwipeLeftTarget = { viewModel.setSwipeLeftTarget(null) },
-                onClearSwipeRightTarget = { viewModel.setSwipeRightTarget(null) },
-                createLogShareIntent = viewModel::createLogShareIntent
         )
     }
 
@@ -301,15 +291,12 @@ fun SettingsScreen(
 
 @Composable
 private fun SettingsScreenContent(
+        viewModel: SettingsViewModel,
         uiState: SettingsUiState,
         installedFontFamilies: List<String>,
         context: Context,
         resources: Resources,
         hasCoarseLocationPermission: Boolean,
-        onShowStatusBarChanged: (Boolean) -> Unit,
-        onAllowLandscapeRotationChanged: (Boolean) -> Unit,
-        onAppLocaleTagChanged: (String) -> Unit,
-        onLauncherFontFamilyChanged: (String) -> Unit,
         onPickWallpaper: () -> Unit,
         onSetBlackWallpaper: () -> Unit,
         onOpenHomeWidgetsSettings: () -> Unit,
@@ -321,16 +308,6 @@ private fun SettingsScreenContent(
         onRequestLocationPermission: () -> Unit,
         onShowAppPicker: (String) -> Unit,
         onShowResetConfirm: () -> Unit,
-        onUnhideApp: (String, String) -> Unit,
-        onRemoveRename: (String, String) -> Unit,
-        onDrawerSidebarCategoriesChanged: (Boolean) -> Unit,
-        onDrawerCategorySidebarOnLeftChanged: (Boolean) -> Unit,
-        onDrawerAppSortModeChanged: (DrawerAppSortMode) -> Unit,
-        onHomeAlignmentChanged: (HomeAlignment) -> Unit,
-        onClearWeatherApp: () -> Unit,
-        onClearSwipeLeftTarget: () -> Unit,
-        onClearSwipeRightTarget: () -> Unit,
-        createLogShareIntent: suspend () -> Intent?
 ) {
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         item { SectionHeader(stringResource(R.string.settings_section_appearance)) }
@@ -339,12 +316,12 @@ private fun SettingsScreenContent(
                         Triple(
                                 R.string.settings_show_status_bar,
                                 uiState.showStatusBar,
-                                onShowStatusBarChanged,
+                                viewModel::setShowStatusBar,
                         ),
                         Triple(
                                 R.string.settings_allow_landscape_rotation,
                                 uiState.allowLandscapeRotation,
-                                onAllowLandscapeRotationChanged,
+                                viewModel::setAllowLandscapeRotation,
                         ),
                 ),
                 key = { it.first },
@@ -358,53 +335,82 @@ private fun SettingsScreenContent(
         item {
             AppLanguageDropdown(
                     currentTag = uiState.appLocaleTag,
-                    onTagSelected = onAppLocaleTagChanged
+                    onTagSelected = viewModel::setAppLocaleTag
             )
         }
         item {
             LauncherFontFamilyDropdown(
                     currentFamilyName = uiState.launcherFontFamilyName,
                     installedFamilies = installedFontFamilies,
-                    onFamilySelected = onLauncherFontFamilyChanged
+                    onFamilySelected = viewModel::setLauncherFontFamilyName
             )
         }
         item {
-            SimpleSettingsRow(
+            SettingsRow(
                     label = stringResource(R.string.settings_set_background_image),
-                    onClick = onPickWallpaper
+                    verticalPadding = 14.dp,
+                    onClick = onPickWallpaper,
             )
         }
         item {
-            SimpleSettingsRow(
+            SettingsRow(
                     label = stringResource(R.string.settings_set_black_wallpaper),
-                    onClick = onSetBlackWallpaper
+                    verticalPadding = 14.dp,
+                    onClick = onSetBlackWallpaper,
             )
         }
         item { SettingsDivider() }
 
         item { SectionHeader(stringResource(R.string.settings_section_home_screen)) }
         item {
-            SettingsSubpageNavigationRow(
+            SettingsRow(
                     label = stringResource(R.string.settings_home_widgets),
                     subtitle = stringResource(R.string.settings_home_widgets_subtitle),
-                    onClick = onOpenHomeWidgetsSettings
+                    verticalPadding = 14.dp,
+                    onClick = onOpenHomeWidgetsSettings,
+                    trailing = {
+                        Icon(
+                                imageVector = Icons.AutoMirrored.Filled.NavigateNext,
+                                contentDescription = stringResource(R.string.cd_open_subpage),
+                                tint = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.size(22.dp),
+                        )
+                    },
             )
         }
         item {
-            SettingsSubpageNavigationRow(
+            SettingsRow(
                     label = stringResource(R.string.settings_accessibility),
                     subtitle = stringResource(R.string.settings_accessibility_subtitle),
+                    verticalPadding = 14.dp,
                     onClick = onOpenDeviceControlSettings,
+                    trailing = {
+                        Icon(
+                                imageVector = Icons.AutoMirrored.Filled.NavigateNext,
+                                contentDescription = stringResource(R.string.cd_open_subpage),
+                                tint = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.size(22.dp),
+                        )
+                    },
             )
         }
         item {
-            SettingsSubpageNavigationRow(
+            SettingsRow(
                     label = stringResource(R.string.settings_edit_home_screen),
-                    onClick = onEditHomeScreen
+                    verticalPadding = 14.dp,
+                    onClick = onEditHomeScreen,
+                    trailing = {
+                        Icon(
+                                imageVector = Icons.AutoMirrored.Filled.NavigateNext,
+                                contentDescription = stringResource(R.string.cd_open_subpage),
+                                tint = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.size(22.dp),
+                        )
+                    },
             )
         }
         item {
-            SettingsSubpageNavigationRow(
+            SettingsRow(
                     label = stringResource(R.string.settings_edit_shortcuts),
                     subtitle =
                             pluralStringResource(
@@ -412,13 +418,22 @@ private fun SettingsScreenContent(
                                     uiState.rightSideShortcuts.size,
                                     uiState.rightSideShortcuts.size
                             ),
-                    onClick = onEditRightShortcuts
+                    verticalPadding = 14.dp,
+                    onClick = onEditRightShortcuts,
+                    trailing = {
+                        Icon(
+                                imageVector = Icons.AutoMirrored.Filled.NavigateNext,
+                                contentDescription = stringResource(R.string.cd_open_subpage),
+                                tint = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.size(22.dp),
+                        )
+                    },
             )
         }
         item {
             HomeAlignmentRow(
                     currentAlignment = uiState.homeAlignment,
-                    onAlignmentChanged = onHomeAlignmentChanged
+                    onAlignmentChanged = viewModel::setHomeAlignment
             )
         }
         item {
@@ -430,7 +445,7 @@ private fun SettingsScreenContent(
                     preferredWeatherAppPackage = uiState.preferredWeatherAppPackage,
                     allApps = uiState.allApps,
                     onPickApp = { onShowAppPicker("weather") },
-                    onClear = onClearWeatherApp,
+                    onClear = { viewModel.setPreferredWeatherApp("") },
             )
         }
         item {
@@ -444,7 +459,7 @@ private fun SettingsScreenContent(
                                     uiState.allApps
                             ),
                     onPickApp = { onShowAppPicker("swipeLeft") },
-                    onClear = onClearSwipeLeftTarget
+                    onClear = { viewModel.setSwipeLeftTarget(null) }
             )
         }
         item {
@@ -458,14 +473,14 @@ private fun SettingsScreenContent(
                                     uiState.allApps
                             ),
                     onPickApp = { onShowAppPicker("swipeRight") },
-                    onClear = onClearSwipeRightTarget
+                    onClear = { viewModel.setSwipeRightTarget(null) }
             )
         }
         item { SettingsDivider() }
 
         item { SectionHeader(stringResource(R.string.settings_section_app_drawer)) }
         item {
-            SettingsSubpageNavigationRow(
+            SettingsRow(
                     label = stringResource(R.string.settings_edit_app_categories),
                     subtitle =
                             pluralStringResource(
@@ -473,7 +488,16 @@ private fun SettingsScreenContent(
                                     uiState.categoryDefinitions.size,
                                     uiState.categoryDefinitions.size
                             ),
-                    onClick = onEditCategories
+                    verticalPadding = 14.dp,
+                    onClick = onEditCategories,
+                    trailing = {
+                        Icon(
+                                imageVector = Icons.AutoMirrored.Filled.NavigateNext,
+                                contentDescription = stringResource(R.string.cd_open_subpage),
+                                tint = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.size(22.dp),
+                        )
+                    },
             )
         }
         item {
@@ -481,14 +505,14 @@ private fun SettingsScreenContent(
                     label = stringResource(R.string.settings_drawer_sidebar_categories),
                     subtitle = stringResource(R.string.settings_drawer_sidebar_categories_subtitle),
                     checked = uiState.drawerSidebarCategories,
-                    onCheckedChange = onDrawerSidebarCategoriesChanged
+                    onCheckedChange = viewModel::setDrawerSidebarCategories
             )
         }
         if (uiState.drawerSidebarCategories) {
             item {
                 DrawerCategoryRailSideRow(
                         railOnLeft = uiState.drawerCategorySidebarOnLeft,
-                        onRailOnLeftChanged = onDrawerCategorySidebarOnLeftChanged
+                        onRailOnLeftChanged = viewModel::setDrawerCategorySidebarOnLeft
                 )
             }
         }
@@ -496,14 +520,23 @@ private fun SettingsScreenContent(
             DrawerAppSortRow(
                     currentMode = uiState.drawerAppSortMode,
                     showCustomSortOption = uiState.drawerSidebarCategories,
-                    onModeChanged = onDrawerAppSortModeChanged
+                    onModeChanged = viewModel::setDrawerAppSortMode
             )
         }
         item {
-            SettingsSubpageNavigationRow(
+            SettingsRow(
                     label = stringResource(R.string.settings_dot_search_title),
                     subtitle = stringResource(R.string.settings_dot_search_subtitle),
-                    onClick = onDrawerDotSearchSettings
+                    verticalPadding = 14.dp,
+                    onClick = onDrawerDotSearchSettings,
+                    trailing = {
+                        Icon(
+                                imageVector = Icons.AutoMirrored.Filled.NavigateNext,
+                                contentDescription = stringResource(R.string.cd_open_subpage),
+                                tint = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.size(22.dp),
+                        )
+                    },
             )
         }
         item { SettingsDivider() }
@@ -515,14 +548,21 @@ private fun SettingsScreenContent(
             }
         } else {
             items(uiState.hiddenApps) { hiddenApp ->
-                SettingsAppInfoRow(
-                        primaryLabel = hiddenApp.label,
-                        secondaryLabel =
+                SettingsRow(
+                        label = hiddenApp.label,
+                        subtitle =
                                 hiddenApp.profileLabel?.let { "$it • ${hiddenApp.packageName}" }
                                         ?: hiddenApp.packageName,
-                        trailingIcon = Icons.Default.Visibility,
-                        trailingContentDescription = stringResource(R.string.cd_unhide_app),
-                        onClick = { onUnhideApp(hiddenApp.packageName, hiddenApp.profileKey) },
+                        subtitleStyle = MaterialTheme.typography.labelMedium,
+                        onClick = { viewModel.unhideApp(hiddenApp.packageName, hiddenApp.profileKey) },
+                        trailing = {
+                            Spacer(Modifier.width(8.dp))
+                            Icon(
+                                    Icons.Default.Visibility,
+                                    stringResource(R.string.cd_unhide_app),
+                                    tint = MaterialTheme.colorScheme.secondary,
+                            )
+                        },
                 )
             }
         }
@@ -535,16 +575,23 @@ private fun SettingsScreenContent(
             }
         } else {
             items(uiState.renamedApps) { renamedApp ->
-                SettingsAppInfoRow(
-                        primaryLabel = renamedApp.customName,
-                        secondaryLabel =
-                                renamedApp.profileLabel?.let {
-                                    "$it • ${renamedApp.packageName}"
-                                } ?: renamedApp.packageName,
-                        trailingIcon = Icons.Default.Close,
-                        trailingContentDescription =
-                                stringResource(R.string.cd_remove_rename),
-                        onClick = { onRemoveRename(renamedApp.packageName, renamedApp.profileKey) },
+                SettingsRow(
+                        label = renamedApp.customName,
+                        subtitle =
+                                renamedApp.profileLabel?.let { "$it • ${renamedApp.packageName}" }
+                                        ?: renamedApp.packageName,
+                        subtitleStyle = MaterialTheme.typography.labelMedium,
+                        onClick = {
+                            viewModel.removeRename(renamedApp.packageName, renamedApp.profileKey)
+                        },
+                        trailing = {
+                            Spacer(Modifier.width(8.dp))
+                            Icon(
+                                    Icons.Default.Close,
+                                    stringResource(R.string.cd_remove_rename),
+                                    tint = MaterialTheme.colorScheme.secondary,
+                            )
+                        },
                 )
             }
         }
@@ -552,10 +599,26 @@ private fun SettingsScreenContent(
 
         item { SectionHeader(stringResource(R.string.settings_connect_section)) }
         items(communityLinks, key = { it.url }) { link ->
-            ExternalLinkRow(
-                    icon = link.icon,
-                    title = stringResource(link.titleRes),
+            SettingsRow(
+                    label = stringResource(link.titleRes),
                     subtitle = stringResource(link.subtitleRes),
+                    verticalPadding = 14.dp,
+                    leading = {
+                        Icon(
+                                imageVector = link.icon,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp),
+                        )
+                    },
+                    trailing = {
+                        Icon(
+                                imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                                contentDescription = stringResource(R.string.cd_open_link),
+                                tint = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.size(18.dp),
+                        )
+                    },
                     onClick = {
                         context.startActivity(
                                 Intent(Intent.ACTION_VIEW, link.url.toUri())
@@ -570,11 +633,24 @@ private fun SettingsScreenContent(
         item {
             ExportLogsRow(
                     context = context,
-                    createLogShareIntent = createLogShareIntent
+                    createLogShareIntent = viewModel::createLogShareIntent
             )
         }
         item {
-            ResetAllDataRow(onClick = onShowResetConfirm)
+            SettingsRow(
+                    label = stringResource(R.string.settings_reset_all_data),
+                    labelColor = MaterialTheme.colorScheme.error,
+                    verticalPadding = 14.dp,
+                    leading = {
+                        Icon(
+                                Icons.Default.Restore,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(24.dp),
+                        )
+                    },
+                    onClick = onShowResetConfirm,
+            )
         }
         item { Spacer(Modifier.height(32.dp)) }
     }
@@ -739,10 +815,12 @@ fun HomeWidgetsSettingsScreen(
             }
             item {
                 val clockLabel =
-                        formatWidgetAppOverrideLabel(
+                        formatPreferredAppLabel(
+                                context,
                                 resources,
                                 uiState.preferredClockAppPackage,
-                                uiState.allApps
+                                uiState.allApps,
+                                ::formatWidgetAppEmptyLabel,
                         )
                 ShortcutTargetRow(
                         label = stringResource(R.string.settings_widget_clock_app),
@@ -753,10 +831,12 @@ fun HomeWidgetsSettingsScreen(
             }
             item {
                 val calendarLabel =
-                        formatWidgetAppOverrideLabel(
+                        formatPreferredAppLabel(
+                                context,
                                 resources,
                                 uiState.preferredCalendarAppPackage,
-                                uiState.allApps
+                                uiState.allApps,
+                                ::formatWidgetAppEmptyLabel,
                         )
                 ShortcutTargetRow(
                         label = stringResource(R.string.settings_widget_calendar_app),
@@ -934,6 +1014,51 @@ private fun SettingsToggleRow(
     }
 }
 
+@Composable
+private fun SettingsRow(
+        label: String,
+        subtitle: String? = null,
+        modifier: Modifier = Modifier,
+        horizontalPadding: Dp = 24.dp,
+        verticalPadding: Dp = 12.dp,
+        labelStyle: TextStyle = MaterialTheme.typography.bodyLarge,
+        subtitleStyle: TextStyle = MaterialTheme.typography.labelSmall,
+        labelColor: Color = MaterialTheme.colorScheme.onBackground,
+        subtitleColor: Color = MaterialTheme.colorScheme.secondary,
+        leading: (@Composable RowScope.() -> Unit)? = null,
+        trailing: (@Composable RowScope.() -> Unit)? = null,
+        onClick: (() -> Unit)? = null,
+        clickableEnabled: Boolean = true,
+) {
+    val padded =
+            Modifier.fillMaxWidth().padding(horizontal = horizontalPadding, vertical = verticalPadding)
+    val rowModifier =
+            modifier.then(
+                    if (onClick != null) {
+                        padded.clickableWithSystemSound(
+                                enabled = clickableEnabled,
+                                onClick = onClick,
+                        )
+                    } else {
+                        padded
+                    }
+            )
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = rowModifier) {
+        leading?.invoke(this)
+        if (leading != null) {
+            Spacer(Modifier.width(16.dp))
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = label, style = labelStyle, color = labelColor)
+            if (!subtitle.isNullOrEmpty()) {
+                Spacer(Modifier.height(4.dp))
+                Text(text = subtitle, style = subtitleStyle, color = subtitleColor)
+            }
+        }
+        trailing?.invoke(this)
+    }
+}
+
 private val SettingsPickerCorner = RoundedCornerShape(12.dp)
 
 @Composable
@@ -1060,6 +1185,48 @@ private fun SettingsLabeledDropdown(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun <T> SettingsDropdown(
+        title: String,
+        subtitle: String? = null,
+        options: List<T>,
+        expanded: Boolean,
+        onExpandedChange: (Boolean) -> Unit,
+        selectedDisplayText: String,
+        fieldEnabled: Boolean = true,
+        menuExpanded: Boolean = expanded,
+        textStyle: TextStyle = MaterialTheme.typography.bodyLarge,
+        textFieldModifier: Modifier = Modifier,
+        itemContent: @Composable (T) -> Unit,
+        onItemSelected: (T) -> Unit,
+) {
+    SettingsLabeledDropdown(
+            title = title,
+            subtitle = subtitle,
+            expanded = expanded,
+            onExpandedChange = onExpandedChange,
+            selectedDisplayText = selectedDisplayText,
+            fieldEnabled = fieldEnabled,
+            menuExpanded = menuExpanded,
+            textStyle = textStyle,
+            textFieldModifier = textFieldModifier,
+    ) {
+        options.forEach { option ->
+            DropdownMenuItem(
+                    text = { itemContent(option) },
+                    onClick =
+                            rememberClickWithSystemSound {
+                                onItemSelected(option)
+                                onExpandedChange(false)
+                            },
+                    colors = settingsPickerMenuItemColors(),
+                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
+            )
+        }
+    }
+}
+
 /**
  * Endonym: name of the language written in that language (e.g. English, Polski), independent of
  * app UI locale.
@@ -1113,34 +1280,23 @@ private fun HomeDateFormatDropdown(
             rememberBooleanChangeWithSystemSound { newExpanded ->
                 if (enabled) expanded = newExpanded
             }
-    val selectedLabel = homeDateFormatStyleLabel(currentStyle)
-    SettingsLabeledDropdown(
+    SettingsDropdown(
             title = stringResource(R.string.settings_home_date_format),
+            options = options,
             expanded = expanded,
             onExpandedChange = onDateFormatExpandedChange,
-            selectedDisplayText = selectedLabel,
+            selectedDisplayText = homeDateFormatStyleLabel(currentStyle),
             fieldEnabled = enabled,
             menuExpanded = expanded && enabled,
-    ) {
-        options.forEach { style ->
-            DropdownMenuItem(
-                    text = {
-                        Text(
-                                text = homeDateFormatStyleLabel(style),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onBackground,
-                        )
-                    },
-                    onClick =
-                            rememberClickWithSystemSound {
-                                onStyleSelected(style)
-                                expanded = false
-                            },
-                    colors = settingsPickerMenuItemColors(),
-                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
-            )
-        }
-    }
+            itemContent = { style ->
+                Text(
+                        text = homeDateFormatStyleLabel(style),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onBackground,
+                )
+            },
+            onItemSelected = onStyleSelected,
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -1167,31 +1323,21 @@ private fun AppLanguageDropdown(
     val selectedDisplayText =
             options.find { (tag, _) -> tag == currentTag }?.second
                     ?: if (currentTag.isBlank()) systemDefaultLabel else languageAutonym(currentTag)
-    SettingsLabeledDropdown(
+    SettingsDropdown(
             title = stringResource(R.string.settings_language_label),
+            options = options,
             expanded = expanded,
             onExpandedChange = onLanguageExpandedChange,
             selectedDisplayText = selectedDisplayText,
-    ) {
-        options.forEach { (storageTag, label) ->
-            DropdownMenuItem(
-                    text = {
-                        Text(
-                                text = label,
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onBackground,
-                        )
-                    },
-                    onClick =
-                            rememberClickWithSystemSound {
-                                onTagSelected(storageTag)
-                                expanded = false
-                            },
-                    colors = settingsPickerMenuItemColors(),
-                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
-            )
-        }
-    }
+            itemContent = { (_, label) ->
+                Text(
+                        text = label,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onBackground,
+                )
+            },
+            onItemSelected = { (storageTag, _) -> onTagSelected(storageTag) },
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -1219,8 +1365,9 @@ private fun LauncherFontFamilyDropdown(
     val selectedLabel =
             options.find { (value, _) -> value == currentFamilyName }?.second
                     ?: currentFamilyName.ifBlank { systemDefault }
-    SettingsLabeledDropdown(
+    SettingsDropdown(
             title = stringResource(R.string.settings_font_label),
+            options = options,
             expanded = expanded,
             onExpandedChange = onFontExpandedChange,
             selectedDisplayText = selectedLabel,
@@ -1228,32 +1375,19 @@ private fun LauncherFontFamilyDropdown(
                     MaterialTheme.typography.bodyLarge.copy(
                             fontFamily = composeFontFamilyFromStoredName(currentFamilyName)
                     ),
-    ) {
-        options.forEach { (storageValue, label) ->
-            DropdownMenuItem(
-                    text = {
-                        Text(
-                                text = label,
-                                style =
-                                        MaterialTheme.typography.bodyLarge.copy(
-                                                fontFamily =
-                                                        composeFontFamilyFromStoredName(
-                                                                storageValue
-                                                        )
-                                        ),
-                                color = MaterialTheme.colorScheme.onBackground,
-                        )
-                    },
-                    onClick =
-                            rememberClickWithSystemSound {
-                                onFamilySelected(storageValue)
-                                expanded = false
-                            },
-                    colors = settingsPickerMenuItemColors(),
-                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
-            )
-        }
-    }
+            itemContent = { (storageValue, label) ->
+                Text(
+                        text = label,
+                        style =
+                                MaterialTheme.typography.bodyLarge.copy(
+                                        fontFamily =
+                                                composeFontFamilyFromStoredName(storageValue)
+                                ),
+                        color = MaterialTheme.colorScheme.onBackground,
+                )
+            },
+            onItemSelected = { (storageValue, _) -> onFamilySelected(storageValue) },
+    )
 }
 
 @Composable
@@ -1379,37 +1513,27 @@ private fun LongLockThresholdRow(
                     currentMinutes,
                     currentMinutes
             )
-    SettingsLabeledDropdown(
+    SettingsDropdown(
             title = stringResource(R.string.settings_long_lock_duration),
             subtitle = stringResource(R.string.settings_long_lock_duration_subtitle),
+            options = options,
             expanded = expanded,
             onExpandedChange = onLongLockExpandedChange,
             selectedDisplayText = selectedLabel,
-    ) {
-        options.forEach { minutes ->
-            DropdownMenuItem(
-                    text = {
-                        Text(
-                                text =
-                                        pluralStringResource(
-                                                R.plurals.settings_long_lock_duration_minutes,
-                                                minutes,
-                                                minutes
-                                        ),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onBackground
-                        )
-                    },
-                    onClick =
-                            rememberClickWithSystemSound {
-                                onMinutesSelected(minutes)
-                                expanded = false
-                            },
-                    colors = settingsPickerMenuItemColors(),
-                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
-            )
-        }
-    }
+            itemContent = { minutes ->
+                Text(
+                        text =
+                                pluralStringResource(
+                                        R.plurals.settings_long_lock_duration_minutes,
+                                        minutes,
+                                        minutes
+                                ),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onBackground
+                )
+            },
+            onItemSelected = onMinutesSelected,
+    )
 }
 
 @Composable
@@ -1471,64 +1595,6 @@ private fun SettingsDivider() {
 }
 
 @Composable
-private fun SettingsSubpageNavigationRow(
-        label: String,
-        subtitle: String? = null,
-        onClick: () -> Unit,
-) {
-    Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier =
-                    Modifier.fillMaxWidth()
-                            .clickableWithSystemSound(onClick = onClick)
-                            .padding(horizontal = 24.dp, vertical = 14.dp)
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                    text = label,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onBackground
-            )
-            if (!subtitle.isNullOrEmpty()) {
-                Spacer(Modifier.height(4.dp))
-                Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.secondary
-                )
-            }
-        }
-        Icon(
-                imageVector = Icons.AutoMirrored.Filled.NavigateNext,
-                contentDescription = stringResource(R.string.cd_open_subpage),
-                tint = MaterialTheme.colorScheme.secondary,
-                modifier = Modifier.size(22.dp)
-        )
-    }
-}
-
-@Composable
-private fun SimpleSettingsRow(
-        label: String,
-        onClick: () -> Unit
-) {
-    Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier =
-                    Modifier.fillMaxWidth()
-                            .clickableWithSystemSound(onClick = onClick)
-                            .padding(horizontal = 24.dp, vertical = 14.dp)
-    ) {
-        Text(
-                text = label,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.weight(1f)
-        )
-    }
-}
-
-@Composable
 private fun EmptySettingsStateText(text: String) {
     Text(
             text = text,
@@ -1545,72 +1611,25 @@ private fun ExportLogsRow(
 ) {
     val scope = rememberCoroutineScope()
     val activity = LocalActivity.current
-    val shareChooserTitle =
-            stringResource(R.string.settings_export_logs_share_chooser)
+    val shareChooserTitle = stringResource(R.string.settings_export_logs_share_chooser)
     val exportLogsFailedToast = stringResource(R.string.toast_export_logs_failed)
-    Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier =
-                    Modifier.fillMaxWidth()
-                            .clickableWithSystemSound {
-                                scope.launch {
-                                    val shareIntent = createLogShareIntent()
-                                    if (shareIntent != null && activity != null) {
-                                        activity.startActivity(
-                                                Intent.createChooser(
-                                                        shareIntent,
-                                                        shareChooserTitle
-                                                )
-                                        )
-                                    } else {
-                                        Toast.makeText(
-                                                        context,
-                                                        exportLogsFailedToast,
-                                                        Toast.LENGTH_SHORT
-                                                )
-                                                .show()
-                                    }
-                                }
-                            }
-                            .padding(horizontal = 24.dp, vertical = 14.dp)
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                    text = stringResource(R.string.settings_export_logs_title),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onBackground
-            )
-            Text(
-                    text = stringResource(R.string.settings_export_logs_subtitle),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.secondary
-            )
-        }
-    }
-}
-
-@Composable
-private fun ResetAllDataRow(onClick: () -> Unit) {
-    Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier =
-                    Modifier.fillMaxWidth()
-                            .clickableWithSystemSound(onClick = onClick)
-                            .padding(horizontal = 24.dp, vertical = 14.dp)
-    ) {
-        Icon(
-                Icons.Default.Restore,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.error,
-                modifier = Modifier.size(24.dp)
-        )
-        Spacer(Modifier.width(16.dp))
-        Text(
-                text = stringResource(R.string.settings_reset_all_data),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.error
-        )
-    }
+    SettingsRow(
+            label = stringResource(R.string.settings_export_logs_title),
+            subtitle = stringResource(R.string.settings_export_logs_subtitle),
+            verticalPadding = 14.dp,
+            onClick = {
+                scope.launch {
+                    val shareIntent = createLogShareIntent()
+                    if (shareIntent != null && activity != null) {
+                        activity.startActivity(
+                                Intent.createChooser(shareIntent, shareChooserTitle)
+                        )
+                    } else {
+                        Toast.makeText(context, exportLogsFailedToast, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            },
+    )
 }
 
 // --- Weather app (location gate + shortcut row) ---
@@ -1628,14 +1647,32 @@ private fun WeatherAppSettingRow(
 ) {
     Column {
         if (!hasCoarseLocationPermission) {
-            LocationWeatherRow(onEnableClick = onRequestLocationPermission)
+            SettingsRow(
+                    label = stringResource(R.string.settings_weather_location_disabled),
+                    subtitle = stringResource(R.string.settings_weather_location_disabled_subtitle),
+                    onClick = onRequestLocationPermission,
+                    leading = {
+                        Icon(
+                                imageVector = Icons.Outlined.LocationOn,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp),
+                        )
+                    },
+                    trailing = {
+                        FokusTextButton(onClick = onRequestLocationPermission) {
+                            Text(stringResource(R.string.settings_weather_location_enable_button))
+                        }
+                    },
+            )
         } else {
             val weatherAppLabel =
-                    formatWeatherAppLabel(
+                    formatPreferredAppLabel(
                             context,
                             resources,
                             preferredWeatherAppPackage,
                             allApps,
+                            ::formatWeatherAppEmptyLabel,
                     )
             ShortcutTargetRow(
                     label = stringResource(R.string.settings_weather_app),
@@ -1643,42 +1680,6 @@ private fun WeatherAppSettingRow(
                     onPickApp = onPickApp,
                     onClear = onClear,
             )
-        }
-    }
-}
-
-// --- Location for weather row (shown only when permission disabled) ---
-
-@Composable
-private fun LocationWeatherRow(onEnableClick: () -> Unit) {
-    Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier =
-                    Modifier.fillMaxWidth()
-                            .clickableWithSystemSound(onClick = onEnableClick)
-                            .padding(horizontal = 24.dp, vertical = 12.dp)
-    ) {
-        Icon(
-                imageVector = Icons.Outlined.LocationOn,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp)
-        )
-        Spacer(Modifier.width(16.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                    text = stringResource(R.string.settings_weather_location_disabled),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onBackground
-            )
-            Text(
-                    text = stringResource(R.string.settings_weather_location_disabled_subtitle),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.secondary
-            )
-        }
-        FokusTextButton(onClick = onEnableClick) {
-            Text(stringResource(R.string.settings_weather_location_enable_button))
         }
     }
 }
@@ -1720,116 +1721,33 @@ private fun ShortcutTargetRow(
     }
 }
 
-@Composable
-private fun SettingsAppInfoRow(
-        primaryLabel: String,
-        secondaryLabel: String,
-        trailingIcon: ImageVector,
-        trailingContentDescription: String,
-        onClick: () -> Unit,
-) {
-    Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier =
-                    Modifier.fillMaxWidth()
-                            .clickableWithSystemSound(onClick = onClick)
-                            .padding(horizontal = 24.dp, vertical = 12.dp),
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                    primaryLabel,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onBackground,
-            )
-            Text(
-                    secondaryLabel,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.secondary,
-            )
-        }
-        Spacer(Modifier.width(8.dp))
-        Icon(
-                trailingIcon,
-                trailingContentDescription,
-                tint = MaterialTheme.colorScheme.secondary,
-        )
-    }
-}
-
-// --- External link row for Connect section ---
-
-@Composable
-private fun ExternalLinkRow(
-        icon: androidx.compose.ui.graphics.vector.ImageVector,
-        title: String,
-        subtitle: String,
-        onClick: () -> Unit
-) {
-    Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier =
-                    Modifier.fillMaxWidth()
-                            .clickableWithSystemSound(onClick = onClick)
-                            .padding(horizontal = 24.dp, vertical = 14.dp)
-    ) {
-        Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp)
-        )
-        Spacer(Modifier.width(16.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onBackground
-            )
-            Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.secondary
-            )
-        }
-        Icon(
-                imageVector = Icons.AutoMirrored.Filled.OpenInNew,
-                contentDescription = stringResource(R.string.cd_open_link),
-                tint = MaterialTheme.colorScheme.secondary,
-                modifier = Modifier.size(18.dp)
-        )
-    }
-}
-
 // =====================  DIALOGS  =====================
 
-private fun formatWidgetAppOverrideLabel(
-        resources: Resources,
-        packageName: String,
-        allApps: List<AppInfo>
-): String {
-    if (packageName.isNotBlank()) {
-        return allApps.find { it.packageName == packageName }?.label ?: packageName
-    }
-    return resources.getString(R.string.settings_weather_app_system_default)
-}
-
-private fun formatWeatherAppLabel(
+private fun formatPreferredAppLabel(
         context: Context,
         resources: Resources,
         packageName: String,
-        allApps: List<AppInfo>
+        allApps: List<AppInfo>,
+        emptyLabel: (Context, Resources) -> String,
 ): String {
     if (packageName.isNotBlank()) {
         return allApps.find { it.packageName == packageName }?.label ?: packageName
     }
-    val hasSystemWeatherApp = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-        val weatherIntent = Intent(Intent.ACTION_MAIN).apply {
-            addCategory(Intent.CATEGORY_APP_WEATHER)
-        }
-        weatherIntent.resolveActivity(context.packageManager) != null
-    } else {
-        false
-    }
+    return emptyLabel(context, resources)
+}
+
+private fun formatWidgetAppEmptyLabel(@Suppress("UNUSED_PARAMETER") context: Context, resources: Resources): String =
+        resources.getString(R.string.settings_weather_app_system_default)
+
+private fun formatWeatherAppEmptyLabel(context: Context, resources: Resources): String {
+    val hasSystemWeatherApp =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                Intent(Intent.ACTION_MAIN)
+                        .apply { addCategory(Intent.CATEGORY_APP_WEATHER) }
+                        .resolveActivity(context.packageManager) != null
+            } else {
+                false
+            }
     return if (hasSystemWeatherApp) {
         resources.getString(R.string.settings_weather_app_system_default)
     } else {

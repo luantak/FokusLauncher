@@ -3,6 +3,7 @@ package com.lu4p.fokuslauncher.utils
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.provider.Settings
 import com.lu4p.fokuslauncher.MainActivity
 
 /** [Intent] that starts this app's main activity as the home (launcher) target. */
@@ -27,3 +28,22 @@ fun Context.tryStartLauncherMainActivity(): Pair<Boolean, String?> =
         onSuccess = { true to null },
         onFailure = { false to it.javaClass.simpleName }
     )
+
+/** Opens the system UI to set the default home app, falling back to general settings. */
+fun Context.openDefaultLauncherSettings() {
+    try {
+        startActivity(
+            Intent(Settings.ACTION_HOME_SETTINGS).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+        )
+    } catch (_: Exception) {
+        try {
+            startActivity(
+                Intent(Settings.ACTION_SETTINGS).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+            )
+        } catch (_: Exception) { }
+    }
+}

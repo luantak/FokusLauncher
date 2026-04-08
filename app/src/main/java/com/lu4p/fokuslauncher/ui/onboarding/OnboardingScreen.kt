@@ -113,7 +113,7 @@ fun OnboardingScreen(
                     onAllow = {
                         locationPermissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
                     },
-                    onSkip = { viewModel.onSkipLocation() }
+                    onSkip = { viewModel.onNext() }
                 )
                 OnboardingStep.SET_DEFAULT_LAUNCHER -> SetDefaultStep(
                     onSetDefault = { viewModel.openDefaultLauncherSettings() },
@@ -121,7 +121,7 @@ fun OnboardingScreen(
                 )
                 OnboardingStep.CUSTOMIZE_HOME -> CustomizeStep(
                     onChooseApps = { viewModel.onChooseApps() },
-                    onSkip = { viewModel.onSkip() }
+                    onSkip = { viewModel.onNext() }
                 )
                 OnboardingStep.SWIPE_SHORTCUTS -> {
                     val swipeState by viewModel.swipeShortcutsState.collectAsStateWithLifecycle()
@@ -129,7 +129,7 @@ fun OnboardingScreen(
                         swipeState = swipeState,
                         onSetSwipeLeft = { viewModel.setSwipeLeftTarget(it) },
                         onSetSwipeRight = { viewModel.setSwipeRightTarget(it) },
-                        onSkip = { viewModel.onSkip() }
+                        onSkip = { viewModel.onNext() }
                     )
                 }
                 OnboardingStep.QUICK_TIPS -> QuickTipsStep(

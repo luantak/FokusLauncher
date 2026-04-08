@@ -90,10 +90,100 @@ sealed interface LaunchTarget {
     ) : LaunchTarget
 }
 
+fun launchTargetFromAppInfo(app: AppInfo): LaunchTarget {
+    val uh = app.userHandle
+    val cn = app.componentName
+    return if (uh != null && cn != null) {
+        LaunchTarget.PrivateApp(
+                packageName = app.packageName,
+                componentName = cn,
+                userHandle = uh,
+        )
+    } else {
+        LaunchTarget.MainApp(app.packageName)
+    }
+}
+
 private data class FilteredDrawerContent(
         val filteredProfileSections: List<DrawerProfileSectionUi>,
         val filteredPrivateSpaceApps: List<AppInfo>
 )
+
+/** Sorted private-space app list cache (fingerprint + sort inputs). */
+private class PrivateAppsSortCache {
+    private val lock = Any()
+    private var fp: Int = 0
+    private var sortMode: DrawerAppSortMode? = null
+    private var counts: Map<String, Int>? = null
+    private var result: List<AppInfo>? = null
+
+    fun get(fp: Int, mode: DrawerAppSortMode, countsMap: Map<String, Int>): List<AppInfo>? =
+            synchronized(lock) {
+                if (result != null &&
+                                fp == this.fp &&
+                                mode == sortMode &&
+                                countsMap === counts
+                ) {
+                    result
+                } else {
+                    null
+                }
+            }
+
+    fun put(fp: Int, mode: DrawerAppSortMode, countsMap: Map<String, Int>, sorted: List<AppInfo>) {
+        synchronized(lock) {
+            this.fp = fp
+            sortMode = mode
+            counts = countsMap
+            result = sorted
+        }
+    }
+}
+
+/** Profile-grouped sections cache (list identity + sort inputs). */
+private class ProfileSectionsBuildCache {
+    private val lock = Any()
+    private var apps: List<AppInfo>? = null
+    private var sortMode: DrawerAppSortMode? = null
+    private var counts: Map<String, Int>? = null
+    private var customOrder: Map<String, List<String>>? = null
+    private var sections: List<DrawerProfileSectionUi>? = null
+
+    fun get(
+            apps: List<AppInfo>,
+            mode: DrawerAppSortMode,
+            countsMap: Map<String, Int>,
+            expectedCustom: Map<String, List<String>>?,
+    ): List<DrawerProfileSectionUi>? =
+            synchronized(lock) {
+                if (sections != null &&
+                                this.apps === apps &&
+                                sortMode == mode &&
+                                countsMap === counts &&
+                                customOrder == expectedCustom
+                ) {
+                    sections
+                } else {
+                    null
+                }
+            }
+
+    fun put(
+            apps: List<AppInfo>,
+            mode: DrawerAppSortMode,
+            countsMap: Map<String, Int>,
+            custom: Map<String, List<String>>?,
+            built: List<DrawerProfileSectionUi>,
+    ) {
+        synchronized(lock) {
+            this.apps = apps
+            sortMode = mode
+            counts = countsMap
+            customOrder = custom
+            sections = built
+        }
+    }
+}
 
 private fun AppDrawerUiState.withFilteredContent(
         filteredContent: FilteredDrawerContent
@@ -136,21 +226,8 @@ constructor(
     private var latestCustomOrderByProfile: Map<String, List<String>> = emptyMap()
     private var latestUseSidebarCategoryDrawer: Boolean = false
 
-
-    // --- Profile sections cache (invalidates when apps list identity or sort inputs change) ---
-    private val profileSectionCacheLock = Any()
-    private var profileSectionsCache: List<DrawerProfileSectionUi>? = null
-    private var profileSectionsCacheApps: List<AppInfo>? = null
-    private var profileSectionsCacheSortMode: DrawerAppSortMode? = null
-    private var profileSectionsCacheCounts: Map<String, Int>? = null
-    private var profileSectionsCacheCustomOrder: Map<String, List<String>>? = null
-
-    // --- Private space list cache (sorted order; raw list often new instance, same contents) ---
-    private val privateSortCacheLock = Any()
-    private var privateSortCacheFingerprint: Int = 0
-    private var privateSortCacheSortMode: DrawerAppSortMode? = null
-    private var privateSortCacheCounts: Map<String, Int>? = null
-    private var privateSortCacheResult: List<AppInfo>? = null
+    private val profileSectionsBuildCache = ProfileSectionsBuildCache()
+    private val privateAppsSortCache = PrivateAppsSortCache()
 
     private var searchQueryApplyJob: Job? = null
     private var searchQueryRequestId: Long = 0
@@ -657,20 +734,6 @@ constructor(
             searchText: String,
     ): Boolean = appRepository.launchDotSearch(pref.profileKey, pref.target, searchText)
 
-    private fun launchTargetFromAppInfo(app: AppInfo): LaunchTarget {
-        val uh = app.userHandle
-        val cn = app.componentName
-        return if (uh != null && cn != null) {
-            LaunchTarget.PrivateApp(
-                    packageName = app.packageName,
-                    componentName = cn,
-                    userHandle = uh
-            )
-        } else {
-            LaunchTarget.MainApp(app.packageName)
-        }
-    }
-
     fun onCategorySelected(category: String) {
         viewModelScope.launch {
             val state = _uiState.value
@@ -1093,25 +1156,12 @@ constructor(
             }
         }
         val fp = fingerprintPrivateApps(raw)
-        synchronized(privateSortCacheLock) {
-            if (privateSortCacheResult != null &&
-                            fp == privateSortCacheFingerprint &&
-                            privateSortCacheSortMode == sortMode &&
-                            privateSortCacheCounts === counts
-            ) {
-                return privateSortCacheResult!!
-            }
-        }
+        privateAppsSortCache.get(fp, sortMode, counts)?.let { return it }
         val sorted =
                 withContext(drawerComputationDispatcher) {
                     sortDrawerAppsWith(raw, sortMode, counts)
                 }
-        synchronized(privateSortCacheLock) {
-            privateSortCacheFingerprint = fp
-            privateSortCacheSortMode = sortMode
-            privateSortCacheCounts = counts
-            privateSortCacheResult = sorted
-        }
+        privateAppsSortCache.put(fp, sortMode, counts, sorted)
         return sorted
     }
 
@@ -1121,35 +1171,16 @@ constructor(
     private suspend fun buildProfileSectionsSuspend(apps: List<AppInfo>): List<DrawerProfileSectionUi> {
         val sortMode = latestDrawerSortMode
         val counts = latestOpenCounts
-        synchronized(profileSectionCacheLock) {
-            if (profileSectionsCache != null &&
-                            profileSectionsCacheApps === apps &&
-                            profileSectionsCacheSortMode == sortMode &&
-                            profileSectionsCacheCounts === counts &&
-                            profileSectionsCacheCustomOrder ==
-                                    if (sortMode == DrawerAppSortMode.CUSTOM) {
-                                        latestCustomOrderByProfile
-                                    } else {
-                                        null
-                                    }
-            ) {
-                return profileSectionsCache!!
-            }
-        }
+        val expectedCustom =
+                if (sortMode == DrawerAppSortMode.CUSTOM) latestCustomOrderByProfile else null
+        profileSectionsBuildCache.get(apps, sortMode, counts, expectedCustom)?.let { return it }
         val built =
                 withContext(drawerComputationDispatcher) {
                     groupAppsIntoProfileSections(context, apps) { list ->
                         sortDrawerAppsWith(list, sortMode, counts)
                     }
                 }
-        synchronized(profileSectionCacheLock) {
-            profileSectionsCache = built
-            profileSectionsCacheApps = apps
-            profileSectionsCacheSortMode = sortMode
-            profileSectionsCacheCounts = counts
-            profileSectionsCacheCustomOrder =
-                    if (sortMode == DrawerAppSortMode.CUSTOM) latestCustomOrderByProfile else null
-        }
+        profileSectionsBuildCache.put(apps, sortMode, counts, expectedCustom, built)
         return built
     }
 
