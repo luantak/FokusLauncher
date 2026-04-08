@@ -92,6 +92,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.data.model.AppInfo
+import com.lu4p.fokuslauncher.data.model.AppShortcutAction
 import com.lu4p.fokuslauncher.ui.drawer.groupAppsIntoProfileSections
 import com.lu4p.fokuslauncher.ui.drawer.profileGroupedAppItems
 import com.lu4p.fokuslauncher.ui.drawer.sortAppsAlphabeticallyByProfileSection
@@ -216,421 +217,387 @@ fun SettingsScreen(
                         )
         )
 
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
+        SettingsScreenContent(
+                uiState = uiState,
+                installedFontFamilies = installedFontFamilies,
+                context = context,
+                resources = resources,
+                hasCoarseLocationPermission = hasCoarseLocationPermission,
+                onShowStatusBarChanged = viewModel::setShowStatusBar,
+                onAllowLandscapeRotationChanged = viewModel::setAllowLandscapeRotation,
+                onAppLocaleTagChanged = viewModel::setAppLocaleTag,
+                onLauncherFontFamilyChanged = viewModel::setLauncherFontFamilyName,
+                onPickWallpaper = { wallpaperPickerLauncher.launch("image/*") },
+                onSetBlackWallpaper = {
+                    viewModel.setBlackWallpaper()
+                    onNavigateToHome()
+                },
+                onOpenHomeWidgetsSettings = onOpenHomeWidgetsSettings,
+                onOpenDeviceControlSettings = onOpenDeviceControlSettings,
+                onEditHomeScreen = onEditHomeScreen,
+                onEditRightShortcuts = onEditRightShortcuts,
+                onEditCategories = onEditCategories,
+                onDrawerDotSearchSettings = onDrawerDotSearchSettings,
+                onRequestLocationPermission = {
+                    locationPermissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
+                },
+                onShowAppPicker = { showAppPickerFor.value = it },
+                onShowResetConfirm = { showResetConfirm.value = true },
+                onUnhideApp = viewModel::unhideApp,
+                onRemoveRename = viewModel::removeRename,
+                onDrawerSidebarCategoriesChanged = viewModel::setDrawerSidebarCategories,
+                onDrawerCategorySidebarOnLeftChanged = viewModel::setDrawerCategorySidebarOnLeft,
+                onDrawerAppSortModeChanged = viewModel::setDrawerAppSortMode,
+                onHomeAlignmentChanged = viewModel::setHomeAlignment,
+                onClearWeatherApp = { viewModel.setPreferredWeatherApp("") },
+                onClearSwipeLeftTarget = { viewModel.setSwipeLeftTarget(null) },
+                onClearSwipeRightTarget = { viewModel.setSwipeRightTarget(null) },
+                createLogShareIntent = viewModel::createLogShareIntent
+        )
+    }
 
-            // ========== APPEARANCE ==========
-            item { SectionHeader(stringResource(R.string.settings_section_appearance)) }
-
-            item {
-                SettingsToggleRow(
-                        label = stringResource(R.string.settings_show_status_bar),
-                        checked = uiState.showStatusBar,
-                        onCheckedChange = { viewModel.setShowStatusBar(it) }
-                )
+    SettingsScreenDialogs(
+            uiState = uiState,
+            showResetConfirm = showResetConfirm.value,
+            pickerTarget = showAppPickerFor.value,
+            onDismissResetConfirm = { showResetConfirm.value = false },
+            onResetConfirmed = {
+                viewModel.resetAllState()
+                onNavigateBack()
+            },
+            onDismissPicker = { showAppPickerFor.value = null },
+            onShortcutTargetSelected = { target, action ->
+                when (target) {
+                    "swipeLeft" -> viewModel.setSwipeLeftTarget(action.target)
+                    "swipeRight" -> viewModel.setSwipeRightTarget(action.target)
+                }
+            },
+            onAppPicked = { target, packageName ->
+                when (target) {
+                    "weather" -> viewModel.setPreferredWeatherApp(packageName)
+                }
             }
+    )
+}
 
-            item {
-                SettingsToggleRow(
-                        label = stringResource(R.string.settings_allow_landscape_rotation),
-                        checked = uiState.allowLandscapeRotation,
-                        onCheckedChange = { viewModel.setAllowLandscapeRotation(it) }
-                )
-            }
+@Composable
+private fun SettingsScreenContent(
+        uiState: SettingsUiState,
+        installedFontFamilies: List<String>,
+        context: Context,
+        resources: Resources,
+        hasCoarseLocationPermission: Boolean,
+        onShowStatusBarChanged: (Boolean) -> Unit,
+        onAllowLandscapeRotationChanged: (Boolean) -> Unit,
+        onAppLocaleTagChanged: (String) -> Unit,
+        onLauncherFontFamilyChanged: (String) -> Unit,
+        onPickWallpaper: () -> Unit,
+        onSetBlackWallpaper: () -> Unit,
+        onOpenHomeWidgetsSettings: () -> Unit,
+        onOpenDeviceControlSettings: () -> Unit,
+        onEditHomeScreen: () -> Unit,
+        onEditRightShortcuts: () -> Unit,
+        onEditCategories: () -> Unit,
+        onDrawerDotSearchSettings: () -> Unit,
+        onRequestLocationPermission: () -> Unit,
+        onShowAppPicker: (String) -> Unit,
+        onShowResetConfirm: () -> Unit,
+        onUnhideApp: (String, String) -> Unit,
+        onRemoveRename: (String, String) -> Unit,
+        onDrawerSidebarCategoriesChanged: (Boolean) -> Unit,
+        onDrawerCategorySidebarOnLeftChanged: (Boolean) -> Unit,
+        onDrawerAppSortModeChanged: (DrawerAppSortMode) -> Unit,
+        onHomeAlignmentChanged: (HomeAlignment) -> Unit,
+        onClearWeatherApp: () -> Unit,
+        onClearSwipeLeftTarget: () -> Unit,
+        onClearSwipeRightTarget: () -> Unit,
+        createLogShareIntent: suspend () -> Intent?
+) {
+    LazyColumn(modifier = Modifier.fillMaxSize()) {
+        item { SectionHeader(stringResource(R.string.settings_section_appearance)) }
+        item {
+            SettingsToggleRow(
+                    label = stringResource(R.string.settings_show_status_bar),
+                    checked = uiState.showStatusBar,
+                    onCheckedChange = onShowStatusBarChanged
+            )
+        }
+        item {
+            SettingsToggleRow(
+                    label = stringResource(R.string.settings_allow_landscape_rotation),
+                    checked = uiState.allowLandscapeRotation,
+                    onCheckedChange = onAllowLandscapeRotationChanged
+            )
+        }
+        item {
+            AppLanguageDropdown(
+                    currentTag = uiState.appLocaleTag,
+                    onTagSelected = onAppLocaleTagChanged
+            )
+        }
+        item {
+            LauncherFontFamilyDropdown(
+                    currentFamilyName = uiState.launcherFontFamilyName,
+                    installedFamilies = installedFontFamilies,
+                    onFamilySelected = onLauncherFontFamilyChanged
+            )
+        }
+        item {
+            SimpleSettingsRow(
+                    label = stringResource(R.string.settings_set_background_image),
+                    onClick = onPickWallpaper
+            )
+        }
+        item {
+            SimpleSettingsRow(
+                    label = stringResource(R.string.settings_set_black_wallpaper),
+                    onClick = onSetBlackWallpaper
+            )
+        }
+        item { SettingsDivider() }
 
-            item {
-                AppLanguageDropdown(
-                        currentTag = uiState.appLocaleTag,
-                        onTagSelected = { tag -> viewModel.setAppLocaleTag(tag) }
-                )
-            }
-
-            item {
-                LauncherFontFamilyDropdown(
-                        currentFamilyName = uiState.launcherFontFamilyName,
-                        installedFamilies = installedFontFamilies,
-                        onFamilySelected = { viewModel.setLauncherFontFamilyName(it) }
-                )
-            }
-
-            item {
-                Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                                .fillMaxWidth()
-                                .clickableWithSystemSound { wallpaperPickerLauncher.launch("image/*") }
-                                .padding(horizontal = 24.dp, vertical = 14.dp)
-                ) {
-                    Text(
-                            text = stringResource(R.string.settings_set_background_image),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onBackground,
-                            modifier = Modifier.weight(1f)
+        item { SectionHeader(stringResource(R.string.settings_section_home_screen)) }
+        item {
+            SettingsSubpageNavigationRow(
+                    label = stringResource(R.string.settings_home_widgets),
+                    subtitle = stringResource(R.string.settings_home_widgets_subtitle),
+                    onClick = onOpenHomeWidgetsSettings
+            )
+        }
+        item {
+            SettingsActionRow(
+                    label = stringResource(R.string.settings_accessibility),
+                    subtitle = stringResource(R.string.settings_accessibility_subtitle),
+                    onClick = onOpenDeviceControlSettings
+            )
+        }
+        item {
+            SettingsSubpageNavigationRow(
+                    label = stringResource(R.string.settings_edit_home_screen),
+                    onClick = onEditHomeScreen
+            )
+        }
+        item {
+            SettingsSubpageNavigationRow(
+                    label = stringResource(R.string.settings_edit_shortcuts),
+                    subtitle =
+                            pluralStringResource(
+                                    R.plurals.settings_shortcuts_configured,
+                                    uiState.rightSideShortcuts.size,
+                                    uiState.rightSideShortcuts.size
+                            ),
+                    onClick = onEditRightShortcuts
+            )
+        }
+        item {
+            HomeAlignmentRow(
+                    currentAlignment = uiState.homeAlignment,
+                    onAlignmentChanged = onHomeAlignmentChanged
+            )
+        }
+        item {
+            Column {
+                if (!hasCoarseLocationPermission) {
+                    LocationWeatherRow(onEnableClick = onRequestLocationPermission)
+                } else {
+                    val weatherAppLabel =
+                            formatWeatherAppLabel(
+                                    context,
+                                    resources,
+                                    uiState.preferredWeatherAppPackage,
+                                    uiState.allApps
+                            )
+                    ShortcutTargetRow(
+                            label = stringResource(R.string.settings_weather_app),
+                            currentTarget = weatherAppLabel,
+                            onPickApp = { onShowAppPicker("weather") },
+                            onClear = onClearWeatherApp
                     )
                 }
             }
+        }
+        item {
+            ShortcutTargetRow(
+                    label = stringResource(R.string.settings_swipe_left),
+                    currentTarget =
+                            formatShortcutTarget(
+                                    context,
+                                    resources,
+                                    uiState.swipeLeftTarget,
+                                    uiState.allApps
+                            ),
+                    onPickApp = { onShowAppPicker("swipeLeft") },
+                    onClear = onClearSwipeLeftTarget
+            )
+        }
+        item {
+            ShortcutTargetRow(
+                    label = stringResource(R.string.settings_swipe_right),
+                    currentTarget =
+                            formatShortcutTarget(
+                                    context,
+                                    resources,
+                                    uiState.swipeRightTarget,
+                                    uiState.allApps
+                            ),
+                    onPickApp = { onShowAppPicker("swipeRight") },
+                    onClear = onClearSwipeRightTarget
+            )
+        }
+        item { SettingsDivider() }
 
+        item { SectionHeader(stringResource(R.string.settings_section_app_drawer)) }
+        item {
+            SettingsSubpageNavigationRow(
+                    label = stringResource(R.string.settings_edit_app_categories),
+                    subtitle =
+                            pluralStringResource(
+                                    R.plurals.settings_categories_count,
+                                    uiState.categoryDefinitions.size,
+                                    uiState.categoryDefinitions.size
+                            ),
+                    onClick = onEditCategories
+            )
+        }
+        item {
+            SettingsToggleRow(
+                    label = stringResource(R.string.settings_drawer_sidebar_categories),
+                    subtitle = stringResource(R.string.settings_drawer_sidebar_categories_subtitle),
+                    checked = uiState.drawerSidebarCategories,
+                    onCheckedChange = onDrawerSidebarCategoriesChanged
+            )
+        }
+        if (uiState.drawerSidebarCategories) {
             item {
-                Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                                .fillMaxWidth()
-                                .clickableWithSystemSound {
-                                    viewModel.setBlackWallpaper()
-                                    onNavigateToHome()
-                                }
-                                .padding(horizontal = 24.dp, vertical = 14.dp)
-                ) {
-                    Text(
-                            text = stringResource(R.string.settings_set_black_wallpaper),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onBackground,
-                            modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-
-            item { SettingsDivider() }
-
-            // ========== HOME SCREEN ==========
-            item { SectionHeader(stringResource(R.string.settings_section_home_screen)) }
-
-            item {
-                SettingsSubpageNavigationRow(
-                        label = stringResource(R.string.settings_home_widgets),
-                        subtitle =
-                                stringResource(R.string.settings_home_widgets_subtitle),
-                        onClick = onOpenHomeWidgetsSettings
+                DrawerCategoryRailSideRow(
+                        railOnLeft = uiState.drawerCategorySidebarOnLeft,
+                        onRailOnLeftChanged = onDrawerCategorySidebarOnLeftChanged
                 )
             }
+        }
+        item {
+            DrawerAppSortRow(
+                    currentMode = uiState.drawerAppSortMode,
+                    showCustomSortOption = uiState.drawerSidebarCategories,
+                    onModeChanged = onDrawerAppSortModeChanged
+            )
+        }
+        item {
+            SettingsSubpageNavigationRow(
+                    label = stringResource(R.string.settings_dot_search_title),
+                    subtitle = stringResource(R.string.settings_dot_search_subtitle),
+                    onClick = onDrawerDotSearchSettings
+            )
+        }
+        item { SettingsDivider() }
 
+        item { SectionHeader(stringResource(R.string.settings_section_hidden_apps)) }
+        if (uiState.hiddenApps.isEmpty()) {
             item {
-                SettingsActionRow(
-                        label = stringResource(R.string.settings_accessibility),
-                        subtitle = stringResource(R.string.settings_accessibility_subtitle),
-                        onClick = onOpenDeviceControlSettings
+                EmptySettingsStateText(text = stringResource(R.string.settings_no_hidden_apps))
+            }
+        } else {
+            items(uiState.hiddenApps) { hiddenApp ->
+                HiddenAppRow(
+                        app = hiddenApp,
+                        onUnhide = { onUnhideApp(hiddenApp.packageName, hiddenApp.profileKey) }
                 )
             }
+        }
+        item { SettingsDivider() }
 
+        item { SectionHeader(stringResource(R.string.settings_section_renamed_apps)) }
+        if (uiState.renamedApps.isEmpty()) {
             item {
-                SettingsSubpageNavigationRow(
-                        label = stringResource(R.string.settings_edit_home_screen),
-                        onClick = onEditHomeScreen
+                EmptySettingsStateText(text = stringResource(R.string.settings_no_renamed_apps))
+            }
+        } else {
+            items(uiState.renamedApps) { renamedApp ->
+                RenamedAppRow(
+                        packageName = renamedApp.packageName,
+                        profileLabel = renamedApp.profileLabel,
+                        customName = renamedApp.customName,
+                        onRemoveRename = {
+                            onRemoveRename(renamedApp.packageName, renamedApp.profileKey)
+                        }
                 )
             }
+        }
+        item { SettingsDivider() }
 
-            item {
-                SettingsSubpageNavigationRow(
-                        label = stringResource(R.string.settings_edit_shortcuts),
-                        subtitle =
-                                pluralStringResource(
-                                        R.plurals.settings_shortcuts_configured,
-                                        uiState.rightSideShortcuts.size,
-                                        uiState.rightSideShortcuts.size
-                                ),
-                        onClick = onEditRightShortcuts
-                )
-            }
-
-            // Home screen alignment picker
-            item {
-                HomeAlignmentRow(
-                        currentAlignment = uiState.homeAlignment,
-                        onAlignmentChanged = { viewModel.setHomeAlignment(it) }
-                )
-            }
-
-            item {
-                Column {
-                    if (!hasCoarseLocationPermission) {
-                        LocationWeatherRow(onEnableClick = {
-                                locationPermissionLauncher.launch(
-                                        Manifest.permission.ACCESS_COARSE_LOCATION
-                                )
-                        })
-                    } else {
-                        val weatherAppLabel =
-                                formatWeatherAppLabel(
-                                        context,
-                                        resources,
-                                        uiState.preferredWeatherAppPackage,
-                                        uiState.allApps
-                                )
-                        ShortcutTargetRow(
-                                label = stringResource(R.string.settings_weather_app),
-                                currentTarget = weatherAppLabel,
-                                onPickApp = { showAppPickerFor.value = "weather" },
-                                onClear = { viewModel.setPreferredWeatherApp("") }
-                        )
-                    }
-                }
-            }
-
-            item {
-                ShortcutTargetRow(
-                        label = stringResource(R.string.settings_swipe_left),
-                        currentTarget =
-                                formatShortcutTarget(
-                                        context,
-                                        resources,
-                                        uiState.swipeLeftTarget,
-                                        uiState.allApps
-                                ),
-                        onPickApp = { showAppPickerFor.value = "swipeLeft" },
-                        onClear = { viewModel.setSwipeLeftTarget(null) }
-                )
-            }
-
-            item {
-                ShortcutTargetRow(
-                        label = stringResource(R.string.settings_swipe_right),
-                        currentTarget =
-                                formatShortcutTarget(
-                                        context,
-                                        resources,
-                                        uiState.swipeRightTarget,
-                                        uiState.allApps
-                                ),
-                        onPickApp = { showAppPickerFor.value = "swipeRight" },
-                        onClear = { viewModel.setSwipeRightTarget(null) }
-                )
-            }
-
-            item { SettingsDivider() }
-
-            // ========== APP DRAWER (includes categories) ==========
-            item { SectionHeader(stringResource(R.string.settings_section_app_drawer)) }
-
-            item {
-                SettingsSubpageNavigationRow(
-                        label = stringResource(R.string.settings_edit_app_categories),
-                        subtitle =
-                                pluralStringResource(
-                                        R.plurals.settings_categories_count,
-                                        uiState.categoryDefinitions.size,
-                                        uiState.categoryDefinitions.size
-                                ),
-                        onClick = onEditCategories
-                )
-            }
-
-            item {
-                SettingsToggleRow(
-                        label = stringResource(R.string.settings_drawer_sidebar_categories),
-                        subtitle = stringResource(R.string.settings_drawer_sidebar_categories_subtitle),
-                        checked = uiState.drawerSidebarCategories,
-                        onCheckedChange = { viewModel.setDrawerSidebarCategories(it) }
-                )
-            }
-
-            if (uiState.drawerSidebarCategories) {
-                item {
-                    DrawerCategoryRailSideRow(
-                            railOnLeft = uiState.drawerCategorySidebarOnLeft,
-                            onRailOnLeftChanged = { viewModel.setDrawerCategorySidebarOnLeft(it) }
-                    )
-                }
-            }
-
-            item {
-                DrawerAppSortRow(
-                        currentMode = uiState.drawerAppSortMode,
-                        showCustomSortOption = uiState.drawerSidebarCategories,
-                        onModeChanged = { viewModel.setDrawerAppSortMode(it) }
-                )
-            }
-
-            item {
-                SettingsSubpageNavigationRow(
-                        label = stringResource(R.string.settings_dot_search_title),
-                        subtitle = stringResource(R.string.settings_dot_search_subtitle),
-                        onClick = onDrawerDotSearchSettings
-                )
-            }
-
-            item { SettingsDivider() }
-
-            // ========== HIDDEN APPS ==========
-            item { SectionHeader(stringResource(R.string.settings_section_hidden_apps)) }
-
-            if (uiState.hiddenApps.isEmpty()) {
-                item {
-                    Text(
-                            text = stringResource(R.string.settings_no_hidden_apps),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.secondary,
-                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
-                    )
-                }
-            } else {
-                items(uiState.hiddenApps) { hiddenApp ->
-                    HiddenAppRow(
-                            app = hiddenApp,
-                            onUnhide = { viewModel.unhideApp(hiddenApp.packageName, hiddenApp.profileKey) }
-                    )
-                }
-            }
-
-            item { SettingsDivider() }
-
-            // ========== RENAMED APPS ==========
-            item { SectionHeader(stringResource(R.string.settings_section_renamed_apps)) }
-
-            if (uiState.renamedApps.isEmpty()) {
-                item {
-                    Text(
-                            text = stringResource(R.string.settings_no_renamed_apps),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.secondary,
-                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
-                    )
-                }
-            } else {
-                items(uiState.renamedApps) { renamedApp ->
-                    RenamedAppRow(
-                            packageName = renamedApp.packageName,
-                            profileLabel = renamedApp.profileLabel,
-                            customName = renamedApp.customName,
-                            onRemoveRename = {
-                                viewModel.removeRename(renamedApp.packageName, renamedApp.profileKey)
-                            }
-                    )
-                }
-            }
-
-            item { SettingsDivider() }
-
-            // ========== CONNECT ==========
-            item { SectionHeader(stringResource(R.string.settings_connect_section)) }
-
-            item {
-                ExternalLinkRow(
+        item { SectionHeader(stringResource(R.string.settings_connect_section)) }
+        item {
+            ExternalLinkRow(
                     icon = Icons.Filled.Star,
                     title = stringResource(R.string.settings_github_title),
                     subtitle = stringResource(R.string.settings_github_subtitle),
                     onClick = {
                         context.startActivity(
-                            Intent(Intent.ACTION_VIEW, "https://github.com/luantak/FokusLauncher".toUri())
-                                .apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+                                Intent(Intent.ACTION_VIEW, "https://github.com/luantak/FokusLauncher".toUri())
+                                        .apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
                         )
                     }
-                )
-            }
-
-            item {
-                ExternalLinkRow(
+            )
+        }
+        item {
+            ExternalLinkRow(
                     icon = Icons.Outlined.Translate,
                     title = stringResource(R.string.settings_weblate_title),
                     subtitle = stringResource(R.string.settings_weblate_subtitle),
                     onClick = {
                         context.startActivity(
-                            Intent(
-                                            Intent.ACTION_VIEW,
-                                            "https://hosted.weblate.org/engage/fokus-launcher/".toUri()
-                                    )
-                                    .apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+                                Intent(
+                                                Intent.ACTION_VIEW,
+                                                "https://hosted.weblate.org/engage/fokus-launcher/".toUri()
+                                        )
+                                        .apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
                         )
                     }
-                )
-            }
-
-            item {
-                ExternalLinkRow(
+            )
+        }
+        item {
+            ExternalLinkRow(
                     icon = Icons.Filled.ChatBubble,
                     title = stringResource(R.string.settings_matrix_title),
                     subtitle = stringResource(R.string.settings_matrix_subtitle),
                     onClick = {
                         context.startActivity(
-                            Intent(Intent.ACTION_VIEW, "https://matrix.to/#/#fokus:matrix.org".toUri())
-                                .apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+                                Intent(Intent.ACTION_VIEW, "https://matrix.to/#/#fokus:matrix.org".toUri())
+                                        .apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
                         )
                     }
-                )
-            }
-
-            item { SettingsDivider() }
-
-            // ========== RESET ==========
-            item { SectionHeader(stringResource(R.string.settings_section_data)) }
-
-            item {
-                val scope = rememberCoroutineScope()
-                val activity = LocalActivity.current
-                val shareChooserTitle =
-                        stringResource(R.string.settings_export_logs_share_chooser)
-                val exportLogsFailedToast = stringResource(R.string.toast_export_logs_failed)
-                Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier =
-                                Modifier.fillMaxWidth()
-                                        .clickableWithSystemSound {
-                                            scope.launch {
-                                                val shareIntent = viewModel.createLogShareIntent()
-                                                if (shareIntent != null && activity != null) {
-                                                    activity.startActivity(
-                                                            Intent.createChooser(
-                                                                    shareIntent,
-                                                                    shareChooserTitle
-                                                            )
-                                                    )
-                                                } else {
-                                                    Toast.makeText(
-                                                                    context,
-                                                                    exportLogsFailedToast,
-                                                                    Toast.LENGTH_SHORT
-                                                            )
-                                                            .show()
-                                                }
-                                            }
-                                        }
-                                        .padding(horizontal = 24.dp, vertical = 14.dp)
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                                text = stringResource(R.string.settings_export_logs_title),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onBackground
-                        )
-                        Text(
-                                text = stringResource(R.string.settings_export_logs_subtitle),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.secondary
-                        )
-                    }
-                }
-            }
-
-            item {
-                Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier =
-                                Modifier.fillMaxWidth()
-                                        .clickableWithSystemSound(onClick = { showResetConfirm.value = true })
-                                        .padding(horizontal = 24.dp, vertical = 14.dp)
-                ) {
-                    Icon(
-                            Icons.Default.Restore,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(Modifier.width(16.dp))
-                    Text(
-                            text = stringResource(R.string.settings_reset_all_data),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.error
-                    )
-                }
-            }
-
-            item { Spacer(Modifier.height(32.dp)) }
+            )
         }
+        item { SettingsDivider() }
+
+        item { SectionHeader(stringResource(R.string.settings_section_data)) }
+        item {
+            ExportLogsRow(
+                    context = context,
+                    createLogShareIntent = createLogShareIntent
+            )
+        }
+        item {
+            ResetAllDataRow(onClick = onShowResetConfirm)
+        }
+        item { Spacer(Modifier.height(32.dp)) }
     }
+}
 
-    // --- Dialogs ---
-
-    if (showResetConfirm.value) {
+@Composable
+private fun SettingsScreenDialogs(
+        uiState: SettingsUiState,
+        showResetConfirm: Boolean,
+        pickerTarget: String?,
+        onDismissResetConfirm: () -> Unit,
+        onResetConfirmed: suspend () -> Unit,
+        onDismissPicker: () -> Unit,
+        onShortcutTargetSelected: (String, AppShortcutAction) -> Unit,
+        onAppPicked: (String, String) -> Unit
+) {
+    if (showResetConfirm) {
         AlertDialog(
-                onDismissRequest = { showResetConfirm.value = false },
+                onDismissRequest = onDismissResetConfirm,
                 title = {
                     Text(stringResource(R.string.settings_reset_confirm_title), color = MaterialTheme.colorScheme.onBackground)
                 },
@@ -645,9 +612,8 @@ fun SettingsScreen(
                     FokusTextButton(
                             onClick = {
                                 scope.launch {
-                                    viewModel.resetAllState()
-                                    showResetConfirm.value = false
-                                    onNavigateBack()
+                                    onResetConfirmed()
+                                    onDismissResetConfirm()
                                 }
                             }
                     ) {
@@ -655,7 +621,7 @@ fun SettingsScreen(
                     }
                 },
                 dismissButton = {
-                    FokusTextButton(onClick = { showResetConfirm.value = false }) {
+                    FokusTextButton(onClick = onDismissResetConfirm) {
                         Text(stringResource(R.string.action_cancel), color = MaterialTheme.colorScheme.primary)
                     }
                 },
@@ -663,34 +629,28 @@ fun SettingsScreen(
         )
     }
 
-    showAppPickerFor.value?.let { pickerTarget ->
-        when (pickerTarget) {
+    pickerTarget?.let { target ->
+        when (target) {
             "swipeLeft", "swipeRight" -> {
                 ShortcutActionPickerDialog(
                         allActions = uiState.allShortcutActions,
                         allApps = uiState.allApps,
                         title = stringResource(R.string.edit_shortcuts_section_all_actions),
                         onSelect = { action ->
-                            when (pickerTarget) {
-                                "swipeLeft" -> viewModel.setSwipeLeftTarget(action.target)
-                                "swipeRight" -> viewModel.setSwipeRightTarget(action.target)
-                            }
-                            showAppPickerFor.value = null
+                            onShortcutTargetSelected(target, action)
+                            onDismissPicker()
                         },
-                        onDismiss = { showAppPickerFor.value = null }
+                        onDismiss = onDismissPicker
                 )
             }
             else -> {
                 AppPickerDialog(
                         allApps = uiState.allApps,
                         onSelect = { packageName ->
-                            when (pickerTarget) {
-                                "weather" -> viewModel.setPreferredWeatherApp(packageName)
-                                else -> {}
-                            }
-                            showAppPickerFor.value = null
+                            onAppPicked(target, packageName)
+                            onDismissPicker()
                         },
-                        onDismiss = { showAppPickerFor.value = null }
+                        onDismiss = onDismissPicker
                 )
             }
         }
@@ -1699,6 +1659,112 @@ private fun SettingsSubpageNavigationRow(
                 contentDescription = stringResource(R.string.cd_open_subpage),
                 tint = MaterialTheme.colorScheme.secondary,
                 modifier = Modifier.size(22.dp)
+        )
+    }
+}
+
+@Composable
+private fun SimpleSettingsRow(
+        label: String,
+        onClick: () -> Unit
+) {
+    Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier =
+                    Modifier.fillMaxWidth()
+                            .clickableWithSystemSound(onClick = onClick)
+                            .padding(horizontal = 24.dp, vertical = 14.dp)
+    ) {
+        Text(
+                text = label,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+private fun EmptySettingsStateText(text: String) {
+    Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.secondary,
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+    )
+}
+
+@Composable
+private fun ExportLogsRow(
+        context: Context,
+        createLogShareIntent: suspend () -> Intent?
+) {
+    val scope = rememberCoroutineScope()
+    val activity = LocalActivity.current
+    val shareChooserTitle =
+            stringResource(R.string.settings_export_logs_share_chooser)
+    val exportLogsFailedToast = stringResource(R.string.toast_export_logs_failed)
+    Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier =
+                    Modifier.fillMaxWidth()
+                            .clickableWithSystemSound {
+                                scope.launch {
+                                    val shareIntent = createLogShareIntent()
+                                    if (shareIntent != null && activity != null) {
+                                        activity.startActivity(
+                                                Intent.createChooser(
+                                                        shareIntent,
+                                                        shareChooserTitle
+                                                )
+                                        )
+                                    } else {
+                                        Toast.makeText(
+                                                        context,
+                                                        exportLogsFailedToast,
+                                                        Toast.LENGTH_SHORT
+                                                )
+                                                .show()
+                                    }
+                                }
+                            }
+                            .padding(horizontal = 24.dp, vertical = 14.dp)
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                    text = stringResource(R.string.settings_export_logs_title),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onBackground
+            )
+            Text(
+                    text = stringResource(R.string.settings_export_logs_subtitle),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.secondary
+            )
+        }
+    }
+}
+
+@Composable
+private fun ResetAllDataRow(onClick: () -> Unit) {
+    Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier =
+                    Modifier.fillMaxWidth()
+                            .clickableWithSystemSound(onClick = onClick)
+                            .padding(horizontal = 24.dp, vertical = 14.dp)
+    ) {
+        Icon(
+                Icons.Default.Restore,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(24.dp)
+        )
+        Spacer(Modifier.width(16.dp))
+        Text(
+                text = stringResource(R.string.settings_reset_all_data),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.error
         )
     }
 }
