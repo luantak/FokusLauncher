@@ -471,13 +471,16 @@ class HomeViewModel @Inject constructor(
         _editFavorites.value = current
     }
 
+    private fun <T> reorderInList(items: List<T>, from: Int, to: Int): List<T>? {
+        if (from !in items.indices || to !in items.indices) return null
+        val next = items.toMutableList()
+        val item = next.removeAt(from)
+        next.add(to, item)
+        return next
+    }
+
     fun reorderFavorite(from: Int, to: Int) {
-        val current = _editFavorites.value.toMutableList()
-        if (from in current.indices && to in current.indices) {
-            val item = current.removeAt(from)
-            current.add(to, item)
-            _editFavorites.value = current
-        }
+        _editFavorites.value = reorderInList(_editFavorites.value, from, to) ?: return
     }
 
     fun saveEditedFavorites() {
@@ -507,12 +510,7 @@ class HomeViewModel @Inject constructor(
     }
 
     fun reorderRightShortcut(from: Int, to: Int) {
-        val current = _editRightShortcuts.value.toMutableList()
-        if (from in current.indices && to in current.indices) {
-            val item = current.removeAt(from)
-            current.add(to, item)
-            _editRightShortcuts.value = current
-        }
+        _editRightShortcuts.value = reorderInList(_editRightShortcuts.value, from, to) ?: return
     }
 
     fun updateShortcutIcon(index: Int, iconName: String) {
@@ -679,36 +677,36 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private fun registerBatteryReceiver() {
-        val filter = IntentFilter(Intent.ACTION_BATTERY_CHANGED)
+    private fun registerPrivateNotExportedReceiver(
+        receiver: BroadcastReceiver,
+        filter: IntentFilter
+    ) {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 context.registerReceiver(
-                    batteryChangedReceiver,
+                    receiver,
                     filter,
                     Context.RECEIVER_NOT_EXPORTED
                 )
             } else {
                 @Suppress("DEPRECATION")
-                context.registerReceiver(batteryChangedReceiver, filter)
+                context.registerReceiver(receiver, filter)
             }
         } catch (_: Exception) { }
     }
 
+    private fun registerBatteryReceiver() {
+        registerPrivateNotExportedReceiver(
+            batteryChangedReceiver,
+            IntentFilter(Intent.ACTION_BATTERY_CHANGED)
+        )
+    }
+
     private fun registerTimezoneChangedReceiver() {
-        val filter = IntentFilter(Intent.ACTION_TIMEZONE_CHANGED)
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                context.registerReceiver(
-                    timezoneChangedReceiver,
-                    filter,
-                    Context.RECEIVER_NOT_EXPORTED
-                )
-            } else {
-                @Suppress("DEPRECATION")
-                context.registerReceiver(timezoneChangedReceiver, filter)
-            }
-        } catch (_: Exception) { }
+        registerPrivateNotExportedReceiver(
+            timezoneChangedReceiver,
+            IntentFilter(Intent.ACTION_TIMEZONE_CHANGED)
+        )
     }
 
     private fun setBatteryPercentFromIntent(intent: Intent) {
@@ -827,21 +825,20 @@ class HomeViewModel @Inject constructor(
 
     private fun observeDoubleTapEmptyLock() {
         viewModelScope.launch {
-            preferencesManager.doubleTapEmptyLockFlow.collect { prefEnabled ->
-                val svcEnabled = LockScreenHelper.isLockAccessibilityServiceEnabled(context)
-                _uiState.value =
-                        _uiState.value.copy(doubleTapEmptyLockEnabled = prefEnabled && svcEnabled)
-            }
+            preferencesManager.doubleTapEmptyLockFlow.collect { recomputeDoubleTapEmptyLockUi(it) }
         }
     }
 
     fun refreshDoubleTapLockEffective() {
         viewModelScope.launch {
-            val prefEnabled = preferencesManager.doubleTapEmptyLockFlow.first()
-            val svcEnabled = LockScreenHelper.isLockAccessibilityServiceEnabled(context)
-            _uiState.value =
-                    _uiState.value.copy(doubleTapEmptyLockEnabled = prefEnabled && svcEnabled)
+            recomputeDoubleTapEmptyLockUi(preferencesManager.doubleTapEmptyLockFlow.first())
         }
+    }
+
+    private fun recomputeDoubleTapEmptyLockUi(prefEnabled: Boolean) {
+        val svcEnabled = LockScreenHelper.isLockAccessibilityServiceEnabled(context)
+        _uiState.value =
+            _uiState.value.copy(doubleTapEmptyLockEnabled = prefEnabled && svcEnabled)
     }
 
     private fun checkDefaultLauncher() {
@@ -890,36 +887,26 @@ class HomeViewModel @Inject constructor(
     }
 
     fun launchFavorite(fav: FavoriteApp) {
-        when (val target = fav.resolvedIconTarget) {
-            is ShortcutTarget.PhoneDial -> launchDefaultDialer()
-            is ShortcutTarget.DeepLink -> launchDeepLink(target.intentUri)
-            is ShortcutTarget.LauncherShortcut -> {
-                val user =
-                        resolveUserHandleForShortcut(fav.profileKey, target.packageName)
-                appRepository.launchLauncherShortcut(
-                        target.packageName,
-                        target.shortcutId,
-                        user,
-                )
-            }
-            is ShortcutTarget.App -> launchAppTarget(target.packageName, fav.profileKey)
-        }
+        launchShortcutTarget(fav.resolvedIconTarget, fav.profileKey)
     }
 
     fun launchShortcut(shortcut: HomeShortcut) {
-        when (val target = shortcut.target) {
-            is ShortcutTarget.App -> launchAppTarget(target.packageName, shortcut.profileKey)
+        launchShortcutTarget(shortcut.target, shortcut.profileKey)
+    }
+
+    private fun launchShortcutTarget(target: ShortcutTarget, profileKey: String) {
+        when (target) {
+            is ShortcutTarget.PhoneDial -> launchDefaultDialer()
+            is ShortcutTarget.DeepLink -> launchDeepLink(target.intentUri)
             is ShortcutTarget.LauncherShortcut -> {
-                val user =
-                        resolveUserHandleForShortcut(shortcut.profileKey, target.packageName)
+                val user = resolveUserHandleForShortcut(profileKey, target.packageName)
                 appRepository.launchLauncherShortcut(
-                        target.packageName,
-                        target.shortcutId,
-                        user,
+                    target.packageName,
+                    target.shortcutId,
+                    user,
                 )
             }
-            is ShortcutTarget.DeepLink -> launchDeepLink(target.intentUri)
-            is ShortcutTarget.PhoneDial -> launchDefaultDialer()
+            is ShortcutTarget.App -> launchAppTarget(target.packageName, profileKey)
         }
     }
 

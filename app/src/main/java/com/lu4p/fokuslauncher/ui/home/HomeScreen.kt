@@ -575,21 +575,21 @@ private fun HomeScreenLongPressSheet(
                 .padding(bottom = 32.dp)
         ) {
             SheetActionRow(
-                icon = Icons.Default.Home,
                 label = stringResource(R.string.settings_edit_home_screen),
                 onClick = onEditHomeScreen,
+                icon = Icons.Default.Home,
                 iconContentDescription = stringResource(R.string.cd_edit_home_screen),
             )
             SheetActionRow(
-                icon = Icons.Filled.TouchApp,
                 label = stringResource(R.string.settings_edit_shortcuts),
                 onClick = onEditShortcuts,
+                icon = Icons.Filled.TouchApp,
                 iconContentDescription = stringResource(R.string.settings_edit_shortcuts),
             )
             SheetActionRow(
-                icon = Icons.Default.Settings,
                 label = stringResource(R.string.settings_title),
                 onClick = onOpenSettings,
+                icon = Icons.Default.Settings,
                 iconContentDescription = stringResource(R.string.cd_settings),
             )
         }

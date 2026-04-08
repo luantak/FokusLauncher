@@ -4,6 +4,7 @@ import android.content.Intent
 import android.provider.Settings
 import com.lu4p.fokuslauncher.ui.components.FokusIconButton
 import com.lu4p.fokuslauncher.ui.components.FokusTextButton
+import com.lu4p.fokuslauncher.ui.components.SheetActionRow
 import com.lu4p.fokuslauncher.ui.util.clickableWithSystemSound
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -31,7 +32,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -118,21 +118,19 @@ fun AppActionSheet(
             }
 
             if (!isOnHomeScreen) {
-                DrawerSheetActionRow(
-                    icon = Icons.Default.Home,
+                SheetActionRow(
                     label = stringResource(R.string.action_add_to_home),
-                    testTag = "action_add_to_home",
                     onClick = {
                         onAddToHome(app)
                         onDismiss()
-                    }
+                    },
+                    icon = Icons.Default.Home,
+                    testTag = "action_add_to_home",
                 )
             }
 
-            DrawerSheetActionRow(
-                icon = Icons.Default.Info,
+            SheetActionRow(
                 label = stringResource(R.string.action_app_info),
-                testTag = "action_app_info",
                 onClick = {
                     val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                         data = "package:${app.packageName}".toUri()
@@ -140,23 +138,23 @@ fun AppActionSheet(
                     }
                     context.startActivity(intent)
                     onDismiss()
-                }
+                },
+                icon = Icons.Default.Info,
+                testTag = "action_app_info",
             )
 
-            DrawerSheetActionRow(
-                icon = Icons.Default.VisibilityOff,
+            SheetActionRow(
                 label = stringResource(R.string.action_hide),
-                testTag = "action_hide",
                 onClick = {
                     onHide(app)
                     onDismiss()
-                }
+                },
+                icon = Icons.Default.VisibilityOff,
+                testTag = "action_hide",
             )
 
-            DrawerSheetActionRow(
-                icon = Icons.Default.Delete,
+            SheetActionRow(
                 label = stringResource(R.string.action_uninstall),
-                testTag = "action_uninstall",
                 onClick = {
                     val intent = Intent(Intent.ACTION_DELETE).apply {
                         data = "package:${app.packageName}".toUri()
@@ -164,41 +162,10 @@ fun AppActionSheet(
                     }
                     context.startActivity(intent)
                     onDismiss()
-                }
+                },
+                icon = Icons.Default.Delete,
+                testTag = "action_uninstall",
             )
         }
-    }
-}
-
-@Composable
-internal fun DrawerSheetActionRow(
-    icon: ImageVector,
-    label: String,
-    testTag: String,
-    onClick: () -> Unit,
-    destructive: Boolean = false
-) {
-    val tint =
-        if (destructive) MaterialTheme.colorScheme.error
-        else MaterialTheme.colorScheme.onBackground
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickableWithSystemSound(onClick = onClick)
-            .padding(horizontal = 24.dp, vertical = 16.dp)
-            .testTag(testTag)
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = label,
-            tint = tint
-        )
-        Spacer(modifier = Modifier.width(16.dp))
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyLarge,
-            color = tint
-        )
     }
 }

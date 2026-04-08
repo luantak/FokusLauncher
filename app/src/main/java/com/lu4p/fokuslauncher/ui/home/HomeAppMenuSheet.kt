@@ -115,48 +115,48 @@ fun HomeAppMenuSheet(
 
             // ── Action rows ────────────────────────────────────────
             SheetActionRow(
-                icon = Icons.Default.Close,
                 label = stringResource(R.string.action_remove_from_home),
                 onClick = {
                     onRemoveFromHome()
                     onDismiss()
-                }
+                },
+                icon = Icons.Default.Close,
             )
 
             SheetActionRow(
-                icon = Icons.Default.Home,
                 label = stringResource(R.string.settings_edit_home_screen),
                 onClick = {
                     onEditHomeScreen()
                     onDismiss()
-                }
+                },
+                icon = Icons.Default.Home,
             )
 
             SheetActionRow(
-                icon = Icons.Default.Info,
                 label = stringResource(R.string.action_app_info),
                 onClick = {
                     onAppInfo()
                     onDismiss()
-                }
+                },
+                icon = Icons.Default.Info,
             )
 
             SheetActionRow(
-                icon = Icons.Default.VisibilityOff,
                 label = stringResource(R.string.action_hide),
                 onClick = {
                     onHide()
                     onDismiss()
-                }
+                },
+                icon = Icons.Default.VisibilityOff,
             )
 
             SheetActionRow(
-                icon = Icons.Default.Delete,
                 label = stringResource(R.string.action_uninstall),
                 onClick = {
                     onUninstall()
                     onDismiss()
-                }
+                },
+                icon = Icons.Default.Delete,
             )
         }
     }

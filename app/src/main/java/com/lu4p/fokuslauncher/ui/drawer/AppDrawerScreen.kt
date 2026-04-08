@@ -12,6 +12,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -98,6 +99,7 @@ import com.lu4p.fokuslauncher.ui.components.FokusIconButton
 import com.lu4p.fokuslauncher.ui.components.FokusTextButton
 import com.lu4p.fokuslauncher.ui.components.MinimalIcons
 import com.lu4p.fokuslauncher.ui.components.SearchBar
+import com.lu4p.fokuslauncher.ui.components.SheetActionRow
 import com.lu4p.fokuslauncher.ui.util.categoryChipDisplayLabel
 import com.lu4p.fokuslauncher.ui.util.clickableWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.combinedClickableWithSystemSound
@@ -217,6 +219,21 @@ private fun LazyItemScope.ReorderableDrawerAppRow(
 }
 
 @Composable
+private fun DrawerDropdownMenuItem(
+        text: @Composable () -> Unit,
+        onClick: () -> Unit,
+        leadingIcon: @Composable () -> Unit,
+        testTag: String,
+) {
+    DropdownMenuItem(
+            text = text,
+            onClick = rememberClickWithSystemSound(onClick),
+            leadingIcon = leadingIcon,
+            modifier = Modifier.testTag(testTag),
+    )
+}
+
+@Composable
 private fun DrawerOverflowMenu(
         uiState: AppDrawerUiState,
         onMenuToggle: () -> Unit,
@@ -245,7 +262,7 @@ private fun DrawerOverflowMenu(
                         )
         ) {
             if (uiState.isPrivateSpaceSupported) {
-                DropdownMenuItem(
+                DrawerDropdownMenuItem(
                         text = {
                             Text(
                                     text =
@@ -254,7 +271,7 @@ private fun DrawerOverflowMenu(
                                             else stringResource(R.string.drawer_private_space_unlock)
                             )
                         },
-                        onClick = rememberClickWithSystemSound { onPrivateSpaceToggle() },
+                        onClick = onPrivateSpaceToggle,
                         leadingIcon = {
                             Icon(
                                     imageVector =
@@ -264,11 +281,11 @@ private fun DrawerOverflowMenu(
                                     contentDescription = null
                             )
                         },
-                        modifier = Modifier.testTag("menu_private_space")
+                        testTag = "menu_private_space",
                 )
             }
             if (showReorderMenuItem) {
-                DropdownMenuItem(
+                DrawerDropdownMenuItem(
                         text = {
                             Text(
                                     stringResource(
@@ -280,26 +297,26 @@ private fun DrawerOverflowMenu(
                                     )
                             )
                         },
-                        onClick = rememberClickWithSystemSound { onToggleReorderApps() },
+                        onClick = onToggleReorderApps,
                         leadingIcon = {
                             Icon(
                                     imageVector = Icons.Default.DragHandle,
                                     contentDescription = null
                             )
                         },
-                        modifier = Modifier.testTag("menu_reorder_apps")
+                        testTag = "menu_reorder_apps",
                 )
             }
-            DropdownMenuItem(
+            DrawerDropdownMenuItem(
                     text = { Text(stringResource(R.string.drawer_menu_launcher_settings)) },
-                    onClick = rememberClickWithSystemSound { onSettingsClick() },
+                    onClick = onSettingsClick,
                     leadingIcon = {
                         Icon(
                                 imageVector = Icons.Default.Settings,
                                 contentDescription = null
                         )
                     },
-                    modifier = Modifier.testTag("menu_settings")
+                    testTag = "menu_settings",
             )
         }
     }
@@ -621,6 +638,40 @@ private fun DrawerAppListColumn(
             }
         }
     }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun ColumnScope.DrawerAppListBody(
+        listState: LazyListState,
+        categorySwipeModifier: Modifier,
+        uiState: AppDrawerUiState,
+        showProfileSections: Boolean,
+        anyProfileAppsVisible: Boolean,
+        focusManager: FocusManager,
+        onAppClick: (LaunchTarget) -> Unit,
+        onAppLongPress: (AppInfo) -> Unit,
+        allowCustomDragReorder: Boolean,
+        onReorderDrawerProfileSection: (sectionId: String, fromIndex: Int, toIndex: Int) -> Unit,
+        onReorderPrivateDrawerApps: (fromIndex: Int, toIndex: Int) -> Unit,
+) {
+    DrawerAppListColumn(
+            listState = listState,
+            modifier =
+                    Modifier.weight(1f)
+                            .fillMaxWidth()
+                            .then(categorySwipeModifier)
+                            .testTag("app_list"),
+            uiState = uiState,
+            showProfileSections = showProfileSections,
+            anyProfileAppsVisible = anyProfileAppsVisible,
+            focusManager = focusManager,
+            onAppClick = onAppClick,
+            onAppLongPress = onAppLongPress,
+            allowCustomDragReorder = allowCustomDragReorder,
+            onReorderProfileSection = onReorderDrawerProfileSection,
+            onReorderPrivateApps = onReorderPrivateDrawerApps,
+    )
 }
 
 @Composable
@@ -987,13 +1038,9 @@ fun AppDrawerContent(
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                             }
-                            DrawerAppListColumn(
+                            DrawerAppListBody(
                                     listState = listState,
-                                    modifier =
-                                            Modifier.weight(1f)
-                                                    .fillMaxWidth()
-                                                    .then(categorySwipeModifier)
-                                                    .testTag("app_list"),
+                                    categorySwipeModifier = categorySwipeModifier,
                                     uiState = uiState,
                                     showProfileSections = showProfileSections,
                                     anyProfileAppsVisible = anyProfileAppsVisible,
@@ -1001,8 +1048,9 @@ fun AppDrawerContent(
                                     onAppClick = onAppClick,
                                     onAppLongPress = onAppLongPress,
                                     allowCustomDragReorder = allowCustomDragReorder,
-                                    onReorderProfileSection = onReorderDrawerProfileSection,
-                                    onReorderPrivateApps = onReorderPrivateDrawerApps
+                                    onReorderDrawerProfileSection =
+                                            onReorderDrawerProfileSection,
+                                    onReorderPrivateDrawerApps = onReorderPrivateDrawerApps,
                             )
                         }
                     }
@@ -1051,13 +1099,9 @@ fun AppDrawerContent(
                                 modifier = Modifier.testTag("category_chips")
                         )
                     }
-                    DrawerAppListColumn(
+                    DrawerAppListBody(
                             listState = listState,
-                            modifier =
-                                    Modifier.weight(1f)
-                                            .fillMaxWidth()
-                                            .then(categorySwipeModifier)
-                                            .testTag("app_list"),
+                            categorySwipeModifier = categorySwipeModifier,
                             uiState = uiState,
                             showProfileSections = showProfileSections,
                             anyProfileAppsVisible = anyProfileAppsVisible,
@@ -1065,8 +1109,8 @@ fun AppDrawerContent(
                             onAppClick = onAppClick,
                             onAppLongPress = onAppLongPress,
                             allowCustomDragReorder = allowCustomDragReorder,
-                            onReorderProfileSection = onReorderDrawerProfileSection,
-                            onReorderPrivateApps = onReorderPrivateDrawerApps
+                            onReorderDrawerProfileSection = onReorderDrawerProfileSection,
+                            onReorderPrivateDrawerApps = onReorderPrivateDrawerApps,
                     )
                 }
             }
@@ -1164,49 +1208,42 @@ fun CategoryActionSheet(
             }
 
             if (showEditApps) {
-                DrawerSheetActionRow(
-                        icon = Icons.Default.Apps,
+                SheetActionRow(
                         label = stringResource(R.string.category_action_edit_apps),
+                        onClick = onEditApps,
+                        icon = Icons.Default.Apps,
                         testTag = "category_action_edit_apps",
-                        onClick = onEditApps
                 )
             }
 
-            Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier =
-                            Modifier.fillMaxWidth()
-                                    .clickableWithSystemSound { showIconPickerDialog = true }
-                                    .padding(horizontal = 24.dp, vertical = 16.dp)
-                                    .testTag("category_action_choose_icon")
-            ) {
-                Icon(
-                        imageVector = MinimalIcons.iconFor(drawerRailIconKey),
-                        contentDescription = stringResource(R.string.icon_picker_current_icon),
-                        modifier = Modifier.size(28.dp),
-                        tint = MaterialTheme.colorScheme.onBackground
-                )
-                Spacer(modifier = Modifier.width(16.dp))
-                Text(
-                        text = stringResource(R.string.category_icon_picker_title),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.weight(1f)
-                )
-            }
-            DrawerSheetActionRow(
-                    icon = Icons.Default.Restore,
+            SheetActionRow(
+                    label = stringResource(R.string.category_icon_picker_title),
+                    onClick = { showIconPickerDialog = true },
+                    testTag = "category_action_choose_icon",
+                    leadingContent = {
+                        Icon(
+                                imageVector = MinimalIcons.iconFor(drawerRailIconKey),
+                                contentDescription =
+                                        stringResource(R.string.icon_picker_current_icon),
+                                modifier = Modifier.size(28.dp),
+                                tint = MaterialTheme.colorScheme.onBackground,
+                        )
+                    },
+                    labelModifier = Modifier.weight(1f),
+            )
+            SheetActionRow(
                     label = stringResource(R.string.category_action_reset_icon),
+                    onClick = onResetCategoryIcon,
+                    icon = Icons.Default.Restore,
                     testTag = "category_action_reset_icon",
-                    onClick = onResetCategoryIcon
             )
             if (showEditApps) {
-                DrawerSheetActionRow(
-                        icon = Icons.Default.Delete,
+                SheetActionRow(
                         label = stringResource(R.string.category_action_remove),
+                        onClick = onDelete,
+                        icon = Icons.Default.Delete,
                         testTag = "category_action_remove",
                         destructive = true,
-                        onClick = onDelete
                 )
             }
         }
