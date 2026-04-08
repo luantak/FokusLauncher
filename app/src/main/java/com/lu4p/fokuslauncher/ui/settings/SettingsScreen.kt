@@ -192,6 +192,7 @@ fun SettingsScreen(
     Column(modifier = Modifier
         .fillMaxSize()
         .background(backgroundScrim)
+        .navigationBarsPadding()
         .testTag("settings_screen")
     ) {
         TopAppBar(
@@ -744,6 +745,7 @@ fun HomeWidgetsSettingsScreen(
             modifier =
                     Modifier.fillMaxSize()
                             .background(backgroundScrim)
+                            .navigationBarsPadding()
                             .testTag("home_widgets_settings_screen")
     ) {
         TopAppBar(
@@ -928,6 +930,7 @@ fun DeviceControlSettingsScreen(
             modifier = Modifier
                     .fillMaxSize()
                     .background(backgroundScrim)
+                    .navigationBarsPadding()
                     .testTag("device_control_settings_screen")
     ) {
         TopAppBar(

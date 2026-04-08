@@ -60,13 +60,13 @@ class MainActivity : AppCompatActivity() {
         }
         window.decorView.isSoundEffectsEnabled = true
         window.decorView.overScrollMode = View.OVER_SCROLL_NEVER
-        hideStatusBar()
+        applySystemBarsAppearance()
         lifecycleScope.launch {
             repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
                 launch {
                     preferencesManager.showStatusBarFlow.collect { showStatusBar ->
                         shouldShowStatusBar = showStatusBar
-                        updateStatusBarVisibility(showStatusBar)
+                        applySystemBarsAppearance()
                     }
                 }
                 launch {
@@ -112,25 +112,22 @@ class MainActivity : AppCompatActivity() {
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) updateStatusBarVisibility(shouldShowStatusBar)
+        if (hasFocus) applySystemBarsAppearance()
     }
 
-    private fun hideStatusBar() {
+    private fun applySystemBarsAppearance() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         WindowInsetsControllerCompat(window, window.decorView).apply {
-            hide(WindowInsetsCompat.Type.statusBars())
-            systemBarsBehavior =
-                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            if (shouldShowStatusBar) {
+                show(WindowInsetsCompat.Type.statusBars())
+                systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
+            } else {
+                hide(WindowInsetsCompat.Type.statusBars())
+                systemBarsBehavior =
+                        WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            }
+            show(WindowInsetsCompat.Type.navigationBars())
         }
-    }
-
-    private fun showStatusBar() {
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        WindowInsetsControllerCompat(window, window.decorView).show(WindowInsetsCompat.Type.statusBars())
-    }
-
-    private fun updateStatusBarVisibility(showStatusBar: Boolean) {
-        if (showStatusBar) showStatusBar() else hideStatusBar()
     }
 
     private fun applyLauncherScreenOrientation(allowLandscape: Boolean) {

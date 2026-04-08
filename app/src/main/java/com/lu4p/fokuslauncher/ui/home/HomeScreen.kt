@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -237,7 +238,9 @@ fun HomeScreenContent(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 32.dp)
-                .padding(top = 80.dp, bottom = 48.dp)
+                .padding(top = 80.dp)
+                .navigationBarsPadding()
+                .padding(bottom = 48.dp)
         ) {
             HomeWidgetsSection(
                 uiState = uiState,
