@@ -8,7 +8,6 @@
     <string name="drawer_menu_launcher_settings">Ustawienia launchera</string>
     <string name="drawer_private_space_lock">Zablokuj prywatną przestrzeń</string>
     <string name="drawer_private_space_unlock">Odblokuj prywatną przestrzeń</string>
-
     <!-- App drawer: one section per Android user profile -->
     <string name="drawer_section_personal">Osobiste</string>
     <string name="drawer_section_work_profile">Służbowe</string>
@@ -16,13 +15,11 @@
     <string name="drawer_section_other_profile">Inny profil</string>
     <string name="drawer_section_clone_profile">Sklonowane aplikacje</string>
     <string name="drawer_section_private_space">Prywatna przestrzeń</string>
-
     <!-- Search -->
     <string name="search">Szukaj</string>
     <string name="search_apps_hint">Wyszukaj aplikacje…</string>
     <string name="search_apps">Wyszukaj aplikacje</string>
     <string name="search_apps_and_actions">Wyszukaj aplikacje i akcje</string>
-
     <!-- Common actions -->
     <string name="action_back">Wstecz</string>
     <string name="action_done">Gotowe</string>
@@ -43,7 +40,6 @@
     <string name="cd_unhide_app">Przestań ukrywać aplikację</string>
     <string name="cd_remove_rename">Usuń zmienioną nazwę</string>
     <string name="cd_delete_category">Usuń kategorię</string>
-
     <!-- Shortcut / target labels -->
     <string name="shortcut_target_not_set">Nie ustawiony</string>
     <string name="shortcut_target_deep_link">Link precyzyjny</string>
@@ -51,7 +47,6 @@
     <string name="shortcut_open_app">Otwórz aplikację</string>
     <string name="shortcut_generic_label">Skrót</string>
     <string name="toast_weather_app_launch_failed">Wybrana aplikacja pogody nie mogła zostać uruchomiona</string>
-
     <!-- App & category sheets -->
     <string name="app_name_placeholder">Nazwa aplikacji</string>
     <string name="action_add_to_home">Dodaj do ekranu głównego</string>
@@ -70,32 +65,27 @@
     <string name="category_settings_title">Kategorie aplikacji</string>
     <string name="category_new_label">Nowa kategoria</string>
     <string name="category_edit_apps">Edytuj aplikacje</string>
-
     <plurals name="category_app_count">
         <item quantity="one">%d aplikacja</item>
         <item quantity="few">%d aplikacje</item>
         <item quantity="many">%d aplikacji</item>
         <item quantity="other">%d aplikacji</item>
     </plurals>
-
     <!-- Inferred app categories (system metadata) -->
     <string name="inferred_category_utilities">Narzędzia</string>
     <string name="inferred_category_games">Gry</string>
     <string name="inferred_category_productivity">Produktywność</string>
     <string name="inferred_category_social">Społecznościowe</string>
     <string name="inferred_category_media">Media</string>
-
     <!-- Home screen -->
     <string name="home_set_default_launcher">Ustaw jako domyślny launcher</string>
     <string name="home_weather_app_picker_title">Wybierz aplikację pogodową</string>
-
     <!-- Home alignment -->
     <string name="home_alignment_title">Ułożenie ekranu głównego</string>
     <string name="home_alignment_subtitle">Pozycja nazw aplikacji i ikon skrótów</string>
     <string name="home_alignment_left">Po lewej</string>
     <string name="home_alignment_center">Na środku</string>
     <string name="home_alignment_right">Po prawej</string>
-
     <!-- Edit home / shortcuts screens -->
     <string name="edit_home_title">Edytuj ekran główny</string>
     <string name="edit_shortcuts_title">Edytuj skróty</string>
@@ -124,7 +114,6 @@
     <string name="icon_cat_privacy">Prywatność</string>
     <string name="icon_cat_other">Inne</string>
     <string name="icon_cat_search_results">Dopasowania</string>
-
     <!-- Settings -->
     <string name="settings_title">Ustawienia</string>
     <string name="settings_section_appearance">Wygląd</string>
@@ -165,7 +154,7 @@
     <string name="settings_edit_app_categories">Edytuj kategorie aplikacji</string>
     <string name="settings_section_app_drawer">Szuflada aplikacji</string>
     <string name="settings_drawer_sidebar_categories">Pasek kategorii w szufladzie</string>
-    <string name="settings_drawer_sidebar_categories_subtitle">Pionowy pasek kategorii: bez paska wyszukiwania; szukaj ikoną lupy</string>
+    <string name="settings_drawer_sidebar_categories_subtitle">Zamienia pasek wyszukiwania na pionowy pasek boczny z kategoriami. Używaj ikony szukania do wyszukiwania aplikacji.</string>
     <string name="settings_drawer_category_rail_side">Strona paska kategorii</string>
     <string name="settings_drawer_category_rail_side_subtitle">Domyślnie po prawej. Przytrzymaj kategorię w szufladzie, aby zmienić ikonę.</string>
     <string name="settings_drawer_rail_position_left">Lewa</string>
@@ -189,28 +178,24 @@
     <string name="settings_reset_confirm_message">To wyczyści twoje ulubione, skróty, ukryte aplikacje, aplikacje ze zmienioną nazwą i wszystkie inne ustawienia. Aplikacja powróci do stanu początkowego.</string>
     <string name="settings_app_picker_title">Wybierz aplikację</string>
     <string name="settings_font_label">Czcionka</string>
-
     <plurals name="settings_shortcuts_configured">
         <item quantity="one">%d skonfigurowany skrót</item>
         <item quantity="few">%d skonfigurowane skróty</item>
         <item quantity="many">%d skonfigurowanych skrótów</item>
         <item quantity="other">%d skonfigurowanych skrótów</item>
     </plurals>
-
     <plurals name="settings_long_lock_duration_minutes">
         <item quantity="one">%d minuta</item>
         <item quantity="few">%d minuty</item>
         <item quantity="many">%d minut</item>
-        <item quantity="other">%d minuty</item>
+        <item quantity="other">%d minut</item>
     </plurals>
-
     <plurals name="settings_categories_count">
         <item quantity="one">%d kategoria</item>
         <item quantity="few">%d kategorie</item>
         <item quantity="many">%d kategorii</item>
         <item quantity="other">%d kategorii</item>
     </plurals>
-
     <!-- Onboarding -->
     <string name="onboarding_welcome_title">Fokus Launcher</string>
     <string name="onboarding_welcome_subtitle">Minimalistyczny ekran główny</string>
@@ -241,16 +226,13 @@
     <string name="onboarding_done">Gotowe</string>
     <string name="onboarding_skip">Pomiń</string>
     <string name="onboarding_next">Dalej</string>
-
     <!-- Settings - Weather location (shown only when disabled) -->
     <string name="settings_weather_location_disabled">Włącz lokalizację dla pogody</string>
     <string name="settings_weather_location_disabled_subtitle">Dotknij, aby pozwolić na dostęp do lokalizacji</string>
     <string name="settings_weather_location_enable_button">Włącz</string>
-
     <!-- Settings - Weather app -->
     <string name="settings_weather_app_system_default">Domyślna systemu</string>
     <string name="settings_weather_app_not_configured">Nie ustawiona</string>
-
     <!-- Settings - Connect section -->
     <string name="settings_connect_section">Nawiąż kontakt</string>
     <string name="settings_github_title">Oznacz gwiazdką na GitHubie</string>
@@ -259,4 +241,40 @@
     <string name="settings_weblate_subtitle">Współtwórz tłumaczenia na Weblate</string>
     <string name="settings_matrix_title">Dołącz do dyskusji</string>
     <string name="settings_matrix_subtitle">Otrzymaj pomoc i podziel się opinią</string>
+    <string name="settings_dot_search_url_template_for_alias">URL dla .%1$s …</string>
+    <string name="settings_dot_search_no_web_search_apps">Brak zainstalowanych aplikacji udostępniających wyszukiwanie w internecie lub w aplikacji dla ich pakietu.</string>
+    <string name="settings_dot_search_default_label">Domyślna aplikacja wyszukiwania</string>
+    <string name="settings_dot_search_default_system">Domyślna systemu (przeglądarka)</string>
+    <string name="settings_dot_search_add_shortcut_url">Szablon URL</string>
+    <string name="settings_dot_search_url_template_help">Możesz użyć linku HTTPS wyszukiwania lub precyzyjnego linku aplikacji (na przykład intent://). Wstaw %1$s gdzie powinny być wyszukiwanie słowa — launcher zamieni to na to co wpisałeś po `. wyszukanie` lub `.x wyszukanie`. Przykład: https://example.com/search?q=%1$s</string>
+    <string name="settings_dot_search_alias_taken">Ten znak jest już w użyciu.</string>
+    <string name="settings_dot_search_pick_alias_app">Wybierz aplikację dla tego skrótu</string>
+    <string name="settings_dot_search_add_shortcut_title">Dodaj skrót</string>
+    <string name="settings_dot_search_add_alias">Dodaj skrót</string>
+    <string name="settings_dot_search_aliases_section">Skróty literowe</string>
+    <string name="settings_dot_search_invalid_alias">Wpisz jedną małą literę (a–z).</string>
+    <string name="cd_open_subpage">Otwiera inny ekran</string>
+    <string name="settings_dot_search_title">Szukanie kropką</string>
+    <string name="settings_dot_search_url_template_error">Dodaj %1$s tam gdzie powinien być wyszukiwany tekst (przykład: https://example.com/search?q=%1$s).</string>
+    <string name="settings_dot_search_alias_dialog_title">Litera skrótu</string>
+    <string name="cd_remove_alias">Usuń skrót</string>
+    <string name="settings_dot_search_url_template">Szablon URL</string>
+    <string name="settings_dot_search_explanation">W szufladzie aplikacji wpisz kropkę i spację, a następnie wpisz wyszukiwane słowa. Dla skrótu użyj kropki, jednej małej litery, spacji i wtedy wyszukaj (na przykład `.a kawa`). Lista aplikacji zawiera tylko aplikacje które udostępniają wyszukiwanie w internecie lub standardową funkcję wyszukiwania w aplikacji dla ich pakietu. Dla innych stron lub aplikacji dodaj link HTTPS lub szablon precyzyjnego linku i wstaw %1$s gdzie powinien być wyszukiwany tekst (na przykład https://example.com/search?q=%1$s).</string>
+    <string name="settings_dot_search_subtitle">Wpisz `. terminy` lub`.&lt;mała litera&gt; terminy` w wyszukiwarce szuflady</string>
+    <string name="settings_dot_search_add_shortcut_app">Aplikacja (intencja wyszukiwania)</string>
+    <string name="settings_dot_search_screen_title">Wyszukiwanie kropką w szufladzie</string>
+    <string name="settings_dot_search_pick_default_app">Wybierz aplikację dla `. wyszukanie`</string>
+    <string name="settings_dot_search_url_template_dialog_title">Szablon URL wyszukiwania</string>
+    <string name="drawer_reorder">Zmień kolejność</string>
+    <string name="drawer_reorder_done">Gotowe</string>
+    <string name="shortcut_open_dialer">Otwórz wybieranie numerów</string>
+    <string name="shortcut_target_phone">Telefon (domyślny dialer)</string>
+    <string name="settings_home_date_format">Format daty</string>
+    <string name="settings_home_date_format_system">Automatyczny (domyślny regionu)</string>
+    <string name="settings_home_date_format_us_slashes">MM/DD/YYYY</string>
+    <string name="settings_home_date_format_eu_slashes">DD/MM/YYYY</string>
+    <string name="settings_home_date_format_eu_dots">DD.MM.YYYY</string>
+    <string name="settings_home_date_format_weekday_month">Pon DD, YYYY</string>
+    <string name="settings_home_date_format_month_long">Miesiąc DD, YYYY</string>
+    <string name="settings_drawer_app_sort_custom">Niestandardowy</string>
 </resources>
