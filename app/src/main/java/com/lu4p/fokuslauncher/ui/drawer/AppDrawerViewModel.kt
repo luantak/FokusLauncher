@@ -95,6 +95,14 @@ private data class FilteredDrawerContent(
         val filteredPrivateSpaceApps: List<AppInfo>
 )
 
+private fun AppDrawerUiState.withFilteredContent(
+        filteredContent: FilteredDrawerContent
+): AppDrawerUiState =
+        copy(
+                filteredProfileSections = filteredContent.filteredProfileSections,
+                filteredPrivateSpaceApps = filteredContent.filteredPrivateSpaceApps
+        )
+
 @HiltViewModel
 class AppDrawerViewModel
 @Inject
@@ -252,15 +260,13 @@ constructor(
                                 rawSearchQuery = state.searchQuery,
                                 category = selectedCategory
                         )
-                _uiState.update {
-                    it.copy(
+                _uiState.update { state ->
+                    state.withFilteredContent(filteredContent).copy(
                             useSidebarCategoryDrawer = sidebarEnabled,
                             selectedCategory = selectedCategory,
                             categories = categories,
-                            filteredProfileSections = filteredContent.filteredProfileSections,
-                            filteredPrivateSpaceApps = filteredContent.filteredPrivateSpaceApps,
                             drawerReorderSessionActive =
-                                    if (!sidebarEnabled) false else it.drawerReorderSessionActive
+                                    if (!sidebarEnabled) false else state.drawerReorderSessionActive
                     )
                 }
                 scheduleDrawerCachePrewarm()
@@ -313,17 +319,15 @@ constructor(
                                         rawSearchQuery = state.searchQuery,
                                         category = state.selectedCategory
                                 )
-                        _uiState.update {
-                            it.copy(
+                        _uiState.update { state ->
+                            state.withFilteredContent(filteredContent).copy(
                                     privateSpaceApps = reorderedPrivate,
-                                    filteredProfileSections = filteredContent.filteredProfileSections,
-                                    filteredPrivateSpaceApps = filteredContent.filteredPrivateSpaceApps,
                                     drawerAppSortMode = mode,
                                     drawerReorderSessionActive =
                                             if (mode != DrawerAppSortMode.CUSTOM) {
                                                 false
                                             } else {
-                                                it.drawerReorderSessionActive
+                                                state.drawerReorderSessionActive
                                             }
                             )
                         }
@@ -476,16 +480,12 @@ constructor(
                             category = selectedCategory
                     )
             _uiState.update { state ->
-                state.copy(
-                                allApps = visible,
-                                privateSpaceApps = privateAppsFiltered,
-                                selectedCategory = selectedCategory,
-                                filteredProfileSections = filteredContent.filteredProfileSections
-                        )
-                        .copy(
-                                categories = categories,
-                                filteredPrivateSpaceApps = filteredContent.filteredPrivateSpaceApps
-                        )
+                state.withFilteredContent(filteredContent).copy(
+                        allApps = visible,
+                        privateSpaceApps = privateAppsFiltered,
+                        selectedCategory = selectedCategory,
+                        categories = categories
+                )
             }
             scheduleDrawerCachePrewarm()
         }
@@ -534,13 +534,11 @@ constructor(
                             category = selectedCategory
                     )
             _uiState.update { state ->
-                state.copy(
+                state.withFilteredContent(filteredContent).copy(
                         allApps = visible,
                         privateSpaceApps = privateApps,
                         selectedCategory = selectedCategory,
                         categories = categories,
-                        filteredProfileSections = filteredContent.filteredProfileSections,
-                        filteredPrivateSpaceApps = filteredContent.filteredPrivateSpaceApps,
                         selectedApp =
                                 state.selectedApp?.takeUnless {
                                     it.packageName == packageName &&
@@ -588,10 +586,7 @@ constructor(
                         if (requestId != searchQueryRequestId || state.searchQuery != query) {
                             state
                         } else {
-                            state.copy(
-                                    filteredProfileSections = filteredContent.filteredProfileSections,
-                                    filteredPrivateSpaceApps = filteredContent.filteredPrivateSpaceApps
-                            )
+                            state.withFilteredContent(filteredContent)
                         }
                     }
 
@@ -696,11 +691,7 @@ constructor(
                             category = category
                     )
             _uiState.update {
-                it.copy(
-                        selectedCategory = category,
-                        filteredProfileSections = filteredContent.filteredProfileSections,
-                        filteredPrivateSpaceApps = filteredContent.filteredPrivateSpaceApps
-                )
+                it.withFilteredContent(filteredContent).copy(selectedCategory = category)
             }
         }
     }
@@ -824,12 +815,7 @@ constructor(
                             rawSearchQuery = state.searchQuery,
                             category = state.selectedCategory
                     )
-            _uiState.update {
-                it.copy(
-                        filteredProfileSections = filteredContent.filteredProfileSections,
-                        filteredPrivateSpaceApps = filteredContent.filteredPrivateSpaceApps
-                )
-            }
+            _uiState.update { it.withFilteredContent(filteredContent) }
         }
     }
 
@@ -870,12 +856,7 @@ constructor(
                             rawSearchQuery = state.searchQuery,
                             category = state.selectedCategory
                     )
-            _uiState.update {
-                it.copy(
-                        filteredProfileSections = filteredContent.filteredProfileSections,
-                        filteredPrivateSpaceApps = filteredContent.filteredPrivateSpaceApps
-                )
-            }
+            _uiState.update { it.withFilteredContent(filteredContent) }
         }
     }
 
@@ -998,13 +979,11 @@ constructor(
                             category = selectedCategory
                     )
             _uiState.update {
-                it.copy(
+                it.withFilteredContent(filteredContent).copy(
                         isPrivateSpaceSupported = supported,
                         isPrivateSpaceUnlocked = unlocked,
                         privateSpaceApps = apps,
                         selectedCategory = selectedCategory,
-                        filteredProfileSections = filteredContent.filteredProfileSections,
-                        filteredPrivateSpaceApps = filteredContent.filteredPrivateSpaceApps,
                         categories = categories
                 )
             }
@@ -1054,11 +1033,9 @@ constructor(
                             category = defaultCategory
                     )
             _uiState.update {
-                it.copy(
+                it.withFilteredContent(filteredContent).copy(
                         searchQuery = "",
                         selectedCategory = defaultCategory,
-                        filteredProfileSections = filteredContent.filteredProfileSections,
-                        filteredPrivateSpaceApps = filteredContent.filteredPrivateSpaceApps,
                         drawerReorderSessionActive = false
                 )
             }

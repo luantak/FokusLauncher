@@ -345,8 +345,7 @@ class HomeViewModel @Inject constructor(
         ) {
             return false
         }
-        _appNameMap.value = apps.associate { appMetadataKey(it.packageName, it.userHandle) to it.label }
-        _allInstalledApps.value = apps
+        applyInstalledAppsSnapshot(apps)
         val installedAppKeys = apps.map { appMetadataKey(it.packageName, it.userHandle) }.toSet()
         val currentFavorites = rawFavorites.value
         val updatedFavorites =
@@ -375,6 +374,21 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    private fun applyInstalledAppsSnapshot(apps: List<AppInfo>) {
+        _allInstalledApps.value = apps
+        _appNameMap.value = apps.associate { appMetadataKey(it.packageName, it.userHandle) to it.label }
+    }
+
+    private suspend fun loadInstalledAppsForEditing(
+        includeShortcutActions: Boolean = false
+    ) {
+        val apps = appRepository.getInstalledApps()
+        applyInstalledAppsSnapshot(apps)
+        if (includeShortcutActions) {
+            _allShortcutActions.value = appRepository.getAllShortcutActions()
+        }
+    }
+
     // ── Long-press → open app menu directly ────────────────────────
 
     fun onFavoriteLongPress(fav: FavoriteApp) {
@@ -395,9 +409,7 @@ class HomeViewModel @Inject constructor(
         _appMenuTarget.value = null
         _editFavorites.value = favorites.value
         viewModelScope.launch(Dispatchers.IO) {
-            val apps = appRepository.getInstalledApps()
-            _allInstalledApps.value = apps
-            _appNameMap.value = apps.associate { appMetadataKey(it.packageName, it.userHandle) to it.label }
+            loadInstalledAppsForEditing()
         }
     }
 
@@ -405,10 +417,7 @@ class HomeViewModel @Inject constructor(
         _appMenuTarget.value = null
         _editRightShortcuts.value = rightSideShortcuts.value
         viewModelScope.launch(Dispatchers.IO) {
-            val apps = appRepository.getInstalledApps()
-            _allInstalledApps.value = apps
-            _appNameMap.value = apps.associate { appMetadataKey(it.packageName, it.userHandle) to it.label }
-            _allShortcutActions.value = appRepository.getAllShortcutActions()
+            loadInstalledAppsForEditing(includeShortcutActions = true)
         }
     }
 
