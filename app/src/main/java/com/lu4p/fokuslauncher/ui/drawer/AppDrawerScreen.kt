@@ -154,6 +154,33 @@ private fun applyOptimisticPrivateSwap(
     return apps
 }
 
+/** Coerces vertical drag into ±[itemHeightPx] steps; [swap] runs for each adjacent move. */
+private inline fun applyVerticalSlotReorder(
+        itemHeightPx: Float,
+        dragOffset: Float,
+        draggedIndex: Int,
+        lastIndex: Int,
+        crossinline swap: (from: Int, to: Int) -> Unit,
+): Pair<Float, Int> {
+    var off = dragOffset
+    var idx = draggedIndex
+    while (off >= itemHeightPx && idx < lastIndex) {
+        val from = idx
+        val to = idx + 1
+        swap(from, to)
+        idx = to
+        off -= itemHeightPx
+    }
+    while (off <= -itemHeightPx && idx > 0) {
+        val from = idx
+        val to = idx - 1
+        swap(from, to)
+        idx = to
+        off += itemHeightPx
+    }
+    return off to idx
+}
+
 private fun profileSectionsOrderKey(sections: List<DrawerProfileSectionUi>): String =
         sections.joinToString(separator = "|") { section ->
             buildString {
@@ -170,6 +197,14 @@ private fun appOrderKey(apps: List<AppInfo>): String =
 private const val DRAWER_CATEGORY_SWIPE_THRESHOLD_PX = 120f
 private val DRAWER_MIN_TOP_PADDING = 48.dp
 private val DRAWER_TOP_INSET_BUFFER = 16.dp
+
+private val ReservedDrawerActionCategories =
+        setOf(
+                ReservedCategoryNames.ALL_APPS,
+                ReservedCategoryNames.PRIVATE,
+                ReservedCategoryNames.WORK,
+                ReservedCategoryNames.UNCATEGORIZED,
+        )
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -449,41 +484,29 @@ private fun DrawerAppListColumn(
                                                                     draggedProfileIndex in sectionApps.indices
                                                     ) {
                                                         profileDragOffset += amount
-                                                        while (profileDragOffset >= itemHeightPx &&
-                                                                        draggedProfileIndex <
-                                                                                sectionApps.lastIndex
-                                                        ) {
-                                                            val from = draggedProfileIndex
-                                                            val to = draggedProfileIndex + 1
-                                                            optimisticProfileSections =
-                                                                    applyOptimisticProfileSwap(
-                                                                            optimisticProfileSections,
-                                                                            latestDisplayProfileSections,
+                                                        val (newOff, newIdx) =
+                                                                applyVerticalSlotReorder(
+                                                                        itemHeightPx,
+                                                                        profileDragOffset,
+                                                                        draggedProfileIndex,
+                                                                        sectionApps.lastIndex,
+                                                                ) { from, to ->
+                                                                    optimisticProfileSections =
+                                                                            applyOptimisticProfileSwap(
+                                                                                    optimisticProfileSections,
+                                                                                    latestDisplayProfileSections,
+                                                                                    section.id,
+                                                                                    from,
+                                                                                    to
+                                                                            )
+                                                                    currentOnReorderProfile(
                                                                             section.id,
                                                                             from,
                                                                             to
                                                                     )
-                                                            currentOnReorderProfile(section.id, from, to)
-                                                            draggedProfileIndex = to
-                                                            profileDragOffset -= itemHeightPx
-                                                        }
-                                                        while (profileDragOffset <= -itemHeightPx &&
-                                                                        draggedProfileIndex > 0
-                                                        ) {
-                                                            val from = draggedProfileIndex
-                                                            val to = draggedProfileIndex - 1
-                                                            optimisticProfileSections =
-                                                                    applyOptimisticProfileSwap(
-                                                                            optimisticProfileSections,
-                                                                            latestDisplayProfileSections,
-                                                                            section.id,
-                                                                            from,
-                                                                            to
-                                                                    )
-                                                            currentOnReorderProfile(section.id, from, to)
-                                                            draggedProfileIndex = to
-                                                            profileDragOffset += itemHeightPx
-                                                        }
+                                                                }
+                                                        profileDragOffset = newOff
+                                                        draggedProfileIndex = newIdx
                                                     }
                                                 },
                                                 onDragEnd = { resetProfileDrag() },
@@ -572,39 +595,24 @@ private fun DrawerAppListColumn(
                                                 change.consume()
                                                 if (draggedPrivateIndex in latestDisplayPrivateApps.indices) {
                                                     privateDragOffset += amount
-                                                    while (privateDragOffset >= itemHeightPx &&
-                                                                    draggedPrivateIndex <
-                                                                            latestDisplayPrivateApps.lastIndex
-                                                    ) {
-                                                        val from = draggedPrivateIndex
-                                                        val to = draggedPrivateIndex + 1
-                                                        optimisticPrivateApps =
-                                                                applyOptimisticPrivateSwap(
-                                                                        optimisticPrivateApps,
-                                                                        latestDisplayPrivateApps,
-                                                                        from,
-                                                                        to
-                                                                )
-                                                        currentOnReorderPrivate(from, to)
-                                                        draggedPrivateIndex = to
-                                                        privateDragOffset -= itemHeightPx
-                                                    }
-                                                    while (privateDragOffset <= -itemHeightPx &&
-                                                                    draggedPrivateIndex > 0
-                                                    ) {
-                                                        val from = draggedPrivateIndex
-                                                        val to = draggedPrivateIndex - 1
-                                                        optimisticPrivateApps =
-                                                                applyOptimisticPrivateSwap(
-                                                                        optimisticPrivateApps,
-                                                                        latestDisplayPrivateApps,
-                                                                        from,
-                                                                        to
-                                                                )
-                                                        currentOnReorderPrivate(from, to)
-                                                        draggedPrivateIndex = to
-                                                        privateDragOffset += itemHeightPx
-                                                    }
+                                                    val (newOff, newIdx) =
+                                                            applyVerticalSlotReorder(
+                                                                    itemHeightPx,
+                                                                    privateDragOffset,
+                                                                    draggedPrivateIndex,
+                                                                    latestDisplayPrivateApps.lastIndex,
+                                                            ) { from, to ->
+                                                                optimisticPrivateApps =
+                                                                        applyOptimisticPrivateSwap(
+                                                                                optimisticPrivateApps,
+                                                                                latestDisplayPrivateApps,
+                                                                                from,
+                                                                                to
+                                                                        )
+                                                                currentOnReorderPrivate(from, to)
+                                                            }
+                                                    privateDragOffset = newOff
+                                                    draggedPrivateIndex = newIdx
                                                 }
                                             },
                                             onDragEnd = { resetPrivateDrag() },
@@ -707,11 +715,7 @@ fun AppDrawerScreen(
     LaunchedEffect(Unit) {
         viewModel.resetSearchStateIfNeeded()
         viewModel.events.collect { event ->
-            when (event) {
-                is DrawerEvent.AutoLaunch -> {
-                    closeAndResetAfterLaunch()
-                }
-            }
+            if (event is DrawerEvent.AutoLaunch) closeAndResetAfterLaunch()
         }
     }
 
@@ -952,6 +956,33 @@ fun AppDrawerContent(
                 Modifier
             }
 
+    val overflowMenu: @Composable () -> Unit = {
+        DrawerOverflowMenu(
+                uiState = uiState,
+                onMenuToggle = onMenuToggle,
+                onMenuDismiss = onMenuDismiss,
+                onPrivateSpaceToggle = onPrivateSpaceToggle,
+                onSettingsClick = onSettingsClick,
+                showReorderMenuItem = showDrawerReorderMenuToggle,
+                onToggleReorderApps = onToggleDrawerReorderApps,
+        )
+    }
+    val drawerAppList: @Composable ColumnScope.() -> Unit = {
+        DrawerAppListBody(
+                listState = listState,
+                categorySwipeModifier = categorySwipeModifier,
+                uiState = uiState,
+                showProfileSections = showProfileSections,
+                anyProfileAppsVisible = anyProfileAppsVisible,
+                focusManager = focusManager,
+                onAppClick = onAppClick,
+                onAppLongPress = onAppLongPress,
+                allowCustomDragReorder = allowCustomDragReorder,
+                onReorderDrawerProfileSection = onReorderDrawerProfileSection,
+                onReorderPrivateDrawerApps = onReorderPrivateDrawerApps,
+        )
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
         Column(
                 modifier =
@@ -1008,15 +1039,7 @@ fun AppDrawerContent(
                                             tint = MaterialTheme.colorScheme.onBackground
                                     )
                                 }
-                                DrawerOverflowMenu(
-                                        uiState = uiState,
-                                        onMenuToggle = onMenuToggle,
-                                        onMenuDismiss = onMenuDismiss,
-                                        onPrivateSpaceToggle = onPrivateSpaceToggle,
-                                        onSettingsClick = onSettingsClick,
-                                        showReorderMenuItem = showDrawerReorderMenuToggle,
-                                        onToggleReorderApps = onToggleDrawerReorderApps
-                                )
+                                overflowMenu()
                             }
                             if (showSearch) {
                                 OutlinedTextField(
@@ -1038,20 +1061,7 @@ fun AppDrawerContent(
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                             }
-                            DrawerAppListBody(
-                                    listState = listState,
-                                    categorySwipeModifier = categorySwipeModifier,
-                                    uiState = uiState,
-                                    showProfileSections = showProfileSections,
-                                    anyProfileAppsVisible = anyProfileAppsVisible,
-                                    focusManager = focusManager,
-                                    onAppClick = onAppClick,
-                                    onAppLongPress = onAppLongPress,
-                                    allowCustomDragReorder = allowCustomDragReorder,
-                                    onReorderDrawerProfileSection =
-                                            onReorderDrawerProfileSection,
-                                    onReorderPrivateDrawerApps = onReorderPrivateDrawerApps,
-                            )
+                            drawerAppList()
                         }
                     }
                     if (drawerCategorySidebarOnRight) {
@@ -1080,15 +1090,7 @@ fun AppDrawerContent(
                                 modifier =
                                         Modifier.weight(1f).testTag("search_bar")
                         )
-                        DrawerOverflowMenu(
-                                uiState = uiState,
-                                onMenuToggle = onMenuToggle,
-                                onMenuDismiss = onMenuDismiss,
-                                onPrivateSpaceToggle = onPrivateSpaceToggle,
-                                onSettingsClick = onSettingsClick,
-                                showReorderMenuItem = showDrawerReorderMenuToggle,
-                                onToggleReorderApps = onToggleDrawerReorderApps
-                        )
+                        overflowMenu()
                     }
                     if (hasNonAllAppsCategory) {
                         CategoryChips(
@@ -1099,19 +1101,7 @@ fun AppDrawerContent(
                                 modifier = Modifier.testTag("category_chips")
                         )
                     }
-                    DrawerAppListBody(
-                            listState = listState,
-                            categorySwipeModifier = categorySwipeModifier,
-                            uiState = uiState,
-                            showProfileSections = showProfileSections,
-                            anyProfileAppsVisible = anyProfileAppsVisible,
-                            focusManager = focusManager,
-                            onAppClick = onAppClick,
-                            onAppLongPress = onAppLongPress,
-                            allowCustomDragReorder = allowCustomDragReorder,
-                            onReorderDrawerProfileSection = onReorderDrawerProfileSection,
-                            onReorderPrivateDrawerApps = onReorderPrivateDrawerApps,
-                    )
+                    drawerAppList()
                 }
             }
         }
@@ -1139,10 +1129,7 @@ fun CategoryActionSheet(
     }
     val normalized = renameValue.trim()
     val isReservedDrawerCategory =
-            category.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true) ||
-                    category.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true) ||
-                    category.equals(ReservedCategoryNames.WORK, ignoreCase = true) ||
-                    category.equals(ReservedCategoryNames.UNCATEGORIZED, ignoreCase = true)
+            ReservedDrawerActionCategories.any { category.equals(it, ignoreCase = true) }
     val canSaveRename = !isReservedDrawerCategory && normalized.isNotBlank()
     val showEditApps = !isReservedDrawerCategory
     val displayTitle = categoryChipDisplayLabel(context, category)

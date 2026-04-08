@@ -83,26 +83,25 @@ class LockScreenAccessibilityService : AccessibilityService() {
 
         val lockedAt = preferencesManager.getLongLockLastScreenOffAtMs()
         if (lockedAt <= 0L) return
-        val thresholdMinutes = preferencesManager.getLongLockReturnHomeThresholdMinutes()
-        val thresholdMs = thresholdMinutes * 60_000L
+        val thresholdMs =
+                longLockThresholdMs(preferencesManager.getLongLockReturnHomeThresholdMinutes())
         val elapsedMs = System.currentTimeMillis() - lockedAt
         if (elapsedMs < thresholdMs) return
 
-        Log.d(
-                tag,
-                "Threshold met via $trigger after ${elapsedMs}ms, attempting to return home"
-        )
+        Log.d(tag, "Threshold met via $trigger after ${elapsedMs}ms, attempting to return home")
 
         val returnedHome = performGlobalAction(GLOBAL_ACTION_HOME)
         Log.d(tag, "GLOBAL_ACTION_HOME result for $trigger: $returnedHome")
 
         val launchedLauncher =
-                if (!returnedHome) {
-                    Log.d(tag, "GLOBAL_ACTION_HOME failed, falling back to explicit activity launch")
-                    bringLauncherToFront()
-                } else {
-                    false
-                }
+                !returnedHome &&
+                        run {
+                            Log.d(
+                                    tag,
+                                    "GLOBAL_ACTION_HOME failed, falling back to explicit activity launch"
+                            )
+                            bringLauncherToFront()
+                        }
 
         if (returnedHome || launchedLauncher) {
             preferencesManager.clearLongLockLastScreenOffAtMs()
@@ -110,8 +109,8 @@ class LockScreenAccessibilityService : AccessibilityService() {
     }
 
     private suspend fun scheduleLockedReturnHome(lockedAtMs: Long) {
-        val thresholdMinutes = preferencesManager.getLongLockReturnHomeThresholdMinutes()
-        val thresholdMs = thresholdMinutes * 60_000L
+        val thresholdMs =
+                longLockThresholdMs(preferencesManager.getLongLockReturnHomeThresholdMinutes())
         val triggerAtMs = lockedAtMs + thresholdMs
         val alarmManager = getSystemService(AlarmManager::class.java)
         if (alarmManager == null) return
@@ -123,10 +122,7 @@ class LockScreenAccessibilityService : AccessibilityService() {
                         createIfMissing = true,
                 )
                         ?: return
-        Log.d(
-                tag,
-                "Scheduling locked return-home alarm in ${thresholdMs}ms at triggerAt=${triggerAtMs}",
-        )
+        Log.d(tag, "Scheduling locked return-home alarm in ${thresholdMs}ms at triggerAt=$triggerAtMs")
         alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMs, pendingIntent)
     }
 
@@ -179,6 +175,8 @@ class LockScreenAccessibilityService : AccessibilityService() {
         runCatching { unregisterReceiver(screenStateReceiver) }
         screenStateReceiverRegistered = false
     }
+
+    private fun longLockThresholdMs(minutes: Int): Long = minutes * 60_000L
 
     companion object {
         @Volatile private var instance: LockScreenAccessibilityService? = null

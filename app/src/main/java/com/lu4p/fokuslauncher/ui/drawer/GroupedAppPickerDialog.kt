@@ -77,29 +77,28 @@ fun GroupedAppPickerDialog(
                                 modifier = Modifier.fillMaxWidth()
                         )
                         Spacer(Modifier.height(8.dp))
+                        val labelStyle = MaterialTheme.typography.bodyLarge
+                        val labelColor = MaterialTheme.colorScheme.onBackground
+                        val rowPad =
+                                Modifier.fillMaxWidth()
+                                        .padding(vertical = 10.dp, horizontal = 8.dp)
                         LazyColumn(modifier = Modifier.height(300.dp)) {
                             profileGroupedAppItems(
                                     sections = filteredSections,
                                     keyPrefix = keyPrefix,
                                     horizontalPadding = 8.dp,
                             ) { app ->
-                                val labelStyle = MaterialTheme.typography.bodyLarge
-                                val labelColor = MaterialTheme.colorScheme.onBackground
                                 val rowModifier =
-                                        Modifier.fillMaxWidth()
-                                                .padding(vertical = 10.dp, horizontal = 8.dp)
+                                        if (useSystemSoundOnItemClick) {
+                                            rowPad.clickableWithSystemSound { onSelect(app) }
+                                        } else {
+                                            rowPad.clickable { onSelect(app) }
+                                        }
                                 Text(
                                         text = app.label,
                                         style = labelStyle,
                                         color = labelColor,
-                                        modifier =
-                                                if (useSystemSoundOnItemClick) {
-                                                    rowModifier.clickableWithSystemSound {
-                                                        onSelect(app)
-                                                    }
-                                                } else {
-                                                    rowModifier.clickable { onSelect(app) }
-                                                }
+                                        modifier = rowModifier,
                                 )
                             }
                         }

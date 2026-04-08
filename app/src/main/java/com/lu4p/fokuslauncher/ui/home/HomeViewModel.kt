@@ -49,6 +49,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
@@ -109,8 +110,8 @@ class HomeViewModel @Inject constructor(
     private val installedAppsRefreshMutex = Mutex()
 
     // Raw favorites from DataStore
-    private val rawFavorites: StateFlow<List<FavoriteApp>> = preferencesManager.favoritesFlow
-        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    private val rawFavorites: StateFlow<List<FavoriteApp>> =
+        preferencesManager.favoritesFlow.stateEagerly(emptyList())
 
     // Renames from Room
     private val _renameMap = MutableStateFlow<Map<String, String>>(emptyMap())
@@ -134,7 +135,7 @@ class HomeViewModel @Inject constructor(
                 ?: fav.label
             fav.copy(label = resolvedName)
         }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    }.stateWhileSubscribed(emptyList())
 
     // ── Dialog state ────────────────────────────────────────────────
 
@@ -166,26 +167,23 @@ class HomeViewModel @Inject constructor(
 
     // ── Swipe gestures ──────────────────────────────────────────────
 
-    val swipeLeftTarget: StateFlow<ShortcutTarget?> = preferencesManager.swipeLeftTargetFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+    val swipeLeftTarget: StateFlow<ShortcutTarget?> =
+        preferencesManager.swipeLeftTargetFlow.stateWhileSubscribed(null)
 
-    val swipeRightTarget: StateFlow<ShortcutTarget?> = preferencesManager.swipeRightTargetFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+    val swipeRightTarget: StateFlow<ShortcutTarget?> =
+        preferencesManager.swipeRightTargetFlow.stateWhileSubscribed(null)
 
-    val rightSideShortcuts: StateFlow<List<HomeShortcut>> = preferencesManager.rightSideShortcutsFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val rightSideShortcuts: StateFlow<List<HomeShortcut>> =
+        preferencesManager.rightSideShortcutsFlow.stateWhileSubscribed(emptyList())
 
     private val preferredWeatherAppPackage: StateFlow<String> =
-        preferencesManager.preferredWeatherAppFlow
-            .stateIn(viewModelScope, SharingStarted.Eagerly, "")
+        preferencesManager.preferredWeatherAppFlow.stateEagerly("")
 
     private val preferredClockAppPackage: StateFlow<String> =
-        preferencesManager.preferredClockAppFlow
-            .stateIn(viewModelScope, SharingStarted.Eagerly, "")
+        preferencesManager.preferredClockAppFlow.stateEagerly("")
 
     private val preferredCalendarAppPackage: StateFlow<String> =
-        preferencesManager.preferredCalendarAppFlow
-            .stateIn(viewModelScope, SharingStarted.Eagerly, "")
+        preferencesManager.preferredCalendarAppFlow.stateEagerly("")
 
     private var weatherTickerJob: Job? = null
 
@@ -238,15 +236,12 @@ class HomeViewModel @Inject constructor(
     }
 
     override fun onCleared() {
-        try {
-            context.unregisterReceiver(batteryChangedReceiver)
-        } catch (_: IllegalArgumentException) {
-            // Not registered
-        }
-        try {
-            context.unregisterReceiver(timezoneChangedReceiver)
-        } catch (_: IllegalArgumentException) {
-            // Not registered
+        listOf(batteryChangedReceiver, timezoneChangedReceiver).forEach { receiver ->
+            try {
+                context.unregisterReceiver(receiver)
+            } catch (_: IllegalArgumentException) {
+                // Not registered
+            }
         }
         weatherTickerJob?.cancel()
         super.onCleared()
@@ -360,12 +355,11 @@ class HomeViewModel @Inject constructor(
         applyInstalledAppsSnapshot(apps)
         val installedAppKeys = apps.map { appMetadataKey(it.packageName, it.userHandle) }.toSet()
         val currentFavorites = rawFavorites.value
+        val nonSentinelFavorites =
+                currentFavorites.filterNot { it.isPhoneFavoriteSentinel() }
         val missingFavoriteKeys =
-                currentFavorites
+                nonSentinelFavorites
                         .asSequence()
-                        .filterNot {
-                            it.packageName == ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE
-                        }
                         .map { appMetadataKey(it.packageName, it.profileKey) }
                         .filterNot(installedAppKeys::contains)
                         .toSet()
@@ -374,12 +368,8 @@ class HomeViewModel @Inject constructor(
                     emptySet()
                 } else {
                     appRepository.getLaunchableAppKeys(
-                            currentFavorites
+                            nonSentinelFavorites
                                     .asSequence()
-                                    .filterNot {
-                                        it.packageName ==
-                                                ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE
-                                    }
                                     .filter {
                                         appMetadataKey(it.packageName, it.profileKey) in
                                                 missingFavoriteKeys
@@ -433,19 +423,19 @@ class HomeViewModel @Inject constructor(
 
     // ── Edit flows ──────────────────────────────────────────────────
 
-    fun startEditingHomeApps() {
-        _appMenuTarget.value = null
-        _editFavorites.value = favorites.value
-        viewModelScope.launch(Dispatchers.IO) {
-            loadInstalledAppsForEditing()
-        }
-    }
+    fun startEditingHomeApps() = startEditingHome(includeShortcutActions = false)
 
-    fun startEditingShortcuts() {
+    fun startEditingShortcuts() = startEditingHome(includeShortcutActions = true)
+
+    private fun startEditingHome(includeShortcutActions: Boolean) {
         _appMenuTarget.value = null
-        _editRightShortcuts.value = rightSideShortcuts.value
+        if (includeShortcutActions) {
+            _editRightShortcuts.value = rightSideShortcuts.value
+        } else {
+            _editFavorites.value = favorites.value
+        }
         viewModelScope.launch(Dispatchers.IO) {
-            loadInstalledAppsForEditing(includeShortcutActions = true)
+            loadInstalledAppsForEditing(includeShortcutActions)
         }
     }
 
@@ -592,7 +582,7 @@ class HomeViewModel @Inject constructor(
     }
 
     fun hideApp(favorite: FavoriteApp) {
-        if (favorite.packageName == ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE) {
+        if (favorite.isPhoneFavoriteSentinel()) {
             _appMenuTarget.value = null
             return
         }
@@ -609,7 +599,7 @@ class HomeViewModel @Inject constructor(
     }
 
     fun openAppInfo(favorite: FavoriteApp) {
-        if (favorite.packageName == ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE) {
+        if (favorite.isPhoneFavoriteSentinel()) {
             _appMenuTarget.value = null
             return
         }
@@ -624,7 +614,7 @@ class HomeViewModel @Inject constructor(
     }
 
     fun uninstallApp(favorite: FavoriteApp) {
-        if (favorite.packageName == ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE) {
+        if (favorite.isPhoneFavoriteSentinel()) {
             _appMenuTarget.value = null
             return
         }
@@ -754,79 +744,54 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun observeHomeAlignment() {
-        viewModelScope.launch {
-            preferencesManager.homeAlignmentFlow.collect { alignment ->
-                _uiState.value = _uiState.value.copy(homeAlignment = alignment)
-            }
+        observeFlow(preferencesManager.homeAlignmentFlow) { alignment ->
+            _uiState.value = _uiState.value.copy(homeAlignment = alignment)
         }
     }
 
     private fun observeHomeDateFormatStyle() {
-        viewModelScope.launch {
-            preferencesManager.homeDateFormatStyleFlow.collect { style ->
-                _homeDateFormatStyle.value = style
-                val now = Date()
-                val locale = Locale.getDefault()
-                val current = _clockUiState.value
-                _clockUiState.value =
-                        current.copy(currentDate = formatHomeDate(now, locale, style))
-            }
+        observeFlow(preferencesManager.homeDateFormatStyleFlow) { style ->
+            _homeDateFormatStyle.value = style
+            val now = Date()
+            val locale = Locale.getDefault()
+            val current = _clockUiState.value
+            _clockUiState.value = current.copy(currentDate = formatHomeDate(now, locale, style))
         }
     }
 
     private fun observeHomeWidgetItemPreferences() {
         viewModelScope.launch {
             combine(
-                preferencesManager.showHomeClockFlow,
-                preferencesManager.showHomeDateFlow,
-                preferencesManager.showHomeWeatherFlow,
-                preferencesManager.showHomeBatteryFlow
+                    preferencesManager.showHomeClockFlow,
+                    preferencesManager.showHomeDateFlow,
+                    preferencesManager.showHomeWeatherFlow,
+                    preferencesManager.showHomeBatteryFlow,
             ) { showClock, showDate, showWeather, showBattery ->
-                WidgetItemPreferences(
-                        showClock,
-                        showDate,
-                        showWeather,
-                        showBattery
-                )
-            }.collect { w ->
                 _uiState.value =
                         _uiState.value.copy(
-                                showHomeClock = w.showClock,
-                                showHomeDate = w.showDate,
-                                showHomeWeather = w.showWeather,
-                                showHomeBattery = w.showBattery
+                                showHomeClock = showClock,
+                                showHomeDate = showDate,
+                                showHomeWeather = showWeather,
+                                showHomeBattery = showBattery,
                         )
+            }.collect { }
+        }
+    }
+
+    private fun observeWeatherRefreshTriggers() {
+        observeFlow(preferencesManager.showHomeWeatherFlow.distinctUntilChanged()) { showWeather ->
+            if (showWeather) {
+                refreshWeather()
+                startWeatherTicker()
+            } else {
+                stopWeatherTicker()
+                applyWeatherUiState(hiddenWeatherState())
             }
         }
     }
 
-    private data class WidgetItemPreferences(
-            val showClock: Boolean,
-            val showDate: Boolean,
-            val showWeather: Boolean,
-            val showBattery: Boolean
-    )
-
-    private fun observeWeatherRefreshTriggers() {
-        viewModelScope.launch {
-            preferencesManager.showHomeWeatherFlow
-                    .distinctUntilChanged()
-                    .collect { showWeather ->
-                        if (showWeather) {
-                            refreshWeather()
-                            startWeatherTicker()
-                        } else {
-                            stopWeatherTicker()
-                            applyWeatherUiState(hiddenWeatherState())
-                        }
-                    }
-        }
-    }
-
     private fun observeDoubleTapEmptyLock() {
-        viewModelScope.launch {
-            preferencesManager.doubleTapEmptyLockFlow.collect { recomputeDoubleTapEmptyLockUi(it) }
-        }
+        observeFlow(preferencesManager.doubleTapEmptyLockFlow, ::recomputeDoubleTapEmptyLockUi)
     }
 
     fun refreshDoubleTapLockEffective() {
@@ -1103,6 +1068,24 @@ class HomeViewModel @Inject constructor(
             _weatherUiState.value = updated
         }
     }
+
+    private fun <T> Flow<T>.stateWhileSubscribed(initial: T): StateFlow<T> =
+            stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), initial)
+
+    private fun <T> Flow<T>.stateEagerly(initial: T): StateFlow<T> =
+            stateIn(viewModelScope, SharingStarted.Eagerly, initial)
+
+    private inline fun <T> observeFlow(
+            flow: Flow<T>,
+            crossinline onEach: (T) -> Unit,
+    ) {
+        viewModelScope.launch {
+            flow.collect { onEach(it) }
+        }
+    }
+
+    private fun FavoriteApp.isPhoneFavoriteSentinel(): Boolean =
+            packageName == ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE
 
     private companion object {
         /**

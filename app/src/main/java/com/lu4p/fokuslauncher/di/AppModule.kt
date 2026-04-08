@@ -47,21 +47,30 @@ object AppModule {
             }
         }
 
+    private val MIGRATION_3_TO_4_NEW_TABLES =
+        listOf(
+            "CREATE TABLE IF NOT EXISTS `hidden_apps_new` (`packageName` TEXT NOT NULL, `profileKey` TEXT NOT NULL, PRIMARY KEY(`packageName`, `profileKey`))",
+            "CREATE TABLE IF NOT EXISTS `renamed_apps_new` (`packageName` TEXT NOT NULL, `profileKey` TEXT NOT NULL, `customName` TEXT NOT NULL, PRIMARY KEY(`packageName`, `profileKey`))",
+            "CREATE TABLE IF NOT EXISTS `app_categories_new` (`packageName` TEXT NOT NULL, `profileKey` TEXT NOT NULL, `category` TEXT NOT NULL, PRIMARY KEY(`packageName`, `profileKey`))",
+        )
+
+    private val MIGRATION_3_TO_4_FINALIZE =
+        listOf(
+            "DROP TABLE `hidden_apps`",
+            "ALTER TABLE `hidden_apps_new` RENAME TO `hidden_apps`",
+            "DROP TABLE `renamed_apps`",
+            "ALTER TABLE `renamed_apps_new` RENAME TO `renamed_apps`",
+            "DROP TABLE `app_categories`",
+            "ALTER TABLE `app_categories_new` RENAME TO `app_categories`",
+        )
+
     fun migration3To4(
         context: Context,
         profileKeyResolver: (Context, String) -> Set<String> = ::resolveInstalledProfileKeys
     ) =
         object : Migration(3, 4) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL(
-                    "CREATE TABLE IF NOT EXISTS `hidden_apps_new` (`packageName` TEXT NOT NULL, `profileKey` TEXT NOT NULL, PRIMARY KEY(`packageName`, `profileKey`))"
-                )
-                db.execSQL(
-                    "CREATE TABLE IF NOT EXISTS `renamed_apps_new` (`packageName` TEXT NOT NULL, `profileKey` TEXT NOT NULL, `customName` TEXT NOT NULL, PRIMARY KEY(`packageName`, `profileKey`))"
-                )
-                db.execSQL(
-                    "CREATE TABLE IF NOT EXISTS `app_categories_new` (`packageName` TEXT NOT NULL, `profileKey` TEXT NOT NULL, `category` TEXT NOT NULL, PRIMARY KEY(`packageName`, `profileKey`))"
-                )
+                MIGRATION_3_TO_4_NEW_TABLES.forEach(db::execSQL)
 
                 migrateByPackageName(
                     db,
@@ -101,12 +110,7 @@ object AppModule {
                     )
                 }
 
-                db.execSQL("DROP TABLE `hidden_apps`")
-                db.execSQL("ALTER TABLE `hidden_apps_new` RENAME TO `hidden_apps`")
-                db.execSQL("DROP TABLE `renamed_apps`")
-                db.execSQL("ALTER TABLE `renamed_apps_new` RENAME TO `renamed_apps`")
-                db.execSQL("DROP TABLE `app_categories`")
-                db.execSQL("ALTER TABLE `app_categories_new` RENAME TO `app_categories`")
+                MIGRATION_3_TO_4_FINALIZE.forEach(db::execSQL)
             }
         }
 
@@ -128,20 +132,17 @@ object AppModule {
         }
     }
 
+    private inline fun <reified T> Context.systemServiceOrNull(serviceName: String): T? =
+            try {
+                getSystemService(serviceName) as? T
+            } catch (_: Exception) {
+                null
+            }
+
     private fun resolveInstalledProfileKeys(context: Context, packageName: String): Set<String> {
         val privateSpaceManager = PrivateSpaceManager(context)
-        val launcherApps =
-            try {
-                context.getSystemService(LAUNCHER_APPS_SERVICE) as? LauncherApps
-            } catch (_: Exception) {
-                null
-            }
-        val userManager =
-            try {
-                context.getSystemService(USER_SERVICE) as? UserManager
-            } catch (_: Exception) {
-                null
-            }
+        val launcherApps = context.systemServiceOrNull<LauncherApps>(LAUNCHER_APPS_SERVICE)
+        val userManager = context.systemServiceOrNull<UserManager>(USER_SERVICE)
 
         val discovered = linkedSetOf<String>()
         if (launcherApps != null && userManager != null) {

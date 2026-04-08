@@ -46,7 +46,7 @@ fun SheetActionRow(
                 .fillMaxWidth()
                 .clickableWithSystemSound(onClick = onClick)
                 .padding(horizontal = 24.dp, vertical = 16.dp)
-                .let { m -> if (testTag != null) m.testTag(testTag) else m },
+                .then(if (testTag != null) Modifier.testTag(testTag) else Modifier),
     ) {
         when {
             leadingContent != null -> leadingContent()

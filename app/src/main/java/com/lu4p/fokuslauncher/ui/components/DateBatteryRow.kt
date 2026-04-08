@@ -27,15 +27,14 @@ fun DateBatteryRow(
     onDateClick: () -> Unit = {}
 ) {
     if (!showDate && !showBattery) return
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier
-    ) {
+    val style = MaterialTheme.typography.titleMedium
+    val color = MaterialTheme.colorScheme.onBackground
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier) {
         if (showDate) {
             Text(
                 text = date,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onBackground,
+                style = style,
+                color = color,
                 modifier =
                         Modifier.clickableWithSystemSound(
                                 indication = null,
@@ -49,11 +48,7 @@ fun DateBatteryRow(
             Spacer(modifier = Modifier.width(8.dp))
         }
         if (showBattery) {
-            Text(
-                text = "$batteryPercent%",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onBackground
-            )
+            Text(text = "$batteryPercent%", style = style, color = color)
         }
     }
 }
