@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.width
 import com.lu4p.fokuslauncher.ui.util.applyVerticalSlotReorder
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.LazyListState
@@ -47,7 +46,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -96,6 +94,7 @@ import com.lu4p.fokuslauncher.utils.DotSearchSyntax
 import com.lu4p.fokuslauncher.ui.components.CategoryChips
 import com.lu4p.fokuslauncher.ui.components.CategoryIconPickerDialog
 import com.lu4p.fokuslauncher.ui.components.DrawerCategorySidebar
+import com.lu4p.fokuslauncher.ui.components.FokusBottomSheet
 import com.lu4p.fokuslauncher.ui.components.FokusIconButton
 import com.lu4p.fokuslauncher.ui.components.FokusTextButton
 import com.lu4p.fokuslauncher.ui.components.MinimalIcons
@@ -107,7 +106,6 @@ import com.lu4p.fokuslauncher.ui.util.clickableWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.combinedClickableWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.rememberClickWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.resolvedCategoryDrawerIconName
-import java.util.Locale
 
 private fun deepCopyProfileSections(
         sections: List<DrawerProfileSectionUi>
@@ -431,21 +429,10 @@ private fun DrawerAppListColumn(
                 val showSectionLabel = section.id != "owner"
                 if (showSectionLabel) {
                     if (hasEmittedProfileListContent) {
-                        item(key = "div_profile_${section.id}") {
-                            HorizontalDivider(
-                                    modifier =
-                                            Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
-                                    color = MaterialTheme.colorScheme.outlineVariant
-                            )
-                        }
+                        item(key = "div_profile_${section.id}") { DrawerListSectionDivider() }
                     }
                     item(key = "hdr_profile_${section.id}") {
-                        Text(
-                                text = section.title.uppercase(Locale.getDefault()),
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)
-                        )
+                        DrawerListSectionHeader(text = section.title)
                     }
                 }
                 hasEmittedProfileListContent = true
@@ -522,19 +509,7 @@ private fun DrawerAppListColumn(
                                     },
                             onLaunchWhenNotReordering = {
                                 focusManager.clearFocus(force = true)
-                                val cn = app.componentName
-                                val uh = app.userHandle
-                                if (cn != null && uh != null) {
-                                    onAppClick(
-                                            LaunchTarget.PrivateApp(
-                                                    packageName = app.packageName,
-                                                    componentName = cn,
-                                                    userHandle = uh
-                                            )
-                                    )
-                                } else {
-                                    onAppClick(LaunchTarget.MainApp(app.packageName))
-                                }
+                                onAppClick(drawerLaunchTargetForDrawerListApp(app))
                             },
                             onLongPressWhenNotReordering = { onAppLongPress(app) },
                     )
@@ -543,21 +518,11 @@ private fun DrawerAppListColumn(
         }
         if (uiState.isPrivateSpaceUnlocked && displayPrivateApps.isNotEmpty()) {
             if (showProfileSections && anyProfileAppsVisible) {
-                item {
-                    HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
-                            color = MaterialTheme.colorScheme.outlineVariant
-                    )
-                }
+                item { DrawerListSectionDivider() }
             }
             item {
-                Text(
-                        text =
-                                stringResource(R.string.drawer_section_private_space)
-                                        .uppercase(Locale.getDefault()),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)
+                DrawerListSectionHeader(
+                        text = stringResource(R.string.drawer_section_private_space)
                 )
             }
             items(
@@ -640,38 +605,18 @@ private fun DrawerAppListColumn(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun ColumnScope.DrawerAppListBody(
-        listState: LazyListState,
-        categorySwipeModifier: Modifier,
-        uiState: AppDrawerUiState,
-        showProfileSections: Boolean,
-        anyProfileAppsVisible: Boolean,
-        focusManager: FocusManager,
-        onAppClick: (LaunchTarget) -> Unit,
-        onAppLongPress: (AppInfo) -> Unit,
-        allowCustomDragReorder: Boolean,
-        onReorderDrawerProfileSection: (sectionId: String, fromIndex: Int, toIndex: Int) -> Unit,
-        onReorderPrivateDrawerApps: (fromIndex: Int, toIndex: Int) -> Unit,
-) {
-    DrawerAppListColumn(
-            listState = listState,
-            modifier =
-                    Modifier.weight(1f)
-                            .fillMaxWidth()
-                            .then(categorySwipeModifier)
-                            .testTag("app_list"),
-            uiState = uiState,
-            showProfileSections = showProfileSections,
-            anyProfileAppsVisible = anyProfileAppsVisible,
-            focusManager = focusManager,
-            onAppClick = onAppClick,
-            onAppLongPress = onAppLongPress,
-            allowCustomDragReorder = allowCustomDragReorder,
-            onReorderProfileSection = onReorderDrawerProfileSection,
-            onReorderPrivateApps = onReorderPrivateDrawerApps,
-    )
+private fun drawerLaunchTargetForDrawerListApp(app: AppInfo): LaunchTarget {
+    val cn = app.componentName
+    val uh = app.userHandle
+    return if (cn != null && uh != null) {
+        LaunchTarget.PrivateApp(
+                packageName = app.packageName,
+                componentName = cn,
+                userHandle = uh,
+        )
+    } else {
+        LaunchTarget.MainApp(app.packageName)
+    }
 }
 
 @Composable
@@ -960,9 +905,13 @@ fun AppDrawerContent(
         )
     }
     val drawerAppList: @Composable ColumnScope.() -> Unit = {
-        DrawerAppListBody(
+        DrawerAppListColumn(
                 listState = listState,
-                categorySwipeModifier = categorySwipeModifier,
+                modifier =
+                        Modifier.weight(1f)
+                                .fillMaxWidth()
+                                .then(categorySwipeModifier)
+                                .testTag("app_list"),
                 uiState = uiState,
                 showProfileSections = showProfileSections,
                 anyProfileAppsVisible = anyProfileAppsVisible,
@@ -970,8 +919,8 @@ fun AppDrawerContent(
                 onAppClick = onAppClick,
                 onAppLongPress = onAppLongPress,
                 allowCustomDragReorder = allowCustomDragReorder,
-                onReorderDrawerProfileSection = onReorderDrawerProfileSection,
-                onReorderPrivateDrawerApps = onReorderPrivateDrawerApps,
+                onReorderProfileSection = onReorderDrawerProfileSection,
+                onReorderPrivateApps = onReorderPrivateDrawerApps,
         )
     }
 
@@ -1128,17 +1077,11 @@ fun CategoryActionSheet(
     val drawerRailIconKey =
             resolvedCategoryDrawerIconName(context, category, categoryDrawerIconOverrides)
 
-    ModalBottomSheet(
+    FokusBottomSheet(
             onDismissRequest = onDismiss,
             sheetState = sheetState,
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-            modifier = Modifier.testTag("category_action_sheet")
+            modifier = Modifier.testTag("category_action_sheet"),
     ) {
-        Column(
-                modifier =
-                        Modifier.fillMaxWidth()
-                                .padding(bottom = 32.dp)
-        ) {
             SheetInlineRenameTitleRow(
                     renameMode = renameMode,
                     renameValue = renameValue,
@@ -1197,7 +1140,6 @@ fun CategoryActionSheet(
                         destructive = true,
                 )
             }
-        }
     }
 
     if (showIconPickerDialog) {

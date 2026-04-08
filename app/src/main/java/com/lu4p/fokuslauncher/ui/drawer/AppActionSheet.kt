@@ -4,19 +4,15 @@ import android.content.Intent
 import android.provider.Settings
 import com.lu4p.fokuslauncher.ui.components.SheetActionRow
 import com.lu4p.fokuslauncher.ui.components.SheetInlineRenameTitleRow
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import com.lu4p.fokuslauncher.ui.components.FokusBottomSheet
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -26,7 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import com.lu4p.fokuslauncher.R
 import androidx.core.net.toUri
 import com.lu4p.fokuslauncher.data.model.AppInfo
@@ -50,17 +45,11 @@ fun AppActionSheet(
     var renameMode by remember(app.packageName) { mutableStateOf(false) }
     var renameValue by remember(app.packageName) { mutableStateOf(app.label) }
 
-    ModalBottomSheet(
+    FokusBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-        modifier = Modifier.testTag("app_action_sheet")
+        modifier = Modifier.testTag("app_action_sheet"),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 32.dp)
-        ) {
             SheetInlineRenameTitleRow(
                     renameMode = renameMode,
                     renameValue = renameValue,
@@ -130,6 +119,5 @@ fun AppActionSheet(
                 icon = Icons.Default.Delete,
                 testTag = "action_uninstall",
             )
-        }
     }
 }

@@ -103,6 +103,13 @@ private fun AppDrawerUiState.withFilteredContent(
                 filteredPrivateSpaceApps = filteredContent.filteredPrivateSpaceApps
         )
 
+private data class DrawerMetadataSnapshot(
+        val hiddenSet: Set<String>,
+        val renameMap: Map<String, String>,
+        val categoryMap: Map<String, String>,
+        val definedCategories: List<String>,
+)
+
 @HiltViewModel
 class AppDrawerViewModel
 @Inject
@@ -202,6 +209,48 @@ constructor(
         viewModelScope.launch { prewarmDrawerCachesSuspend() }
     }
 
+    private fun effectiveDrawerSearchFilterQuery(raw: String): String {
+        val trimmed = raw.trimStart()
+        return if (DotSearchSyntax.isPossibleDotSearchPrefix(trimmed)) "" else trimmed.trim()
+    }
+
+    private suspend fun persistCategoriesFilterAndBuild(
+            visible: List<AppInfo>,
+            privateApps: List<AppInfo>,
+            stateSnapshot: AppDrawerUiState,
+            definedCategories: List<String>,
+            useSidebarCategoryDrawer: Boolean,
+    ): Triple<List<String>, String, FilteredDrawerContent> {
+        val categories =
+                deriveCategories(
+                        apps = visible,
+                        definedCategories = definedCategories,
+                        includePrivate =
+                                stateSnapshot.isPrivateSpaceUnlocked && privateApps.isNotEmpty(),
+                        includeWork = visible.any { isDrawerWorkProfileApp(context, it) },
+                        includeAllAppsSection = !useSidebarCategoryDrawer,
+                )
+        val selectedCategory =
+                resolveSelectedCategory(
+                        currentCategory = stateSnapshot.selectedCategory,
+                        categories = categories,
+                        skipAllAppsCategory = useSidebarCategoryDrawer,
+                )
+        maybePersistMergedCustomOrder(
+                allApps = visible,
+                privateApps = privateApps,
+                useSidebarCategoryDrawer = useSidebarCategoryDrawer,
+        )
+        val filteredContent =
+                buildFilteredDrawerContent(
+                        allApps = visible,
+                        privateApps = privateApps,
+                        rawSearchQuery = stateSnapshot.searchQuery,
+                        category = selectedCategory,
+                )
+        return Triple(categories, selectedCategory, filteredContent)
+    }
+
     private suspend fun prewarmDrawerCachesSuspend() {
         val state = _uiState.value
         buildProfileSectionsSuspend(state.allApps)
@@ -234,34 +283,13 @@ constructor(
                     }
                 }
                 val state = _uiState.value
-                val categories =
-                        deriveCategories(
-                                apps = state.allApps,
-                                definedCategories = latestDefinedCategories,
-                                includePrivate =
-                                        state.isPrivateSpaceUnlocked &&
-                                                state.privateSpaceApps.isNotEmpty(),
-                                includeWork =
-                                        state.allApps.any { isDrawerWorkProfileApp(context, it) },
-                                includeAllAppsSection = !sidebarEnabled
-                        )
-                val selectedCategory =
-                        resolveSelectedCategory(
-                                currentCategory = state.selectedCategory,
-                                categories = categories,
-                                skipAllAppsCategory = sidebarEnabled
-                        )
-                maybePersistMergedCustomOrder(
-                        allApps = state.allApps,
-                        privateApps = state.privateSpaceApps,
-                        useSidebarCategoryDrawer = sidebarEnabled
-                )
-                val filteredContent =
-                        buildFilteredDrawerContent(
-                                allApps = state.allApps,
+                val (categories, selectedCategory, filteredContent) =
+                        persistCategoriesFilterAndBuild(
+                                visible = state.allApps,
                                 privateApps = state.privateSpaceApps,
-                                rawSearchQuery = state.searchQuery,
-                                category = selectedCategory
+                                stateSnapshot = state,
+                                definedCategories = latestDefinedCategories,
+                                useSidebarCategoryDrawer = sidebarEnabled,
                         )
                 _uiState.update { state ->
                     state.withFilteredContent(filteredContent).copy(
@@ -347,10 +375,12 @@ constructor(
     private fun loadApps() {
         viewModelScope.launch {
             rebuildVisibleApps(
-                    hiddenSet = latestHiddenSet,
-                    renameMap = latestRenameMap,
-                    categoryMap = latestCategoryMap,
-                    definedCategories = latestDefinedCategories
+                    DrawerMetadataSnapshot(
+                            latestHiddenSet,
+                            latestRenameMap,
+                            latestCategoryMap,
+                            latestDefinedCategories,
+                    )
             )
         }
     }
@@ -387,10 +417,12 @@ constructor(
                         latestCategoryMap = state.categoryMap
                         latestDefinedCategories = state.definedCategories
                         rebuildVisibleApps(
-                                hiddenSet = state.hiddenSet,
-                                renameMap = state.renameMap,
-                                categoryMap = state.categoryMap,
-                                definedCategories = state.definedCategories
+                                DrawerMetadataSnapshot(
+                                        state.hiddenSet,
+                                        state.renameMap,
+                                        state.categoryMap,
+                                        state.definedCategories,
+                                )
                         )
                     }
         }
@@ -401,10 +433,12 @@ constructor(
             appRepository.getInstalledAppsVersion().drop(1).collect {
                 synchronized(optimisticallyRemovedKeys) { optimisticallyRemovedKeys.clear() }
                 rebuildVisibleApps(
-                        hiddenSet = latestHiddenSet,
-                        renameMap = latestRenameMap,
-                        categoryMap = latestCategoryMap,
-                        definedCategories = latestDefinedCategories
+                        DrawerMetadataSnapshot(
+                                latestHiddenSet,
+                                latestRenameMap,
+                                latestCategoryMap,
+                                latestDefinedCategories,
+                        )
                 )
             }
         }
@@ -422,12 +456,8 @@ constructor(
      * Applies hidden + renamed overlays and updates profile sections. Runs the expensive
      * PackageManager query off the main thread.
      */
-    private suspend fun rebuildVisibleApps(
-            hiddenSet: Set<String>,
-            renameMap: Map<String, String>,
-            categoryMap: Map<String, String>,
-            definedCategories: List<String>
-    ) {
+
+    private suspend fun rebuildVisibleApps(metadata: DrawerMetadataSnapshot) {
         drawerListRebuildMutex.withLock {
             val base = withContext(Dispatchers.IO) { appRepository.getInstalledApps() }
             val removedSnapshot =
@@ -435,9 +465,9 @@ constructor(
             val visible =
                     applyMetadataOverlays(
                                     apps = base,
-                                    hiddenSet = hiddenSet,
-                                    renameMap = renameMap,
-                                    categoryMap = categoryMap
+                                    hiddenSet = metadata.hiddenSet,
+                                    renameMap = metadata.renameMap,
+                                    categoryMap = metadata.categoryMap,
                             )
                             .filterNot { app ->
                                 drawerOpenCountKey(app.packageName, app.userHandle) in
@@ -448,47 +478,27 @@ constructor(
             val privateAppsFiltered =
                     applyMetadataOverlays(
                                     apps = stateSnapshot.privateSpaceApps,
-                                    hiddenSet = hiddenSet,
-                                    renameMap = renameMap,
-                                    categoryMap = categoryMap
+                                    hiddenSet = metadata.hiddenSet,
+                                    renameMap = metadata.renameMap,
+                                    categoryMap = metadata.categoryMap,
                             )
                             .filterNot { app ->
                                 drawerOpenCountKey(app.packageName, app.userHandle) in removedSnapshot
                             }
-            val categories =
-                    deriveCategories(
-                            apps = visible,
-                            definedCategories = definedCategories,
-                            includePrivate =
-                                    stateSnapshot.isPrivateSpaceUnlocked &&
-                                            privateAppsFiltered.isNotEmpty(),
-                            includeWork = visible.any { isDrawerWorkProfileApp(context, it) },
-                            includeAllAppsSection = !stateSnapshot.useSidebarCategoryDrawer
-                    )
-            val selectedCategory =
-                    resolveSelectedCategory(
-                            currentCategory = stateSnapshot.selectedCategory,
-                            categories = categories,
-                            skipAllAppsCategory = stateSnapshot.useSidebarCategoryDrawer
-                    )
-            maybePersistMergedCustomOrder(
-                    allApps = visible,
-                    privateApps = privateAppsFiltered,
-                    useSidebarCategoryDrawer = stateSnapshot.useSidebarCategoryDrawer
-            )
-            val filteredContent =
-                    buildFilteredDrawerContent(
-                            allApps = visible,
+            val (categories, selectedCategory, filteredContent) =
+                    persistCategoriesFilterAndBuild(
+                            visible = visible,
                             privateApps = privateAppsFiltered,
-                            rawSearchQuery = stateSnapshot.searchQuery,
-                            category = selectedCategory
+                            stateSnapshot = stateSnapshot,
+                            definedCategories = metadata.definedCategories,
+                            useSidebarCategoryDrawer = stateSnapshot.useSidebarCategoryDrawer,
                     )
             _uiState.update { state ->
                 state.withFilteredContent(filteredContent).copy(
                         allApps = visible,
                         privateSpaceApps = privateAppsFiltered,
                         selectedCategory = selectedCategory,
-                        categories = categories
+                        categories = categories,
                 )
             }
             scheduleDrawerCachePrewarm()
@@ -509,33 +519,13 @@ constructor(
                     stateSnapshot.privateSpaceApps.filterNot {
                         it.packageName == packageName && appProfileKey(it.userHandle) == profileKey
                     }
-            val categories =
-                    deriveCategories(
-                            apps = visible,
-                            definedCategories = latestDefinedCategories,
-                            includePrivate =
-                                    stateSnapshot.isPrivateSpaceUnlocked &&
-                                            privateApps.isNotEmpty(),
-                            includeWork = visible.any { isDrawerWorkProfileApp(context, it) },
-                            includeAllAppsSection = !stateSnapshot.useSidebarCategoryDrawer
-                    )
-            val selectedCategory =
-                    resolveSelectedCategory(
-                            currentCategory = stateSnapshot.selectedCategory,
-                            categories = categories,
-                            skipAllAppsCategory = stateSnapshot.useSidebarCategoryDrawer
-                    )
-            maybePersistMergedCustomOrder(
-                    allApps = visible,
-                    privateApps = privateApps,
-                    useSidebarCategoryDrawer = stateSnapshot.useSidebarCategoryDrawer
-            )
-            val filteredContent =
-                    buildFilteredDrawerContent(
-                            allApps = visible,
+            val (categories, selectedCategory, filteredContent) =
+                    persistCategoriesFilterAndBuild(
+                            visible = visible,
                             privateApps = privateApps,
-                            rawSearchQuery = stateSnapshot.searchQuery,
-                            category = selectedCategory
+                            stateSnapshot = stateSnapshot,
+                            definedCategories = latestDefinedCategories,
+                            useSidebarCategoryDrawer = stateSnapshot.useSidebarCategoryDrawer,
                     )
             _uiState.update { state ->
                 state.withFilteredContent(filteredContent).copy(
@@ -546,8 +536,8 @@ constructor(
                         selectedApp =
                                 state.selectedApp?.takeUnless {
                                     it.packageName == packageName &&
-                                        appProfileKey(it.userHandle) == profileKey
-                                }
+                                            appProfileKey(it.userHandle) == profileKey
+                                },
                 )
             }
             scheduleDrawerCachePrewarm()
@@ -556,12 +546,8 @@ constructor(
 
     // --- Search ---
 
-    private fun drawerSearchFilterActive(raw: String): Boolean {
-        val trimmed = raw.trimStart()
-        val q =
-                if (DotSearchSyntax.isPossibleDotSearchPrefix(trimmed)) "" else trimmed.trim()
-        return q.isNotBlank()
-    }
+    private fun drawerSearchFilterActive(raw: String): Boolean =
+            effectiveDrawerSearchFilterQuery(raw).isNotBlank()
 
     fun onSearchQueryChanged(query: String) {
         searchQueryApplyJob?.cancel()
@@ -635,21 +621,17 @@ constructor(
         if (trimmed.isBlank()) return false
 
         when (val parsed = DotSearchSyntax.parse(trimmed)) {
-            is DotSearchParsed.Default -> {
-                val pref = drawerDotSearchDefault
-                if (appRepository.launchDotSearch(pref.profileKey, pref.target, parsed.searchText)) {
-                    resetSearchState()
-                    return true
-                }
-                return false
-            }
+            is DotSearchParsed.Default ->
+                    if (launchDotSearchWithPreference(drawerDotSearchDefault, parsed.searchText)) {
+                        resetSearchState()
+                        return true
+                    } else return false
             is DotSearchParsed.Alias -> {
                 val pref = drawerDotSearchAliases[parsed.aliasChar] ?: return false
-                if (appRepository.launchDotSearch(pref.profileKey, pref.target, parsed.searchText)) {
+                return if (launchDotSearchWithPreference(pref, parsed.searchText)) {
                     resetSearchState()
-                    return true
-                }
-                return false
+                    true
+                } else false
             }
             null -> {}
         }
@@ -669,6 +651,11 @@ constructor(
                 )
         )
     }
+
+    private fun launchDotSearchWithPreference(
+            pref: DotSearchTargetPreference,
+            searchText: String,
+    ): Boolean = appRepository.launchDotSearch(pref.profileKey, pref.target, searchText)
 
     private fun launchTargetFromAppInfo(app: AppInfo): LaunchTarget {
         val uh = app.userHandle
@@ -784,84 +771,57 @@ constructor(
 
     fun reorderDrawerProfileSectionApps(sectionId: String, fromIndex: Int, toIndex: Int) {
         viewModelScope.launch {
-            if (latestDrawerSortMode != DrawerAppSortMode.CUSTOM || !latestUseSidebarCategoryDrawer) {
-                return@launch
-            }
-            val state = _uiState.value
-            val trimmed = state.searchQuery.trimStart()
-            val filterQuery =
-                    if (DotSearchSyntax.isPossibleDotSearchPrefix(trimmed)) "" else trimmed.trim()
-            if (filterQuery.isNotBlank() || !state.drawerReorderSessionActive) return@launch
-            val section = state.filteredProfileSections.find { it.id == sectionId } ?: return@launch
-            val visible = section.apps
-            if (fromIndex !in visible.indices ||
-                            toIndex !in visible.indices ||
-                            fromIndex == toIndex
-            ) {
-                return@launch
-            }
-            val profileKey = appProfileKey(visible.first().userHandle)
-            val merged =
-                    mergeCustomOrderMaps(state.allApps, state.privateSpaceApps, latestCustomOrderByProfile)
-            val profileFullOrder = merged[profileKey] ?: return@launch
-            val subsetKeys =
-                    visible.map { drawerOpenCountKey(it.packageName, it.userHandle) }
-            val newProfileOrder =
-                    reorderSubsetInFullOrder(profileFullOrder, subsetKeys, fromIndex, toIndex)
-            val newMap = merged.toMutableMap()
-            newMap[profileKey] = newProfileOrder
-            latestCustomOrderByProfile = newMap
-            preferencesManager.setDrawerCustomAppOrder(newMap)
-            val filteredContent =
-                    buildFilteredDrawerContent(
-                            allApps = state.allApps,
-                            privateApps = state.privateSpaceApps,
-                            rawSearchQuery = state.searchQuery,
-                            category = state.selectedCategory
-                    )
-            _uiState.update { it.withFilteredContent(filteredContent) }
+            val visible =
+                    _uiState.value.filteredProfileSections.find { it.id == sectionId }?.apps
+                            ?: return@launch
+            persistCustomDrawerReorder(visible, fromIndex, toIndex)
         }
     }
 
     fun reorderPrivateDrawerApps(fromIndex: Int, toIndex: Int) {
         viewModelScope.launch {
-            if (latestDrawerSortMode != DrawerAppSortMode.CUSTOM || !latestUseSidebarCategoryDrawer) {
-                return@launch
-            }
-            val state = _uiState.value
-            val trimmed = state.searchQuery.trimStart()
-            val filterQuery =
-                    if (DotSearchSyntax.isPossibleDotSearchPrefix(trimmed)) "" else trimmed.trim()
-            if (filterQuery.isNotBlank() || !state.drawerReorderSessionActive) return@launch
-            val visible = state.filteredPrivateSpaceApps
-            if (fromIndex !in visible.indices ||
-                            toIndex !in visible.indices ||
-                            fromIndex == toIndex ||
-                            visible.isEmpty()
-            ) {
-                return@launch
-            }
-            val profileKey = appProfileKey(visible.first().userHandle)
-            val merged =
-                    mergeCustomOrderMaps(state.allApps, state.privateSpaceApps, latestCustomOrderByProfile)
-            val profileFullOrder = merged[profileKey] ?: return@launch
-            val subsetKeys =
-                    visible.map { drawerOpenCountKey(it.packageName, it.userHandle) }
-            val newProfileOrder =
-                    reorderSubsetInFullOrder(profileFullOrder, subsetKeys, fromIndex, toIndex)
-            val newMap = merged.toMutableMap()
-            newMap[profileKey] = newProfileOrder
-            latestCustomOrderByProfile = newMap
-            preferencesManager.setDrawerCustomAppOrder(newMap)
-            val filteredContent =
-                    buildFilteredDrawerContent(
-                            allApps = state.allApps,
-                            privateApps = state.privateSpaceApps,
-                            rawSearchQuery = state.searchQuery,
-                            category = state.selectedCategory
-                    )
-            _uiState.update { it.withFilteredContent(filteredContent) }
+            persistCustomDrawerReorder(_uiState.value.filteredPrivateSpaceApps, fromIndex, toIndex)
         }
+    }
+
+    private suspend fun persistCustomDrawerReorder(
+            visible: List<AppInfo>,
+            fromIndex: Int,
+            toIndex: Int
+    ) {
+        if (latestDrawerSortMode != DrawerAppSortMode.CUSTOM || !latestUseSidebarCategoryDrawer) return
+        val state = _uiState.value
+        if (effectiveDrawerSearchFilterQuery(state.searchQuery).isNotBlank() ||
+                        !state.drawerReorderSessionActive
+        ) {
+            return
+        }
+        if (fromIndex !in visible.indices ||
+                        toIndex !in visible.indices ||
+                        fromIndex == toIndex ||
+                        visible.isEmpty()
+        ) {
+            return
+        }
+        val profileKey = appProfileKey(visible.first().userHandle)
+        val merged =
+                mergeCustomOrderMaps(state.allApps, state.privateSpaceApps, latestCustomOrderByProfile)
+        val profileFullOrder = merged[profileKey] ?: return
+        val subsetKeys = visible.map { drawerOpenCountKey(it.packageName, it.userHandle) }
+        val newProfileOrder =
+                reorderSubsetInFullOrder(profileFullOrder, subsetKeys, fromIndex, toIndex)
+        val newMap = merged.toMutableMap()
+        newMap[profileKey] = newProfileOrder
+        latestCustomOrderByProfile = newMap
+        preferencesManager.setDrawerCustomAppOrder(newMap)
+        val filteredContent =
+                buildFilteredDrawerContent(
+                        allApps = state.allApps,
+                        privateApps = state.privateSpaceApps,
+                        rawSearchQuery = state.searchQuery,
+                        category = state.selectedCategory
+                )
+        _uiState.update { it.withFilteredContent(filteredContent) }
     }
 
     fun hideApp(app: AppInfo) {
@@ -956,31 +916,15 @@ constructor(
                         emptyList()
                     }
             val state = _uiState.value
-            val categories =
-                    deriveCategories(
-                            apps = state.allApps,
-                            definedCategories = latestDefinedCategories,
-                            includePrivate = unlocked && apps.isNotEmpty(),
-                            includeWork = state.allApps.any { isDrawerWorkProfileApp(context, it) },
-                            includeAllAppsSection = !state.useSidebarCategoryDrawer
-                    )
-            val selectedCategory =
-                    resolveSelectedCategory(
-                            currentCategory = state.selectedCategory,
-                            categories = categories,
-                            skipAllAppsCategory = state.useSidebarCategoryDrawer
-                    )
-            maybePersistMergedCustomOrder(
-                    allApps = state.allApps,
-                    privateApps = apps,
-                    useSidebarCategoryDrawer = state.useSidebarCategoryDrawer
-            )
-            val filteredContent =
-                    buildFilteredDrawerContent(
-                            allApps = state.allApps,
+            val tempState =
+                    state.copy(isPrivateSpaceUnlocked = unlocked, privateSpaceApps = apps)
+            val (categories, selectedCategory, filteredContent) =
+                    persistCategoriesFilterAndBuild(
+                            visible = state.allApps,
                             privateApps = apps,
-                            rawSearchQuery = state.searchQuery,
-                            category = selectedCategory
+                            stateSnapshot = tempState,
+                            definedCategories = latestDefinedCategories,
+                            useSidebarCategoryDrawer = state.useSidebarCategoryDrawer,
                     )
             _uiState.update {
                 it.withFilteredContent(filteredContent).copy(
@@ -988,7 +932,7 @@ constructor(
                         isPrivateSpaceUnlocked = unlocked,
                         privateSpaceApps = apps,
                         selectedCategory = selectedCategory,
-                        categories = categories
+                        categories = categories,
                 )
             }
             scheduleDrawerCachePrewarm()

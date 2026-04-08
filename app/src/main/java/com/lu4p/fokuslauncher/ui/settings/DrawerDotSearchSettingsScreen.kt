@@ -14,10 +14,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.AlertDialog
+import com.lu4p.fokuslauncher.ui.components.FokusAlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -27,8 +26,6 @@ import com.lu4p.fokuslauncher.ui.components.FokusTextButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -104,26 +101,15 @@ fun DrawerDotSearchSettingsScreen(
     Scaffold(
             containerColor = backgroundScrim,
             topBar = {
-                TopAppBar(
+                FokusSettingsTopBar(
                         title = {
                             Text(
                                     stringResource(R.string.settings_dot_search_screen_title),
-                                    color = MaterialTheme.colorScheme.onBackground
+                                    color = MaterialTheme.colorScheme.onBackground,
                             )
                         },
-                        navigationIcon = {
-                            FokusIconButton(onClick = onNavigateBack) {
-                                Icon(
-                                        Icons.AutoMirrored.Filled.ArrowBack,
-                                        stringResource(R.string.action_back),
-                                        tint = MaterialTheme.colorScheme.onBackground
-                                )
-                            }
-                        },
-                        colors =
-                                TopAppBarDefaults.topAppBarColors(
-                                        containerColor = Color.Transparent
-                                )
+                        onNavigateBack = onNavigateBack,
+                        containerColor = Color.Transparent,
                 )
             },
             floatingActionButton = {
@@ -217,7 +203,7 @@ fun DrawerDotSearchSettingsScreen(
     }
 
     if (showAddShortcutChoice) {
-        AlertDialog(
+        FokusAlertDialog(
                 onDismissRequest = { },
                 title = {
                     Text(
@@ -249,7 +235,6 @@ fun DrawerDotSearchSettingsScreen(
                         Text(stringResource(R.string.action_cancel))
                     }
                 },
-                containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
     }
 
@@ -406,7 +391,7 @@ private fun DotSearchUrlTemplateDialog(
 ) {
     var value by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
-    AlertDialog(
+    FokusAlertDialog(
             onDismissRequest = onDismiss,
             title = { Text(title, color = MaterialTheme.colorScheme.onBackground) },
             text = {
@@ -448,14 +433,13 @@ private fun DotSearchUrlTemplateDialog(
                 }
             },
             dismissButton = { FokusTextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
     )
 }
 
 @Composable
 private fun AliasCharDialog(onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
     var value by remember { mutableStateOf("") }
-    AlertDialog(
+    FokusAlertDialog(
             onDismissRequest = onDismiss,
             title = {
                 Text(
@@ -483,6 +467,5 @@ private fun AliasCharDialog(onConfirm: (String) -> Unit, onDismiss: () -> Unit) 
             dismissButton = {
                 FokusTextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
             },
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
     )
 }

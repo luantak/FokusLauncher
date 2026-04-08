@@ -1,8 +1,5 @@
 package com.lu4p.fokuslauncher.ui.home
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import com.lu4p.fokuslauncher.ui.components.SheetActionRow
 import com.lu4p.fokuslauncher.ui.components.SheetInlineRenameTitleRow
 import androidx.compose.material.icons.Icons
@@ -12,18 +9,15 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import com.lu4p.fokuslauncher.ui.components.FokusBottomSheet
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 
@@ -55,16 +49,10 @@ fun HomeAppMenuSheet(
     var renameMode by remember(fav.packageName) { mutableStateOf(false) }
     var renameValue by remember(fav.packageName) { mutableStateOf(fav.label) }
 
-    ModalBottomSheet(
+    FokusBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surfaceVariant
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 32.dp)
-        ) {
             SheetInlineRenameTitleRow(
                     renameMode = renameMode,
                     renameValue = renameValue,
@@ -128,6 +116,5 @@ fun HomeAppMenuSheet(
                 },
                 icon = Icons.Default.Delete,
             )
-        }
     }
 }

@@ -66,9 +66,6 @@ interface AppDao {
     )
     suspend fun getAppCategory(packageName: String, profileKey: String): String?
 
-    @Query("SELECT * FROM app_categories WHERE category = :category")
-    fun getAppsByCategory(category: String): Flow<List<AppCategoryEntity>>
-
     @Query("SELECT * FROM app_category_definitions ORDER BY position ASC, name COLLATE NOCASE ASC")
     fun getAllCategoryDefinitions(): Flow<List<AppCategoryDefinitionEntity>>
 

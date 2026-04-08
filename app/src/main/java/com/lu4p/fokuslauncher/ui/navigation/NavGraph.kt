@@ -48,8 +48,13 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.activity.compose.LocalActivity
 import androidx.core.net.toUri
+import androidx.compose.animation.AnimatedContentScope
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NamedNavArgument
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavDeepLink
+import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -100,6 +105,28 @@ private fun snapBackAnimationSpec() = spring<Float>(
     dampingRatio = Spring.DampingRatioNoBouncy,
     stiffness = Spring.StiffnessHigh
 )
+
+@Composable
+private fun settingsViewModel(activity: ComponentActivity): SettingsViewModel =
+        hiltViewModel(viewModelStoreOwner = activity)
+
+private fun NavGraphBuilder.fokusSettingsComposable(
+        route: String,
+        arguments: List<NamedNavArgument> = emptyList(),
+        deepLinks: List<NavDeepLink> = emptyList(),
+        content: @Composable AnimatedContentScope.(NavBackStackEntry) -> Unit,
+) {
+    composable(
+            route = route,
+            arguments = arguments,
+            deepLinks = deepLinks,
+            enterTransition = { slideInHorizontally(tween(ANIM_DURATION)) { it } },
+            exitTransition = { slideOutHorizontally(tween(ANIM_DURATION)) { -it } },
+            popEnterTransition = { slideInHorizontally(tween(ANIM_DURATION)) { -it } },
+            popExitTransition = { slideOutHorizontally(tween(ANIM_DURATION)) { it } },
+            content = content,
+    )
+}
 
 @Composable
 fun FokusNavGraph(
@@ -445,25 +472,10 @@ fun FokusNavGraph(
             }
 
             // =====================  SETTINGS  =====================
-            composable(
-                Routes.SETTINGS,
-                enterTransition = {
-                    slideInHorizontally(tween(ANIM_DURATION)) { it }
-                },
-                exitTransition = {
-                    slideOutHorizontally(tween(ANIM_DURATION)) { -it }
-                },
-                popEnterTransition = {
-                    slideInHorizontally(tween(ANIM_DURATION)) { -it }
-                },
-                popExitTransition = {
-                    slideOutHorizontally(tween(ANIM_DURATION)) { it }
-                }
-            ) {
-                val settingsViewModel: SettingsViewModel =
-                        hiltViewModel(viewModelStoreOwner = componentActivity)
+            fokusSettingsComposable(Routes.SETTINGS) {
+                val settingsVm = settingsViewModel(componentActivity)
                 SettingsScreen(
-                    viewModel = settingsViewModel,
+                    viewModel = settingsVm,
                     onNavigateBack = { navController.popBackStack() },
                     onNavigateToHome = {
                         showDrawer = false
@@ -491,98 +503,55 @@ fun FokusNavGraph(
                 )
             }
 
-            composable(
-                Routes.SETTINGS_HOME_WIDGETS,
-                enterTransition = { slideInHorizontally(tween(ANIM_DURATION)) { it } },
-                exitTransition = { slideOutHorizontally(tween(ANIM_DURATION)) { -it } },
-                popEnterTransition = { slideInHorizontally(tween(ANIM_DURATION)) { -it } },
-                popExitTransition = { slideOutHorizontally(tween(ANIM_DURATION)) { it } }
-            ) {
-                val settingsViewModel: SettingsViewModel =
-                        hiltViewModel(viewModelStoreOwner = componentActivity)
+            fokusSettingsComposable(Routes.SETTINGS_HOME_WIDGETS) {
                 HomeWidgetsSettingsScreen(
-                        viewModel = settingsViewModel,
+                        viewModel = settingsViewModel(componentActivity),
                         onNavigateBack = { navController.popBackStack() },
                         backgroundScrim = Color.Black
                 )
             }
 
-            composable(
-                Routes.SETTINGS_DRAWER_DOT_SEARCH,
-                enterTransition = { slideInHorizontally(tween(ANIM_DURATION)) { it } },
-                exitTransition = { slideOutHorizontally(tween(ANIM_DURATION)) { -it } },
-                popEnterTransition = { slideInHorizontally(tween(ANIM_DURATION)) { -it } },
-                popExitTransition = { slideOutHorizontally(tween(ANIM_DURATION)) { it } }
-            ) {
+            fokusSettingsComposable(Routes.SETTINGS_DRAWER_DOT_SEARCH) {
                 DrawerDotSearchSettingsScreen(
                         onNavigateBack = { navController.popBackStack() },
                         backgroundScrim = Color.Black
                 )
             }
 
-            composable(
-                Routes.SETTINGS_DEVICE_CONTROL,
-                enterTransition = { slideInHorizontally(tween(ANIM_DURATION)) { it } },
-                exitTransition = { slideOutHorizontally(tween(ANIM_DURATION)) { -it } },
-                popEnterTransition = { slideInHorizontally(tween(ANIM_DURATION)) { -it } },
-                popExitTransition = { slideOutHorizontally(tween(ANIM_DURATION)) { it } }
-            ) {
-                val settingsViewModel: SettingsViewModel =
-                        hiltViewModel(viewModelStoreOwner = componentActivity)
+            fokusSettingsComposable(Routes.SETTINGS_DEVICE_CONTROL) {
                 DeviceControlSettingsScreen(
-                    viewModel = settingsViewModel,
-                    onNavigateBack = { navController.popBackStack() },
-                    backgroundScrim = Color.Black
+                        viewModel = settingsViewModel(componentActivity),
+                        onNavigateBack = { navController.popBackStack() },
+                        backgroundScrim = Color.Black
                 )
             }
 
-            composable(
-                Routes.SETTINGS_CATEGORIES,
-                enterTransition = { slideInHorizontally(tween(ANIM_DURATION)) { it } },
-                exitTransition = { slideOutHorizontally(tween(ANIM_DURATION)) { -it } },
-                popEnterTransition = { slideInHorizontally(tween(ANIM_DURATION)) { -it } },
-                popExitTransition = { slideOutHorizontally(tween(ANIM_DURATION)) { it } }
-            ) {
-                val settingsViewModel: SettingsViewModel =
-                        hiltViewModel(viewModelStoreOwner = componentActivity)
+            fokusSettingsComposable(Routes.SETTINGS_CATEGORIES) {
                 CategorySettingsScreen(
-                    viewModel = settingsViewModel,
-                    onNavigateBack = { navController.popBackStack() },
-                    onEditCategoryApps = { category ->
-                        navController.navigate(
-                            "${Routes.SETTINGS_CATEGORY_APPS}/${Uri.encode(category)}"
-                        ) {
-                            launchSingleTop = true
-                        }
-                    },
-                    backgroundScrim = Color.Black
+                        viewModel = settingsViewModel(componentActivity),
+                        onNavigateBack = { navController.popBackStack() },
+                        onEditCategoryApps = { category ->
+                            navController.navigate(
+                                    "${Routes.SETTINGS_CATEGORY_APPS}/${Uri.encode(category)}"
+                            ) {
+                                launchSingleTop = true
+                            }
+                        },
+                        backgroundScrim = Color.Black
                 )
             }
 
-            composable(
-                "${Routes.SETTINGS_CATEGORY_APPS}/{category}",
-                enterTransition = { slideInHorizontally(tween(ANIM_DURATION)) { it } },
-                exitTransition = { slideOutHorizontally(tween(ANIM_DURATION)) { -it } },
-                popEnterTransition = { slideInHorizontally(tween(ANIM_DURATION)) { -it } },
-                popExitTransition = { slideOutHorizontally(tween(ANIM_DURATION)) { it } }
-            ) { entry ->
-                val settingsViewModel: SettingsViewModel =
-                        hiltViewModel(viewModelStoreOwner = componentActivity)
+            fokusSettingsComposable("${Routes.SETTINGS_CATEGORY_APPS}/{category}") { entry ->
                 CategoryAppsScreen(
-                    category = Uri.decode(entry.arguments?.getString("category").orEmpty()),
-                    viewModel = settingsViewModel,
-                    onNavigateBack = { navController.popBackStack() },
-                    backgroundScrim = Color.Black
+                        category =
+                                Uri.decode(entry.arguments?.getString("category").orEmpty()),
+                        viewModel = settingsViewModel(componentActivity),
+                        onNavigateBack = { navController.popBackStack() },
+                        backgroundScrim = Color.Black
                 )
             }
 
-            composable(
-                Routes.SETTINGS_EDIT_HOME_APPS,
-                enterTransition = { slideInHorizontally(tween(ANIM_DURATION)) { it } },
-                exitTransition = { slideOutHorizontally(tween(ANIM_DURATION)) { -it } },
-                popEnterTransition = { slideInHorizontally(tween(ANIM_DURATION)) { -it } },
-                popExitTransition = { slideOutHorizontally(tween(ANIM_DURATION)) { it } }
-            ) { editBackStackEntry ->
+            fokusSettingsComposable(Routes.SETTINGS_EDIT_HOME_APPS) { editBackStackEntry ->
                 val homeBackStackEntry = remember(editBackStackEntry) {
                     navController.getBackStackEntry(Routes.HOME)
                 }
@@ -599,13 +568,7 @@ fun FokusNavGraph(
                 )
             }
 
-            composable(
-                Routes.SETTINGS_EDIT_SHORTCUTS,
-                enterTransition = { slideInHorizontally(tween(ANIM_DURATION)) { it } },
-                exitTransition = { slideOutHorizontally(tween(ANIM_DURATION)) { -it } },
-                popEnterTransition = { slideInHorizontally(tween(ANIM_DURATION)) { -it } },
-                popExitTransition = { slideOutHorizontally(tween(ANIM_DURATION)) { it } }
-            ) { editBackStackEntry ->
+            fokusSettingsComposable(Routes.SETTINGS_EDIT_SHORTCUTS) { editBackStackEntry ->
                 val homeBackStackEntry = remember(editBackStackEntry) {
                     navController.getBackStackEntry(Routes.HOME)
                 }

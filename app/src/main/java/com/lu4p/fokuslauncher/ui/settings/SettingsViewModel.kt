@@ -398,40 +398,57 @@ constructor(
             val lockRail: LockRailPrefs,
     )
 
+    private inline fun <T, R> mapEntitiesForSettings(
+            entities: List<T>,
+            hiddenLabels: Map<String, AppInfo>,
+            privateSpaceUnlocked: Boolean,
+            privateProfileKey: String?,
+            packageName: (T) -> String,
+            profileKey: (T) -> String,
+            transform: (T, AppInfo?, String?) -> R,
+    ): List<R> =
+            entities.mapNotNull { entity ->
+                val pkg = packageName(entity)
+                val prof = profileKey(entity)
+                val key = appMetadataKey(pkg, prof)
+                val matchingApp = hiddenLabels[key]
+                if (!privateSpaceUnlocked && prof == privateProfileKey) null
+                else
+                        transform(
+                                entity,
+                                matchingApp,
+                                profileLabelForSettings(prof, matchingApp, privateProfileKey),
+                        )
+            }
+
     private fun hiddenInfosForSettings(
             hiddenApps: List<HiddenAppEntity>,
             hiddenLabels: Map<String, AppInfo>,
             privateSpaceUnlocked: Boolean,
             privateProfileKey: String?,
     ): List<HiddenAppInfo> =
-            hiddenApps
-                    .mapNotNull { hiddenApp ->
-                        val key = appMetadataKey(hiddenApp.packageName, hiddenApp.profileKey)
-                        val matchingApp = hiddenLabels[key]
-                        if (!privateSpaceUnlocked && hiddenApp.profileKey == privateProfileKey) {
-                            null
-                        } else {
-                            HiddenAppInfo(
-                                    packageName = hiddenApp.packageName,
-                                    profileKey = hiddenApp.profileKey,
-                                    label = matchingApp?.label ?: hiddenApp.packageName,
-                                    profileLabel =
-                                            profileLabelForSettings(
-                                                    profileKey = hiddenApp.profileKey,
-                                                    matchingApp = matchingApp,
-                                                    privateProfileKey = privateProfileKey,
-                                            ),
-                            )
-                        }
-                    }
-                    .sortedWith(
-                            compareBy(
-                                    { profileSortBucket(it.profileLabel) },
-                                    { it.profileLabel ?: "" },
-                                    { it.label.lowercase() },
-                                    { it.packageName.lowercase() },
-                            ),
-                    )
+            mapEntitiesForSettings(
+                    hiddenApps,
+                    hiddenLabels,
+                    privateSpaceUnlocked,
+                    privateProfileKey,
+                    packageName = { it.packageName },
+                    profileKey = { it.profileKey },
+            ) { hiddenApp, matchingApp, profileLabel ->
+                HiddenAppInfo(
+                        packageName = hiddenApp.packageName,
+                        profileKey = hiddenApp.profileKey,
+                        label = matchingApp?.label ?: hiddenApp.packageName,
+                        profileLabel = profileLabel,
+                )
+            }.sortedWith(
+                    compareBy(
+                            { profileSortBucket(it.profileLabel) },
+                            { it.profileLabel ?: "" },
+                            { it.label.lowercase() },
+                            { it.packageName.lowercase() },
+                    ),
+            )
 
     private fun renamedInfosForSettings(
             renamedApps: List<RenamedAppEntity>,
@@ -439,34 +456,28 @@ constructor(
             privateSpaceUnlocked: Boolean,
             privateProfileKey: String?,
     ): List<RenamedAppInfo> =
-            renamedApps
-                    .mapNotNull { renamedApp ->
-                        val key = appMetadataKey(renamedApp.packageName, renamedApp.profileKey)
-                        val matchingApp = hiddenLabels[key]
-                        if (!privateSpaceUnlocked && renamedApp.profileKey == privateProfileKey) {
-                            null
-                        } else {
-                            RenamedAppInfo(
-                                    packageName = renamedApp.packageName,
-                                    profileKey = renamedApp.profileKey,
-                                    customName = renamedApp.customName,
-                                    profileLabel =
-                                            profileLabelForSettings(
-                                                    profileKey = renamedApp.profileKey,
-                                                    matchingApp = matchingApp,
-                                                    privateProfileKey = privateProfileKey,
-                                            ),
-                            )
-                        }
-                    }
-                    .sortedWith(
-                            compareBy(
-                                    { profileSortBucket(it.profileLabel) },
-                                    { it.profileLabel ?: "" },
-                                    { it.customName.lowercase() },
-                                    { it.packageName.lowercase() },
-                            ),
-                    )
+            mapEntitiesForSettings(
+                    renamedApps,
+                    hiddenLabels,
+                    privateSpaceUnlocked,
+                    privateProfileKey,
+                    packageName = { it.packageName },
+                    profileKey = { it.profileKey },
+            ) { renamedApp, matchingApp, profileLabel ->
+                RenamedAppInfo(
+                        packageName = renamedApp.packageName,
+                        profileKey = renamedApp.profileKey,
+                        customName = renamedApp.customName,
+                        profileLabel = profileLabel,
+                )
+            }.sortedWith(
+                    compareBy(
+                            { profileSortBucket(it.profileLabel) },
+                            { it.profileLabel ?: "" },
+                            { it.customName.lowercase() },
+                            { it.packageName.lowercase() },
+                    ),
+            )
 
     private fun profileLabelForSettings(
             profileKey: String,
@@ -529,65 +540,49 @@ constructor(
 
     // --- Swipe gestures ---
 
-    fun setSwipeLeftTarget(target: ShortcutTarget?) {
-        viewModelScope.launch { preferencesManager.setSwipeLeftTarget(target) }
+    private fun launchPreferences(block: suspend PreferencesManager.() -> Unit) {
+        viewModelScope.launch { preferencesManager.block() }
     }
 
-    fun setSwipeRightTarget(target: ShortcutTarget?) {
-        viewModelScope.launch { preferencesManager.setSwipeRightTarget(target) }
-    }
+    fun setSwipeLeftTarget(target: ShortcutTarget?) =
+            launchPreferences { setSwipeLeftTarget(target) }
 
-    fun setPreferredWeatherApp(packageName: String) {
-        viewModelScope.launch { preferencesManager.setPreferredWeatherApp(packageName) }
-    }
+    fun setSwipeRightTarget(target: ShortcutTarget?) =
+            launchPreferences { setSwipeRightTarget(target) }
 
-    fun setPreferredClockApp(packageName: String) {
-        viewModelScope.launch { preferencesManager.setPreferredClockApp(packageName) }
-    }
+    fun setPreferredWeatherApp(packageName: String) =
+            launchPreferences { setPreferredWeatherApp(packageName) }
 
-    fun setPreferredCalendarApp(packageName: String) {
-        viewModelScope.launch { preferencesManager.setPreferredCalendarApp(packageName) }
-    }
+    fun setPreferredClockApp(packageName: String) =
+            launchPreferences { setPreferredClockApp(packageName) }
 
-    fun setShowStatusBar(show: Boolean) {
-        viewModelScope.launch { preferencesManager.setShowStatusBar(show) }
-    }
+    fun setPreferredCalendarApp(packageName: String) =
+            launchPreferences { setPreferredCalendarApp(packageName) }
 
-    fun setAllowLandscapeRotation(allow: Boolean) {
-        viewModelScope.launch { preferencesManager.setAllowLandscapeRotation(allow) }
-    }
+    fun setShowStatusBar(show: Boolean) = launchPreferences { setShowStatusBar(show) }
 
-    fun setDoubleTapEmptyLock(enabled: Boolean) {
-        viewModelScope.launch { preferencesManager.setDoubleTapEmptyLock(enabled) }
-    }
+    fun setAllowLandscapeRotation(allow: Boolean) =
+            launchPreferences { setAllowLandscapeRotation(allow) }
 
-    fun setLongLockReturnHome(enabled: Boolean) {
-        viewModelScope.launch { preferencesManager.setLongLockReturnHome(enabled) }
-    }
+    fun setDoubleTapEmptyLock(enabled: Boolean) =
+            launchPreferences { setDoubleTapEmptyLock(enabled) }
 
-    fun setLongLockReturnHomeThresholdMinutes(minutes: Int) {
-        viewModelScope.launch { preferencesManager.setLongLockReturnHomeThresholdMinutes(minutes) }
-    }
+    fun setLongLockReturnHome(enabled: Boolean) =
+            launchPreferences { setLongLockReturnHome(enabled) }
 
-    fun setShowHomeClock(show: Boolean) {
-        viewModelScope.launch { preferencesManager.setShowHomeClock(show) }
-    }
+    fun setLongLockReturnHomeThresholdMinutes(minutes: Int) =
+            launchPreferences { setLongLockReturnHomeThresholdMinutes(minutes) }
 
-    fun setShowHomeDate(show: Boolean) {
-        viewModelScope.launch { preferencesManager.setShowHomeDate(show) }
-    }
+    fun setShowHomeClock(show: Boolean) = launchPreferences { setShowHomeClock(show) }
 
-    fun setShowHomeWeather(show: Boolean) {
-        viewModelScope.launch { preferencesManager.setShowHomeWeather(show) }
-    }
+    fun setShowHomeDate(show: Boolean) = launchPreferences { setShowHomeDate(show) }
 
-    fun setShowHomeBattery(show: Boolean) {
-        viewModelScope.launch { preferencesManager.setShowHomeBattery(show) }
-    }
+    fun setShowHomeWeather(show: Boolean) = launchPreferences { setShowHomeWeather(show) }
 
-    fun setHomeDateFormatStyle(style: HomeDateFormatStyle) {
-        viewModelScope.launch { preferencesManager.setHomeDateFormatStyle(style) }
-    }
+    fun setShowHomeBattery(show: Boolean) = launchPreferences { setShowHomeBattery(show) }
+
+    fun setHomeDateFormatStyle(style: HomeDateFormatStyle) =
+            launchPreferences { setHomeDateFormatStyle(style) }
 
     fun setDrawerSidebarCategories(enabled: Boolean) {
         viewModelScope.launch {
@@ -600,18 +595,16 @@ constructor(
         }
     }
 
-    fun setDrawerCategorySidebarOnLeft(onLeft: Boolean) {
-        viewModelScope.launch { preferencesManager.setDrawerCategorySidebarOnLeft(onLeft) }
-    }
+    fun setDrawerCategorySidebarOnLeft(onLeft: Boolean) =
+            launchPreferences { setDrawerCategorySidebarOnLeft(onLeft) }
 
     fun setCategoryDrawerIcon(category: String, iconName: String) {
         if (!MinimalIcons.all.containsKey(iconName)) return
         viewModelScope.launch { preferencesManager.setDrawerCategoryIcon(category, iconName) }
     }
 
-    fun clearCategoryDrawerIcon(category: String) {
-        viewModelScope.launch { preferencesManager.clearDrawerCategoryIcon(category) }
-    }
+    fun clearCategoryDrawerIcon(category: String) =
+            launchPreferences { clearDrawerCategoryIcon(category) }
 
     fun setDrawerAppSortMode(mode: DrawerAppSortMode) {
         viewModelScope.launch {
@@ -626,13 +619,11 @@ constructor(
 
     // --- Home alignment ---
 
-    fun setHomeAlignment(alignment: HomeAlignment) {
-        viewModelScope.launch { preferencesManager.setHomeAlignment(alignment) }
-    }
+    fun setHomeAlignment(alignment: HomeAlignment) =
+            launchPreferences { setHomeAlignment(alignment) }
 
-    fun setLauncherFontFamilyName(familyName: String) {
-        viewModelScope.launch { preferencesManager.setLauncherFontFamilyName(familyName) }
-    }
+    fun setLauncherFontFamilyName(familyName: String) =
+            launchPreferences { setLauncherFontFamilyName(familyName) }
 
     fun setAppLocaleTag(tag: String) {
         viewModelScope.launch {

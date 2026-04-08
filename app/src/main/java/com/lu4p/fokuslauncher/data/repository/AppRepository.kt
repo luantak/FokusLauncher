@@ -34,7 +34,6 @@ import com.lu4p.fokuslauncher.data.model.appProfileKey
 import com.lu4p.fokuslauncher.data.model.SystemCategoryKeys
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
 import com.lu4p.fokuslauncher.utils.ProfileHeuristics
-import com.lu4p.fokuslauncher.utils.normalizedForSearch
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -99,6 +98,40 @@ constructor(
         registerProfileChangeReceiver()
     }
 
+    private fun launcherAppsOrNull(): LauncherApps? =
+            try {
+                context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as? LauncherApps
+            } catch (_: Exception) {
+                null
+            }
+
+    private fun userManagerOrNull(): UserManager? =
+            try {
+                context.getSystemService(Context.USER_SERVICE) as? UserManager
+            } catch (_: Exception) {
+                null
+            }
+
+    private fun contextAsUser(user: UserHandle): Context {
+        if (user == Process.myUserHandle()) return context
+        return runCatching {
+            val m =
+                    Context::class.java.getMethod(
+                            "createContextAsUser",
+                            UserHandle::class.java,
+                            Int::class.javaPrimitiveType,
+                    )
+            m.invoke(context, user, 0) as Context
+        }.getOrDefault(context)
+    }
+
+    /** System/reserved category labels that cannot be renamed, deleted, or reordered as user slots. */
+    private fun isProtectedCategoryName(normalized: String): Boolean =
+            normalized.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true) ||
+                    normalized.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true) ||
+                    normalized.equals(ReservedCategoryNames.WORK, ignoreCase = true) ||
+                    normalized.equals(ReservedCategoryNames.UNCATEGORIZED, ignoreCase = true)
+
     // --- App Loading ---
 
     /**
@@ -124,41 +157,6 @@ constructor(
             withContext(Dispatchers.IO) { getInstalledApps() }
 
     /**
-     * True when [packageName] still has at least one launchable activity in [profileKey] (owner =
-     * `"0"`). Used to avoid pruning home favorites when [getInstalledApps] returns a partial list
-     * but the app is still installed.
-     */
-    fun hasLaunchableActivities(packageName: String, profileKey: String): Boolean {
-        if (packageName == ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE) {
-            return true
-        }
-        val launcherApps =
-                try {
-                    context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as? LauncherApps
-                } catch (_: Exception) {
-                    null
-                }
-        val userManager =
-                try {
-                    context.getSystemService(Context.USER_SERVICE) as? UserManager
-                } catch (_: Exception) {
-                    null
-                }
-        val user = resolveUserHandleForProfileKey(profileKey, userManager) ?: return false
-        if (launcherApps == null) {
-            if (user != Process.myUserHandle()) {
-                return false
-            }
-            return context.packageManager.getLaunchIntentForPackage(packageName) != null
-        }
-        return try {
-            launcherApps.getActivityList(packageName, user).isNotEmpty()
-        } catch (_: Exception) {
-            false
-        }
-    }
-
-    /**
      * Returns launchable package/profile keys for the requested profiles using one launcher query
      * per profile instead of one query per package.
      */
@@ -172,18 +170,8 @@ constructor(
             return emptySet()
         }
 
-        val launcherApps =
-                try {
-                    context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as? LauncherApps
-                } catch (_: Exception) {
-                    null
-                }
-        val userManager =
-                try {
-                    context.getSystemService(Context.USER_SERVICE) as? UserManager
-                } catch (_: Exception) {
-                    null
-                }
+        val launcherApps = launcherAppsOrNull()
+        val userManager = userManagerOrNull()
 
         if (launcherApps == null || userManager == null) {
             return if ("0" in normalizedProfileKeys) {
@@ -216,24 +204,6 @@ constructor(
         return launchableKeys
     }
 
-    private fun resolveUserHandleForProfileKey(
-            profileKey: String,
-            userManager: UserManager?
-    ): UserHandle? {
-        val normalized = profileKey.ifBlank { "0" }
-        if (normalized == "0") {
-            return Process.myUserHandle()
-        }
-        val profiles = userManager?.userProfiles ?: return null
-        for (profile in profiles) {
-            if (privateSpaceManager.isPrivateSpaceProfile(profile)) continue
-            if (appProfileKey(profile) == normalized) {
-                return profile
-            }
-        }
-        return null
-    }
-
     /**
      * Loads launchable activities per [UserManager.userProfiles] via [LauncherApps.getActivityList],
      * so cloned / parallel / work-profile installs (same package as the primary user) still
@@ -241,18 +211,8 @@ constructor(
      * section.
      */
     private fun loadInstalledAppsMergedAcrossProfiles(): List<AppInfo> {
-        val launcherApps =
-                try {
-                    context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as? LauncherApps
-                } catch (_: Exception) {
-                    null
-                }
-        val userManager =
-                try {
-                    context.getSystemService(Context.USER_SERVICE) as? UserManager
-                } catch (_: Exception) {
-                    null
-                }
+        val launcherApps = launcherAppsOrNull()
+        val userManager = userManagerOrNull()
 
         if (launcherApps == null || userManager == null) {
             return loadInstalledAppsLegacyQuery()
@@ -519,19 +479,8 @@ constructor(
         return app?.userHandle ?: Process.myUserHandle()
     }
 
-    private fun dotSearchLaunchContext(profileKey: String, target: ShortcutTarget?): Context {
-        val user = resolveDotSearchUserHandle(profileKey, target)
-        if (user == Process.myUserHandle()) return context
-        return runCatching {
-            val m =
-                    Context::class.java.getMethod(
-                            "createContextAsUser",
-                            UserHandle::class.java,
-                            Int::class.javaPrimitiveType
-                    )
-            m.invoke(context, user, 0) as Context
-        }.getOrDefault(context)
-    }
+    private fun dotSearchLaunchContext(profileKey: String, target: ShortcutTarget?): Context =
+            contextAsUser(resolveDotSearchUserHandle(profileKey, target))
 
     private fun startDotSearchActivity(ctx: Context, intent: Intent): Boolean {
         return try {
@@ -570,18 +519,8 @@ constructor(
             apps.filter { appSupportsWebSearch(it) }
 
     private fun contextForAppUser(app: AppInfo): Context {
-        val uh = app.userHandle
-                ?: return context
-        if (uh == Process.myUserHandle()) return context
-        return runCatching {
-            val m =
-                    Context::class.java.getMethod(
-                            "createContextAsUser",
-                            UserHandle::class.java,
-                            Int::class.javaPrimitiveType
-                    )
-            m.invoke(context, uh, 0) as Context
-        }.getOrDefault(context)
+        val uh = app.userHandle ?: return context
+        return contextAsUser(uh)
     }
 
     /**
@@ -606,7 +545,7 @@ constructor(
             userHandle: UserHandle? = null
     ): Boolean {
         return try {
-            val launcherApps = context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as LauncherApps
+            val launcherApps = launcherAppsOrNull() ?: return false
             val user = userHandle ?: Process.myUserHandle()
             launcherApps.startShortcut(packageName, shortcutId, null, null, user)
             true
@@ -624,12 +563,7 @@ constructor(
         val apps = getInstalledApps()
         val actions = mutableListOf<AppShortcutAction>()
 
-        val launcherApps =
-            try {
-                context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as LauncherApps
-            } catch (_: Exception) {
-                null
-            }
+        val launcherApps = launcherAppsOrNull()
 
         val myUser = Process.myUserHandle()
         actions.add(
@@ -706,25 +640,6 @@ constructor(
     suspend fun getAllShortcutActionsOnBackground(): List<AppShortcutAction> =
             withContext(Dispatchers.IO) { getAllShortcutActions() }
 
-    /** Searches the installed apps list by a query string, matching against the app label. */
-    fun searchApps(query: String): List<AppInfo> {
-        if (query.isBlank()) return getInstalledApps()
-        val normalizedQuery = query.normalizedForSearch()
-        return getInstalledApps().filter { it.normalizedLabel.contains(normalizedQuery) }
-    }
-
-    /** Filters apps by category. Returns all apps if category is blank or "All apps". */
-    fun filterByCategory(category: String): List<AppInfo> {
-        val normalized = normalizeCategory(category)
-        if (normalized.isBlank() || normalized.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true)) {
-            return getInstalledApps()
-        }
-        if (normalized.equals(ReservedCategoryNames.UNCATEGORIZED, ignoreCase = true)) {
-            return getInstalledApps().filter { it.category.isBlank() }
-        }
-        return getInstalledApps().filter { it.category.equals(normalized, ignoreCase = true) }
-    }
-
     // --- Hidden Apps (Room) ---
 
     /** Returns a Flow of all hidden package names. */
@@ -740,10 +655,6 @@ constructor(
         appDao.unhideApp(HiddenAppEntity(packageName, profileKey))
     }
 
-    /** Checks if an app is hidden. */
-    suspend fun isAppHidden(packageName: String, profileKey: String): Boolean =
-            appDao.isAppHidden(packageName, profileKey)
-
     // --- Renamed Apps (Room) ---
 
     /** Returns a Flow of all renamed app entities. */
@@ -758,10 +669,6 @@ constructor(
     suspend fun removeRename(packageName: String, profileKey: String) {
         appDao.removeRename(packageName, profileKey)
     }
-
-    /** Returns the custom name for an app, or null if not renamed. */
-    suspend fun getCustomName(packageName: String, profileKey: String): String? =
-            appDao.getCustomName(packageName, profileKey)
 
     // --- App Categories (Room) ---
 
@@ -810,14 +717,7 @@ constructor(
         val oldNormalized = normalizeCategory(oldName)
         val newNormalized = normalizeCategory(newName)
         if (oldNormalized.isBlank() || newNormalized.isBlank()) return
-        if (oldNormalized.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true)) return
-        if (oldNormalized.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true)) return
-        if (oldNormalized.equals(ReservedCategoryNames.WORK, ignoreCase = true)) return
-        if (newNormalized.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true)) return
-        if (newNormalized.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true)) return
-        if (newNormalized.equals(ReservedCategoryNames.WORK, ignoreCase = true)) return
-        if (oldNormalized.equals(ReservedCategoryNames.UNCATEGORIZED, ignoreCase = true)) return
-        if (newNormalized.equals(ReservedCategoryNames.UNCATEGORIZED, ignoreCase = true)) return
+        if (isProtectedCategoryName(oldNormalized) || isProtectedCategoryName(newNormalized)) return
 
         val rawAssignments = appDao.getAllAppCategories().first()
         rawAssignments.forEach { assignment ->
@@ -847,11 +747,7 @@ constructor(
     /** Deletes a category and removes its app memberships. */
     suspend fun deleteCategory(name: String) {
         val normalized = normalizeCategory(name)
-        if (normalized.isBlank()) return
-        if (normalized.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true)) return
-        if (normalized.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true)) return
-        if (normalized.equals(ReservedCategoryNames.WORK, ignoreCase = true)) return
-        if (normalized.equals(ReservedCategoryNames.UNCATEGORIZED, ignoreCase = true)) return
+        if (normalized.isBlank() || isProtectedCategoryName(normalized)) return
 
         val assignmentsByPackage =
                 appDao.getAllAppCategories().first().associateBy {
@@ -889,10 +785,7 @@ constructor(
                 categories.asSequence()
                         .map(::normalizeCategory)
                         .filter { it.isNotBlank() }
-                        .filterNot { it.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true) }
-                        .filterNot { it.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true) }
-                        .filterNot { it.equals(ReservedCategoryNames.WORK, ignoreCase = true) }
-                        .filterNot { it.equals(ReservedCategoryNames.UNCATEGORIZED, ignoreCase = true) }
+                        .filterNot { isProtectedCategoryName(it) }
                         .distinct()
                         .toList()
         val entities = normalized.mapIndexed { index, name ->
@@ -900,10 +793,6 @@ constructor(
         }
         appDao.replaceCategoryDefinitions(entities)
     }
-
-    /** Returns the assigned category for an app, or null. */
-    suspend fun getAppCategory(packageName: String, profileKey: String): String? =
-            appDao.getAppCategory(packageName, profileKey)?.let(::normalizeCategory)
 
     /** Clears all app-specific data (hidden apps, renamed apps, categories). */
     suspend fun clearAllAppData() {

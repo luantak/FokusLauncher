@@ -25,7 +25,6 @@ import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -56,10 +55,12 @@ import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.ui.components.ClockWidget
 import com.lu4p.fokuslauncher.ui.components.DateBatteryRow
+import com.lu4p.fokuslauncher.ui.components.FokusBottomSheet
 import com.lu4p.fokuslauncher.ui.components.FokusOutlinedButton
 import com.lu4p.fokuslauncher.ui.components.MinimalIcons
 import com.lu4p.fokuslauncher.ui.components.SheetActionRow
 import com.lu4p.fokuslauncher.ui.components.WeatherWidget
+import com.lu4p.fokuslauncher.ui.util.clickableNoRippleWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.clickableWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.combinedClickableWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.LocalSystemClickSound
@@ -475,10 +476,7 @@ private fun RightShortcutIcons(
             tint = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier
                 .size(24.dp)
-                .clickableWithSystemSound(
-                    indication = null,
-                    interactionSource = remember { MutableInteractionSource() }
-                ) { onIconClick(shortcut) }
+                .clickableNoRippleWithSystemSound { onIconClick(shortcut) }
                 .testTag("right_shortcut_icon_$index")
         )
     }
@@ -564,16 +562,10 @@ private fun HomeScreenLongPressSheet(
     onOpenSettings: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState()
-    ModalBottomSheet(
+    FokusBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surfaceVariant
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 32.dp)
-        ) {
             SheetActionRow(
                 label = stringResource(R.string.settings_edit_home_screen),
                 onClick = onEditHomeScreen,
@@ -592,7 +584,6 @@ private fun HomeScreenLongPressSheet(
                 icon = Icons.Default.Settings,
                 iconContentDescription = stringResource(R.string.cd_settings),
             )
-        }
     }
 }
 

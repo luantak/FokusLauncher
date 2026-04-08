@@ -1,9 +1,7 @@
 package com.lu4p.fokuslauncher.ui.components
 
-import com.lu4p.fokuslauncher.ui.util.clickableWithSystemSound
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import com.lu4p.fokuslauncher.ui.util.clickableNoRippleWithSystemSound
 import androidx.compose.foundation.layout.Row
-import androidx.compose.runtime.remember
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
@@ -35,13 +33,7 @@ fun DateBatteryRow(
                 text = date,
                 style = style,
                 color = color,
-                modifier =
-                        Modifier.clickableWithSystemSound(
-                                indication = null,
-                                interactionSource =
-                                        remember { MutableInteractionSource() },
-                                onClick = onDateClick
-                        )
+                modifier = Modifier.clickableNoRippleWithSystemSound(onClick = onDateClick)
             )
         }
         if (showDate && showBattery) {

@@ -107,6 +107,15 @@ fun Modifier.clickableWithSystemSound(
     )
 }
 
+/** System click sound without press indication (e.g. text / widget taps on home). */
+@Composable
+fun Modifier.clickableNoRippleWithSystemSound(onClick: () -> Unit): Modifier =
+        clickableWithSystemSound(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick,
+        )
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun Modifier.combinedClickableWithSystemSound(

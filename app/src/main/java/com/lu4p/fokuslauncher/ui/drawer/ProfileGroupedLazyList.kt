@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -52,20 +51,13 @@ fun LazyListScope.profileGroupedAppItems(
         if (showSectionLabel) {
             if (hasEmitted) {
                 item(key = "${keyPrefix}_div_${section.id}") {
-                    HorizontalDivider(
-                            modifier =
-                                    Modifier.padding(horizontal = horizontalPadding, vertical = 8.dp),
-                            color = MaterialTheme.colorScheme.outlineVariant,
-                    )
+                    DrawerListSectionDivider(horizontalPadding = horizontalPadding)
                 }
             }
             item(key = "${keyPrefix}_hdr_${section.id}") {
-                Text(
-                        text = section.title.uppercase(Locale.getDefault()),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier =
-                                Modifier.padding(horizontal = horizontalPadding, vertical = 12.dp),
+                DrawerListSectionHeader(
+                        text = section.title,
+                        horizontalPadding = horizontalPadding,
                 )
             }
         }
@@ -97,20 +89,13 @@ fun LazyListScope.profileGroupedShortcutItems(
         if (showSectionLabel) {
             if (hasEmitted) {
                 item(key = "${keyPrefix}_div_${section.id}") {
-                    HorizontalDivider(
-                            modifier =
-                                    Modifier.padding(horizontal = horizontalPadding, vertical = 8.dp),
-                            color = MaterialTheme.colorScheme.outlineVariant,
-                    )
+                    DrawerListSectionDivider(horizontalPadding = horizontalPadding)
                 }
             }
             item(key = "${keyPrefix}_hdr_${section.id}") {
-                Text(
-                        text = section.title.uppercase(Locale.getDefault()),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier =
-                                Modifier.padding(horizontal = horizontalPadding, vertical = 12.dp),
+                DrawerListSectionHeader(
+                        text = section.title,
+                        horizontalPadding = horizontalPadding,
                 )
             }
         }

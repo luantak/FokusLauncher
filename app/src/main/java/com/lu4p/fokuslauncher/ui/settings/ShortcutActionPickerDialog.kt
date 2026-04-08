@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.AlertDialog
+import com.lu4p.fokuslauncher.ui.components.FokusAlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -55,7 +55,7 @@ fun ShortcutActionPickerDialog(
                 groupShortcutActionsIntoProfileSections(context, filtered, allApps)
             }
 
-    AlertDialog(
+    FokusAlertDialog(
             onDismissRequest = onDismiss,
             title = {
                 Text(title, color = MaterialTheme.colorScheme.onBackground)

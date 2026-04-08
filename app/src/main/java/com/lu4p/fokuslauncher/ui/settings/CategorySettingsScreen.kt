@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DragHandle
@@ -34,8 +33,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import com.lu4p.fokuslauncher.ui.util.applyVerticalSlotReorder
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import com.lu4p.fokuslauncher.ui.components.FokusIconButton
 import com.lu4p.fokuslauncher.ui.util.clickableWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.rememberBooleanChangeWithSystemSound
@@ -118,26 +115,15 @@ fun CategorySettingsScreen(
             containerColor = backgroundScrim,
             snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {
-                TopAppBar(
+                FokusSettingsTopBar(
                         title = {
                             Text(
                                     stringResource(R.string.category_settings_title),
-                                    color = MaterialTheme.colorScheme.onBackground
+                                    color = MaterialTheme.colorScheme.onBackground,
                             )
                         },
-                        navigationIcon = {
-                            FokusIconButton(onClick = onNavigateBack) {
-                                Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                        contentDescription = stringResource(R.string.action_back),
-                                        tint = MaterialTheme.colorScheme.onBackground
-                                )
-                            }
-                        },
-                        colors =
-                                TopAppBarDefaults.topAppBarColors(
-                                        containerColor = Color.Transparent
-                                )
+                        onNavigateBack = onNavigateBack,
+                        containerColor = Color.Transparent,
                 )
             }
     ) { innerPadding ->
@@ -422,31 +408,24 @@ fun CategoryAppsScreen(
                         .background(backgroundScrim)
                         .navigationBarsPadding()
         ) {
-        TopAppBar(
+        FokusSettingsTopBar(
                 title = {
                     Text(
                             categoryChipDisplayLabel(context, category),
-                            color = MaterialTheme.colorScheme.onBackground
+                            color = MaterialTheme.colorScheme.onBackground,
                     )
                 },
-                navigationIcon = {
-                    FokusIconButton(onClick = onNavigateBack) {
-                        Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.action_back),
-                                tint = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
-                },
+                onNavigateBack = onNavigateBack,
+                containerColor = MaterialTheme.colorScheme.surface,
                 actions = {
                     FokusIconButton(onClick = onNavigateBack) {
                         Icon(
                                 imageVector = Icons.Default.Check,
                                 contentDescription = stringResource(R.string.action_done),
-                                tint = MaterialTheme.colorScheme.onBackground
+                                tint = MaterialTheme.colorScheme.onBackground,
                         )
                     }
-                }
+                },
         )
         OutlinedTextField(
                 value = searchQuery,

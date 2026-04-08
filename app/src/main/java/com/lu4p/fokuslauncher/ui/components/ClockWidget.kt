@@ -1,9 +1,7 @@
 package com.lu4p.fokuslauncher.ui.components
 
-import com.lu4p.fokuslauncher.ui.util.clickableWithSystemSound
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import com.lu4p.fokuslauncher.ui.util.clickableNoRippleWithSystemSound
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.remember
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -23,6 +21,6 @@ fun ClockWidget(
         text = time,
         style = MaterialTheme.typography.displayLarge.copy(fontWeight = FontWeight.Light),
         color = MaterialTheme.colorScheme.onBackground,
-        modifier = modifier.clickableWithSystemSound(indication = null, interactionSource = remember { MutableInteractionSource() }, onClick = onClick)
+        modifier = modifier.clickableNoRippleWithSystemSound(onClick = onClick)
     )
 }

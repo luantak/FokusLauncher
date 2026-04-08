@@ -3,13 +3,10 @@ package com.lu4p.fokuslauncher.data.util
 import android.content.Context
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
-import androidx.datastore.preferences.core.stringPreferencesKey
+import com.lu4p.fokuslauncher.data.local.APP_LOCALE_TAG_KEY
 import com.lu4p.fokuslauncher.data.local.fokusLauncherPreferencesDataStore
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
-
-/** Must stay in sync with [com.lu4p.fokuslauncher.data.local.PreferencesManager]. */
-private val APP_LOCALE_TAG_KEY = stringPreferencesKey("app_locale_tag")
 
 object AppLocaleHelper {
 

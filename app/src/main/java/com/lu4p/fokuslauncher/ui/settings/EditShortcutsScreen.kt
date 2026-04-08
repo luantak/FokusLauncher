@@ -17,7 +17,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material3.Checkbox
@@ -28,7 +27,6 @@ import com.lu4p.fokuslauncher.ui.components.FokusIconButton
 import com.lu4p.fokuslauncher.ui.util.applyVerticalSlotReorder
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -113,22 +111,18 @@ fun EditShortcutsScreen(
             .background(backgroundScrim)
             .navigationBarsPadding()
     ) {
-        TopAppBar(
+        FokusSettingsTopBar(
             title = {
-                Text(stringResource(R.string.edit_shortcuts_title), color = MaterialTheme.colorScheme.onBackground)
+                Text(
+                    stringResource(R.string.edit_shortcuts_title),
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
             },
-            navigationIcon = {
-                FokusIconButton(onClick = {
-                    viewModel.saveEditedRightShortcuts()
-                    onNavigateBack()
-                }) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(R.string.action_back),
-                        tint = MaterialTheme.colorScheme.onBackground
-                    )
-                }
+            onNavigateBack = {
+                viewModel.saveEditedRightShortcuts()
+                onNavigateBack()
             },
+            containerColor = MaterialTheme.colorScheme.surface,
             actions = {
                 FokusIconButton(onClick = {
                     viewModel.saveEditedRightShortcuts()
@@ -137,10 +131,10 @@ fun EditShortcutsScreen(
                     Icon(
                         imageVector = Icons.Default.Check,
                         contentDescription = stringResource(R.string.action_done),
-                        tint = MaterialTheme.colorScheme.onBackground
+                        tint = MaterialTheme.colorScheme.onBackground,
                     )
                 }
-            }
+            },
         )
 
         OutlinedTextField(
