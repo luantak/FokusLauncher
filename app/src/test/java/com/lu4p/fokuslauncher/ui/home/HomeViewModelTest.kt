@@ -383,10 +383,12 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun `launchApp delegates to repository`() {
+    fun `launchFavorite delegates to repository for primary profile app target`() {
         val viewModel = createViewModel()
 
-        viewModel.launchApp("com.lu4p.music")
+        viewModel.launchFavorite(
+                FavoriteApp(label = "Music", packageName = "com.lu4p.music", iconName = "music")
+        )
 
         verify { appRepository.launchApp("com.lu4p.music") }
     }
