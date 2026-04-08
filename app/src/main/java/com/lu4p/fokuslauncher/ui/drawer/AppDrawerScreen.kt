@@ -153,33 +153,6 @@ private fun applyOptimisticPrivateSwap(
     return apps
 }
 
-/** Coerces vertical drag into ±[itemHeightPx] steps; [swap] runs for each adjacent move. */
-private inline fun applyVerticalSlotReorder(
-        itemHeightPx: Float,
-        dragOffset: Float,
-        draggedIndex: Int,
-        lastIndex: Int,
-        crossinline swap: (from: Int, to: Int) -> Unit,
-): Pair<Float, Int> {
-    var off = dragOffset
-    var idx = draggedIndex
-    while (off >= itemHeightPx && idx < lastIndex) {
-        val from = idx
-        val to = idx + 1
-        swap(from, to)
-        idx = to
-        off -= itemHeightPx
-    }
-    while (off <= -itemHeightPx && idx > 0) {
-        val from = idx
-        val to = idx - 1
-        swap(from, to)
-        idx = to
-        off += itemHeightPx
-    }
-    return off to idx
-}
-
 private fun profileSectionsOrderKey(sections: List<DrawerProfileSectionUi>): String =
         sections.joinToString(separator = "|") { section ->
             buildString {
