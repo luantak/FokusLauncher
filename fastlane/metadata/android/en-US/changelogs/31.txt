@@ -1,0 +1,6 @@
+Favorites no longer reset when the system delivers incomplete app lists.
+Return home after a long lock without exempting the launcher from battery optimization.
+Lists and settings sit above the bottom gesture bar or nav buttons, not tucked underneath. Horizontal chip drawer hides redundant Uncategorized and lone "All apps" chips.
+Category settings show inline why an add is blocked. 
+UI taps use system touch sounds when enabled.
+Russian added; Polish refreshed.
