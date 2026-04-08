@@ -23,6 +23,8 @@ import com.lu4p.fokuslauncher.data.database.entity.AppCategoryDefinitionEntity
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryEntity
 import com.lu4p.fokuslauncher.data.database.entity.HiddenAppEntity
 import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
+import com.lu4p.fokuslauncher.data.model.AddCategoryResult
+import com.lu4p.fokuslauncher.data.model.reservedCategoryAddFailure
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import com.lu4p.fokuslauncher.data.model.AppShortcutAction
@@ -726,22 +728,20 @@ constructor(
             }
 
     /** Adds a user-defined category. */
-    suspend fun addCategoryDefinition(name: String) {
+    suspend fun addCategoryDefinition(name: String): AddCategoryResult {
         val normalized = normalizeCategory(name)
-        if (normalized.isBlank()) return
-        if (normalized.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true)) return
-        if (normalized.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true)) return
-        if (normalized.equals(ReservedCategoryNames.WORK, ignoreCase = true)) return
-        if (normalized.equals(ReservedCategoryNames.UNCATEGORIZED, ignoreCase = true)) return
+        if (normalized.isBlank()) return AddCategoryResult.Failure.Blank
+        reservedCategoryAddFailure(context, normalized)?.let { return it }
         val existing =
                 appDao.getAllCategoryDefinitions().first().any { entity ->
                     normalizeCategory(entity.name).equals(normalized, ignoreCase = true)
                 }
-        if (existing) return
+        if (existing) return AddCategoryResult.Failure.Duplicate(normalized)
         val nextPosition = appDao.getMaxCategoryDefinitionPosition() + 1
         appDao.upsertCategoryDefinition(
                 AppCategoryDefinitionEntity(name = normalized, position = nextPosition)
         )
+        return AddCategoryResult.Success
     }
 
     /** Renames a category across assignments and user-defined categories. */

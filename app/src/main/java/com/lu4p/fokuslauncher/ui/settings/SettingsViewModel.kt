@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
+import com.lu4p.fokuslauncher.data.model.AddCategoryResult
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
 import com.lu4p.fokuslauncher.data.model.AppShortcutAction
@@ -29,8 +30,11 @@ import android.net.Uri
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.collectLatest
@@ -92,6 +96,9 @@ constructor(
 
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
+
+    private val _addCategoryResults = MutableSharedFlow<AddCategoryResult>(extraBufferCapacity = 1)
+    val addCategoryResults: SharedFlow<AddCategoryResult> = _addCategoryResults.asSharedFlow()
 
     private val _installedFontFamilies = MutableStateFlow<List<String>>(emptyList())
     val installedFontFamilies: StateFlow<List<String>> = _installedFontFamilies.asStateFlow()
@@ -344,7 +351,7 @@ constructor(
     }
 
     fun addCategoryDefinition(name: String) {
-        viewModelScope.launch { appRepository.addCategoryDefinition(name) }
+        viewModelScope.launch { _addCategoryResults.emit(appRepository.addCategoryDefinition(name)) }
     }
 
     fun deleteCategory(name: String) {

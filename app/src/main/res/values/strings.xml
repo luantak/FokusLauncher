@@ -77,6 +77,12 @@
     <string name="category_no_category">No category</string>
     <string name="category_settings_title">App categories</string>
     <string name="category_new_label">New category</string>
+    <string name="category_add_error_blank">Enter a category name. Empty names are not saved.</string>
+    <string name="category_add_error_reserved_all_apps">\"All apps\" is a built-in drawer filter, not a custom category. Choose a different name.</string>
+    <string name="category_add_error_reserved_uncategorized">\"Uncategorized\" is the built-in list for apps without a category. Choose a different name.</string>
+    <string name="category_add_error_reserved_private">\"Private\" is reserved for Private Space. Choose a different name.</string>
+    <string name="category_add_error_reserved_work">\"Work\" is reserved for work profile apps. Choose a different name.</string>
+    <string name="category_add_error_duplicate">A category named \"%1$s\" already exists. If you typed a translated word, it may match a default type such as Games or Media.</string>
     <string name="category_edit_apps">Edit apps</string>
 
     <plurals name="category_app_count">

@@ -1,5 +1,6 @@
 package com.lu4p.fokuslauncher.ui.settings
 
+import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
@@ -29,8 +30,12 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import com.lu4p.fokuslauncher.ui.components.FokusIconButton
 import com.lu4p.fokuslauncher.ui.util.clickableWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.rememberBooleanChangeWithSystemSound
@@ -56,7 +61,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.lu4p.fokuslauncher.R
+import com.lu4p.fokuslauncher.data.model.AddCategoryResult
 import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
+import com.lu4p.fokuslauncher.data.model.categoryAddFieldFailure
 import com.lu4p.fokuslauncher.ui.drawer.groupAppsIntoProfileSections
 import com.lu4p.fokuslauncher.ui.drawer.profileGroupedAppItems
 import com.lu4p.fokuslauncher.ui.drawer.sortAppsAlphabeticallyByProfileSection
@@ -77,79 +84,110 @@ fun CategorySettingsScreen(
         backgroundScrim: Color = FokusBackdrop.ScrimColorWithoutBlur
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     var newCategory by remember { mutableStateOf("") }
     val normalizedNewCategory = newCategory.trim()
-    val canAddCategory =
-            normalizedNewCategory.isNotBlank() &&
-                    !normalizedNewCategory.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true) &&
-                    !normalizedNewCategory.equals(ReservedCategoryNames.UNCATEGORIZED, ignoreCase = true) &&
-                    !normalizedNewCategory.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true) &&
-                    !normalizedNewCategory.equals(ReservedCategoryNames.WORK, ignoreCase = true)
+    val inlineFieldFailure: AddCategoryResult.Failure? =
+            remember(newCategory, context, uiState.categoryDefinitions) {
+                categoryAddFieldFailure(context, newCategory, uiState.categoryDefinitions)
+            }
+    val canAddCategory = inlineFieldFailure == null && normalizedNewCategory.isNotBlank()
     val categories =
             remember(uiState.allApps, uiState.categoryDefinitions) { deriveEditableCategories(uiState) }
     var localCategories by remember(categories) { mutableStateOf(categories) }
     val appCounts = remember(uiState.allApps) { buildCategoryCounts(uiState) }
     var categoryIconPickerFor by remember { mutableStateOf<String?>(null) }
 
-    Column(
-            modifier = Modifier
-                    .fillMaxSize()
-                    .background(backgroundScrim)
-                    .navigationBarsPadding()
-    ) {
-        TopAppBar(
-                title = {
-                    Text(stringResource(R.string.category_settings_title), color = MaterialTheme.colorScheme.onBackground)
-                },
-                navigationIcon = {
-                    FokusIconButton(onClick = onNavigateBack) {
-                        Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.action_back),
-                                tint = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(viewModel) {
+        viewModel.addCategoryResults.collect { result ->
+            when (result) {
+                AddCategoryResult.Success -> newCategory = ""
+                is AddCategoryResult.Failure -> {
+                    snackbarHostState.showSnackbar(
+                            message = categoryAddFailureMessage(context, result),
+                            withDismissAction = true
+                    )
                 }
-        )
-        Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
-        ) {
-            OutlinedTextField(
-                    value = newCategory,
-                    onValueChange = { newCategory = it },
-                    singleLine = true,
-                    label = { Text(stringResource(R.string.category_new_label)) },
-                    modifier = Modifier.weight(1f)
-            )
-            FokusTextButton(
-                    enabled = canAddCategory,
-                    onClick = {
-                        viewModel.addCategoryDefinition(newCategory)
-                        newCategory = ""
-                    }
-            ) {
-                Text(stringResource(R.string.action_add))
             }
         }
+    }
 
-        ReorderableCategoryList(
-                categories = localCategories,
-                counts = appCounts,
-                showDrawerCategoryIcons = uiState.drawerSidebarCategories,
-                categoryDrawerIconOverrides = uiState.categoryDrawerIconOverrides,
-                onOpenCategoryIconPicker = { categoryIconPickerFor = it },
-                onResetCategoryDrawerIcon = { viewModel.clearCategoryDrawerIcon(it) },
-                onReorder = { from, to ->
-                    val reordered = localCategories.toMutableList()
-                    val item = reordered.removeAt(from)
-                    reordered.add(to, item)
-                    localCategories = reordered
-                },
-                onReorderFinished = { viewModel.reorderCategories(it) },
-                onEditCategoryApps = onEditCategoryApps,
-                onDelete = { viewModel.deleteCategory(it) }
-        )
+    Scaffold(
+            containerColor = backgroundScrim,
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+            topBar = {
+                TopAppBar(
+                        title = {
+                            Text(
+                                    stringResource(R.string.category_settings_title),
+                                    color = MaterialTheme.colorScheme.onBackground
+                            )
+                        },
+                        navigationIcon = {
+                            FokusIconButton(onClick = onNavigateBack) {
+                                Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                        contentDescription = stringResource(R.string.action_back),
+                                        tint = MaterialTheme.colorScheme.onBackground
+                                )
+                            }
+                        },
+                        colors =
+                                TopAppBarDefaults.topAppBarColors(
+                                        containerColor = Color.Transparent
+                                )
+                )
+            }
+    ) { innerPadding ->
+        Column(
+                modifier =
+                        Modifier.fillMaxSize()
+                                .padding(innerPadding)
+                                .navigationBarsPadding()
+        ) {
+            Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
+            ) {
+                OutlinedTextField(
+                        value = newCategory,
+                        onValueChange = { newCategory = it },
+                        singleLine = true,
+                        label = { Text(stringResource(R.string.category_new_label)) },
+                        isError = inlineFieldFailure != null,
+                        supportingText =
+                                inlineFieldFailure?.let { failure ->
+                                    { Text(categoryAddFailureMessage(context, failure)) }
+                                },
+                        modifier = Modifier.weight(1f)
+                )
+                FokusTextButton(
+                        enabled = canAddCategory,
+                        onClick = { viewModel.addCategoryDefinition(newCategory) }
+                ) {
+                    Text(stringResource(R.string.action_add))
+                }
+            }
+
+            ReorderableCategoryList(
+                    categories = localCategories,
+                    counts = appCounts,
+                    showDrawerCategoryIcons = uiState.drawerSidebarCategories,
+                    categoryDrawerIconOverrides = uiState.categoryDrawerIconOverrides,
+                    onOpenCategoryIconPicker = { categoryIconPickerFor = it },
+                    onResetCategoryDrawerIcon = { viewModel.clearCategoryDrawerIcon(it) },
+                    onReorder = { from, to ->
+                        val reordered = localCategories.toMutableList()
+                        val item = reordered.removeAt(from)
+                        reordered.add(to, item)
+                        localCategories = reordered
+                    },
+                    onReorderFinished = { viewModel.reorderCategories(it) },
+                    onEditCategoryApps = onEditCategoryApps,
+                    onDelete = { viewModel.deleteCategory(it) }
+            )
+        }
     }
 
     val pickerCategory = categoryIconPickerFor
@@ -163,6 +201,29 @@ fun CategorySettingsScreen(
                 },
                 onDismiss = { categoryIconPickerFor = null }
         )
+    }
+}
+
+private fun categoryAddFailureMessage(
+        context: Context,
+        failure: AddCategoryResult.Failure
+): String {
+    return when (failure) {
+        AddCategoryResult.Failure.Blank ->
+            context.getString(R.string.category_add_error_blank)
+        AddCategoryResult.Failure.ReservedAllApps ->
+            context.getString(R.string.category_add_error_reserved_all_apps)
+        AddCategoryResult.Failure.ReservedUncategorized ->
+            context.getString(R.string.category_add_error_reserved_uncategorized)
+        AddCategoryResult.Failure.ReservedPrivate ->
+            context.getString(R.string.category_add_error_reserved_private)
+        AddCategoryResult.Failure.ReservedWork ->
+            context.getString(R.string.category_add_error_reserved_work)
+        is AddCategoryResult.Failure.Duplicate ->
+            context.getString(
+                    R.string.category_add_error_duplicate,
+                    categoryChipDisplayLabel(context, failure.canonicalName)
+            )
     }
 }
 

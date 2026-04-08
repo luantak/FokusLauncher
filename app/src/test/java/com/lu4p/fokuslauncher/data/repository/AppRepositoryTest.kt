@@ -15,6 +15,7 @@ import com.lu4p.fokuslauncher.data.database.entity.AppCategoryDefinitionEntity
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryEntity
 import com.lu4p.fokuslauncher.data.database.entity.HiddenAppEntity
 import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
+import com.lu4p.fokuslauncher.data.model.AddCategoryResult
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.SystemCategoryKeys
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
@@ -482,10 +483,16 @@ class AppRepositoryTest {
     }
 
     @Test
-    fun `addCategoryDefinition ignores reserved category names`() = runTest {
-        repository.addCategoryDefinition("All apps")
-        repository.addCategoryDefinition("Private")
-        repository.addCategoryDefinition("   ")
+    fun `addCategoryDefinition rejects reserved category names`() = runTest {
+        assertEquals(
+                AddCategoryResult.Failure.ReservedAllApps,
+                repository.addCategoryDefinition("All apps")
+        )
+        assertEquals(
+                AddCategoryResult.Failure.ReservedPrivate,
+                repository.addCategoryDefinition("Private")
+        )
+        assertEquals(AddCategoryResult.Failure.Blank, repository.addCategoryDefinition("   "))
 
         coVerify(exactly = 0) { appDao.upsertCategoryDefinition(any()) }
     }
@@ -507,9 +514,23 @@ class AppRepositoryTest {
         every { appDao.getAllCategoryDefinitions() } returns flowOf(emptyList())
         coEvery { appDao.getMaxCategoryDefinitionPosition() } returns 3
 
-        repository.addCategoryDefinition("  My Category  ")
+        val result = repository.addCategoryDefinition("  My Category  ")
 
+        assertEquals(AddCategoryResult.Success, result)
         coVerify { appDao.upsertCategoryDefinition(AppCategoryDefinitionEntity("My Category", 4)) }
+    }
+
+    @Test
+    fun `addCategoryDefinition returns duplicate when name exists`() = runTest {
+        every { appDao.getAllCategoryDefinitions() } returns
+                flowOf(listOf(AppCategoryDefinitionEntity("Games", 0)))
+        coEvery { appDao.getMaxCategoryDefinitionPosition() } returns 0
+
+        assertEquals(
+                AddCategoryResult.Failure.Duplicate("Games"),
+                repository.addCategoryDefinition("Games")
+        )
+        coVerify(exactly = 0) { appDao.upsertCategoryDefinition(any()) }
     }
 
     @Test
