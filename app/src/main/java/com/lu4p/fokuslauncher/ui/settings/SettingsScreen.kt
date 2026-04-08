@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.NavigateNext
@@ -53,7 +54,6 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -80,8 +80,6 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.data.model.AppInfo
@@ -97,6 +95,7 @@ import com.lu4p.fokuslauncher.ui.settings.components.SettingsDropdown
 import com.lu4p.fokuslauncher.ui.settings.components.SettingsRow
 import com.lu4p.fokuslauncher.ui.settings.components.SettingsToggleRow
 import com.lu4p.fokuslauncher.ui.theme.composeFontFamilyFromStoredName
+import com.lu4p.fokuslauncher.ui.util.OnResumeEffect
 import com.lu4p.fokuslauncher.ui.util.formatShortcutTargetDisplay
 import android.app.Activity
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -130,39 +129,46 @@ private val communityLinks =
                 ),
         )
 
+private fun Context.hasCoarseLocationPermission(): Boolean =
+        ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) ==
+                PackageManager.PERMISSION_GRANTED
+
+private fun <T> LazyListScope.manageableAppsSection(
+        headerRes: Int,
+        emptyTextRes: Int,
+        apps: List<T>,
+        key: (T) -> Any,
+        label: (T) -> String,
+        subtitle: (T) -> String,
+        onRowClick: (T) -> Unit,
+        trailingContent: @Composable RowScope.(T) -> Unit,
+) {
+    item { SectionHeader(stringResource(headerRes)) }
+    if (apps.isEmpty()) {
+        item { EmptySettingsStateText(text = stringResource(emptyTextRes)) }
+    } else {
+        items(apps, key = key) { app ->
+            SettingsRow(
+                    label = label(app),
+                    subtitle = subtitle(app),
+                    subtitleStyle = MaterialTheme.typography.labelMedium,
+                    onClick = { onRowClick(app) },
+                    trailing = { trailingContent(app) },
+            )
+        }
+    }
+}
+
 @Composable
 private fun rememberCoarseLocationPermission(context: Context, activity: Activity?): Pair<Boolean, () -> Unit> {
-    var granted by remember {
-        mutableStateOf(
-                ContextCompat.checkSelfPermission(
-                                context,
-                                Manifest.permission.ACCESS_COARSE_LOCATION,
-                        ) == PackageManager.PERMISSION_GRANTED
-        )
-    }
+    var granted by remember { mutableStateOf(context.hasCoarseLocationPermission()) }
     val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                granted =
-                        ContextCompat.checkSelfPermission(
-                                        context,
-                                        Manifest.permission.ACCESS_COARSE_LOCATION,
-                                ) == PackageManager.PERMISSION_GRANTED
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
+    OnResumeEffect(lifecycleOwner) { granted = context.hasCoarseLocationPermission() }
     val launcher =
             rememberLauncherForActivityResult(
                     contract = ActivityResultContracts.RequestPermission(),
             ) {
-                granted =
-                        ContextCompat.checkSelfPermission(
-                                        context,
-                                        Manifest.permission.ACCESS_COARSE_LOCATION,
-                                ) == PackageManager.PERMISSION_GRANTED
+                granted = context.hasCoarseLocationPermission()
                 if (!granted &&
                                 activity != null &&
                                 !ActivityCompat.shouldShowRequestPermissionRationale(
@@ -357,14 +363,7 @@ private fun SettingsScreenContent(
                     subtitle = stringResource(R.string.settings_home_widgets_subtitle),
                     verticalPadding = 14.dp,
                     onClick = onOpenHomeWidgetsSettings,
-                    trailing = {
-                        Icon(
-                                imageVector = Icons.AutoMirrored.Filled.NavigateNext,
-                                contentDescription = stringResource(R.string.cd_open_subpage),
-                                tint = MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier.size(22.dp),
-                        )
-                    },
+                    trailing = { SubpageChevron() },
             )
         }
         item {
@@ -373,14 +372,7 @@ private fun SettingsScreenContent(
                     subtitle = stringResource(R.string.settings_accessibility_subtitle),
                     verticalPadding = 14.dp,
                     onClick = onOpenDeviceControlSettings,
-                    trailing = {
-                        Icon(
-                                imageVector = Icons.AutoMirrored.Filled.NavigateNext,
-                                contentDescription = stringResource(R.string.cd_open_subpage),
-                                tint = MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier.size(22.dp),
-                        )
-                    },
+                    trailing = { SubpageChevron() },
             )
         }
         item {
@@ -388,14 +380,7 @@ private fun SettingsScreenContent(
                     label = stringResource(R.string.settings_edit_home_screen),
                     verticalPadding = 14.dp,
                     onClick = onEditHomeScreen,
-                    trailing = {
-                        Icon(
-                                imageVector = Icons.AutoMirrored.Filled.NavigateNext,
-                                contentDescription = stringResource(R.string.cd_open_subpage),
-                                tint = MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier.size(22.dp),
-                        )
-                    },
+                    trailing = { SubpageChevron() },
             )
         }
         item {
@@ -409,14 +394,7 @@ private fun SettingsScreenContent(
                             ),
                     verticalPadding = 14.dp,
                     onClick = onEditRightShortcuts,
-                    trailing = {
-                        Icon(
-                                imageVector = Icons.AutoMirrored.Filled.NavigateNext,
-                                contentDescription = stringResource(R.string.cd_open_subpage),
-                                tint = MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier.size(22.dp),
-                        )
-                    },
+                    trailing = { SubpageChevron() },
             )
         }
         item {
@@ -479,14 +457,7 @@ private fun SettingsScreenContent(
                             ),
                     verticalPadding = 14.dp,
                     onClick = onEditCategories,
-                    trailing = {
-                        Icon(
-                                imageVector = Icons.AutoMirrored.Filled.NavigateNext,
-                                contentDescription = stringResource(R.string.cd_open_subpage),
-                                tint = MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier.size(22.dp),
-                        )
-                    },
+                    trailing = { SubpageChevron() },
             )
         }
         item {
@@ -518,72 +489,51 @@ private fun SettingsScreenContent(
                     subtitle = stringResource(R.string.settings_dot_search_subtitle),
                     verticalPadding = 14.dp,
                     onClick = onDrawerDotSearchSettings,
-                    trailing = {
-                        Icon(
-                                imageVector = Icons.AutoMirrored.Filled.NavigateNext,
-                                contentDescription = stringResource(R.string.cd_open_subpage),
-                                tint = MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier.size(22.dp),
-                        )
-                    },
+                    trailing = { SubpageChevron() },
             )
         }
         item { SettingsDivider() }
 
-        item { SectionHeader(stringResource(R.string.settings_section_hidden_apps)) }
-        if (uiState.hiddenApps.isEmpty()) {
-            item {
-                EmptySettingsStateText(text = stringResource(R.string.settings_no_hidden_apps))
-            }
-        } else {
-            items(uiState.hiddenApps) { hiddenApp ->
-                SettingsRow(
-                        label = hiddenApp.label,
-                        subtitle =
-                                hiddenApp.profileLabel?.let { "$it • ${hiddenApp.packageName}" }
-                                        ?: hiddenApp.packageName,
-                        subtitleStyle = MaterialTheme.typography.labelMedium,
-                        onClick = { viewModel.unhideApp(hiddenApp.packageName, hiddenApp.profileKey) },
-                        trailing = {
-                            Spacer(Modifier.width(8.dp))
-                            Icon(
-                                    Icons.Default.Visibility,
-                                    stringResource(R.string.cd_unhide_app),
-                                    tint = MaterialTheme.colorScheme.secondary,
-                            )
-                        },
-                )
-            }
-        }
+        manageableAppsSection(
+                headerRes = R.string.settings_section_hidden_apps,
+                emptyTextRes = R.string.settings_no_hidden_apps,
+                apps = uiState.hiddenApps,
+                key = { "${it.packageName}|${it.profileKey}" },
+                label = { it.label },
+                subtitle = { app ->
+                    app.profileLabel?.let { pl -> "$pl • ${app.packageName}" } ?: app.packageName
+                },
+                onRowClick = { viewModel.unhideApp(it.packageName, it.profileKey) },
+                trailingContent = {
+                    Spacer(Modifier.width(8.dp))
+                    Icon(
+                            Icons.Default.Visibility,
+                            stringResource(R.string.cd_unhide_app),
+                            tint = MaterialTheme.colorScheme.secondary,
+                    )
+                },
+        )
         item { SettingsDivider() }
 
-        item { SectionHeader(stringResource(R.string.settings_section_renamed_apps)) }
-        if (uiState.renamedApps.isEmpty()) {
-            item {
-                EmptySettingsStateText(text = stringResource(R.string.settings_no_renamed_apps))
-            }
-        } else {
-            items(uiState.renamedApps) { renamedApp ->
-                SettingsRow(
-                        label = renamedApp.customName,
-                        subtitle =
-                                renamedApp.profileLabel?.let { "$it • ${renamedApp.packageName}" }
-                                        ?: renamedApp.packageName,
-                        subtitleStyle = MaterialTheme.typography.labelMedium,
-                        onClick = {
-                            viewModel.removeRename(renamedApp.packageName, renamedApp.profileKey)
-                        },
-                        trailing = {
-                            Spacer(Modifier.width(8.dp))
-                            Icon(
-                                    Icons.Default.Close,
-                                    stringResource(R.string.cd_remove_rename),
-                                    tint = MaterialTheme.colorScheme.secondary,
-                            )
-                        },
-                )
-            }
-        }
+        manageableAppsSection(
+                headerRes = R.string.settings_section_renamed_apps,
+                emptyTextRes = R.string.settings_no_renamed_apps,
+                apps = uiState.renamedApps,
+                key = { "${it.packageName}|${it.profileKey}" },
+                label = { it.customName },
+                subtitle = { app ->
+                    app.profileLabel?.let { pl -> "$pl • ${app.packageName}" } ?: app.packageName
+                },
+                onRowClick = { viewModel.removeRename(it.packageName, it.profileKey) },
+                trailingContent = {
+                    Spacer(Modifier.width(8.dp))
+                    Icon(
+                            Icons.Default.Close,
+                            stringResource(R.string.cd_remove_rename),
+                            tint = MaterialTheme.colorScheme.secondary,
+                    )
+                },
+        )
         item { SettingsDivider() }
 
         item { SectionHeader(stringResource(R.string.settings_connect_section)) }
@@ -859,18 +809,9 @@ fun DeviceControlSettingsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
     var accessibilityResumeTick by remember { mutableIntStateOf(0) }
-
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                accessibilityResumeTick++
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    OnResumeEffect(lifecycleOwner) { accessibilityResumeTick++ }
 
     val lockAccessibilityOn =
             remember(accessibilityResumeTick) {
@@ -1293,6 +1234,16 @@ private fun HomeAlignmentRow(
             }
         }
     }
+}
+
+@Composable
+private fun SubpageChevron() {
+    Icon(
+            imageVector = Icons.AutoMirrored.Filled.NavigateNext,
+            contentDescription = stringResource(R.string.cd_open_subpage),
+            tint = MaterialTheme.colorScheme.secondary,
+            modifier = Modifier.size(22.dp),
+    )
 }
 
 @Composable

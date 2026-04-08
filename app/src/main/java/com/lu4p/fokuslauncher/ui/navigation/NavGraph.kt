@@ -38,8 +38,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -51,6 +49,7 @@ import androidx.core.net.toUri
 import androidx.compose.animation.AnimatedContentScope
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.lu4p.fokuslauncher.ui.util.OnResumeEffect
 import androidx.navigation.NamedNavArgument
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDeepLink
@@ -269,19 +268,10 @@ fun FokusNavGraph(
                     var snapBackJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
 
                     // Reset horizontal offset when returning from launched app
-                    DisposableEffect(lifecycleOwner, coroutineScope) {
-                        val observer = LifecycleEventObserver { _, event ->
-                            if (event == Lifecycle.Event.ON_RESUME) {
-                                // Cancel any pending snap-back animation and reset immediately
-                                snapBackJob?.cancel()
-                                horizontalOffsetPx = 0f
-                                launchTriggered = false
-                            }
-                        }
-                        lifecycleOwner.lifecycle.addObserver(observer)
-                        onDispose {
-                            lifecycleOwner.lifecycle.removeObserver(observer)
-                        }
+                    OnResumeEffect(lifecycleOwner, coroutineScope) {
+                        snapBackJob?.cancel()
+                        horizontalOffsetPx = 0f
+                        launchTriggered = false
                     }
 
                     LaunchedEffect(launchTriggered) {

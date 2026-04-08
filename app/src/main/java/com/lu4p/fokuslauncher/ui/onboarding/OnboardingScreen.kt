@@ -32,7 +32,7 @@ import com.lu4p.fokuslauncher.ui.components.FokusTextButton
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,11 +45,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.R
+import com.lu4p.fokuslauncher.ui.util.OnResumeEffect
 import com.lu4p.fokuslauncher.ui.util.formatShortcutTargetDisplay
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.ui.settings.ShortcutActionPickerDialog
@@ -66,17 +65,7 @@ fun OnboardingScreen(
     val isLastStep by viewModel.isLastStep.collectAsStateWithLifecycle()
     val showEditHomeApps by viewModel.showEditHomeApps.collectAsStateWithLifecycle()
 
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                viewModel.recheckDefaultLauncher()
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
-    }
+    OnResumeEffect(lifecycleOwner) { viewModel.recheckDefaultLauncher() }
 
     // Create HomeViewModel for the edit screen when needed
     val homeViewModel: HomeViewModel? = if (showEditHomeApps) hiltViewModel() else null
@@ -160,10 +149,7 @@ fun OnboardingScreen(
 
         // Show EditHomeAppsScreen as full-screen overlay during onboarding
         if (showEditHomeApps && homeViewModel != null) {
-            remember(homeViewModel) {
-                homeViewModel.startEditingHomeApps()
-                true
-            }
+            LaunchedEffect(homeViewModel) { homeViewModel.startEditingHomeApps() }
             EditHomeAppsScreen(
                 viewModel = homeViewModel,
                 onNavigateBack = { viewModel.onEditHomeAppsDismissed() },

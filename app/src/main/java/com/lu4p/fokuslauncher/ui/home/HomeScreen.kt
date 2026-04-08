@@ -29,7 +29,6 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -42,8 +41,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.lu4p.fokuslauncher.R
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.lu4p.fokuslauncher.data.model.AppInfo
@@ -60,6 +57,7 @@ import com.lu4p.fokuslauncher.ui.components.FokusOutlinedButton
 import com.lu4p.fokuslauncher.ui.components.MinimalIcons
 import com.lu4p.fokuslauncher.ui.components.SheetActionRow
 import com.lu4p.fokuslauncher.ui.components.WeatherWidget
+import com.lu4p.fokuslauncher.ui.util.OnResumeEffect
 import com.lu4p.fokuslauncher.ui.util.clickableNoRippleWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.clickableWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.combinedClickableWithSystemSound
@@ -85,15 +83,15 @@ fun HomeScreen(
     val appMenuTarget by viewModel.appMenuTarget.collectAsStateWithLifecycle()
     val showHomeScreenMenu by viewModel.showHomeScreenMenu.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val onFavoriteClick = remember(viewModel) { { fav: FavoriteApp -> viewModel.launchFavorite(fav) } }
-    val onFavoriteLongPress = remember(viewModel) { { fav: FavoriteApp -> viewModel.onFavoriteLongPress(fav) } }
-    val onHomeLongPress = remember(viewModel) { { viewModel.onHomeScreenLongPress() } }
-    val onShortcutClick = remember(viewModel) { { shortcut: HomeShortcut -> viewModel.launchShortcut(shortcut) } }
-    val onSetDefaultLauncher = remember(viewModel) { { viewModel.openDefaultLauncherSettings() } }
-    val onClockClick = remember(viewModel) { { viewModel.openClockApp() } }
-    val onDateClick = remember(viewModel) { { viewModel.openCalendarApp() } }
-    val onWeatherClick = remember(viewModel) { { viewModel.openWeatherAppPicker() } }
-    val onDoubleTapEmptyLock = remember(viewModel) { { viewModel.onDoubleTapEmptyLock() } }
+    val onFavoriteClick = viewModel::launchFavorite
+    val onFavoriteLongPress = viewModel::onFavoriteLongPress
+    val onHomeLongPress = viewModel::onHomeScreenLongPress
+    val onShortcutClick = viewModel::launchShortcut
+    val onSetDefaultLauncher = viewModel::openDefaultLauncherSettings
+    val onClockClick = viewModel::openClockApp
+    val onDateClick = viewModel::openCalendarApp
+    val onWeatherClick = viewModel::openWeatherAppPicker
+    val onDoubleTapEmptyLock = viewModel::onDoubleTapEmptyLock
 
     LaunchedEffect(viewModel) {
         viewModel.requestLockAccessibilitySettings.collect {
@@ -101,27 +99,11 @@ fun HomeScreen(
         }
     }
 
-    DisposableEffect(lifecycleOwner, viewModel) {
-        val runResumeActions = {
-            viewModel.refreshInstalledApps(forceReload = false)
-            viewModel.recheckDefaultLauncher()
-            viewModel.refreshDoubleTapLockEffective()
-            viewModel.refreshWeather()
-        }
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                runResumeActions()
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        // Navigating back to Home composes this screen while the activity is already RESUMED,
-        // so ON_RESUME is not delivered to a newly registered observer — refresh once now.
-        if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
-            runResumeActions()
-        }
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
+    OnResumeEffect(lifecycleOwner, viewModel, alsoRunIfAlreadyResumed = true) {
+        viewModel.refreshInstalledApps(forceReload = false)
+        viewModel.recheckDefaultLauncher()
+        viewModel.refreshDoubleTapLockEffective()
+        viewModel.refreshWeather()
     }
 
     Box(modifier = modifier.fillMaxSize()) {

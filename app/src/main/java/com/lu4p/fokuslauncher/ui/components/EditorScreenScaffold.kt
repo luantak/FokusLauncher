@@ -41,28 +41,18 @@ fun EditorScreenScaffold(
         onDone: () -> Unit,
         content: @Composable ColumnScope.(searchQuery: String, listState: LazyListState) -> Unit,
 ) {
-    EditorScreenScaffoldLayout(
-            topBar = {
-                FokusSettingsTopBar(
-                        titleText = titleText,
-                        onNavigateBack = onNavigateBack,
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        actions = {
-                            FokusIconButton(onClick = onDone) {
-                                Icon(
-                                        imageVector = Icons.Default.Check,
-                                        contentDescription =
-                                                stringResource(R.string.action_done),
-                                        tint = MaterialTheme.colorScheme.onBackground,
-                                )
-                            }
-                        },
+    EditorScreenScaffold(
+            title = {
+                Text(
+                        text = titleText,
+                        color = MaterialTheme.colorScheme.onBackground,
                 )
             },
             searchPlaceholderResId = searchPlaceholderResId,
             backgroundScrim = backgroundScrim,
             listReadyToScroll = listReadyToScroll,
             onNavigateBack = onNavigateBack,
+            onDone = onDone,
             content = content,
     )
 }
