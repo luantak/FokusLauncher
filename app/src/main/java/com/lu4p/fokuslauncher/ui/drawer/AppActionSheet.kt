@@ -2,7 +2,9 @@ package com.lu4p.fokuslauncher.ui.drawer
 
 import android.content.Intent
 import android.provider.Settings
-import androidx.compose.foundation.clickable
+import com.lu4p.fokuslauncher.ui.components.FokusIconButton
+import com.lu4p.fokuslauncher.ui.components.FokusTextButton
+import com.lu4p.fokuslauncher.ui.util.clickableWithSystemSound
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,14 +17,12 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -85,10 +85,10 @@ fun AppActionSheet(
                             .weight(1f)
                             .testTag("rename_inline_input")
                     )
-                    TextButton(onClick = { renameMode = false }) {
+                    FokusTextButton(onClick = { renameMode = false }) {
                         Text(stringResource(R.string.action_cancel))
                     }
-                    TextButton(
+                    FokusTextButton(
                         onClick = {
                             val trimmed = renameValue.trim()
                             if (trimmed.isNotEmpty()) {
@@ -104,7 +104,7 @@ fun AppActionSheet(
                         color = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.weight(1f)
                     )
-                    IconButton(
+                    FokusIconButton(
                         onClick = { renameMode = true },
                         modifier = Modifier.testTag("action_rename")
                     ) {
@@ -185,7 +185,7 @@ internal fun DrawerSheetActionRow(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickableWithSystemSound(onClick = onClick)
             .padding(horizontal = 24.dp, vertical = 16.dp)
             .testTag(testTag)
     ) {

@@ -25,10 +25,10 @@ import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import com.lu4p.fokuslauncher.ui.components.FokusIconButton
+import com.lu4p.fokuslauncher.ui.components.FokusTextButton
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
@@ -150,7 +150,7 @@ fun OnboardingScreen(
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    TextButton(onClick = { viewModel.onNext() }) {
+                    FokusTextButton(onClick = { viewModel.onNext() }) {
                         Text(
                             text = stringResource(R.string.onboarding_next),
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -332,7 +332,7 @@ private fun LocationStep(
             Text(text = stringResource(R.string.onboarding_location_allow))
         }
         Spacer(modifier = Modifier.height(16.dp))
-        TextButton(onClick = onSkip) {
+        FokusTextButton(onClick = onSkip) {
             Text(
                 text = stringResource(R.string.onboarding_location_skip),
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
@@ -374,7 +374,7 @@ private fun SetDefaultStep(
             Text(text = stringResource(R.string.onboarding_set_default_button))
         }
         Spacer(modifier = Modifier.height(16.dp))
-        TextButton(onClick = onNext) {
+        FokusTextButton(onClick = onNext) {
             Text(
                 text = stringResource(R.string.onboarding_next),
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -416,7 +416,7 @@ private fun CustomizeStep(
             Text(text = stringResource(R.string.onboarding_choose_apps))
         }
         Spacer(modifier = Modifier.height(16.dp))
-        TextButton(onClick = onSkip) {
+        FokusTextButton(onClick = onSkip) {
             Text(
                 text = stringResource(R.string.onboarding_skip),
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
@@ -479,10 +479,10 @@ private fun SwipeShortcutsStep(
                     color = MaterialTheme.colorScheme.secondary
                 )
             }
-            TextButton(onClick = { showAppPickerFor.value = "swipeLeft" }) {
+            FokusTextButton(onClick = { showAppPickerFor.value = "swipeLeft" }) {
                 Text(stringResource(R.string.onboarding_swipe_change))
             }
-            IconButton(onClick = { onSetSwipeLeft(null) }, modifier = Modifier.size(36.dp)) {
+            FokusIconButton(onClick = { onSetSwipeLeft(null) }, modifier = Modifier.size(36.dp)) {
                 Icon(
                     Icons.Default.Close,
                     contentDescription = stringResource(R.string.action_clear),
@@ -517,10 +517,10 @@ private fun SwipeShortcutsStep(
                     color = MaterialTheme.colorScheme.secondary
                 )
             }
-            TextButton(onClick = { showAppPickerFor.value = "swipeRight" }) {
+            FokusTextButton(onClick = { showAppPickerFor.value = "swipeRight" }) {
                 Text(stringResource(R.string.onboarding_swipe_change))
             }
-            IconButton(onClick = { onSetSwipeRight(null) }, modifier = Modifier.size(36.dp)) {
+            FokusIconButton(onClick = { onSetSwipeRight(null) }, modifier = Modifier.size(36.dp)) {
                 Icon(
                     Icons.Default.Close,
                     contentDescription = stringResource(R.string.action_clear),
@@ -531,7 +531,7 @@ private fun SwipeShortcutsStep(
         }
 
         Spacer(modifier = Modifier.height(24.dp))
-        TextButton(onClick = onSkip) {
+        FokusTextButton(onClick = onSkip) {
             Text(
                 text = stringResource(R.string.onboarding_next),
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)

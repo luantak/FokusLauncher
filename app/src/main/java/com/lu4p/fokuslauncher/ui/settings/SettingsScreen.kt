@@ -11,7 +11,11 @@ import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
+import com.lu4p.fokuslauncher.ui.components.FokusIconButton
+import com.lu4p.fokuslauncher.ui.components.FokusTextButton
+import com.lu4p.fokuslauncher.ui.util.clickableWithSystemSound
+import com.lu4p.fokuslauncher.ui.util.rememberBooleanChangeWithSystemSound
+import com.lu4p.fokuslauncher.ui.util.rememberClickWithSystemSound
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,6 +23,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -42,7 +47,6 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
@@ -53,7 +57,6 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -196,7 +199,7 @@ fun SettingsScreen(
                     Text(stringResource(R.string.settings_title), color = MaterialTheme.colorScheme.onBackground)
                 },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    FokusIconButton(onClick = onNavigateBack) {
                         Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = stringResource(R.string.action_back),
@@ -251,7 +254,7 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { wallpaperPickerLauncher.launch("image/*") }
+                                .clickableWithSystemSound { wallpaperPickerLauncher.launch("image/*") }
                                 .padding(horizontal = 24.dp, vertical = 14.dp)
                 ) {
                     Text(
@@ -268,7 +271,7 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable {
+                                .clickableWithSystemSound {
                                     viewModel.setBlackWallpaper()
                                     onNavigateToHome()
                                 }
@@ -539,7 +542,7 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier =
                                 Modifier.fillMaxWidth()
-                                        .clickable {
+                                        .clickableWithSystemSound {
                                             scope.launch {
                                                 val shareIntent = viewModel.createLogShareIntent()
                                                 if (shareIntent != null && activity != null) {
@@ -585,7 +588,7 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier =
                                 Modifier.fillMaxWidth()
-                                        .clickable(onClick = { showResetConfirm.value = true })
+                                        .clickableWithSystemSound(onClick = { showResetConfirm.value = true })
                                         .padding(horizontal = 24.dp, vertical = 14.dp)
                 ) {
                     Icon(
@@ -623,7 +626,7 @@ fun SettingsScreen(
                 },
                 confirmButton = {
                     val scope = rememberCoroutineScope()
-                    TextButton(
+                    FokusTextButton(
                             onClick = {
                                 scope.launch {
                                     viewModel.resetAllState()
@@ -636,7 +639,7 @@ fun SettingsScreen(
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showResetConfirm.value = false }) {
+                    FokusTextButton(onClick = { showResetConfirm.value = false }) {
                         Text(stringResource(R.string.action_cancel), color = MaterialTheme.colorScheme.primary)
                     }
                 },
@@ -751,7 +754,7 @@ fun HomeWidgetsSettingsScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    FokusIconButton(onClick = onNavigateBack) {
                         Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = stringResource(R.string.action_back),
@@ -935,7 +938,7 @@ fun DeviceControlSettingsScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    FokusIconButton(onClick = onNavigateBack) {
                         Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = stringResource(R.string.action_back),
@@ -1027,7 +1030,7 @@ private fun SettingsToggleRow(
             verticalAlignment = Alignment.CenterVertically,
             modifier =
                     Modifier.fillMaxWidth()
-                            .clickable(enabled = enabled) { onCheckedChange(!checked) }
+                            .clickableWithSystemSound(enabled = enabled) { onCheckedChange(!checked) }
                             .padding(horizontal = 24.dp, vertical = 12.dp)
     ) {
         Column(modifier = Modifier.weight(1f)) {
@@ -1050,7 +1053,7 @@ private fun SettingsToggleRow(
         Spacer(Modifier.width(16.dp))
         Switch(
                 checked = checked,
-                onCheckedChange = onCheckedChange,
+                onCheckedChange = rememberBooleanChangeWithSystemSound(onCheckedChange),
                 enabled = enabled
         )
     }
@@ -1133,8 +1136,11 @@ private fun HomeDateFormatDropdown(
                 )
             }
     var expanded by remember { mutableStateOf(false) }
+    val onDateFormatExpandedChange =
+            rememberBooleanChangeWithSystemSound { newExpanded ->
+                if (enabled) expanded = newExpanded
+            }
     val selectedLabel = homeDateFormatStyleLabel(currentStyle)
-
     Column(
             modifier =
                     Modifier.fillMaxWidth()
@@ -1148,7 +1154,7 @@ private fun HomeDateFormatDropdown(
         Spacer(Modifier.height(12.dp))
         ExposedDropdownMenuBox(
                 expanded = expanded && enabled,
-                onExpandedChange = { if (enabled) expanded = it }
+                onExpandedChange = onDateFormatExpandedChange
         ) {
             OutlinedTextField(
                     modifier =
@@ -1193,10 +1199,11 @@ private fun HomeDateFormatDropdown(
                                         color = MaterialTheme.colorScheme.onBackground,
                                 )
                             },
-                            onClick = {
-                                onStyleSelected(style)
-                                expanded = false
-                            },
+                            onClick =
+                                    rememberClickWithSystemSound {
+                                        onStyleSelected(style)
+                                        expanded = false
+                                    },
                             colors = settingsPickerMenuItemColors(),
                             contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
                     )
@@ -1226,10 +1233,10 @@ private fun AppLanguageDropdown(
                 }
             }
     var expanded by remember { mutableStateOf(false) }
+    val onLanguageExpandedChange = rememberBooleanChangeWithSystemSound { expanded = it }
     val selectedDisplayText =
             options.find { (tag, _) -> tag == currentTag }?.second
                     ?: if (currentTag.isBlank()) systemDefaultLabel else languageAutonym(currentTag)
-
     Column(
             modifier = Modifier
                     .fillMaxWidth()
@@ -1241,7 +1248,7 @@ private fun AppLanguageDropdown(
                 color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(Modifier.height(12.dp))
-        ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+        ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = onLanguageExpandedChange) {
             OutlinedTextField(
                     modifier =
                             Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
@@ -1277,10 +1284,11 @@ private fun AppLanguageDropdown(
                                         color = MaterialTheme.colorScheme.onBackground,
                                 )
                             },
-                            onClick = {
-                                onTagSelected(storageTag)
-                                expanded = false
-                            },
+                            onClick =
+                                    rememberClickWithSystemSound {
+                                        onTagSelected(storageTag)
+                                        expanded = false
+                                    },
                             colors = settingsPickerMenuItemColors(),
                             contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
                     )
@@ -1311,10 +1319,10 @@ private fun LauncherFontFamilyDropdown(
                 }
             }
     var expanded by remember { mutableStateOf(false) }
+    val onFontExpandedChange = rememberBooleanChangeWithSystemSound { expanded = it }
     val selectedLabel =
             options.find { (value, _) -> value == currentFamilyName }?.second
                     ?: currentFamilyName.ifBlank { systemDefault }
-
     Column(
             modifier = Modifier
                     .fillMaxWidth()
@@ -1326,7 +1334,7 @@ private fun LauncherFontFamilyDropdown(
                 color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(Modifier.height(12.dp))
-        ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+        ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = onFontExpandedChange) {
             OutlinedTextField(
                     modifier =
                             Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
@@ -1372,10 +1380,11 @@ private fun LauncherFontFamilyDropdown(
                                         color = MaterialTheme.colorScheme.onBackground,
                                 )
                             },
-                            onClick = {
-                                onFamilySelected(storageValue)
-                                expanded = false
-                            },
+                            onClick =
+                                    rememberClickWithSystemSound {
+                                        onFamilySelected(storageValue)
+                                        expanded = false
+                                    },
                             colors = settingsPickerMenuItemColors(),
                             contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
                     )
@@ -1409,14 +1418,16 @@ private fun DrawerCategoryRailSideRow(
         SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
             SegmentedButton(
                     selected = railOnLeft,
-                    onClick = { onRailOnLeftChanged(true) },
+                    onClick =
+                            rememberClickWithSystemSound { onRailOnLeftChanged(true) },
                     shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
             ) {
                 Text(stringResource(R.string.settings_drawer_rail_position_left))
             }
             SegmentedButton(
                     selected = !railOnLeft,
-                    onClick = { onRailOnLeftChanged(false) },
+                    onClick =
+                            rememberClickWithSystemSound { onRailOnLeftChanged(false) },
                     shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
             ) {
                 Text(stringResource(R.string.settings_drawer_rail_position_right))
@@ -1465,7 +1476,7 @@ private fun DrawerAppSortRow(
             modes.forEachIndexed { index, mode ->
                 SegmentedButton(
                         selected = coercedMode == mode,
-                        onClick = { onModeChanged(mode) },
+                        onClick = rememberClickWithSystemSound { onModeChanged(mode) },
                         shape =
                                 SegmentedButtonDefaults.itemShape(
                                         index = index,
@@ -1498,6 +1509,7 @@ private fun LongLockThresholdRow(
 ) {
     val options = remember { listOf(1, 5, 15, 30) }
     var expanded by remember { mutableStateOf(false) }
+    val onLongLockExpandedChange = rememberBooleanChangeWithSystemSound { expanded = it }
     val selectedLabel =
             pluralStringResource(
                     R.plurals.settings_long_lock_duration_minutes,
@@ -1521,7 +1533,7 @@ private fun LongLockThresholdRow(
                 color = MaterialTheme.colorScheme.secondary
         )
         Spacer(Modifier.height(12.dp))
-        ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+        ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = onLongLockExpandedChange) {
             OutlinedTextField(
                     modifier =
                             Modifier.menuAnchor(
@@ -1565,10 +1577,11 @@ private fun LongLockThresholdRow(
                                         color = MaterialTheme.colorScheme.onBackground
                                 )
                             },
-                            onClick = {
-                                onMinutesSelected(minutes)
-                                expanded = false
-                            },
+                            onClick =
+                                    rememberClickWithSystemSound {
+                                        onMinutesSelected(minutes)
+                                        expanded = false
+                                    },
                             colors = settingsPickerMenuItemColors(),
                             contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
                     )
@@ -1604,7 +1617,10 @@ private fun HomeAlignmentRow(
             HomeAlignment.entries.forEachIndexed { index, alignment ->
                 SegmentedButton(
                         selected = currentAlignment == alignment,
-                        onClick = { onAlignmentChanged(alignment) },
+                        onClick =
+                                rememberClickWithSystemSound {
+                                    onAlignmentChanged(alignment)
+                                },
                         shape = SegmentedButtonDefaults.itemShape(
                                 index = index,
                                 count = HomeAlignment.entries.size
@@ -1665,7 +1681,7 @@ private fun SettingsSubpageNavigationRow(
             verticalAlignment = Alignment.CenterVertically,
             modifier =
                     Modifier.fillMaxWidth()
-                            .clickable(onClick = onClick)
+                            .clickableWithSystemSound(onClick = onClick)
                             .padding(horizontal = 24.dp, vertical = 14.dp)
     ) {
         Column(modifier = Modifier.weight(1f)) {
@@ -1700,7 +1716,7 @@ private fun LocationWeatherRow(onEnableClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             modifier =
                     Modifier.fillMaxWidth()
-                            .clickable(onClick = onEnableClick)
+                            .clickableWithSystemSound(onClick = onEnableClick)
                             .padding(horizontal = 24.dp, vertical = 12.dp)
     ) {
         Icon(
@@ -1722,7 +1738,7 @@ private fun LocationWeatherRow(onEnableClick: () -> Unit) {
                     color = MaterialTheme.colorScheme.secondary
             )
         }
-        TextButton(onClick = onEnableClick) {
+        FokusTextButton(onClick = onEnableClick) {
             Text(stringResource(R.string.settings_weather_location_enable_button))
         }
     }
@@ -1753,8 +1769,8 @@ private fun ShortcutTargetRow(
                     color = MaterialTheme.colorScheme.secondary
             )
         }
-        TextButton(onClick = onPickApp) { Text(stringResource(R.string.action_change)) }
-        IconButton(onClick = onClear, modifier = Modifier.size(36.dp)) {
+        FokusTextButton(onClick = onPickApp) { Text(stringResource(R.string.action_change)) }
+        FokusIconButton(onClick = onClear, modifier = Modifier.size(36.dp)) {
             Icon(
                     Icons.Default.Close,
                     stringResource(R.string.action_clear),
@@ -1773,7 +1789,7 @@ private fun HiddenAppRow(app: HiddenAppInfo, onUnhide: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             modifier =
                     Modifier.fillMaxWidth()
-                            .clickable(onClick = onUnhide)
+                            .clickableWithSystemSound(onClick = onUnhide)
                             .padding(horizontal = 24.dp, vertical = 12.dp)
     ) {
         Text(
@@ -1797,7 +1813,7 @@ private fun RenamedAppRow(packageName: String, customName: String, onRemoveRenam
             verticalAlignment = Alignment.CenterVertically,
             modifier =
                     Modifier.fillMaxWidth()
-                            .clickable(onClick = onRemoveRename)
+                            .clickableWithSystemSound(onClick = onRemoveRename)
                             .padding(horizontal = 24.dp, vertical = 12.dp)
     ) {
         Column(modifier = Modifier.weight(1f)) {
@@ -1834,7 +1850,7 @@ private fun ExternalLinkRow(
             verticalAlignment = Alignment.CenterVertically,
             modifier =
                     Modifier.fillMaxWidth()
-                            .clickable(onClick = onClick)
+                            .clickableWithSystemSound(onClick = onClick)
                             .padding(horizontal = 24.dp, vertical = 14.dp)
     ) {
         Icon(
@@ -1912,7 +1928,7 @@ private fun AppPickerDialog(
                                     color = MaterialTheme.colorScheme.onBackground,
                                     modifier =
                                             Modifier.fillMaxWidth()
-                                                    .clickable { onSelect(app.packageName) }
+                                                    .clickableWithSystemSound { onSelect(app.packageName) }
                                                     .padding(vertical = 10.dp, horizontal = 8.dp)
                             )
                         }
@@ -1921,7 +1937,7 @@ private fun AppPickerDialog(
             },
             confirmButton = {},
             dismissButton = {
-                TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+                FokusTextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
             },
             containerColor = MaterialTheme.colorScheme.surfaceVariant
     )

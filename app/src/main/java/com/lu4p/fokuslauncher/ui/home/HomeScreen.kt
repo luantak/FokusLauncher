@@ -2,7 +2,6 @@ package com.lu4p.fokuslauncher.ui.home
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -30,10 +29,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -65,8 +62,13 @@ import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.ui.components.ClockWidget
 import com.lu4p.fokuslauncher.ui.components.DateBatteryRow
+import com.lu4p.fokuslauncher.ui.components.FokusOutlinedButton
+import com.lu4p.fokuslauncher.ui.components.FokusTextButton
 import com.lu4p.fokuslauncher.ui.components.MinimalIcons
 import com.lu4p.fokuslauncher.ui.components.WeatherWidget
+import com.lu4p.fokuslauncher.ui.util.clickableWithSystemSound
+import com.lu4p.fokuslauncher.ui.util.combinedClickableWithSystemSound
+import com.lu4p.fokuslauncher.ui.util.LocalSystemClickSound
 import com.lu4p.fokuslauncher.utils.LockScreenHelper
 import com.lu4p.fokuslauncher.utils.containsNormalizedSearch
 
@@ -216,6 +218,7 @@ fun HomeScreenContent(
     doubleTapEmptyLockEnabled: Boolean = false,
     onDoubleTapEmptyLock: () -> Unit = {},
 ) {
+    val play = LocalSystemClickSound.current
     val noIndication = remember { MutableInteractionSource() }
     Box(
         modifier = modifier
@@ -257,7 +260,10 @@ fun HomeScreenContent(
                                                 interactionSource = emptyTapSource,
                                                 onClick = {},
                                                 onLongClick = onHomeScreenLongPress,
-                                                onDoubleClick = onDoubleTapEmptyLock,
+                                                onDoubleClick = {
+                                                    play()
+                                                    onDoubleTapEmptyLock()
+                                                },
                                         )
                 )
             } else {
@@ -469,7 +475,7 @@ private fun RightShortcutIcons(
             tint = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier
                 .size(24.dp)
-                .clickable(
+                .clickableWithSystemSound(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() }
                 ) { onIconClick(shortcut) }
@@ -485,7 +491,7 @@ private fun BoxScope.HomeDefaultLauncherBanner(
 ) {
     if (isDefaultLauncher) return
 
-    OutlinedButton(
+    FokusOutlinedButton(
         onClick = onSetDefaultLauncher,
         shape = RoundedCornerShape(24.dp),
         colors = ButtonDefaults.outlinedButtonColors(
@@ -525,7 +531,7 @@ private fun FavoriteAppItem(
     Column(
             horizontalAlignment = horizontalAlignment,
             modifier =
-                    Modifier.combinedClickable(
+                    Modifier.combinedClickableWithSystemSound(
                                     indication = null,
                                     interactionSource = remember { MutableInteractionSource() },
                                     onClick = onClick,
@@ -572,7 +578,7 @@ private fun HomeScreenLongPressSheet(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable(onClick = {
+                    .clickableWithSystemSound(onClick = {
                         onEditHomeScreen()
                     })
                     .padding(horizontal = 24.dp, vertical = 16.dp)
@@ -593,7 +599,7 @@ private fun HomeScreenLongPressSheet(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable(onClick = {
+                    .clickableWithSystemSound(onClick = {
                         onEditShortcuts()
                     })
                     .padding(horizontal = 24.dp, vertical = 16.dp)
@@ -614,7 +620,7 @@ private fun HomeScreenLongPressSheet(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable(onClick = {
+                    .clickableWithSystemSound(onClick = {
                         onOpenSettings()
                     })
                     .padding(horizontal = 24.dp, vertical = 16.dp)
@@ -680,7 +686,7 @@ private fun WeatherAppPickerDialog(
                             color = MaterialTheme.colorScheme.onBackground,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { onSelect(app.packageName) }
+                                .clickableWithSystemSound { onSelect(app.packageName) }
                                 .padding(vertical = 10.dp, horizontal = 8.dp)
                         )
                     }
@@ -689,7 +695,7 @@ private fun WeatherAppPickerDialog(
         },
         confirmButton = {},
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+            FokusTextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
         },
         containerColor = MaterialTheme.colorScheme.surfaceVariant
     )

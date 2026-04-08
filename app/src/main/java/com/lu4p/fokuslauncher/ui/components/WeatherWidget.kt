@@ -1,6 +1,6 @@
 package com.lu4p.fokuslauncher.ui.components
 
-import androidx.compose.foundation.clickable
+import com.lu4p.fokuslauncher.ui.util.clickableWithSystemSound
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Row
 import androidx.compose.runtime.remember
@@ -33,7 +33,7 @@ fun WeatherWidget(
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
-            .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }, onClick = onClick)
+            .clickableWithSystemSound(indication = null, interactionSource = remember { MutableInteractionSource() }, onClick = onClick)
             .testTag("weather_widget")
     ) {
         Text(text = weatherEmoji, fontSize = 18.sp)

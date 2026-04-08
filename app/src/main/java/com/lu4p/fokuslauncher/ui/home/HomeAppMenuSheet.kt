@@ -1,6 +1,8 @@
 package com.lu4p.fokuslauncher.ui.home
 
-import androidx.compose.foundation.clickable
+import com.lu4p.fokuslauncher.ui.components.FokusIconButton
+import com.lu4p.fokuslauncher.ui.components.FokusTextButton
+import com.lu4p.fokuslauncher.ui.util.clickableWithSystemSound
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,12 +18,10 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -87,10 +87,10 @@ fun HomeAppMenuSheet(
                         singleLine = true,
                         modifier = Modifier.weight(1f)
                     )
-                    TextButton(onClick = { renameMode = false }) {
+                    FokusTextButton(onClick = { renameMode = false }) {
                         Text(stringResource(R.string.action_cancel))
                     }
-                    TextButton(
+                    FokusTextButton(
                         onClick = {
                             val trimmed = renameValue.trim()
                             if (trimmed.isNotEmpty()) {
@@ -106,7 +106,7 @@ fun HomeAppMenuSheet(
                         color = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.weight(1f)
                     )
-                    IconButton(onClick = { renameMode = true }) {
+                    FokusIconButton(onClick = { renameMode = true }) {
                         Icon(
                             imageVector = Icons.Default.Edit,
                             contentDescription = stringResource(R.string.action_rename),
@@ -175,7 +175,7 @@ private fun MenuActionRow(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickableWithSystemSound(onClick = onClick)
             .padding(horizontal = 24.dp, vertical = 16.dp)
     ) {
         Icon(

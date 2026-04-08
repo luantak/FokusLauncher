@@ -2,7 +2,6 @@ package com.lu4p.fokuslauncher.ui.settings
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,8 +22,8 @@ import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import com.lu4p.fokuslauncher.ui.components.FokusIconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -60,6 +59,8 @@ import com.lu4p.fokuslauncher.ui.drawer.profileGroupedShortcutItems
 import com.lu4p.fokuslauncher.ui.drawer.profileOriginLabelForHomeShortcut
 import com.lu4p.fokuslauncher.ui.home.HomeViewModel
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
+import com.lu4p.fokuslauncher.ui.util.clickableWithSystemSound
+import com.lu4p.fokuslauncher.ui.util.rememberBooleanChangeWithSystemSound
 import com.lu4p.fokuslauncher.utils.containsNormalizedSearch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -114,7 +115,7 @@ fun EditShortcutsScreen(
                 Text(stringResource(R.string.edit_shortcuts_title), color = MaterialTheme.colorScheme.onBackground)
             },
             navigationIcon = {
-                IconButton(onClick = {
+                FokusIconButton(onClick = {
                     viewModel.saveEditedRightShortcuts()
                     onNavigateBack()
                 }) {
@@ -126,7 +127,7 @@ fun EditShortcutsScreen(
                 }
             },
             actions = {
-                IconButton(onClick = {
+                FokusIconButton(onClick = {
                     viewModel.saveEditedRightShortcuts()
                     onNavigateBack()
                 }) {
@@ -291,7 +292,8 @@ private fun ReorderableShortcutList(
                 Spacer(modifier = Modifier.width(8.dp))
                 Checkbox(
                     checked = true,
-                    onCheckedChange = { _ -> onToggleChecked(shortcut) }
+                    onCheckedChange =
+                            rememberBooleanChangeWithSystemSound { _ -> onToggleChecked(shortcut) }
                 )
                 Spacer(modifier = Modifier.width(8.dp))
 
@@ -301,7 +303,7 @@ private fun ReorderableShortcutList(
                     tint = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier
                         .size(40.dp)
-                        .clickable { onOpenIconPicker(index) }
+                        .clickableWithSystemSound { onOpenIconPicker(index) }
                 )
 
                 Spacer(modifier = Modifier.width(8.dp))
@@ -355,7 +357,8 @@ private fun ReorderableShortcutList(
                 Spacer(modifier = Modifier.width(8.dp))
                 Checkbox(
                     checked = false,
-                    onCheckedChange = { _ -> onToggleUnchecked(action) }
+                    onCheckedChange =
+                            rememberBooleanChangeWithSystemSound { _ -> onToggleUnchecked(action) }
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(

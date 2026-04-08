@@ -1,6 +1,5 @@
 package com.lu4p.fokuslauncher.ui.components
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -9,8 +8,8 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import com.lu4p.fokuslauncher.ui.util.clickableWithSystemSound
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -63,10 +62,13 @@ fun IconPickerSectionsLazyGrid(
                                         } else {
                                             MaterialTheme.colorScheme.onSurface
                                         },
-                                modifier = Modifier.size(40.dp).clickable { onSelect(name) },
+                                modifier =
+                                        Modifier.size(40.dp).clickableWithSystemSound {
+                                            onSelect(name)
+                                        },
                         )
                     IconPickerGridVariant.Drawer ->
-                        IconButton(
+                        FokusIconButton(
                                 onClick = { onSelect(name) },
                                 modifier = Modifier.size(48.dp),
                         ) {

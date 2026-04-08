@@ -20,12 +20,12 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import com.lu4p.fokuslauncher.ui.components.FokusIconButton
+import com.lu4p.fokuslauncher.ui.components.FokusTextButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -49,6 +49,7 @@ import com.lu4p.fokuslauncher.ui.drawer.profileGroupedAppItems
 import com.lu4p.fokuslauncher.ui.drawer.sortAppsAlphabeticallyByProfileSection
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
 import com.lu4p.fokuslauncher.ui.util.formatShortcutTargetDisplay
+import com.lu4p.fokuslauncher.ui.util.rememberClickWithSystemSound
 import com.lu4p.fokuslauncher.utils.containsNormalizedSearch
 
 /** Token stored in URL templates; validated by [DrawerDotSearchSettingsViewModel.isValidDotSearchUrlTemplate]. */
@@ -110,7 +111,7 @@ fun DrawerDotSearchSettingsScreen(
                             )
                         },
                         navigationIcon = {
-                            IconButton(onClick = onNavigateBack) {
+                            FokusIconButton(onClick = onNavigateBack) {
                                 Icon(
                                         Icons.AutoMirrored.Filled.ArrowBack,
                                         stringResource(R.string.action_back),
@@ -125,7 +126,12 @@ fun DrawerDotSearchSettingsScreen(
                 )
             },
             floatingActionButton = {
-                FloatingActionButton(onClick = { showAddShortcutChoice = true }) {
+                FloatingActionButton(
+                        onClick =
+                                rememberClickWithSystemSound {
+                                    showAddShortcutChoice = true
+                                }
+                ) {
                     Icon(Icons.Default.Add, stringResource(R.string.settings_dot_search_add_alias))
                 }
             }
@@ -196,7 +202,7 @@ fun DrawerDotSearchSettingsScreen(
                                 color = MaterialTheme.colorScheme.secondary
                         )
                     }
-                    IconButton(onClick = { viewModel.removeAlias(ch) }) {
+                    FokusIconButton(onClick = { viewModel.removeAlias(ch) }) {
                         Icon(
                                 Icons.Default.Close,
                                 stringResource(R.string.cd_remove_alias),
@@ -219,7 +225,7 @@ fun DrawerDotSearchSettingsScreen(
                 },
                 text = {
                     Column {
-                        TextButton(
+                        FokusTextButton(
                                 onClick = {
                                     showAddShortcutChoice = false
                                     showAliasAppPicker = true
@@ -227,7 +233,7 @@ fun DrawerDotSearchSettingsScreen(
                         ) {
                             Text(stringResource(R.string.settings_dot_search_add_shortcut_app))
                         }
-                        TextButton(
+                        FokusTextButton(
                                 onClick = {
                                     showAddShortcutChoice = false
                                     showAliasCharForUrlTemplate = true
@@ -239,7 +245,7 @@ fun DrawerDotSearchSettingsScreen(
                 },
                 confirmButton = {},
                 dismissButton = {
-                    TextButton(onClick = { showAddShortcutChoice = false }) {
+                    FokusTextButton(onClick = { showAddShortcutChoice = false }) {
                         Text(stringResource(R.string.action_cancel))
                     }
                 },
@@ -390,13 +396,13 @@ private fun DotSearchTargetSettingsRow(
                 color = MaterialTheme.colorScheme.secondary
         )
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            TextButton(onClick = onPickApp) { Text(stringResource(R.string.action_change)) }
-            TextButton(onClick = onPickUrlTemplate) {
+            FokusTextButton(onClick = onPickApp) { Text(stringResource(R.string.action_change)) }
+            FokusTextButton(onClick = onPickUrlTemplate) {
                 Text(stringResource(R.string.settings_dot_search_url_template))
             }
             Spacer(modifier = Modifier.weight(1f))
             if (onClear != null) {
-                IconButton(onClick = onClear, modifier = Modifier.size(36.dp)) {
+                FokusIconButton(onClick = onClear, modifier = Modifier.size(36.dp)) {
                     Icon(
                             Icons.Default.Close,
                             stringResource(R.string.action_clear),
@@ -469,7 +475,7 @@ private fun DotSearchAppPickerDialog(
                 }
             },
             confirmButton = {},
-            dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
+            dismissButton = { FokusTextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
             containerColor = MaterialTheme.colorScheme.surfaceVariant
     )
 }
@@ -515,7 +521,7 @@ private fun DotSearchUrlTemplateDialog(
                 }
             },
             confirmButton = {
-                TextButton(
+                FokusTextButton(
                         onClick = {
                             if (!DrawerDotSearchSettingsViewModel.isValidDotSearchUrlTemplate(value)) {
                                 error = validationErrorText
@@ -527,7 +533,7 @@ private fun DotSearchUrlTemplateDialog(
                     Text(stringResource(R.string.action_done))
                 }
             },
-            dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
+            dismissButton = { FokusTextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
             containerColor = MaterialTheme.colorScheme.surfaceVariant
     )
 }
@@ -556,12 +562,12 @@ private fun AliasCharDialog(onConfirm: (String) -> Unit, onDismiss: () -> Unit) 
                 )
             },
             confirmButton = {
-                TextButton(onClick = { onConfirm(value) }) {
+                FokusTextButton(onClick = { onConfirm(value) }) {
                     Text(stringResource(R.string.action_done))
                 }
             },
             dismissButton = {
-                TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+                FokusTextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
             },
             containerColor = MaterialTheme.colorScheme.surfaceVariant
     )

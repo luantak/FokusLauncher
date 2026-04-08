@@ -13,7 +13,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -105,7 +104,7 @@ fun MinimalIconPickerDialog(
             },
             confirmButton = {},
             dismissButton = {
-                TextButton(onClick = onDismiss) {
+                FokusTextButton(onClick = onDismiss) {
                     Text(
                             stringResource(R.string.action_cancel),
                             color = MaterialTheme.colorScheme.onBackground

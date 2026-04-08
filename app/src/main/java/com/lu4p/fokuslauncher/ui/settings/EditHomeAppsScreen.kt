@@ -24,8 +24,8 @@ import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import com.lu4p.fokuslauncher.ui.components.FokusIconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -60,6 +60,7 @@ import com.lu4p.fokuslauncher.ui.drawer.profileOriginLabelForFavorite
 import com.lu4p.fokuslauncher.ui.drawer.sortAppsAlphabeticallyByProfileSection
 import com.lu4p.fokuslauncher.ui.home.HomeViewModel
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
+import com.lu4p.fokuslauncher.ui.util.rememberBooleanChangeWithSystemSound
 import com.lu4p.fokuslauncher.utils.containsNormalizedSearch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -111,7 +112,7 @@ fun EditHomeAppsScreen(
                 Text(stringResource(R.string.edit_home_title), color = MaterialTheme.colorScheme.onBackground)
             },
             navigationIcon = {
-                IconButton(onClick = {
+                FokusIconButton(onClick = {
                     viewModel.saveEditedFavorites()
                     onNavigateBack()
                 }) {
@@ -123,7 +124,7 @@ fun EditHomeAppsScreen(
                 }
             },
             actions = {
-                IconButton(onClick = {
+                FokusIconButton(onClick = {
                     viewModel.saveEditedFavorites()
                     onNavigateBack()
                 }) {
@@ -263,7 +264,7 @@ private fun ReorderableEditHomeAppsList(
                 Spacer(modifier = Modifier.width(8.dp))
                 Checkbox(
                     checked = true,
-                    onCheckedChange = {
+                    onCheckedChange = rememberBooleanChangeWithSystemSound {
                         allApps.find {
                             it.packageName == fav.packageName &&
                                     appProfileKey(it.userHandle) == fav.profileKey
@@ -319,7 +320,7 @@ private fun ReorderableEditHomeAppsList(
                 Spacer(modifier = Modifier.width(8.dp))
                 Checkbox(
                     checked = false,
-                    onCheckedChange = { onToggle(app) }
+                    onCheckedChange = rememberBooleanChangeWithSystemSound { onToggle(app) }
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Column(modifier = Modifier.weight(1f)) {

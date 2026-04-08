@@ -2,7 +2,6 @@ package com.lu4p.fokuslauncher.ui.settings
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,12 +26,14 @@ import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import com.lu4p.fokuslauncher.ui.components.FokusIconButton
+import com.lu4p.fokuslauncher.ui.util.clickableWithSystemSound
+import com.lu4p.fokuslauncher.ui.util.rememberBooleanChangeWithSystemSound
+import com.lu4p.fokuslauncher.ui.components.FokusTextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -99,7 +100,7 @@ fun CategorySettingsScreen(
                     Text(stringResource(R.string.category_settings_title), color = MaterialTheme.colorScheme.onBackground)
                 },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    FokusIconButton(onClick = onNavigateBack) {
                         Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = stringResource(R.string.action_back),
@@ -119,7 +120,7 @@ fun CategorySettingsScreen(
                     label = { Text(stringResource(R.string.category_new_label)) },
                     modifier = Modifier.weight(1f)
             )
-            TextButton(
+            FokusTextButton(
                     enabled = canAddCategory,
                     onClick = {
                         viewModel.addCategoryDefinition(newCategory)
@@ -203,7 +204,7 @@ private fun ReorderableCategoryList(
                             Modifier.fillMaxWidth()
                                     .heightIn(min = 56.dp)
                                     .graphicsLayer { translationY = offset }
-                                    .clickable { onEditCategoryApps(category) }
+                                    .clickableWithSystemSound { onEditCategoryApps(category) }
                                     .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
                 Icon(
@@ -251,7 +252,7 @@ private fun ReorderableCategoryList(
                                     category,
                                     categoryDrawerIconOverrides
                             )
-                    IconButton(
+                    FokusIconButton(
                             onClick = { onOpenCategoryIconPicker(category) },
                             modifier = Modifier.size(40.dp)
                     ) {
@@ -261,7 +262,7 @@ private fun ReorderableCategoryList(
                                 tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
-                    IconButton(
+                    FokusIconButton(
                             onClick = { onResetCategoryDrawerIcon(category) },
                             modifier = Modifier.size(40.dp)
                     ) {
@@ -286,10 +287,10 @@ private fun ReorderableCategoryList(
                             color = MaterialTheme.colorScheme.secondary
                     )
                 }
-                TextButton(onClick = { onEditCategoryApps(category) }) {
+                FokusTextButton(onClick = { onEditCategoryApps(category) }) {
                     Text(stringResource(R.string.category_edit_apps))
                 }
-                IconButton(onClick = { onDelete(category) }) {
+                FokusIconButton(onClick = { onDelete(category) }) {
                     Icon(
                             imageVector = Icons.Default.Delete,
                             contentDescription = stringResource(R.string.cd_delete_category),
@@ -368,7 +369,7 @@ fun CategoryAppsScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    FokusIconButton(onClick = onNavigateBack) {
                         Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = stringResource(R.string.action_back),
@@ -377,7 +378,7 @@ fun CategoryAppsScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = onNavigateBack) {
+                    FokusIconButton(onClick = onNavigateBack) {
                         Icon(
                                 imageVector = Icons.Default.Check,
                                 contentDescription = stringResource(R.string.action_done),
@@ -452,17 +453,18 @@ private fun CategoryAppRow(
         secondary: String,
         onToggle: () -> Unit
 ) {
+    val onCheckboxChange = rememberBooleanChangeWithSystemSound { onToggle() }
     Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier =
                     Modifier.fillMaxWidth()
                             .height(56.dp)
-                            .clickable(onClick = onToggle)
+                            .clickableWithSystemSound(onClick = onToggle)
                             .padding(horizontal = 16.dp)
     ) {
         Spacer(modifier = Modifier.size(24.dp))
         Spacer(modifier = Modifier.width(8.dp))
-        Checkbox(checked = checked, onCheckedChange = { onToggle() })
+        Checkbox(checked = checked, onCheckedChange = onCheckboxChange)
         Spacer(modifier = Modifier.width(8.dp))
         Column {
             Text(

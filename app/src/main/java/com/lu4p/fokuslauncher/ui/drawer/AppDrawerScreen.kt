@@ -4,8 +4,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.text.KeyboardActions
@@ -44,12 +42,10 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -93,11 +89,16 @@ import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import com.lu4p.fokuslauncher.data.model.appListStableKey
 import com.lu4p.fokuslauncher.utils.DotSearchSyntax
 import com.lu4p.fokuslauncher.ui.components.CategoryChips
-import com.lu4p.fokuslauncher.ui.components.DrawerCategorySidebar
 import com.lu4p.fokuslauncher.ui.components.CategoryIconPickerDialog
+import com.lu4p.fokuslauncher.ui.components.DrawerCategorySidebar
+import com.lu4p.fokuslauncher.ui.components.FokusIconButton
+import com.lu4p.fokuslauncher.ui.components.FokusTextButton
 import com.lu4p.fokuslauncher.ui.components.MinimalIcons
 import com.lu4p.fokuslauncher.ui.components.SearchBar
 import com.lu4p.fokuslauncher.ui.util.categoryChipDisplayLabel
+import com.lu4p.fokuslauncher.ui.util.clickableWithSystemSound
+import com.lu4p.fokuslauncher.ui.util.combinedClickableWithSystemSound
+import com.lu4p.fokuslauncher.ui.util.rememberClickWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.resolvedCategoryDrawerIconName
 import java.util.Locale
 
@@ -165,7 +166,7 @@ private fun DrawerOverflowMenu(
         modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier) {
-        IconButton(onClick = onMenuToggle, modifier = Modifier.testTag("settings_button")) {
+        FokusIconButton(onClick = onMenuToggle, modifier = Modifier.testTag("settings_button")) {
             Icon(
                     imageVector = Icons.Default.MoreVert,
                     contentDescription = stringResource(R.string.cd_menu),
@@ -191,7 +192,7 @@ private fun DrawerOverflowMenu(
                                             else stringResource(R.string.drawer_private_space_unlock)
                             )
                         },
-                        onClick = onPrivateSpaceToggle,
+                        onClick = rememberClickWithSystemSound { onPrivateSpaceToggle() },
                         leadingIcon = {
                             Icon(
                                     imageVector =
@@ -217,7 +218,7 @@ private fun DrawerOverflowMenu(
                                     )
                             )
                         },
-                        onClick = onToggleReorderApps,
+                        onClick = rememberClickWithSystemSound { onToggleReorderApps() },
                         leadingIcon = {
                             Icon(
                                     imageVector = Icons.Default.DragHandle,
@@ -229,7 +230,7 @@ private fun DrawerOverflowMenu(
             }
             DropdownMenuItem(
                     text = { Text(stringResource(R.string.drawer_menu_launcher_settings)) },
-                    onClick = onSettingsClick,
+                    onClick = rememberClickWithSystemSound { onSettingsClick() },
                     leadingIcon = {
                         Icon(
                                 imageVector = Icons.Default.Settings,
@@ -938,7 +939,7 @@ fun AppDrawerContent(
                                         color = MaterialTheme.colorScheme.onBackground,
                                         modifier = Modifier.weight(1f)
                                 )
-                                IconButton(
+                                FokusIconButton(
                                         onClick = { showSearch = !showSearch },
                                         modifier = Modifier.testTag("drawer_search_icon")
                                 ) {
@@ -1123,10 +1124,10 @@ fun CategoryActionSheet(
                                     Modifier.weight(1f)
                                             .testTag("category_rename_inline_input")
                     )
-                    TextButton(onClick = { renameMode = false }) {
+                    FokusTextButton(onClick = { renameMode = false }) {
                         Text(stringResource(R.string.action_cancel))
                     }
-                    TextButton(
+                    FokusTextButton(
                             enabled = canSaveRename,
                             onClick = {
                                 onRename(normalized)
@@ -1141,7 +1142,7 @@ fun CategoryActionSheet(
                             modifier = Modifier.weight(1f)
                     )
                     if (!isReservedDrawerCategory) {
-                        IconButton(
+                        FokusIconButton(
                                 onClick = { renameMode = true },
                                 modifier = Modifier.testTag("category_action_rename")
                         ) {
@@ -1169,7 +1170,7 @@ fun CategoryActionSheet(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier =
                             Modifier.fillMaxWidth()
-                                    .clickable { showIconPickerDialog = true }
+                                    .clickableWithSystemSound { showIconPickerDialog = true }
                                     .padding(horizontal = 24.dp, vertical = 16.dp)
                                     .testTag("category_action_choose_icon")
             ) {
@@ -1232,7 +1233,10 @@ fun AppListItem(
             color = MaterialTheme.colorScheme.onBackground,
             modifier =
                     modifier.fillMaxWidth()
-                            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+                            .combinedClickableWithSystemSound(
+                                    onClick = onClick,
+                                    onLongClick = onLongClick
+                            )
                             .padding(horizontal = 24.dp, vertical = 12.dp)
                             .testTag("app_item_${app.packageName}")
     )

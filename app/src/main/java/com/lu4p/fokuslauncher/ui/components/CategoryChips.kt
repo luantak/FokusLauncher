@@ -20,6 +20,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.lu4p.fokuslauncher.ui.util.categoryChipDisplayLabel
+import com.lu4p.fokuslauncher.ui.util.rememberClickWithSystemSound
 import com.lu4p.fokuslauncher.ui.theme.ChipBackground
 
 @Composable
@@ -56,7 +57,10 @@ fun CategoryChips(
             ) {
                 FilterChip(
                         selected = isSelected,
-                        onClick = { onCategorySelected(category) },
+                        onClick =
+                                rememberClickWithSystemSound {
+                                    onCategorySelected(category)
+                                },
                         label = {
                             Text(
                                     text = categoryChipDisplayLabel(context, category),

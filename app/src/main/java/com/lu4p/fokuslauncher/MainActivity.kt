@@ -58,6 +58,7 @@ class MainActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             window.isNavigationBarContrastEnforced = false
         }
+        window.decorView.isSoundEffectsEnabled = true
         window.decorView.overScrollMode = View.OVER_SCROLL_NEVER
         hideStatusBar()
         lifecycleScope.launch {
