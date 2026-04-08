@@ -2,6 +2,7 @@ package com.lu4p.fokuslauncher.data.local
 
 import android.content.Context
 import android.os.UserHandle
+import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
@@ -21,13 +22,32 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import org.json.JSONArray
 import org.json.JSONObject
 
+/** BCP-47 tag (e.g. en, pl). Empty = follow system. Shared with [AppLocaleHelper]. */
+internal val APP_LOCALE_TAG_KEY = stringPreferencesKey("app_locale_tag")
+
+data class HomeWidgetVisibility(
+        val showClock: Boolean,
+        val showDate: Boolean,
+        val showWeather: Boolean,
+        val showBattery: Boolean,
+)
+
 @Singleton
 class PreferencesManager @Inject constructor(@param:ApplicationContext private val context: Context) {
+
+    private fun <T> prefFlow(key: Preferences.Key<T>, default: T): Flow<T> =
+            context.fokusLauncherPreferencesDataStore.data.map { it[key] ?: default }
+
+    private suspend fun <T> setPref(key: Preferences.Key<T>, value: T) {
+        context.fokusLauncherPreferencesDataStore.edit { it[key] = value }
+    }
+
     companion object {
         private val FAVORITES_KEY = stringPreferencesKey("favorite_apps")
         private val SWIPE_LEFT_KEY = stringPreferencesKey("swipe_left_app")
@@ -71,8 +91,6 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         private val ONBOARDING_REACHED_SET_DEFAULT_KEY = booleanPreferencesKey("onboarding_reached_set_default")
         private val HOME_ALIGNMENT_KEY = stringPreferencesKey("home_alignment")
         private val LAUNCHER_FONT_FAMILY_KEY = stringPreferencesKey("launcher_font_family")
-        /** BCP-47 tag (e.g. en, pl). Empty = follow system. Sync with AppLocaleHelper. */
-        private val APP_LOCALE_TAG_KEY = stringPreferencesKey("app_locale_tag")
         private val ALLOW_LANDSCAPE_ROTATION_KEY =
                 booleanPreferencesKey("allow_landscape_rotation")
         private val DOUBLE_TAP_EMPTY_LOCK_KEY =
@@ -215,122 +233,64 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
 
     // --- Preferred weather app ---
 
-    val preferredWeatherAppFlow: Flow<String> =
-            context.fokusLauncherPreferencesDataStore.data.map { prefs -> prefs[PREFERRED_WEATHER_APP_KEY] ?: "" }
-
-    suspend fun setPreferredWeatherApp(packageName: String) {
-        context.fokusLauncherPreferencesDataStore.edit { prefs -> prefs[PREFERRED_WEATHER_APP_KEY] = packageName }
-    }
+    val preferredWeatherAppFlow: Flow<String> = prefFlow(PREFERRED_WEATHER_APP_KEY, "")
+    suspend fun setPreferredWeatherApp(packageName: String) =
+            setPref(PREFERRED_WEATHER_APP_KEY, packageName)
 
     // --- Clock / calendar tap overrides (home widgets) ---
 
-    val preferredClockAppFlow: Flow<String> =
-            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
-                prefs[PREFERRED_CLOCK_APP_KEY] ?: ""
-            }
+    val preferredClockAppFlow: Flow<String> = prefFlow(PREFERRED_CLOCK_APP_KEY, "")
+    suspend fun setPreferredClockApp(packageName: String) =
+            setPref(PREFERRED_CLOCK_APP_KEY, packageName)
 
-    suspend fun setPreferredClockApp(packageName: String) {
-        context.fokusLauncherPreferencesDataStore.edit { prefs ->
-            prefs[PREFERRED_CLOCK_APP_KEY] = packageName
-        }
-    }
-
-    val preferredCalendarAppFlow: Flow<String> =
-            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
-                prefs[PREFERRED_CALENDAR_APP_KEY] ?: ""
-            }
-
-    suspend fun setPreferredCalendarApp(packageName: String) {
-        context.fokusLauncherPreferencesDataStore.edit { prefs ->
-            prefs[PREFERRED_CALENDAR_APP_KEY] = packageName
-        }
-    }
+    val preferredCalendarAppFlow: Flow<String> = prefFlow(PREFERRED_CALENDAR_APP_KEY, "")
+    suspend fun setPreferredCalendarApp(packageName: String) =
+            setPref(PREFERRED_CALENDAR_APP_KEY, packageName)
 
     // --- System UI ---
 
-    val showStatusBarFlow: Flow<Boolean> =
-            context.fokusLauncherPreferencesDataStore.data.map { prefs -> prefs[SHOW_STATUS_BAR_KEY] ?: false }
+    val showStatusBarFlow: Flow<Boolean> = prefFlow(SHOW_STATUS_BAR_KEY, false)
+    suspend fun setShowStatusBar(show: Boolean) = setPref(SHOW_STATUS_BAR_KEY, show)
 
-    suspend fun setShowStatusBar(show: Boolean) {
-        context.fokusLauncherPreferencesDataStore.edit { prefs -> prefs[SHOW_STATUS_BAR_KEY] = show }
-    }
+    val showHomeClockFlow: Flow<Boolean> = prefFlow(SHOW_HOME_CLOCK_KEY, true)
+    suspend fun setShowHomeClock(show: Boolean) = setPref(SHOW_HOME_CLOCK_KEY, show)
 
-    val showHomeClockFlow: Flow<Boolean> =
-            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
-                prefs[SHOW_HOME_CLOCK_KEY] ?: true
-            }
-
-    suspend fun setShowHomeClock(show: Boolean) {
-        context.fokusLauncherPreferencesDataStore.edit { prefs ->
-            prefs[SHOW_HOME_CLOCK_KEY] = show
-        }
-    }
-
-    val showHomeDateFlow: Flow<Boolean> =
-            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
-                prefs[SHOW_HOME_DATE_KEY] ?: true
-            }
-
-    suspend fun setShowHomeDate(show: Boolean) {
-        context.fokusLauncherPreferencesDataStore.edit { prefs ->
-            prefs[SHOW_HOME_DATE_KEY] = show
-        }
-    }
+    val showHomeDateFlow: Flow<Boolean> = prefFlow(SHOW_HOME_DATE_KEY, true)
+    suspend fun setShowHomeDate(show: Boolean) = setPref(SHOW_HOME_DATE_KEY, show)
 
     val homeDateFormatStyleFlow: Flow<HomeDateFormatStyle> =
             context.fokusLauncherPreferencesDataStore.data.map { prefs ->
                 HomeDateFormatStyle.fromString(prefs[HOME_DATE_FORMAT_STYLE_KEY])
             }
 
-    suspend fun setHomeDateFormatStyle(style: HomeDateFormatStyle) {
-        context.fokusLauncherPreferencesDataStore.edit { prefs ->
-            prefs[HOME_DATE_FORMAT_STYLE_KEY] = style.name
-        }
-    }
+    suspend fun setHomeDateFormatStyle(style: HomeDateFormatStyle) =
+            setPref(HOME_DATE_FORMAT_STYLE_KEY, style.name)
 
-    val showHomeWeatherFlow: Flow<Boolean> =
-            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
-                prefs[SHOW_HOME_WEATHER_KEY] ?: true
+    val showHomeWeatherFlow: Flow<Boolean> = prefFlow(SHOW_HOME_WEATHER_KEY, true)
+    suspend fun setShowHomeWeather(show: Boolean) = setPref(SHOW_HOME_WEATHER_KEY, show)
+
+    val showHomeBatteryFlow: Flow<Boolean> = prefFlow(SHOW_HOME_BATTERY_KEY, true)
+    suspend fun setShowHomeBattery(show: Boolean) = setPref(SHOW_HOME_BATTERY_KEY, show)
+
+    val homeWidgetVisibilityFlow: Flow<HomeWidgetVisibility> =
+            combine(
+                    showHomeClockFlow,
+                    showHomeDateFlow,
+                    showHomeWeatherFlow,
+                    showHomeBatteryFlow,
+            ) { showClock, showDate, showWeather, showBattery ->
+                HomeWidgetVisibility(showClock, showDate, showWeather, showBattery)
             }
-
-    suspend fun setShowHomeWeather(show: Boolean) {
-        context.fokusLauncherPreferencesDataStore.edit { prefs ->
-            prefs[SHOW_HOME_WEATHER_KEY] = show
-        }
-    }
-
-    val showHomeBatteryFlow: Flow<Boolean> =
-            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
-                prefs[SHOW_HOME_BATTERY_KEY] ?: true
-            }
-
-    suspend fun setShowHomeBattery(show: Boolean) {
-        context.fokusLauncherPreferencesDataStore.edit { prefs ->
-            prefs[SHOW_HOME_BATTERY_KEY] = show
-        }
-    }
 
     val drawerSidebarCategoriesFlow: Flow<Boolean> =
-            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
-                prefs[DRAWER_SIDEBAR_CATEGORIES_KEY] ?: false
-            }
-
-    suspend fun setDrawerSidebarCategories(enabled: Boolean) {
-        context.fokusLauncherPreferencesDataStore.edit { prefs ->
-            prefs[DRAWER_SIDEBAR_CATEGORIES_KEY] = enabled
-        }
-    }
+            prefFlow(DRAWER_SIDEBAR_CATEGORIES_KEY, false)
+    suspend fun setDrawerSidebarCategories(enabled: Boolean) =
+            setPref(DRAWER_SIDEBAR_CATEGORIES_KEY, enabled)
 
     val drawerCategorySidebarOnLeftFlow: Flow<Boolean> =
-            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
-                prefs[DRAWER_CATEGORY_SIDEBAR_ON_LEFT_KEY] ?: false
-            }
-
-    suspend fun setDrawerCategorySidebarOnLeft(onLeft: Boolean) {
-        context.fokusLauncherPreferencesDataStore.edit { prefs ->
-            prefs[DRAWER_CATEGORY_SIDEBAR_ON_LEFT_KEY] = onLeft
-        }
-    }
+            prefFlow(DRAWER_CATEGORY_SIDEBAR_ON_LEFT_KEY, false)
+    suspend fun setDrawerCategorySidebarOnLeft(onLeft: Boolean) =
+            setPref(DRAWER_CATEGORY_SIDEBAR_ON_LEFT_KEY, onLeft)
 
     val drawerCategoryIconsFlow: Flow<Map<String, String>> =
             context.fokusLauncherPreferencesDataStore.data.map { prefs ->
@@ -380,11 +340,8 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
                 DrawerAppSortMode.fromStorage(prefs[DRAWER_APP_SORT_MODE_KEY])
             }
 
-    suspend fun setDrawerAppSortMode(mode: DrawerAppSortMode) {
-        context.fokusLauncherPreferencesDataStore.edit { prefs ->
-            prefs[DRAWER_APP_SORT_MODE_KEY] = mode.name
-        }
-    }
+    suspend fun setDrawerAppSortMode(mode: DrawerAppSortMode) =
+            setPref(DRAWER_APP_SORT_MODE_KEY, mode.name)
 
     val drawerCustomAppOrderFlow: Flow<Map<String, List<String>>> =
             context.fokusLauncherPreferencesDataStore.data.map { prefs ->
@@ -474,9 +431,7 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
     // --- Onboarding ---
 
     val hasCompletedOnboardingFlow: Flow<Boolean> =
-            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
-                prefs[HAS_COMPLETED_ONBOARDING_KEY] ?: false
-            }
+            prefFlow(HAS_COMPLETED_ONBOARDING_KEY, false)
 
     suspend fun setHasCompletedOnboarding(completed: Boolean) {
         context.fokusLauncherPreferencesDataStore.edit { prefs ->
@@ -504,9 +459,8 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
                 HomeAlignment.fromString(prefs[HOME_ALIGNMENT_KEY] ?: HomeAlignment.LEFT.name)
             }
 
-    suspend fun setHomeAlignment(alignment: HomeAlignment) {
-        context.fokusLauncherPreferencesDataStore.edit { prefs -> prefs[HOME_ALIGNMENT_KEY] = alignment.name }
-    }
+    suspend fun setHomeAlignment(alignment: HomeAlignment) =
+            setPref(HOME_ALIGNMENT_KEY, alignment.name)
 
     // --- Launcher text (system fonts + scale) ---
 
@@ -527,8 +481,7 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
 
     // --- App language (per-app locale) ---
 
-    val appLocaleTagFlow: Flow<String> =
-            context.fokusLauncherPreferencesDataStore.data.map { prefs -> prefs[APP_LOCALE_TAG_KEY] ?: "" }
+    val appLocaleTagFlow: Flow<String> = prefFlow(APP_LOCALE_TAG_KEY, "")
 
     suspend fun setAppLocaleTag(tag: String) {
         val trimmed = tag.trim()
@@ -541,60 +494,30 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
     // --- Screen rotation ---
 
     val allowLandscapeRotationFlow: Flow<Boolean> =
-            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
-                prefs[ALLOW_LANDSCAPE_ROTATION_KEY] ?: false
-            }
+            prefFlow(ALLOW_LANDSCAPE_ROTATION_KEY, false)
+    suspend fun setAllowLandscapeRotation(allow: Boolean) =
+            setPref(ALLOW_LANDSCAPE_ROTATION_KEY, allow)
 
-    suspend fun setAllowLandscapeRotation(allow: Boolean) {
-        context.fokusLauncherPreferencesDataStore.edit { prefs ->
-            prefs[ALLOW_LANDSCAPE_ROTATION_KEY] = allow
-        }
-    }
+    val doubleTapEmptyLockFlow: Flow<Boolean> = prefFlow(DOUBLE_TAP_EMPTY_LOCK_KEY, false)
+    suspend fun setDoubleTapEmptyLock(enabled: Boolean) =
+            setPref(DOUBLE_TAP_EMPTY_LOCK_KEY, enabled)
 
-    val doubleTapEmptyLockFlow: Flow<Boolean> =
-            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
-                prefs[DOUBLE_TAP_EMPTY_LOCK_KEY] ?: false
-            }
-
-    suspend fun setDoubleTapEmptyLock(enabled: Boolean) {
-        context.fokusLauncherPreferencesDataStore.edit { prefs ->
-            prefs[DOUBLE_TAP_EMPTY_LOCK_KEY] = enabled
-        }
-    }
-
-    val longLockReturnHomeFlow: Flow<Boolean> =
-            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
-                prefs[LONG_LOCK_RETURN_HOME_KEY] ?: false
-            }
-
-    suspend fun setLongLockReturnHome(enabled: Boolean) {
-        context.fokusLauncherPreferencesDataStore.edit { prefs ->
-            prefs[LONG_LOCK_RETURN_HOME_KEY] = enabled
-        }
-    }
+    val longLockReturnHomeFlow: Flow<Boolean> = prefFlow(LONG_LOCK_RETURN_HOME_KEY, false)
+    suspend fun setLongLockReturnHome(enabled: Boolean) =
+            setPref(LONG_LOCK_RETURN_HOME_KEY, enabled)
 
     val longLockReturnHomeThresholdMinutesFlow: Flow<Int> =
-            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
-                prefs[LONG_LOCK_RETURN_HOME_THRESHOLD_MINUTES_KEY]
-                        ?: DEFAULT_LONG_LOCK_RETURN_HOME_THRESHOLD_MINUTES
-            }
-
-    suspend fun setLongLockReturnHomeThresholdMinutes(minutes: Int) {
-        context.fokusLauncherPreferencesDataStore.edit { prefs ->
-            prefs[LONG_LOCK_RETURN_HOME_THRESHOLD_MINUTES_KEY] = minutes
-        }
-    }
+            prefFlow(
+                    LONG_LOCK_RETURN_HOME_THRESHOLD_MINUTES_KEY,
+                    DEFAULT_LONG_LOCK_RETURN_HOME_THRESHOLD_MINUTES,
+            )
+    suspend fun setLongLockReturnHomeThresholdMinutes(minutes: Int) =
+            setPref(LONG_LOCK_RETURN_HOME_THRESHOLD_MINUTES_KEY, minutes)
 
     val longLockLastScreenOffAtMsFlow: Flow<Long> =
-            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
-                prefs[LONG_LOCK_LAST_SCREEN_OFF_AT_MS_KEY] ?: 0L
-            }
-
-    suspend fun setLongLockLastScreenOffAtMs(timestampMs: Long) {
-        context.fokusLauncherPreferencesDataStore.edit { prefs ->
-            prefs[LONG_LOCK_LAST_SCREEN_OFF_AT_MS_KEY] = timestampMs
-        }
-    }
+            prefFlow(LONG_LOCK_LAST_SCREEN_OFF_AT_MS_KEY, 0L)
+    suspend fun setLongLockLastScreenOffAtMs(timestampMs: Long) =
+            setPref(LONG_LOCK_LAST_SCREEN_OFF_AT_MS_KEY, timestampMs)
 
     suspend fun clearLongLockLastScreenOffAtMs() {
         context.fokusLauncherPreferencesDataStore.edit { prefs ->

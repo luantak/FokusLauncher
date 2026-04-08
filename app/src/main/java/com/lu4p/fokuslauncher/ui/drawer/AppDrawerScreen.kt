@@ -12,7 +12,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,8 +25,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.HorizontalDivider
+import com.lu4p.fokuslauncher.ui.util.applyVerticalSlotReorder
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
@@ -43,10 +46,8 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -92,16 +93,18 @@ import com.lu4p.fokuslauncher.utils.DotSearchSyntax
 import com.lu4p.fokuslauncher.ui.components.CategoryChips
 import com.lu4p.fokuslauncher.ui.components.CategoryIconPickerDialog
 import com.lu4p.fokuslauncher.ui.components.DrawerCategorySidebar
+import com.lu4p.fokuslauncher.ui.components.FokusBottomSheet
 import com.lu4p.fokuslauncher.ui.components.FokusIconButton
 import com.lu4p.fokuslauncher.ui.components.FokusTextButton
 import com.lu4p.fokuslauncher.ui.components.MinimalIcons
 import com.lu4p.fokuslauncher.ui.components.SearchBar
+import com.lu4p.fokuslauncher.ui.components.SheetActionRow
+import com.lu4p.fokuslauncher.ui.components.SheetInlineRenameTitleRow
 import com.lu4p.fokuslauncher.ui.util.categoryChipDisplayLabel
 import com.lu4p.fokuslauncher.ui.util.clickableWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.combinedClickableWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.rememberClickWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.resolvedCategoryDrawerIconName
-import java.util.Locale
 
 private fun deepCopyProfileSections(
         sections: List<DrawerProfileSectionUi>
@@ -167,6 +170,107 @@ private const val DRAWER_CATEGORY_SWIPE_THRESHOLD_PX = 120f
 private val DRAWER_MIN_TOP_PADDING = 48.dp
 private val DRAWER_TOP_INSET_BUFFER = 16.dp
 
+private val ReservedDrawerActionCategories =
+        setOf(
+                ReservedCategoryNames.ALL_APPS,
+                ReservedCategoryNames.PRIVATE,
+                ReservedCategoryNames.WORK,
+                ReservedCategoryNames.UNCATEGORIZED,
+        )
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun LazyItemScope.ReorderableDrawerAppRow(
+        allowCustomDragReorder: Boolean,
+        placementAnimationEnabled: Boolean,
+        offsetY: Float,
+        dragHandleModifier: Modifier,
+        content: @Composable RowScope.() -> Unit,
+) {
+    Row(
+            modifier =
+                    Modifier.then(
+                                    if (allowCustomDragReorder && placementAnimationEnabled) {
+                                        Modifier.animateItem(
+                                                fadeInSpec = null,
+                                                fadeOutSpec = null,
+                                                placementSpec =
+                                                        tween(
+                                                                180,
+                                                                easing = FastOutSlowInEasing,
+                                                        ),
+                                        )
+                                    } else {
+                                        Modifier
+                                    }
+                            )
+                            .fillMaxWidth()
+                            .heightIn(min = 56.dp)
+                            .graphicsLayer { translationY = offsetY },
+            verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (allowCustomDragReorder) {
+            Icon(
+                    imageVector = Icons.Default.DragHandle,
+                    contentDescription = stringResource(R.string.cd_drag_to_reorder),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier =
+                            Modifier.padding(start = 8.dp)
+                                    .size(24.dp)
+                                    .then(dragHandleModifier),
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+        }
+        content()
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun LazyItemScope.ReorderableDrawerAppListItem(
+        app: AppInfo,
+        allowCustomDragReorder: Boolean,
+        isDraggedRow: Boolean,
+        offsetY: Float,
+        dragHandleModifier: Modifier,
+        onLaunchWhenNotReordering: () -> Unit,
+        onLongPressWhenNotReordering: () -> Unit,
+) {
+    ReorderableDrawerAppRow(
+            allowCustomDragReorder = allowCustomDragReorder,
+            placementAnimationEnabled = !isDraggedRow,
+            offsetY = offsetY,
+            dragHandleModifier = dragHandleModifier,
+    ) {
+        AppListItem(
+                app = app,
+                onClick = {
+                    if (allowCustomDragReorder) return@AppListItem
+                    onLaunchWhenNotReordering()
+                },
+                onLongClick = {
+                    if (!allowCustomDragReorder) onLongPressWhenNotReordering()
+                },
+                modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+@Composable
+private fun DrawerDropdownMenuItem(
+        text: @Composable () -> Unit,
+        onClick: () -> Unit,
+        leadingIcon: @Composable () -> Unit,
+        testTag: String,
+) {
+    DropdownMenuItem(
+            text = text,
+            onClick = rememberClickWithSystemSound(onClick),
+            leadingIcon = leadingIcon,
+            modifier = Modifier.testTag(testTag),
+    )
+}
+
 @Composable
 private fun DrawerOverflowMenu(
         uiState: AppDrawerUiState,
@@ -196,7 +300,7 @@ private fun DrawerOverflowMenu(
                         )
         ) {
             if (uiState.isPrivateSpaceSupported) {
-                DropdownMenuItem(
+                DrawerDropdownMenuItem(
                         text = {
                             Text(
                                     text =
@@ -205,7 +309,7 @@ private fun DrawerOverflowMenu(
                                             else stringResource(R.string.drawer_private_space_unlock)
                             )
                         },
-                        onClick = rememberClickWithSystemSound { onPrivateSpaceToggle() },
+                        onClick = onPrivateSpaceToggle,
                         leadingIcon = {
                             Icon(
                                     imageVector =
@@ -215,11 +319,11 @@ private fun DrawerOverflowMenu(
                                     contentDescription = null
                             )
                         },
-                        modifier = Modifier.testTag("menu_private_space")
+                        testTag = "menu_private_space",
                 )
             }
             if (showReorderMenuItem) {
-                DropdownMenuItem(
+                DrawerDropdownMenuItem(
                         text = {
                             Text(
                                     stringResource(
@@ -231,26 +335,26 @@ private fun DrawerOverflowMenu(
                                     )
                             )
                         },
-                        onClick = rememberClickWithSystemSound { onToggleReorderApps() },
+                        onClick = onToggleReorderApps,
                         leadingIcon = {
                             Icon(
                                     imageVector = Icons.Default.DragHandle,
                                     contentDescription = null
                             )
                         },
-                        modifier = Modifier.testTag("menu_reorder_apps")
+                        testTag = "menu_reorder_apps",
                 )
             }
-            DropdownMenuItem(
+            DrawerDropdownMenuItem(
                     text = { Text(stringResource(R.string.drawer_menu_launcher_settings)) },
-                    onClick = rememberClickWithSystemSound { onSettingsClick() },
+                    onClick = onSettingsClick,
                     leadingIcon = {
                         Icon(
                                 imageVector = Icons.Default.Settings,
                                 contentDescription = null
                         )
                     },
-                    modifier = Modifier.testTag("menu_settings")
+                    testTag = "menu_settings",
             )
         }
     }
@@ -324,21 +428,10 @@ private fun DrawerAppListColumn(
                 val showSectionLabel = section.id != "owner"
                 if (showSectionLabel) {
                     if (hasEmittedProfileListContent) {
-                        item(key = "div_profile_${section.id}") {
-                            HorizontalDivider(
-                                    modifier =
-                                            Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
-                                    color = MaterialTheme.colorScheme.outlineVariant
-                            )
-                        }
+                        item(key = "div_profile_${section.id}") { DrawerListSectionDivider() }
                     }
                     item(key = "hdr_profile_${section.id}") {
-                        Text(
-                                text = section.title.uppercase(Locale.getDefault()),
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)
-                        )
+                        DrawerListSectionHeader(text = section.title)
                     }
                 }
                 hasEmittedProfileListContent = true
@@ -361,154 +454,74 @@ private fun DrawerAppListColumn(
                             } else {
                                 0f
                             }
-                    Row(
-                            modifier =
-                                    Modifier.then(
-                                            if (allowCustomDragReorder && !isDraggedRow) {
-                                                Modifier.animateItem(
-                                                        fadeInSpec = null,
-                                                        fadeOutSpec = null,
-                                                        placementSpec =
-                                                                tween(
-                                                                        180,
-                                                                        easing =
-                                                                                FastOutSlowInEasing,
-                                                                ),
-                                                )
-                                            } else {
-                                                Modifier
-                                            }
-                                    )
-                                            .fillMaxWidth()
-                                            .heightIn(min = 56.dp)
-                                            .graphicsLayer { translationY = offsetY },
-                            verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        if (allowCustomDragReorder) {
-                            Icon(
-                                    imageVector = Icons.Default.DragHandle,
-                                    contentDescription =
-                                            stringResource(R.string.cd_drag_to_reorder),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier =
-                                            Modifier.padding(start = 8.dp)
-                                                    .size(24.dp)
-                                                    .pointerInput(
-                                                            section.id,
-                                                            appListStableKey(app),
+                    ReorderableDrawerAppListItem(
+                            app = app,
+                            allowCustomDragReorder = allowCustomDragReorder,
+                            isDraggedRow = isDraggedRow,
+                            offsetY = offsetY,
+                            dragHandleModifier =
+                                    Modifier.pointerInput(
+                                            section.id,
+                                            appListStableKey(app),
+                                    ) {
+                                        detectVerticalDragGestures(
+                                                onDragStart = {
+                                                    draggedProfileSectionId = section.id
+                                                    draggedProfileIndex = currentIndex
+                                                    profileDragOffset = 0f
+                                                },
+                                                onVerticalDrag = { change, amount ->
+                                                    change.consume()
+                                                    val sectionApps = latestSectionApps.value
+                                                    if (draggedProfileSectionId == section.id &&
+                                                                    draggedProfileIndex in sectionApps.indices
                                                     ) {
-                                                        detectVerticalDragGestures(
-                                                                onDragStart = {
-                                                                    draggedProfileSectionId = section.id
-                                                                    draggedProfileIndex = currentIndex
-                                                                    profileDragOffset = 0f
-                                                                },
-                                                                onVerticalDrag = { change, amount ->
-                                                                    change.consume()
-                                                                    val sectionApps =
-                                                                            latestSectionApps.value
-                                                                    if (draggedProfileSectionId == section.id &&
-                                                                                    draggedProfileIndex in
-                                                                                            sectionApps.indices
-                                                                    ) {
-                                                                        profileDragOffset += amount
-                                                                        while (profileDragOffset >= itemHeightPx &&
-                                                                                        draggedProfileIndex <
-                                                                                                sectionApps.lastIndex
-                                                                        ) {
-                                                                            val from = draggedProfileIndex
-                                                                            val to = draggedProfileIndex + 1
-                                                                            optimisticProfileSections =
-                                                                                    applyOptimisticProfileSwap(
-                                                                                            optimisticProfileSections,
-                                                                                            latestDisplayProfileSections,
-                                                                                            section.id,
-                                                                                            from,
-                                                                                            to
-                                                                                    )
-                                                                            currentOnReorderProfile(
+                                                        profileDragOffset += amount
+                                                        val (newOff, newIdx) =
+                                                                applyVerticalSlotReorder(
+                                                                        itemHeightPx,
+                                                                        profileDragOffset,
+                                                                        draggedProfileIndex,
+                                                                        sectionApps.lastIndex,
+                                                                ) { from, to ->
+                                                                    optimisticProfileSections =
+                                                                            applyOptimisticProfileSwap(
+                                                                                    optimisticProfileSections,
+                                                                                    latestDisplayProfileSections,
                                                                                     section.id,
                                                                                     from,
                                                                                     to
                                                                             )
-                                                                            draggedProfileIndex = to
-                                                                            profileDragOffset -= itemHeightPx
-                                                                        }
-                                                                        while (profileDragOffset <= -itemHeightPx &&
-                                                                                        draggedProfileIndex > 0
-                                                                        ) {
-                                                                            val from = draggedProfileIndex
-                                                                            val to = draggedProfileIndex - 1
-                                                                            optimisticProfileSections =
-                                                                                    applyOptimisticProfileSwap(
-                                                                                            optimisticProfileSections,
-                                                                                            latestDisplayProfileSections,
-                                                                                            section.id,
-                                                                                            from,
-                                                                                            to
-                                                                                    )
-                                                                            currentOnReorderProfile(
-                                                                                    section.id,
-                                                                                    from,
-                                                                                    to
-                                                                            )
-                                                                            draggedProfileIndex = to
-                                                                            profileDragOffset += itemHeightPx
-                                                                        }
-                                                                    }
-                                                                },
-                                                                onDragEnd = { resetProfileDrag() },
-                                                                onDragCancel = { resetProfileDrag() }
-                                                        )
+                                                                    currentOnReorderProfile(
+                                                                            section.id,
+                                                                            from,
+                                                                            to
+                                                                    )
+                                                                }
+                                                        profileDragOffset = newOff
+                                                        draggedProfileIndex = newIdx
                                                     }
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                        }
-                        AppListItem(
-                                app = app,
-                                onClick = {
-                                    if (allowCustomDragReorder) return@AppListItem
-                                    focusManager.clearFocus(force = true)
-                                    val cn = app.componentName
-                                    val uh = app.userHandle
-                                    if (cn != null && uh != null) {
-                                        onAppClick(
-                                                LaunchTarget.PrivateApp(
-                                                        packageName = app.packageName,
-                                                        componentName = cn,
-                                                        userHandle = uh
-                                                )
+                                                },
+                                                onDragEnd = { resetProfileDrag() },
+                                                onDragCancel = { resetProfileDrag() }
                                         )
-                                    } else {
-                                        onAppClick(LaunchTarget.MainApp(app.packageName))
-                                    }
-                                },
-                                onLongClick = {
-                                    if (!allowCustomDragReorder) onAppLongPress(app)
-                                },
-                                modifier = Modifier.weight(1f)
-                        )
-                    }
+                                    },
+                            onLaunchWhenNotReordering = {
+                                focusManager.clearFocus(force = true)
+                                onAppClick(launchTargetFromAppInfo(app))
+                            },
+                            onLongPressWhenNotReordering = { onAppLongPress(app) },
+                    )
                 }
             }
         }
         if (uiState.isPrivateSpaceUnlocked && displayPrivateApps.isNotEmpty()) {
             if (showProfileSections && anyProfileAppsVisible) {
-                item {
-                    HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
-                            color = MaterialTheme.colorScheme.outlineVariant
-                    )
-                }
+                item { DrawerListSectionDivider() }
             }
             item {
-                Text(
-                        text =
-                                stringResource(R.string.drawer_section_private_space)
-                                        .uppercase(Locale.getDefault()),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)
+                DrawerListSectionHeader(
+                        text = stringResource(R.string.drawer_section_private_space)
                 )
             }
             items(
@@ -527,115 +540,65 @@ private fun DrawerAppListColumn(
                         } else {
                             0f
                         }
-                Row(
-                        modifier =
-                                Modifier.then(
-                                        if (allowCustomDragReorder && !isDraggedRow) {
-                                            Modifier.animateItem(
-                                                    fadeInSpec = null,
-                                                    fadeOutSpec = null,
-                                                    placementSpec =
-                                                            tween(
-                                                                    180,
-                                                                    easing = FastOutSlowInEasing,
-                                                            ),
-                                            )
-                                        } else {
-                                            Modifier
-                                        }
-                                )
-                                        .fillMaxWidth()
-                                        .heightIn(min = 56.dp)
-                                        .graphicsLayer { translationY = offsetY },
-                        verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (allowCustomDragReorder) {
-                        Icon(
-                                imageVector = Icons.Default.DragHandle,
-                                contentDescription = stringResource(R.string.cd_drag_to_reorder),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier =
-                                        Modifier.padding(start = 8.dp)
-                                                .size(24.dp)
-                                                .pointerInput(
-                                                        appListStableKey(app),
-                                                        latestDisplayPrivateApps.size,
-                                                ) {
-                                                    detectVerticalDragGestures(
-                                                            onDragStart = {
-                                                                draggedPrivateIndex = currentIndex
-                                                                privateDragOffset = 0f
-                                                            },
-                                                            onVerticalDrag = { change, amount ->
-                                                                change.consume()
-                                                                if (draggedPrivateIndex in latestDisplayPrivateApps.indices) {
-                                                                    privateDragOffset += amount
-                                                                    while (privateDragOffset >= itemHeightPx &&
-                                                                                    draggedPrivateIndex <
-                                                                                            latestDisplayPrivateApps
-                                                                                                    .lastIndex
-                                                                    ) {
-                                                                        val from = draggedPrivateIndex
-                                                                        val to = draggedPrivateIndex + 1
-                                                                        optimisticPrivateApps =
-                                                                                applyOptimisticPrivateSwap(
-                                                                                        optimisticPrivateApps,
-                                                                                        latestDisplayPrivateApps,
-                                                                                        from,
-                                                                                        to
-                                                                                )
-                                                                        currentOnReorderPrivate(from, to)
-                                                                        draggedPrivateIndex = to
-                                                                        privateDragOffset -= itemHeightPx
-                                                                    }
-                                                                    while (privateDragOffset <= -itemHeightPx &&
-                                                                                    draggedPrivateIndex > 0
-                                                                    ) {
-                                                                        val from = draggedPrivateIndex
-                                                                        val to = draggedPrivateIndex - 1
-                                                                        optimisticPrivateApps =
-                                                                                applyOptimisticPrivateSwap(
-                                                                                        optimisticPrivateApps,
-                                                                                        latestDisplayPrivateApps,
-                                                                                        from,
-                                                                                        to
-                                                                                )
-                                                                        currentOnReorderPrivate(from, to)
-                                                                        draggedPrivateIndex = to
-                                                                        privateDragOffset += itemHeightPx
-                                                                    }
-                                                                }
-                                                            },
-                                                            onDragEnd = { resetPrivateDrag() },
-                                                            onDragCancel = { resetPrivateDrag() }
-                                                    )
+                ReorderableDrawerAppListItem(
+                        app = app,
+                        allowCustomDragReorder = allowCustomDragReorder,
+                        isDraggedRow = isDraggedRow,
+                        offsetY = offsetY,
+                        dragHandleModifier =
+                                Modifier.pointerInput(
+                                        appListStableKey(app),
+                                        latestDisplayPrivateApps.size,
+                                ) {
+                                    detectVerticalDragGestures(
+                                            onDragStart = {
+                                                draggedPrivateIndex = currentIndex
+                                                privateDragOffset = 0f
+                                            },
+                                            onVerticalDrag = { change, amount ->
+                                                change.consume()
+                                                if (draggedPrivateIndex in latestDisplayPrivateApps.indices) {
+                                                    privateDragOffset += amount
+                                                    val (newOff, newIdx) =
+                                                            applyVerticalSlotReorder(
+                                                                    itemHeightPx,
+                                                                    privateDragOffset,
+                                                                    draggedPrivateIndex,
+                                                                    latestDisplayPrivateApps.lastIndex,
+                                                            ) { from, to ->
+                                                                optimisticPrivateApps =
+                                                                        applyOptimisticPrivateSwap(
+                                                                                optimisticPrivateApps,
+                                                                                latestDisplayPrivateApps,
+                                                                                from,
+                                                                                to
+                                                                        )
+                                                                currentOnReorderPrivate(from, to)
+                                                            }
+                                                    privateDragOffset = newOff
+                                                    draggedPrivateIndex = newIdx
                                                 }
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                    }
-                    AppListItem(
-                            app = app,
-                            onClick = {
-                                if (allowCustomDragReorder) return@AppListItem
-                                val componentName = app.componentName
-                                val userHandle = app.userHandle
-                                if (componentName != null && userHandle != null) {
-                                    focusManager.clearFocus(force = true)
-                                    onAppClick(
-                                            LaunchTarget.PrivateApp(
-                                                    packageName = app.packageName,
-                                                    componentName = componentName,
-                                                    userHandle = userHandle
-                                            )
+                                            },
+                                            onDragEnd = { resetPrivateDrag() },
+                                            onDragCancel = { resetPrivateDrag() }
                                     )
-                                }
-                            },
-                            onLongClick = {
-                                if (!allowCustomDragReorder) onAppLongPress(app)
-                            },
-                            modifier = Modifier.weight(1f)
-                    )
-                }
+                                },
+                        onLaunchWhenNotReordering = {
+                            val componentName = app.componentName
+                            val userHandle = app.userHandle
+                            if (componentName != null && userHandle != null) {
+                                focusManager.clearFocus(force = true)
+                                onAppClick(
+                                        LaunchTarget.PrivateApp(
+                                                packageName = app.packageName,
+                                                componentName = componentName,
+                                                userHandle = userHandle
+                                        )
+                                )
+                            }
+                        },
+                        onLongPressWhenNotReordering = { onAppLongPress(app) },
+                )
             }
         }
     }
@@ -674,11 +637,7 @@ fun AppDrawerScreen(
     LaunchedEffect(Unit) {
         viewModel.resetSearchStateIfNeeded()
         viewModel.events.collect { event ->
-            when (event) {
-                is DrawerEvent.AutoLaunch -> {
-                    closeAndResetAfterLaunch()
-                }
-            }
+            if (event is DrawerEvent.AutoLaunch) closeAndResetAfterLaunch()
         }
     }
 
@@ -919,6 +878,37 @@ fun AppDrawerContent(
                 Modifier
             }
 
+    val overflowMenu: @Composable () -> Unit = {
+        DrawerOverflowMenu(
+                uiState = uiState,
+                onMenuToggle = onMenuToggle,
+                onMenuDismiss = onMenuDismiss,
+                onPrivateSpaceToggle = onPrivateSpaceToggle,
+                onSettingsClick = onSettingsClick,
+                showReorderMenuItem = showDrawerReorderMenuToggle,
+                onToggleReorderApps = onToggleDrawerReorderApps,
+        )
+    }
+    val drawerAppList: @Composable ColumnScope.() -> Unit = {
+        DrawerAppListColumn(
+                listState = listState,
+                modifier =
+                        Modifier.weight(1f)
+                                .fillMaxWidth()
+                                .then(categorySwipeModifier)
+                                .testTag("app_list"),
+                uiState = uiState,
+                showProfileSections = showProfileSections,
+                anyProfileAppsVisible = anyProfileAppsVisible,
+                focusManager = focusManager,
+                onAppClick = onAppClick,
+                onAppLongPress = onAppLongPress,
+                allowCustomDragReorder = allowCustomDragReorder,
+                onReorderProfileSection = onReorderDrawerProfileSection,
+                onReorderPrivateApps = onReorderPrivateDrawerApps,
+        )
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
         Column(
                 modifier =
@@ -975,15 +965,7 @@ fun AppDrawerContent(
                                             tint = MaterialTheme.colorScheme.onBackground
                                     )
                                 }
-                                DrawerOverflowMenu(
-                                        uiState = uiState,
-                                        onMenuToggle = onMenuToggle,
-                                        onMenuDismiss = onMenuDismiss,
-                                        onPrivateSpaceToggle = onPrivateSpaceToggle,
-                                        onSettingsClick = onSettingsClick,
-                                        showReorderMenuItem = showDrawerReorderMenuToggle,
-                                        onToggleReorderApps = onToggleDrawerReorderApps
-                                )
+                                overflowMenu()
                             }
                             if (showSearch) {
                                 OutlinedTextField(
@@ -1005,23 +987,7 @@ fun AppDrawerContent(
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                             }
-                            DrawerAppListColumn(
-                                    listState = listState,
-                                    modifier =
-                                            Modifier.weight(1f)
-                                                    .fillMaxWidth()
-                                                    .then(categorySwipeModifier)
-                                                    .testTag("app_list"),
-                                    uiState = uiState,
-                                    showProfileSections = showProfileSections,
-                                    anyProfileAppsVisible = anyProfileAppsVisible,
-                                    focusManager = focusManager,
-                                    onAppClick = onAppClick,
-                                    onAppLongPress = onAppLongPress,
-                                    allowCustomDragReorder = allowCustomDragReorder,
-                                    onReorderProfileSection = onReorderDrawerProfileSection,
-                                    onReorderPrivateApps = onReorderPrivateDrawerApps
-                            )
+                            drawerAppList()
                         }
                     }
                     if (drawerCategorySidebarOnRight) {
@@ -1050,15 +1016,7 @@ fun AppDrawerContent(
                                 modifier =
                                         Modifier.weight(1f).testTag("search_bar")
                         )
-                        DrawerOverflowMenu(
-                                uiState = uiState,
-                                onMenuToggle = onMenuToggle,
-                                onMenuDismiss = onMenuDismiss,
-                                onPrivateSpaceToggle = onPrivateSpaceToggle,
-                                onSettingsClick = onSettingsClick,
-                                showReorderMenuItem = showDrawerReorderMenuToggle,
-                                onToggleReorderApps = onToggleDrawerReorderApps
-                        )
+                        overflowMenu()
                     }
                     if (hasNonAllAppsCategory) {
                         CategoryChips(
@@ -1069,23 +1027,7 @@ fun AppDrawerContent(
                                 modifier = Modifier.testTag("category_chips")
                         )
                     }
-                    DrawerAppListColumn(
-                            listState = listState,
-                            modifier =
-                                    Modifier.weight(1f)
-                                            .fillMaxWidth()
-                                            .then(categorySwipeModifier)
-                                            .testTag("app_list"),
-                            uiState = uiState,
-                            showProfileSections = showProfileSections,
-                            anyProfileAppsVisible = anyProfileAppsVisible,
-                            focusManager = focusManager,
-                            onAppClick = onAppClick,
-                            onAppLongPress = onAppLongPress,
-                            allowCustomDragReorder = allowCustomDragReorder,
-                            onReorderProfileSection = onReorderDrawerProfileSection,
-                            onReorderPrivateApps = onReorderPrivateDrawerApps
-                    )
+                    drawerAppList()
                 }
             }
         }
@@ -1105,7 +1047,6 @@ fun CategoryActionSheet(
         onResetCategoryIcon: () -> Unit
 ) {
     val context = LocalContext.current
-    val sheetState = rememberModalBottomSheetState()
     var showIconPickerDialog by remember(category) { mutableStateOf(false) }
     var renameMode by remember(category) { mutableStateOf(false) }
     var renameValue by remember(category) {
@@ -1113,121 +1054,75 @@ fun CategoryActionSheet(
     }
     val normalized = renameValue.trim()
     val isReservedDrawerCategory =
-            category.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true) ||
-                    category.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true) ||
-                    category.equals(ReservedCategoryNames.WORK, ignoreCase = true) ||
-                    category.equals(ReservedCategoryNames.UNCATEGORIZED, ignoreCase = true)
+            ReservedDrawerActionCategories.any { category.equals(it, ignoreCase = true) }
     val canSaveRename = !isReservedDrawerCategory && normalized.isNotBlank()
     val showEditApps = !isReservedDrawerCategory
     val displayTitle = categoryChipDisplayLabel(context, category)
     val drawerRailIconKey =
             resolvedCategoryDrawerIconName(context, category, categoryDrawerIconOverrides)
 
-    ModalBottomSheet(
+    FokusBottomSheet(
             onDismissRequest = onDismiss,
-            sheetState = sheetState,
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-            modifier = Modifier.testTag("category_action_sheet")
+            modifier = Modifier.testTag("category_action_sheet"),
     ) {
-        Column(
-                modifier =
-                        Modifier.fillMaxWidth()
-                                .padding(bottom = 32.dp)
-        ) {
-            Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)
-            ) {
-                if (renameMode) {
-                    OutlinedTextField(
-                            value = renameValue,
-                            onValueChange = { renameValue = it },
-                            placeholder = { Text(stringResource(R.string.category_name_label)) },
-                            singleLine = true,
-                            modifier =
-                                    Modifier.weight(1f)
-                                            .testTag("category_rename_inline_input")
-                    )
-                    FokusTextButton(onClick = { renameMode = false }) {
-                        Text(stringResource(R.string.action_cancel))
-                    }
-                    FokusTextButton(
-                            enabled = canSaveRename,
-                            onClick = {
-                                onRename(normalized)
-                                onDismiss()
-                            }
-                    ) { Text(stringResource(R.string.action_save)) }
-                } else {
-                    Text(
-                            text = displayTitle,
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = MaterialTheme.colorScheme.onBackground,
-                            modifier = Modifier.weight(1f)
-                    )
-                    if (!isReservedDrawerCategory) {
-                        FokusIconButton(
-                                onClick = { renameMode = true },
-                                modifier = Modifier.testTag("category_action_rename")
-                        ) {
-                            Icon(
-                                    imageVector = Icons.Default.Edit,
-                                    contentDescription =
-                                            stringResource(R.string.category_action_rename),
-                                    tint = MaterialTheme.colorScheme.onBackground
-                            )
-                        }
-                    }
-                }
-            }
+            SheetInlineRenameTitleRow(
+                    renameMode = renameMode,
+                    renameValue = renameValue,
+                    onRenameValueChange = { renameValue = it },
+                    idleTitle = displayTitle,
+                    placeholder = { Text(stringResource(R.string.category_name_label)) },
+                    onStartRename = { renameMode = true },
+                    onCancelRename = { renameMode = false },
+                    onSave = {
+                        onRename(normalized)
+                        onDismiss()
+                    },
+                    saveEnabled = canSaveRename,
+                    showEditButton = !isReservedDrawerCategory,
+                    editIconContentDescription = stringResource(R.string.category_action_rename),
+                    textFieldTestTag = "category_rename_inline_input",
+                    editButtonTestTag = "category_action_rename",
+            )
 
             if (showEditApps) {
-                DrawerSheetActionRow(
-                        icon = Icons.Default.Apps,
+                SheetActionRow(
                         label = stringResource(R.string.category_action_edit_apps),
+                        onClick = onEditApps,
+                        icon = Icons.Default.Apps,
                         testTag = "category_action_edit_apps",
-                        onClick = onEditApps
                 )
             }
 
-            Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier =
-                            Modifier.fillMaxWidth()
-                                    .clickableWithSystemSound { showIconPickerDialog = true }
-                                    .padding(horizontal = 24.dp, vertical = 16.dp)
-                                    .testTag("category_action_choose_icon")
-            ) {
-                Icon(
-                        imageVector = MinimalIcons.iconFor(drawerRailIconKey),
-                        contentDescription = stringResource(R.string.icon_picker_current_icon),
-                        modifier = Modifier.size(28.dp),
-                        tint = MaterialTheme.colorScheme.onBackground
-                )
-                Spacer(modifier = Modifier.width(16.dp))
-                Text(
-                        text = stringResource(R.string.category_icon_picker_title),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.weight(1f)
-                )
-            }
-            DrawerSheetActionRow(
-                    icon = Icons.Default.Restore,
+            SheetActionRow(
+                    label = stringResource(R.string.category_icon_picker_title),
+                    onClick = { showIconPickerDialog = true },
+                    testTag = "category_action_choose_icon",
+                    leadingContent = {
+                        Icon(
+                                imageVector = MinimalIcons.iconFor(drawerRailIconKey),
+                                contentDescription =
+                                        stringResource(R.string.icon_picker_current_icon),
+                                modifier = Modifier.size(28.dp),
+                                tint = MaterialTheme.colorScheme.onBackground,
+                        )
+                    },
+                    labelModifier = Modifier.weight(1f),
+            )
+            SheetActionRow(
                     label = stringResource(R.string.category_action_reset_icon),
+                    onClick = onResetCategoryIcon,
+                    icon = Icons.Default.Restore,
                     testTag = "category_action_reset_icon",
-                    onClick = onResetCategoryIcon
             )
             if (showEditApps) {
-                DrawerSheetActionRow(
-                        icon = Icons.Default.Delete,
+                SheetActionRow(
                         label = stringResource(R.string.category_action_remove),
+                        onClick = onDelete,
+                        icon = Icons.Default.Delete,
                         testTag = "category_action_remove",
                         destructive = true,
-                        onClick = onDelete
                 )
             }
-        }
     }
 
     if (showIconPickerDialog) {

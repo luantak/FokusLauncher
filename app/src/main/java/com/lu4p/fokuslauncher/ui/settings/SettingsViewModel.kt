@@ -3,6 +3,7 @@ package com.lu4p.fokuslauncher.ui.settings
 import android.os.Process
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.lu4p.fokuslauncher.data.database.entity.HiddenAppEntity
 import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.AddCategoryResult
@@ -25,11 +26,7 @@ import android.app.WallpaperManager
 import android.content.ClipData
 import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
 import androidx.core.content.FileProvider
-import android.graphics.Canvas
-import androidx.core.graphics.createBitmap
-import android.graphics.Color as AndroidColor
 import android.net.Uri
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -52,6 +49,7 @@ import com.lu4p.fokuslauncher.ui.drawer.profileOriginLabelForApp
 import com.lu4p.fokuslauncher.ui.util.categoryChipDisplayLabel
 import com.lu4p.fokuslauncher.utils.AppDiagnosticLogExporter
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
+import com.lu4p.fokuslauncher.utils.WallpaperHelper
 
 data class SettingsUiState(
         val hiddenApps: List<HiddenAppInfo> = emptyList(),
@@ -139,287 +137,201 @@ constructor(
 
     private fun observeState() {
         viewModelScope.launch {
-            val homeWidgetTogglesFlow =
-                    combine(
-                            preferencesManager.showHomeClockFlow,
-                            preferencesManager.showHomeDateFlow,
-                            preferencesManager.showHomeWeatherFlow,
-                            preferencesManager.showHomeBatteryFlow
-                    ) { showClock, showDate, showWeather, showBattery ->
-                        HomeWidgetToggles(
-                                showClock = showClock,
-                                showDate = showDate,
-                                showWeather = showWeather,
-                                showBattery = showBattery
-                        )
-                    }
-            val homeWidgetItemsFlow =
-                    combine(
-                            homeWidgetTogglesFlow,
-                            preferencesManager.preferredClockAppFlow,
-                            preferencesManager.preferredCalendarAppFlow,
-                            preferencesManager.homeDateFormatStyleFlow
-                    ) { toggles, clockPkg, calendarPkg, dateFormatStyle ->
-                        HomeWidgetItemSettings(
-                                showClock = toggles.showClock,
-                                showDate = toggles.showDate,
-                                showWeather = toggles.showWeather,
-                                showBattery = toggles.showBattery,
-                                preferredClockAppPackage = clockPkg,
-                                preferredCalendarAppPackage = calendarPkg,
-                                homeDateFormatStyle = dateFormatStyle
-                        )
-                    }
-            val favoritesQuintupleFlow =
+            val favoritesBaseFlow =
                     combine(
                             appRepository.getHiddenApps(),
                             appRepository.getAllRenamedApps(),
                             preferencesManager.favoritesFlow,
                             preferencesManager.rightSideShortcutsFlow,
-                            preferencesManager.swipeLeftTargetFlow
+                            preferencesManager.swipeLeftTargetFlow,
                     ) { hiddenApps, renamedApps, favorites, rightSideShortcuts, swipeLeft ->
-                        Quintuple(
+                        FavoritesBase(
                                 hiddenApps = hiddenApps,
                                 renamedApps = renamedApps,
                                 favorites = favorites,
                                 rightSideShortcuts = rightSideShortcuts,
-                                swipeLeft = swipeLeft
+                                swipeLeft = swipeLeft,
                         )
                     }
-            combine(
+            val categoryStateFlow =
+                    combine(
                             appRepository.getInstalledAppsVersion(),
-                            favoritesQuintupleFlow,
-                            privateSpaceRefreshTick
-                    ) { _, base, _ ->
-                        base
-                    }
-                    .combine(appRepository.getAllAppCategories()) { leftState, appCategories ->
-                        leftState to appCategories.associate {
-                            appMetadataKey(it.packageName, it.profileKey) to it.category
-                        }
-                    }
-                    .combine(appRepository.getAllCategoryDefinitions()) { stateWithCategories, definitions ->
-                        val (leftState, appCategories) = stateWithCategories
+                            favoritesBaseFlow,
+                            privateSpaceRefreshTick,
+                            appRepository.getAllAppCategories(),
+                            appRepository.getAllCategoryDefinitions(),
+                    ) { _, base, _, categories, definitions ->
                         CategoryState(
-                                base = leftState,
-                                appCategories = appCategories,
-                                categoryDefinitions = definitions.map { it.name }
+                                hiddenApps = base.hiddenApps,
+                                renamedApps = base.renamedApps,
+                                favorites = base.favorites,
+                                rightSideShortcuts = base.rightSideShortcuts,
+                                swipeLeft = base.swipeLeft,
+                                appCategories =
+                                        categories.associate {
+                                            appMetadataKey(it.packageName, it.profileKey) to it.category
+                                        },
+                                categoryDefinitions = definitions.map { it.name },
                         )
                     }
-                    .combine(preferencesManager.swipeRightTargetFlow) { leftState, swipeRight ->
-                        leftState to swipeRight
-                    }
-                    .combine(preferencesManager.preferredWeatherAppFlow) { swipeState, preferredWeatherApp ->
-                        Pair(swipeState, preferredWeatherApp)
-                    }
-                    .combine(preferencesManager.showStatusBarFlow) { weatherState, showStatusBar ->
-                        weatherState to showStatusBar
-                    }
-                    .combine(preferencesManager.drawerSidebarCategoriesFlow) {
-                            weatherWithStatusBar,
-                            drawerSidebarCategories ->
-                        Triple(
-                                weatherWithStatusBar,
-                                drawerSidebarCategories,
-                                drawerSidebarCategories
+            val homeWidgetItemsFlow =
+                    combine(
+                            preferencesManager.homeWidgetVisibilityFlow,
+                            combine(
+                                    preferencesManager.preferredClockAppFlow,
+                                    preferencesManager.preferredCalendarAppFlow,
+                                    preferencesManager.homeDateFormatStyleFlow,
+                            ) { clk, cal, fmt -> Triple(clk, cal, fmt) },
+                    ) { vis, p ->
+                        HomeWidgetItemSettings(
+                                showClock = vis.showClock,
+                                showDate = vis.showDate,
+                                showWeather = vis.showWeather,
+                                showBattery = vis.showBattery,
+                                preferredClockAppPackage = p.first,
+                                preferredCalendarAppPackage = p.second,
+                                homeDateFormatStyle = p.third,
                         )
                     }
-                    .combine(preferencesManager.drawerAppSortModeFlow) {
-                            triple, drawerAppSortMode ->
-                        Triple(
-                                triple.first,
-                                triple.second,
-                                triple.third to drawerAppSortMode
+            val drawerPrefsFlow =
+                    combine(
+                            preferencesManager.swipeRightTargetFlow,
+                            preferencesManager.preferredWeatherAppFlow,
+                            preferencesManager.showStatusBarFlow,
+                            preferencesManager.drawerSidebarCategoriesFlow,
+                            preferencesManager.drawerAppSortModeFlow,
+                    ) { swipeRight, weatherPkg, showStatusBar, sidebarCategories, sortMode ->
+                        DrawerPrefs(
+                                swipeRightTarget = swipeRight,
+                                preferredWeatherAppPackage = weatherPkg,
+                                showStatusBar = showStatusBar,
+                                drawerSidebarCategories = sidebarCategories,
+                                drawerAppSortMode = sortMode,
                         )
                     }
-                    .combine(preferencesManager.launcherFontFamilyFlow) { triple, fontFamilyName ->
-                        Pair(
-                                Triple(triple.first, triple.second, triple.third),
-                                fontFamilyName
+            val lookPrefsFlow =
+                    combine(
+                            preferencesManager.launcherFontFamilyFlow,
+                            preferencesManager.appLocaleTagFlow,
+                            preferencesManager.homeAlignmentFlow,
+                            preferencesManager.allowLandscapeRotationFlow,
+                    ) { font, localeTag, homeAlignment, allowLandscape ->
+                        LookPrefs(
+                                launcherFontFamilyName = font,
+                                appLocaleTag = localeTag,
+                                homeAlignment = homeAlignment,
+                                allowLandscapeRotation = allowLandscape,
                         )
                     }
-                    .combine(preferencesManager.appLocaleTagFlow) { pair, appLocaleTag ->
-                        Pair(pair.first, Pair(pair.second, appLocaleTag))
-                    }
-                    .combine(preferencesManager.homeAlignmentFlow) { nested, homeAlignment ->
-                        Pair(nested, homeAlignment)
-                    }
-                    .combine(preferencesManager.allowLandscapeRotationFlow) {
-                            nestedAndHome,
-                            allowLandscapeRotation ->
-                        nestedAndHome to allowLandscapeRotation
-                    }
-                    .combine(homeWidgetItemsFlow) { nestedAndRotation, homeWidgetItems ->
-                        Pair(nestedAndRotation, homeWidgetItems)
-                    }
-                    .combine(preferencesManager.doubleTapEmptyLockFlow) { pair, doubleTapEmptyLock ->
-                        Triple(
-                                pair.first.first,
-                                pair.first.second,
-                                pair.second to doubleTapEmptyLock
+            val lockRailPrefsFlow =
+                    combine(
+                            preferencesManager.doubleTapEmptyLockFlow,
+                            preferencesManager.longLockReturnHomeFlow,
+                            preferencesManager.longLockReturnHomeThresholdMinutesFlow,
+                            preferencesManager.drawerCategorySidebarOnLeftFlow,
+                            preferencesManager.drawerCategoryIconsFlow,
+                    ) { doubleTap, longLockReturn, longLockMinutes, railOnLeft, iconOverrides ->
+                        LockRailPrefs(
+                                doubleTapEmptyLock = doubleTap,
+                                longLockReturnHome = longLockReturn,
+                                longLockReturnHomeThresholdMinutes = longLockMinutes,
+                                drawerCategorySidebarOnLeft = railOnLeft,
+                                categoryDrawerIconOverrides = iconOverrides,
                         )
                     }
-                    .combine(preferencesManager.longLockReturnHomeFlow) { triple, longLockReturnHome ->
-                        Pair(triple, longLockReturnHome)
+            val drawerLookLockFlow =
+                    combine(drawerPrefsFlow, lookPrefsFlow, lockRailPrefsFlow) {
+                            drawer,
+                            look,
+                            lockRail ->
+                        Triple(drawer, look, lockRail)
                     }
-                    .combine(preferencesManager.longLockReturnHomeThresholdMinutesFlow) {
-                            pair,
-                            longLockThresholdMinutes ->
-                        Triple(pair.first, pair.second, longLockThresholdMinutes)
-                    }
-                    .combine(preferencesManager.drawerCategorySidebarOnLeftFlow) { triple, railOnLeft ->
-                        triple to railOnLeft
-                    }
-                    .combine(preferencesManager.drawerCategoryIconsFlow) { pair, icons ->
-                        pair to icons
-                    }
-                    .collectLatest { tripleRailIcons ->
-                        val tripleAndRail = tripleRailIcons.first
-                        val categoryDrawerIconOverrides = tripleRailIcons.second
-                        val triple = tripleAndRail.first
-                        val drawerCategorySidebarOnLeft = tripleAndRail.second
-                        val nestedAndHome = triple.first.first
-                        val allowLandscapeRotation = triple.first.second
-                        val homeWidgetItems = triple.first.third.first
-                        val doubleTapEmptyLock = triple.first.third.second
-                        val longLockReturnHome = triple.second
-                        val longLockThresholdMinutes = triple.third
-                        val (nested, homeAlignment) = nestedAndHome
-                        val (sortTriple, fontAndLocale) = nested
-                        val (fontFamilyName, appLocaleTag) = fontAndLocale
-                        val (weatherWithStatusBar, _, sidebarAndSort) = sortTriple
-                        val (drawerSidebarCategories, drawerAppSortMode) = sidebarAndSort
-                        val (weatherState, showStatusBar) = weatherWithStatusBar
-                        val (swipeState, preferredWeatherApp) = weatherState
-                        val (leftState, swipeRight) = swipeState
-                        val privateSpaceUnlocked = privateSpaceManager.isPrivateSpaceUnlocked()
-                        val privateProfileKey =
-                                privateSpaceManager
-                                        .getPrivateSpaceProfile()
-                                        ?.takeIf { it != Process.myUserHandle() }
-                                        ?.let(::appProfileKey)
-                        val categoryMap = leftState.appCategories
-                        val installedApps =
-                                appRepository.getInstalledAppsOnBackground().map { app ->
-                                    app.copy(
-                                        category =
-                                            categoryMap[appMetadataKey(app.packageName, app.userHandle)]
-                                                ?: app.category
-                                    )
-                                }
-                        val privateApps =
-                                if (privateSpaceUnlocked) {
-                                    privateSpaceManager.getPrivateSpaceApps()
-                                } else {
-                                    emptyList()
-                                }
-                        val metadataLookupApps = installedApps + privateApps
-                        val allShortcutActions = appRepository.getAllShortcutActionsOnBackground()
-                        val hiddenLabels =
-                            metadataLookupApps.associate {
-                                appMetadataKey(it.packageName, it.userHandle) to it
-                            }
-                        val hiddenInfos =
-                                leftState.base.hiddenApps.map { hiddenApp ->
-                                    val key = appMetadataKey(hiddenApp.packageName, hiddenApp.profileKey)
-                                    val matchingApp = hiddenLabels[key]
-                                    if (!privateSpaceUnlocked && hiddenApp.profileKey == privateProfileKey) {
-                                        null
-                                    } else {
-                                    HiddenAppInfo(
-                                        packageName = hiddenApp.packageName,
-                                        profileKey = hiddenApp.profileKey,
-                                        label = matchingApp?.label ?: hiddenApp.packageName,
-                                        profileLabel =
-                                                profileLabelForSettings(
-                                                        profileKey = hiddenApp.profileKey,
-                                                        matchingApp = matchingApp,
-                                                        privateProfileKey = privateProfileKey
-                                        )
-                                    )
-                                    }
-                                }
-                                        .filterNotNull()
-                                        .sortedWith(
-                                                compareBy<HiddenAppInfo>(
-                                                        { profileSortBucket(it.profileLabel) },
-                                                        { it.profileLabel ?: "" },
-                                                        { it.label.lowercase() },
-                                                        { it.packageName.lowercase() }
-                                                )
-                                        )
-                        val renamedInfos =
-                                leftState.base.renamedApps.map { renamedApp ->
-                                    val key = appMetadataKey(renamedApp.packageName, renamedApp.profileKey)
-                                    val matchingApp = hiddenLabels[key]
-                                    if (!privateSpaceUnlocked && renamedApp.profileKey == privateProfileKey) {
-                                        null
-                                    } else {
-                                        RenamedAppInfo(
-                                                packageName = renamedApp.packageName,
-                                                profileKey = renamedApp.profileKey,
-                                                customName = renamedApp.customName,
-                                                profileLabel =
-                                                        profileLabelForSettings(
-                                                                profileKey = renamedApp.profileKey,
-                                                                matchingApp = matchingApp,
-                                                                privateProfileKey = privateProfileKey
-                                                )
-                                        )
-                                    }
-                                }
-                                        .filterNotNull()
-                                        .sortedWith(
-                                                compareBy<RenamedAppInfo>(
-                                                        { profileSortBucket(it.profileLabel) },
-                                                        { it.profileLabel ?: "" },
-                                                        { it.customName.lowercase() },
-                                                        { it.packageName.lowercase() }
-                                                )
-                                        )
-                        _uiState.value =
-                                SettingsUiState(
-                                        hiddenApps = hiddenInfos,
-                                        renamedApps = renamedInfos,
-                                        appCategories = leftState.appCategories,
-                                        categoryDefinitions = leftState.categoryDefinitions,
-                                        favorites = leftState.base.favorites,
-                                        rightSideShortcuts = leftState.base.rightSideShortcuts,
-                                        swipeLeftTarget = leftState.base.swipeLeft,
-                                        swipeRightTarget = swipeRight,
-                                        preferredWeatherAppPackage = preferredWeatherApp,
-                                        preferredClockAppPackage = homeWidgetItems.preferredClockAppPackage,
-                                        preferredCalendarAppPackage = homeWidgetItems.preferredCalendarAppPackage,
-                                        showStatusBar = showStatusBar,
-                                        showHomeClock = homeWidgetItems.showClock,
-                                        showHomeDate = homeWidgetItems.showDate,
-                                        showHomeWeather = homeWidgetItems.showWeather,
-                                        showHomeBattery = homeWidgetItems.showBattery,
-                                        homeDateFormatStyle = homeWidgetItems.homeDateFormatStyle,
-                                        drawerSidebarCategories = drawerSidebarCategories,
-                                        drawerCategorySidebarOnLeft = drawerCategorySidebarOnLeft,
-                                        categoryDrawerIconOverrides = categoryDrawerIconOverrides,
-                                        drawerAppSortMode = drawerAppSortMode,
-                                        homeAlignment = homeAlignment,
-                                        launcherFontFamilyName = fontFamilyName,
-                                        appLocaleTag = appLocaleTag,
-                                        allowLandscapeRotation = allowLandscapeRotation,
-                                        doubleTapEmptyLock = doubleTapEmptyLock,
-                                        longLockReturnHome = longLockReturnHome,
-                                        longLockReturnHomeThresholdMinutes = longLockThresholdMinutes,
-                                        allApps = installedApps,
-                                        allShortcutActions = allShortcutActions
-                                )
-                    }
+            combine(categoryStateFlow, homeWidgetItemsFlow, drawerLookLockFlow) {
+                    left,
+                    homeWidgetItems,
+                    drawerLookLock ->
+                val (drawer, look, lockRail) = drawerLookLock
+                val privateSpaceUnlocked = privateSpaceManager.isPrivateSpaceUnlocked()
+                val privateProfileKey =
+                        privateSpaceManager
+                                .getPrivateSpaceProfile()
+                                ?.takeIf { it != Process.myUserHandle() }
+                                ?.let(::appProfileKey)
+                val categoryMap = left.appCategories
+                val installedApps =
+                        appRepository.getInstalledAppsOnBackground().map { app ->
+                            app.copy(
+                                    category =
+                                            categoryMap[
+                                                            appMetadataKey(
+                                                                    app.packageName,
+                                                                    app.userHandle,
+                                                            )
+                                                    ]
+                                                    ?: app.category,
+                            )
+                        }
+                val privateApps =
+                        if (privateSpaceUnlocked) {
+                            privateSpaceManager.getPrivateSpaceApps()
+                        } else {
+                            emptyList()
+                        }
+                val metadataLookupApps = installedApps + privateApps
+                val allShortcutActions = appRepository.getAllShortcutActionsOnBackground()
+                val hiddenLabels =
+                        metadataLookupApps.associate {
+                            appMetadataKey(it.packageName, it.userHandle) to it
+                        }
+                SettingsUiState(
+                        hiddenApps =
+                                hiddenInfosForSettings(
+                                        left.hiddenApps,
+                                        hiddenLabels,
+                                        privateSpaceUnlocked,
+                                        privateProfileKey,
+                                ),
+                        renamedApps =
+                                renamedInfosForSettings(
+                                        left.renamedApps,
+                                        hiddenLabels,
+                                        privateSpaceUnlocked,
+                                        privateProfileKey,
+                                ),
+                        appCategories = left.appCategories,
+                        categoryDefinitions = left.categoryDefinitions,
+                        favorites = left.favorites,
+                        rightSideShortcuts = left.rightSideShortcuts,
+                        swipeLeftTarget = left.swipeLeft,
+                        swipeRightTarget = drawer.swipeRightTarget,
+                        preferredWeatherAppPackage = drawer.preferredWeatherAppPackage,
+                        preferredClockAppPackage = homeWidgetItems.preferredClockAppPackage,
+                        preferredCalendarAppPackage =
+                                homeWidgetItems.preferredCalendarAppPackage,
+                        showStatusBar = drawer.showStatusBar,
+                        showHomeClock = homeWidgetItems.showClock,
+                        showHomeDate = homeWidgetItems.showDate,
+                        showHomeWeather = homeWidgetItems.showWeather,
+                        showHomeBattery = homeWidgetItems.showBattery,
+                        homeDateFormatStyle = homeWidgetItems.homeDateFormatStyle,
+                        drawerSidebarCategories = drawer.drawerSidebarCategories,
+                        drawerCategorySidebarOnLeft = lockRail.drawerCategorySidebarOnLeft,
+                        categoryDrawerIconOverrides = lockRail.categoryDrawerIconOverrides,
+                        drawerAppSortMode = drawer.drawerAppSortMode,
+                        homeAlignment = look.homeAlignment,
+                        launcherFontFamilyName = look.launcherFontFamilyName,
+                        appLocaleTag = look.appLocaleTag,
+                        allowLandscapeRotation = look.allowLandscapeRotation,
+                        doubleTapEmptyLock = lockRail.doubleTapEmptyLock,
+                        longLockReturnHome = lockRail.longLockReturnHome,
+                        longLockReturnHomeThresholdMinutes =
+                                lockRail.longLockReturnHomeThresholdMinutes,
+                        allApps = installedApps,
+                        allShortcutActions = allShortcutActions,
+                )
+            }.collectLatest { _uiState.value = it }
         }
     }
-
-    private data class HomeWidgetToggles(
-            val showClock: Boolean,
-            val showDate: Boolean,
-            val showWeather: Boolean,
-            val showBattery: Boolean
-    )
 
     private data class HomeWidgetItemSettings(
             val showClock: Boolean,
@@ -431,19 +343,127 @@ constructor(
             val homeDateFormatStyle: HomeDateFormatStyle
     )
 
-    private data class Quintuple(
-            val hiddenApps: List<com.lu4p.fokuslauncher.data.database.entity.HiddenAppEntity>,
+    private data class FavoritesBase(
+            val hiddenApps: List<HiddenAppEntity>,
             val renamedApps: List<RenamedAppEntity>,
-        val favorites: List<FavoriteApp>,
-        val rightSideShortcuts: List<HomeShortcut>,
-        val swipeLeft: ShortcutTarget?
+            val favorites: List<FavoriteApp>,
+            val rightSideShortcuts: List<HomeShortcut>,
+            val swipeLeft: ShortcutTarget?,
     )
 
     private data class CategoryState(
-            val base: Quintuple,
+            val hiddenApps: List<HiddenAppEntity>,
+            val renamedApps: List<RenamedAppEntity>,
+            val favorites: List<FavoriteApp>,
+            val rightSideShortcuts: List<HomeShortcut>,
+            val swipeLeft: ShortcutTarget?,
             val appCategories: Map<String, String>,
-            val categoryDefinitions: List<String>
+            val categoryDefinitions: List<String>,
     )
+
+    private data class DrawerPrefs(
+            val swipeRightTarget: ShortcutTarget?,
+            val preferredWeatherAppPackage: String,
+            val showStatusBar: Boolean,
+            val drawerSidebarCategories: Boolean,
+            val drawerAppSortMode: DrawerAppSortMode,
+    )
+
+    private data class LookPrefs(
+            val launcherFontFamilyName: String,
+            val appLocaleTag: String,
+            val homeAlignment: HomeAlignment,
+            val allowLandscapeRotation: Boolean,
+    )
+
+    private data class LockRailPrefs(
+            val doubleTapEmptyLock: Boolean,
+            val longLockReturnHome: Boolean,
+            val longLockReturnHomeThresholdMinutes: Int,
+            val drawerCategorySidebarOnLeft: Boolean,
+            val categoryDrawerIconOverrides: Map<String, String>,
+    )
+
+    private inline fun <T, R> mapEntitiesForSettings(
+            entities: List<T>,
+            hiddenLabels: Map<String, AppInfo>,
+            privateSpaceUnlocked: Boolean,
+            privateProfileKey: String?,
+            packageName: (T) -> String,
+            profileKey: (T) -> String,
+            transform: (T, AppInfo?, String?) -> R,
+    ): List<R> =
+            entities.mapNotNull { entity ->
+                val pkg = packageName(entity)
+                val prof = profileKey(entity)
+                val key = appMetadataKey(pkg, prof)
+                val matchingApp = hiddenLabels[key]
+                if (!privateSpaceUnlocked && prof == privateProfileKey) null
+                else
+                        transform(
+                                entity,
+                                matchingApp,
+                                profileLabelForSettings(prof, matchingApp, privateProfileKey),
+                        )
+            }
+
+    private fun hiddenInfosForSettings(
+            hiddenApps: List<HiddenAppEntity>,
+            hiddenLabels: Map<String, AppInfo>,
+            privateSpaceUnlocked: Boolean,
+            privateProfileKey: String?,
+    ): List<HiddenAppInfo> =
+            mapEntitiesForSettings(
+                    hiddenApps,
+                    hiddenLabels,
+                    privateSpaceUnlocked,
+                    privateProfileKey,
+                    packageName = { it.packageName },
+                    profileKey = { it.profileKey },
+            ) { hiddenApp, matchingApp, profileLabel ->
+                HiddenAppInfo(
+                        packageName = hiddenApp.packageName,
+                        profileKey = hiddenApp.profileKey,
+                        label = matchingApp?.label ?: hiddenApp.packageName,
+                        profileLabel = profileLabel,
+                )
+            }.sortedWith(
+                    compareBy(
+                            { profileSortBucket(it.profileLabel) },
+                            { it.profileLabel ?: "" },
+                            { it.label.lowercase() },
+                            { it.packageName.lowercase() },
+                    ),
+            )
+
+    private fun renamedInfosForSettings(
+            renamedApps: List<RenamedAppEntity>,
+            hiddenLabels: Map<String, AppInfo>,
+            privateSpaceUnlocked: Boolean,
+            privateProfileKey: String?,
+    ): List<RenamedAppInfo> =
+            mapEntitiesForSettings(
+                    renamedApps,
+                    hiddenLabels,
+                    privateSpaceUnlocked,
+                    privateProfileKey,
+                    packageName = { it.packageName },
+                    profileKey = { it.profileKey },
+            ) { renamedApp, matchingApp, profileLabel ->
+                RenamedAppInfo(
+                        packageName = renamedApp.packageName,
+                        profileKey = renamedApp.profileKey,
+                        customName = renamedApp.customName,
+                        profileLabel = profileLabel,
+                )
+            }.sortedWith(
+                    compareBy(
+                            { profileSortBucket(it.profileLabel) },
+                            { it.profileLabel ?: "" },
+                            { it.customName.lowercase() },
+                            { it.packageName.lowercase() },
+                    ),
+            )
 
     private fun profileLabelForSettings(
             profileKey: String,
@@ -506,65 +526,49 @@ constructor(
 
     // --- Swipe gestures ---
 
-    fun setSwipeLeftTarget(target: ShortcutTarget?) {
-        viewModelScope.launch { preferencesManager.setSwipeLeftTarget(target) }
+    private fun launchPreferences(block: suspend PreferencesManager.() -> Unit) {
+        viewModelScope.launch { preferencesManager.block() }
     }
 
-    fun setSwipeRightTarget(target: ShortcutTarget?) {
-        viewModelScope.launch { preferencesManager.setSwipeRightTarget(target) }
-    }
+    fun setSwipeLeftTarget(target: ShortcutTarget?) =
+            launchPreferences { setSwipeLeftTarget(target) }
 
-    fun setPreferredWeatherApp(packageName: String) {
-        viewModelScope.launch { preferencesManager.setPreferredWeatherApp(packageName) }
-    }
+    fun setSwipeRightTarget(target: ShortcutTarget?) =
+            launchPreferences { setSwipeRightTarget(target) }
 
-    fun setPreferredClockApp(packageName: String) {
-        viewModelScope.launch { preferencesManager.setPreferredClockApp(packageName) }
-    }
+    fun setPreferredWeatherApp(packageName: String) =
+            launchPreferences { setPreferredWeatherApp(packageName) }
 
-    fun setPreferredCalendarApp(packageName: String) {
-        viewModelScope.launch { preferencesManager.setPreferredCalendarApp(packageName) }
-    }
+    fun setPreferredClockApp(packageName: String) =
+            launchPreferences { setPreferredClockApp(packageName) }
 
-    fun setShowStatusBar(show: Boolean) {
-        viewModelScope.launch { preferencesManager.setShowStatusBar(show) }
-    }
+    fun setPreferredCalendarApp(packageName: String) =
+            launchPreferences { setPreferredCalendarApp(packageName) }
 
-    fun setAllowLandscapeRotation(allow: Boolean) {
-        viewModelScope.launch { preferencesManager.setAllowLandscapeRotation(allow) }
-    }
+    fun setShowStatusBar(show: Boolean) = launchPreferences { setShowStatusBar(show) }
 
-    fun setDoubleTapEmptyLock(enabled: Boolean) {
-        viewModelScope.launch { preferencesManager.setDoubleTapEmptyLock(enabled) }
-    }
+    fun setAllowLandscapeRotation(allow: Boolean) =
+            launchPreferences { setAllowLandscapeRotation(allow) }
 
-    fun setLongLockReturnHome(enabled: Boolean) {
-        viewModelScope.launch { preferencesManager.setLongLockReturnHome(enabled) }
-    }
+    fun setDoubleTapEmptyLock(enabled: Boolean) =
+            launchPreferences { setDoubleTapEmptyLock(enabled) }
 
-    fun setLongLockReturnHomeThresholdMinutes(minutes: Int) {
-        viewModelScope.launch { preferencesManager.setLongLockReturnHomeThresholdMinutes(minutes) }
-    }
+    fun setLongLockReturnHome(enabled: Boolean) =
+            launchPreferences { setLongLockReturnHome(enabled) }
 
-    fun setShowHomeClock(show: Boolean) {
-        viewModelScope.launch { preferencesManager.setShowHomeClock(show) }
-    }
+    fun setLongLockReturnHomeThresholdMinutes(minutes: Int) =
+            launchPreferences { setLongLockReturnHomeThresholdMinutes(minutes) }
 
-    fun setShowHomeDate(show: Boolean) {
-        viewModelScope.launch { preferencesManager.setShowHomeDate(show) }
-    }
+    fun setShowHomeClock(show: Boolean) = launchPreferences { setShowHomeClock(show) }
 
-    fun setShowHomeWeather(show: Boolean) {
-        viewModelScope.launch { preferencesManager.setShowHomeWeather(show) }
-    }
+    fun setShowHomeDate(show: Boolean) = launchPreferences { setShowHomeDate(show) }
 
-    fun setShowHomeBattery(show: Boolean) {
-        viewModelScope.launch { preferencesManager.setShowHomeBattery(show) }
-    }
+    fun setShowHomeWeather(show: Boolean) = launchPreferences { setShowHomeWeather(show) }
 
-    fun setHomeDateFormatStyle(style: HomeDateFormatStyle) {
-        viewModelScope.launch { preferencesManager.setHomeDateFormatStyle(style) }
-    }
+    fun setShowHomeBattery(show: Boolean) = launchPreferences { setShowHomeBattery(show) }
+
+    fun setHomeDateFormatStyle(style: HomeDateFormatStyle) =
+            launchPreferences { setHomeDateFormatStyle(style) }
 
     fun setDrawerSidebarCategories(enabled: Boolean) {
         viewModelScope.launch {
@@ -577,18 +581,16 @@ constructor(
         }
     }
 
-    fun setDrawerCategorySidebarOnLeft(onLeft: Boolean) {
-        viewModelScope.launch { preferencesManager.setDrawerCategorySidebarOnLeft(onLeft) }
-    }
+    fun setDrawerCategorySidebarOnLeft(onLeft: Boolean) =
+            launchPreferences { setDrawerCategorySidebarOnLeft(onLeft) }
 
     fun setCategoryDrawerIcon(category: String, iconName: String) {
         if (!MinimalIcons.all.containsKey(iconName)) return
         viewModelScope.launch { preferencesManager.setDrawerCategoryIcon(category, iconName) }
     }
 
-    fun clearCategoryDrawerIcon(category: String) {
-        viewModelScope.launch { preferencesManager.clearDrawerCategoryIcon(category) }
-    }
+    fun clearCategoryDrawerIcon(category: String) =
+            launchPreferences { clearDrawerCategoryIcon(category) }
 
     fun setDrawerAppSortMode(mode: DrawerAppSortMode) {
         viewModelScope.launch {
@@ -603,13 +605,11 @@ constructor(
 
     // --- Home alignment ---
 
-    fun setHomeAlignment(alignment: HomeAlignment) {
-        viewModelScope.launch { preferencesManager.setHomeAlignment(alignment) }
-    }
+    fun setHomeAlignment(alignment: HomeAlignment) =
+            launchPreferences { setHomeAlignment(alignment) }
 
-    fun setLauncherFontFamilyName(familyName: String) {
-        viewModelScope.launch { preferencesManager.setLauncherFontFamilyName(familyName) }
-    }
+    fun setLauncherFontFamilyName(familyName: String) =
+            launchPreferences { setLauncherFontFamilyName(familyName) }
 
     fun setAppLocaleTag(tag: String) {
         viewModelScope.launch {
@@ -669,27 +669,6 @@ constructor(
     }
 
     fun setBlackWallpaper() {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                // Create a full-screen black bitmap
-                val width = context.resources.displayMetrics.widthPixels
-                val height = context.resources.displayMetrics.heightPixels
-                val bitmap = createBitmap(width, height, Bitmap.Config.ARGB_8888)
-                val canvas = Canvas(bitmap)
-                canvas.drawColor(AndroidColor.BLACK)
-
-                val wallpaperManager = WallpaperManager.getInstance(context)
-                // Set for home screen
-                wallpaperManager.setBitmap(bitmap, null, true, WallpaperManager.FLAG_SYSTEM)
-                // Try to set for lock screen too
-                try {
-                    wallpaperManager.setBitmap(bitmap, null, true, WallpaperManager.FLAG_LOCK)
-                } catch (_: Exception) {
-                    // Lock screen wallpaper may fail on some devices, ignore
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
+        viewModelScope.launch { WallpaperHelper.setBlackWallpaper(context) }
     }
 }

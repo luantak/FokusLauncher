@@ -18,27 +18,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TouchApp
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -48,30 +41,28 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.lu4p.fokuslauncher.R
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.appProfileKey
-import com.lu4p.fokuslauncher.ui.drawer.groupAppsIntoProfileSections
-import com.lu4p.fokuslauncher.ui.drawer.profileGroupedAppItems
+import com.lu4p.fokuslauncher.ui.drawer.GroupedAppPickerDialog
 import com.lu4p.fokuslauncher.ui.drawer.profileOriginLabelForFavorite
-import com.lu4p.fokuslauncher.ui.drawer.sortAppsAlphabeticallyByProfileSection
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.ui.components.ClockWidget
 import com.lu4p.fokuslauncher.ui.components.DateBatteryRow
+import com.lu4p.fokuslauncher.ui.components.FokusBottomSheet
 import com.lu4p.fokuslauncher.ui.components.FokusOutlinedButton
-import com.lu4p.fokuslauncher.ui.components.FokusTextButton
 import com.lu4p.fokuslauncher.ui.components.MinimalIcons
+import com.lu4p.fokuslauncher.ui.components.SheetActionRow
 import com.lu4p.fokuslauncher.ui.components.WeatherWidget
+import com.lu4p.fokuslauncher.ui.util.OnResumeEffect
+import com.lu4p.fokuslauncher.ui.util.clickableNoRippleWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.clickableWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.combinedClickableWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.LocalSystemClickSound
 import com.lu4p.fokuslauncher.utils.LockScreenHelper
-import com.lu4p.fokuslauncher.utils.containsNormalizedSearch
 
 @Composable
 fun HomeScreen(
@@ -92,15 +83,15 @@ fun HomeScreen(
     val appMenuTarget by viewModel.appMenuTarget.collectAsStateWithLifecycle()
     val showHomeScreenMenu by viewModel.showHomeScreenMenu.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val onFavoriteClick = remember(viewModel) { { fav: FavoriteApp -> viewModel.launchFavorite(fav) } }
-    val onFavoriteLongPress = remember(viewModel) { { fav: FavoriteApp -> viewModel.onFavoriteLongPress(fav) } }
-    val onHomeLongPress = remember(viewModel) { { viewModel.onHomeScreenLongPress() } }
-    val onShortcutClick = remember(viewModel) { { shortcut: HomeShortcut -> viewModel.launchShortcut(shortcut) } }
-    val onSetDefaultLauncher = remember(viewModel) { { viewModel.openDefaultLauncherSettings() } }
-    val onClockClick = remember(viewModel) { { viewModel.openClockApp() } }
-    val onDateClick = remember(viewModel) { { viewModel.openCalendarApp() } }
-    val onWeatherClick = remember(viewModel) { { viewModel.openWeatherAppPicker() } }
-    val onDoubleTapEmptyLock = remember(viewModel) { { viewModel.onDoubleTapEmptyLock() } }
+    val onFavoriteClick = viewModel::launchFavorite
+    val onFavoriteLongPress = viewModel::onFavoriteLongPress
+    val onHomeLongPress = viewModel::onHomeScreenLongPress
+    val onShortcutClick = viewModel::launchShortcut
+    val onSetDefaultLauncher = viewModel::openDefaultLauncherSettings
+    val onClockClick = viewModel::openClockApp
+    val onDateClick = viewModel::openCalendarApp
+    val onWeatherClick = viewModel::openWeatherAppPicker
+    val onDoubleTapEmptyLock = viewModel::onDoubleTapEmptyLock
 
     LaunchedEffect(viewModel) {
         viewModel.requestLockAccessibilitySettings.collect {
@@ -108,27 +99,11 @@ fun HomeScreen(
         }
     }
 
-    DisposableEffect(lifecycleOwner, viewModel) {
-        val runResumeActions = {
-            viewModel.refreshInstalledApps(forceReload = false)
-            viewModel.recheckDefaultLauncher()
-            viewModel.refreshDoubleTapLockEffective()
-            viewModel.refreshWeather()
-        }
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                runResumeActions()
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        // Navigating back to Home composes this screen while the activity is already RESUMED,
-        // so ON_RESUME is not delivered to a newly registered observer — refresh once now.
-        if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
-            runResumeActions()
-        }
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
+    OnResumeEffect(lifecycleOwner, viewModel, alsoRunIfAlreadyResumed = true) {
+        viewModel.refreshInstalledApps(forceReload = false)
+        viewModel.recheckDefaultLauncher()
+        viewModel.refreshDoubleTapLockEffective()
+        viewModel.refreshWeather()
     }
 
     Box(modifier = modifier.fillMaxSize()) {
@@ -190,10 +165,12 @@ fun HomeScreen(
     }
 
     if (showWeatherAppPicker) {
-        WeatherAppPickerDialog(
-            allApps = allInstalledApps,
-            onSelect = { packageName -> viewModel.setPreferredWeatherApp(packageName) },
-            onDismiss = { viewModel.closeWeatherAppPicker() }
+        GroupedAppPickerDialog(
+            apps = allInstalledApps,
+            title = stringResource(R.string.home_weather_app_picker_title),
+            keyPrefix = "weather_app_pick",
+            onSelect = { app -> viewModel.setPreferredWeatherApp(app.packageName) },
+            onDismiss = { viewModel.closeWeatherAppPicker() },
         )
     }
 }
@@ -346,6 +323,47 @@ private fun HomeWidgetsSection(
 }
 
 @Composable
+private fun FavoritesList(
+    favorites: List<FavoriteApp>,
+    installedApps: List<AppInfo>,
+    horizontalAlignment: Alignment.Horizontal,
+    onLabelClick: (FavoriteApp) -> Unit,
+    onLabelLongPress: (FavoriteApp) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(20.dp),
+        horizontalAlignment = horizontalAlignment,
+    ) {
+        favorites.forEach { fav ->
+            FavoriteAppItem(
+                fav = fav,
+                installedApps = installedApps,
+                onClick = { onLabelClick(fav) },
+                onLongPress = { onLabelLongPress(fav) },
+                horizontalAlignment = horizontalAlignment,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ShortcutIconsColumn(
+    shortcuts: List<HomeShortcut>,
+    onIconClick: (HomeShortcut) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        RightShortcutIcons(shortcuts = shortcuts, onIconClick = onIconClick)
+    }
+}
+
+@Composable
 private fun HomeFavoritesSection(
     homeAlignment: HomeAlignment,
     favorites: List<FavoriteApp>,
@@ -355,111 +373,67 @@ private fun HomeFavoritesSection(
     onLabelLongPress: (FavoriteApp) -> Unit,
     onIconClick: (HomeShortcut) -> Unit,
 ) {
+    val listModifier =
+        Modifier.fillMaxWidth().testTag("favorites_list")
     when (homeAlignment) {
-        HomeAlignment.CENTER -> {
+        HomeAlignment.CENTER ->
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("favorites_list"),
-                horizontalAlignment = Alignment.CenterHorizontally
+                modifier = listModifier,
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                favorites.forEach { fav ->
-                    FavoriteAppItem(
-                        fav = fav,
-                        installedApps = installedApps,
-                        onClick = { onLabelClick(fav) },
-                        onLongPress = { onLabelLongPress(fav) },
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    )
-                    Spacer(modifier = Modifier.height(20.dp))
-                }
+                FavoritesList(
+                    favorites = favorites,
+                    installedApps = installedApps,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    onLabelClick = onLabelClick,
+                    onLabelLongPress = onLabelLongPress,
+                )
                 if (rightSideShortcuts.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(24.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         RightShortcutIcons(
                             shortcuts = rightSideShortcuts,
-                            onIconClick = onIconClick
+                            onIconClick = onIconClick,
                         )
                     }
                 }
             }
-        }
 
-        HomeAlignment.RIGHT -> {
+        HomeAlignment.LEFT, HomeAlignment.RIGHT -> {
+            val favAlign =
+                    if (homeAlignment == HomeAlignment.LEFT) Alignment.Start else Alignment.End
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("favorites_list"),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Bottom
+                    modifier = listModifier,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Bottom,
             ) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    RightShortcutIcons(
-                        shortcuts = rightSideShortcuts,
-                        onIconClick = onIconClick
+                val favs: @Composable () -> Unit = {
+                    FavoritesList(
+                            favorites = favorites,
+                            installedApps = installedApps,
+                            horizontalAlignment = favAlign,
+                            onLabelClick = onLabelClick,
+                            onLabelLongPress = onLabelLongPress,
+                            modifier = Modifier.weight(1f),
                     )
                 }
-
-                Spacer(modifier = Modifier.width(24.dp))
-
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(20.dp),
-                    modifier = Modifier.weight(1f),
-                    horizontalAlignment = Alignment.End
-                ) {
-                    favorites.forEach { fav ->
-                        FavoriteAppItem(
-                            fav = fav,
-                            installedApps = installedApps,
-                            onClick = { onLabelClick(fav) },
-                            onLongPress = { onLabelLongPress(fav) },
-                            horizontalAlignment = Alignment.End,
-                        )
-                    }
-                }
-            }
-        }
-
-        HomeAlignment.LEFT -> {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("favorites_list"),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Bottom
-            ) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(20.dp),
-                    modifier = Modifier.weight(1f),
-                    horizontalAlignment = Alignment.Start
-                ) {
-                    favorites.forEach { fav ->
-                        FavoriteAppItem(
-                            fav = fav,
-                            installedApps = installedApps,
-                            onClick = { onLabelClick(fav) },
-                            onLongPress = { onLabelLongPress(fav) },
-                            horizontalAlignment = Alignment.Start,
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.width(24.dp))
-
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    RightShortcutIcons(
-                        shortcuts = rightSideShortcuts,
-                        onIconClick = onIconClick
+                val icons: @Composable () -> Unit = {
+                    ShortcutIconsColumn(
+                            shortcuts = rightSideShortcuts,
+                            onIconClick = onIconClick,
                     )
+                }
+                if (homeAlignment == HomeAlignment.LEFT) {
+                    favs()
+                    Spacer(modifier = Modifier.width(24.dp))
+                    icons()
+                } else {
+                    icons()
+                    Spacer(modifier = Modifier.width(24.dp))
+                    favs()
                 }
             }
         }
@@ -478,10 +452,7 @@ private fun RightShortcutIcons(
             tint = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier
                 .size(24.dp)
-                .clickableWithSystemSound(
-                    indication = null,
-                    interactionSource = remember { MutableInteractionSource() }
-                ) { onIconClick(shortcut) }
+                .clickableNoRippleWithSystemSound { onIconClick(shortcut) }
                 .testTag("right_shortcut_icon_$index")
         )
     }
@@ -567,139 +538,28 @@ private fun HomeScreenLongPressSheet(
     onOpenSettings: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState()
-    ModalBottomSheet(
+    FokusBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surfaceVariant
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 32.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickableWithSystemSound(onClick = {
-                        onEditHomeScreen()
-                    })
-                    .padding(horizontal = 24.dp, vertical = 16.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Home,
-                    contentDescription = stringResource(R.string.cd_edit_home_screen),
-                    tint = MaterialTheme.colorScheme.onBackground
-                )
-                Spacer(modifier = Modifier.width(16.dp))
-                Text(
-                    text = stringResource(R.string.settings_edit_home_screen),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickableWithSystemSound(onClick = {
-                        onEditShortcuts()
-                    })
-                    .padding(horizontal = 24.dp, vertical = 16.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.TouchApp,
-                    contentDescription = stringResource(R.string.settings_edit_shortcuts),
-                    tint = MaterialTheme.colorScheme.onBackground
-                )
-                Spacer(modifier = Modifier.width(16.dp))
-                Text(
-                    text = stringResource(R.string.settings_edit_shortcuts),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickableWithSystemSound(onClick = {
-                        onOpenSettings()
-                    })
-                    .padding(horizontal = 24.dp, vertical = 16.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Settings,
-                    contentDescription = stringResource(R.string.cd_settings),
-                    tint = MaterialTheme.colorScheme.onBackground
-                )
-                Spacer(modifier = Modifier.width(16.dp))
-                Text(
-                    text = stringResource(R.string.settings_title),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-            }
-        }
+            SheetActionRow(
+                label = stringResource(R.string.settings_edit_home_screen),
+                onClick = onEditHomeScreen,
+                icon = Icons.Default.Home,
+                iconContentDescription = stringResource(R.string.cd_edit_home_screen),
+            )
+            SheetActionRow(
+                label = stringResource(R.string.settings_edit_shortcuts),
+                onClick = onEditShortcuts,
+                icon = Icons.Filled.TouchApp,
+                iconContentDescription = stringResource(R.string.settings_edit_shortcuts),
+            )
+            SheetActionRow(
+                label = stringResource(R.string.settings_title),
+                onClick = onOpenSettings,
+                icon = Icons.Default.Settings,
+                iconContentDescription = stringResource(R.string.cd_settings),
+            )
     }
 }
 
-@Composable
-private fun WeatherAppPickerDialog(
-    allApps: List<AppInfo>,
-    onSelect: (String) -> Unit,
-    onDismiss: () -> Unit
-) {
-    var filter by remember { mutableStateOf("") }
-    val context = LocalContext.current
-    val filtered =
-        remember(filter, allApps) {
-            if (filter.isBlank()) allApps
-            else allApps.filter { it.label.containsNormalizedSearch(filter) }
-        }
-    val filteredSections =
-        remember(filtered, context) {
-            groupAppsIntoProfileSections(context, filtered, ::sortAppsAlphabeticallyByProfileSection)
-        }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(stringResource(R.string.home_weather_app_picker_title), color = MaterialTheme.colorScheme.onBackground)
-        },
-        text = {
-            Column {
-                OutlinedTextField(
-                    value = filter,
-                    onValueChange = { filter = it },
-                    label = { Text(stringResource(R.string.search)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(Modifier.height(8.dp))
-                LazyColumn(modifier = Modifier.height(300.dp)) {
-                    profileGroupedAppItems(
-                        sections = filteredSections,
-                        keyPrefix = "weather_app_pick",
-                        horizontalPadding = 8.dp,
-                    ) { app ->
-                        Text(
-                            text = app.label,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onBackground,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickableWithSystemSound { onSelect(app.packageName) }
-                                .padding(vertical = 10.dp, horizontal = 8.dp)
-                        )
-                    }
-                }
-            }
-        },
-        confirmButton = {},
-        dismissButton = {
-            FokusTextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
-        },
-        containerColor = MaterialTheme.colorScheme.surfaceVariant
-    )
-}

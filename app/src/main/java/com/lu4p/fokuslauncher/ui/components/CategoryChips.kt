@@ -49,6 +49,12 @@ fun CategoryChips(
     ) {
         items(items = categories, key = { it }) { category ->
             val isSelected = category.equals(selectedCategory, ignoreCase = true)
+            val (chipTypography, chipWeight) =
+                    if (isSelected) {
+                        MaterialTheme.typography.labelLarge to FontWeight.SemiBold
+                    } else {
+                        MaterialTheme.typography.labelMedium to FontWeight.Normal
+                    }
             Box(
                     modifier =
                             Modifier.pointerInput(category) {
@@ -64,12 +70,8 @@ fun CategoryChips(
                         label = {
                             Text(
                                     text = categoryChipDisplayLabel(context, category),
-                                    style =
-                                            if (isSelected) MaterialTheme.typography.labelLarge
-                                            else MaterialTheme.typography.labelMedium,
-                                    fontWeight =
-                                            if (isSelected) FontWeight.SemiBold
-                                            else FontWeight.Normal
+                                    style = chipTypography,
+                                    fontWeight = chipWeight,
                             )
                         },
                         shape = RoundedCornerShape(20.dp),

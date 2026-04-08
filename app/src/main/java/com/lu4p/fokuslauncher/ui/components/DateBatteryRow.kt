@@ -1,9 +1,7 @@
 package com.lu4p.fokuslauncher.ui.components
 
-import com.lu4p.fokuslauncher.ui.util.clickableWithSystemSound
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import com.lu4p.fokuslauncher.ui.util.clickableNoRippleWithSystemSound
 import androidx.compose.foundation.layout.Row
-import androidx.compose.runtime.remember
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
@@ -27,33 +25,22 @@ fun DateBatteryRow(
     onDateClick: () -> Unit = {}
 ) {
     if (!showDate && !showBattery) return
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier
-    ) {
+    val style = MaterialTheme.typography.titleMedium
+    val color = MaterialTheme.colorScheme.onBackground
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier) {
         if (showDate) {
             Text(
                 text = date,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier =
-                        Modifier.clickableWithSystemSound(
-                                indication = null,
-                                interactionSource =
-                                        remember { MutableInteractionSource() },
-                                onClick = onDateClick
-                        )
+                style = style,
+                color = color,
+                modifier = Modifier.clickableNoRippleWithSystemSound(onClick = onDateClick)
             )
         }
         if (showDate && showBattery) {
             Spacer(modifier = Modifier.width(8.dp))
         }
         if (showBattery) {
-            Text(
-                text = "$batteryPercent%",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onBackground
-            )
+            Text(text = "$batteryPercent%", style = style, color = color)
         }
     }
 }

@@ -6,6 +6,7 @@ import android.content.pm.LauncherApps
 import android.os.Process
 import android.os.UserManager
 import android.content.Context
+import android.database.Cursor
 import androidx.room.Room
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
@@ -46,88 +47,102 @@ object AppModule {
             }
         }
 
+    private val MIGRATION_3_TO_4_NEW_TABLES =
+        listOf(
+            "CREATE TABLE IF NOT EXISTS `hidden_apps_new` (`packageName` TEXT NOT NULL, `profileKey` TEXT NOT NULL, PRIMARY KEY(`packageName`, `profileKey`))",
+            "CREATE TABLE IF NOT EXISTS `renamed_apps_new` (`packageName` TEXT NOT NULL, `profileKey` TEXT NOT NULL, `customName` TEXT NOT NULL, PRIMARY KEY(`packageName`, `profileKey`))",
+            "CREATE TABLE IF NOT EXISTS `app_categories_new` (`packageName` TEXT NOT NULL, `profileKey` TEXT NOT NULL, `category` TEXT NOT NULL, PRIMARY KEY(`packageName`, `profileKey`))",
+        )
+
+    private val MIGRATION_3_TO_4_FINALIZE =
+        listOf(
+            "DROP TABLE `hidden_apps`",
+            "ALTER TABLE `hidden_apps_new` RENAME TO `hidden_apps`",
+            "DROP TABLE `renamed_apps`",
+            "ALTER TABLE `renamed_apps_new` RENAME TO `renamed_apps`",
+            "DROP TABLE `app_categories`",
+            "ALTER TABLE `app_categories_new` RENAME TO `app_categories`",
+        )
+
     fun migration3To4(
         context: Context,
         profileKeyResolver: (Context, String) -> Set<String> = ::resolveInstalledProfileKeys
     ) =
         object : Migration(3, 4) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL(
-                    "CREATE TABLE IF NOT EXISTS `hidden_apps_new` (`packageName` TEXT NOT NULL, `profileKey` TEXT NOT NULL, PRIMARY KEY(`packageName`, `profileKey`))"
-                )
-                db.execSQL(
-                    "CREATE TABLE IF NOT EXISTS `renamed_apps_new` (`packageName` TEXT NOT NULL, `profileKey` TEXT NOT NULL, `customName` TEXT NOT NULL, PRIMARY KEY(`packageName`, `profileKey`))"
-                )
-                db.execSQL(
-                    "CREATE TABLE IF NOT EXISTS `app_categories_new` (`packageName` TEXT NOT NULL, `profileKey` TEXT NOT NULL, `category` TEXT NOT NULL, PRIMARY KEY(`packageName`, `profileKey`))"
-                )
+                MIGRATION_3_TO_4_NEW_TABLES.forEach(db::execSQL)
 
-                db.query("SELECT packageName FROM hidden_apps").use { cursor ->
-                    val packageIndex = cursor.getColumnIndexOrThrow("packageName")
-                    while (cursor.moveToNext()) {
-                        val packageName = cursor.getString(packageIndex)
-                        for (profileKey in profileKeyResolver(context, packageName)) {
-                            db.execSQL(
-                                "INSERT OR REPLACE INTO `hidden_apps_new` (`packageName`, `profileKey`) VALUES (?, ?)",
-                                arrayOf(packageName, profileKey)
-                            )
-                        }
-                    }
+                migrateByPackageName(
+                    db,
+                    context,
+                    profileKeyResolver,
+                    "SELECT packageName FROM hidden_apps",
+                ) { d, packageName, profileKey, _ ->
+                    d.execSQL(
+                        "INSERT OR REPLACE INTO `hidden_apps_new` (`packageName`, `profileKey`) VALUES (?, ?)",
+                        arrayOf(packageName, profileKey),
+                    )
                 }
 
-                db.query("SELECT packageName, customName FROM renamed_apps").use { cursor ->
-                    val packageIndex = cursor.getColumnIndexOrThrow("packageName")
-                    val customNameIndex = cursor.getColumnIndexOrThrow("customName")
-                    while (cursor.moveToNext()) {
-                        val packageName = cursor.getString(packageIndex)
-                        val customName = cursor.getString(customNameIndex)
-                        for (profileKey in profileKeyResolver(context, packageName)) {
-                            db.execSQL(
-                                "INSERT OR REPLACE INTO `renamed_apps_new` (`packageName`, `profileKey`, `customName`) VALUES (?, ?, ?)",
-                                arrayOf(packageName, profileKey, customName)
-                            )
-                        }
-                    }
+                migrateByPackageName(
+                    db,
+                    context,
+                    profileKeyResolver,
+                    "SELECT packageName, customName FROM renamed_apps",
+                ) { d, packageName, profileKey, c ->
+                    val customName = c.getString(c.getColumnIndexOrThrow("customName"))
+                    d.execSQL(
+                        "INSERT OR REPLACE INTO `renamed_apps_new` (`packageName`, `profileKey`, `customName`) VALUES (?, ?, ?)",
+                        arrayOf(packageName, profileKey, customName),
+                    )
                 }
 
-                db.query("SELECT packageName, category FROM app_categories").use { cursor ->
-                    val packageIndex = cursor.getColumnIndexOrThrow("packageName")
-                    val categoryIndex = cursor.getColumnIndexOrThrow("category")
-                    while (cursor.moveToNext()) {
-                        val packageName = cursor.getString(packageIndex)
-                        val category = cursor.getString(categoryIndex)
-                        for (profileKey in profileKeyResolver(context, packageName)) {
-                            db.execSQL(
-                                "INSERT OR REPLACE INTO `app_categories_new` (`packageName`, `profileKey`, `category`) VALUES (?, ?, ?)",
-                                arrayOf(packageName, profileKey, category)
-                            )
-                        }
-                    }
+                migrateByPackageName(
+                    db,
+                    context,
+                    profileKeyResolver,
+                    "SELECT packageName, category FROM app_categories",
+                ) { d, packageName, profileKey, c ->
+                    val category = c.getString(c.getColumnIndexOrThrow("category"))
+                    d.execSQL(
+                        "INSERT OR REPLACE INTO `app_categories_new` (`packageName`, `profileKey`, `category`) VALUES (?, ?, ?)",
+                        arrayOf(packageName, profileKey, category),
+                    )
                 }
 
-                db.execSQL("DROP TABLE `hidden_apps`")
-                db.execSQL("ALTER TABLE `hidden_apps_new` RENAME TO `hidden_apps`")
-                db.execSQL("DROP TABLE `renamed_apps`")
-                db.execSQL("ALTER TABLE `renamed_apps_new` RENAME TO `renamed_apps`")
-                db.execSQL("DROP TABLE `app_categories`")
-                db.execSQL("ALTER TABLE `app_categories_new` RENAME TO `app_categories`")
+                MIGRATION_3_TO_4_FINALIZE.forEach(db::execSQL)
             }
         }
 
+    private inline fun migrateByPackageName(
+        db: SupportSQLiteDatabase,
+        context: Context,
+        profileKeyResolver: (Context, String) -> Set<String>,
+        sql: String,
+        crossinline onRow: (SupportSQLiteDatabase, String, String, Cursor) -> Unit,
+    ) {
+        db.query(sql).use { cursor ->
+            val packageIndex = cursor.getColumnIndexOrThrow("packageName")
+            while (cursor.moveToNext()) {
+                val packageName = cursor.getString(packageIndex)
+                for (profileKey in profileKeyResolver(context, packageName)) {
+                    onRow(db, packageName, profileKey, cursor)
+                }
+            }
+        }
+    }
+
+    private inline fun <reified T> Context.systemServiceOrNull(serviceName: String): T? =
+            try {
+                getSystemService(serviceName) as? T
+            } catch (_: Exception) {
+                null
+            }
+
     private fun resolveInstalledProfileKeys(context: Context, packageName: String): Set<String> {
         val privateSpaceManager = PrivateSpaceManager(context)
-        val launcherApps =
-            try {
-                context.getSystemService(LAUNCHER_APPS_SERVICE) as? LauncherApps
-            } catch (_: Exception) {
-                null
-            }
-        val userManager =
-            try {
-                context.getSystemService(USER_SERVICE) as? UserManager
-            } catch (_: Exception) {
-                null
-            }
+        val launcherApps = context.systemServiceOrNull<LauncherApps>(LAUNCHER_APPS_SERVICE)
+        val userManager = context.systemServiceOrNull<UserManager>(USER_SERVICE)
 
         val discovered = linkedSetOf<String>()
         if (launcherApps != null && userManager != null) {

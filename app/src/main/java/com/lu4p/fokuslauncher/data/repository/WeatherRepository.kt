@@ -86,43 +86,34 @@ class WeatherRepository @Inject constructor() {
         val current = obj.getJSONObject("current")
         val temperature = current.getDouble("temperature_2m").toInt()
         val weatherCode = current.getInt("weather_code")
-        val iconCode = mapOpenMeteoCodeToIcon(weatherCode)
-        val description = mapOpenMeteoCodeToDescription(weatherCode)
+        val openMeteo = openMeteoPresentation(weatherCode)
 
         return WeatherData(
                 temperature = temperature,
-                description = description,
-                iconCode = iconCode,
+                description = openMeteo.description,
+                iconCode = openMeteo.iconCode,
                 lastUpdated = System.currentTimeMillis()
         )
     }
 
-    private fun mapOpenMeteoCodeToIcon(code: Int): String {
-        return when (code) {
-            0 -> "01d" // clear
-            1, 2 -> "02d" // partly cloudy
-            3 -> "04d" // overcast
-            45, 48 -> "50d" // fog
-            51, 53, 55, 56, 57 -> "09d" // drizzle
-            61, 63, 65, 66, 67, 80, 81, 82 -> "10d" // rain
-            71, 73, 75, 77, 85, 86 -> "13d" // snow
-            95, 96, 99 -> "11d" // thunderstorm
-            else -> "03d"
-        }
-    }
+    /**
+     * Single lookup for Open-Meteo WMO weather codes. Description is not shown in the launcher UI
+     * but kept on [WeatherData] for completeness / debugging.
+     */
+    private data class OpenMeteoPresentation(val iconCode: String, val description: String)
 
-    /** Not shown in the launcher UI; kept for [WeatherData] completeness / debugging. */
-    private fun mapOpenMeteoCodeToDescription(code: Int): String {
+    private fun openMeteoPresentation(code: Int): OpenMeteoPresentation {
         return when (code) {
-            0 -> "Clear sky"
-            1, 2 -> "Partly cloudy"
-            3 -> "Overcast"
-            45, 48 -> "Foggy"
-            51, 53, 55, 56, 57 -> "Drizzle"
-            61, 63, 65, 66, 67, 80, 81, 82 -> "Rain"
-            71, 73, 75, 77, 85, 86 -> "Snow"
-            95, 96, 99 -> "Thunderstorm"
-            else -> "Cloudy"
+            0 -> OpenMeteoPresentation("01d", "Clear sky") // clear
+            1, 2 -> OpenMeteoPresentation("02d", "Partly cloudy") // partly cloudy
+            3 -> OpenMeteoPresentation("04d", "Overcast") // overcast
+            45, 48 -> OpenMeteoPresentation("50d", "Foggy") // fog
+            51, 53, 55, 56, 57 -> OpenMeteoPresentation("09d", "Drizzle") // drizzle
+            61, 63, 65, 66, 67, 80, 81, 82 ->
+                    OpenMeteoPresentation("10d", "Rain") // rain
+            71, 73, 75, 77, 85, 86 -> OpenMeteoPresentation("13d", "Snow") // snow
+            95, 96, 99 -> OpenMeteoPresentation("11d", "Thunderstorm") // thunderstorm
+            else -> OpenMeteoPresentation("03d", "Cloudy")
         }
     }
 }

@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -56,7 +55,7 @@ fun MinimalIconPickerDialog(
                 if (iconSearchQuery.isBlank()) MinimalIcons.iconPickerSections
                 else MinimalIcons.iconPickerSearchSections(filteredIconNames)
             }
-    AlertDialog(
+    FokusAlertDialog(
             onDismissRequest = onDismiss,
             title = title,
             text = {
@@ -111,7 +110,6 @@ fun MinimalIconPickerDialog(
                     )
                 }
             },
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
     )
 }
 

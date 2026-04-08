@@ -6,20 +6,21 @@ import android.content.Intent
 import android.content.res.Resources
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.widget.Toast
 import android.provider.Settings
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.BorderStroke
 import com.lu4p.fokuslauncher.ui.components.FokusIconButton
 import com.lu4p.fokuslauncher.ui.components.FokusTextButton
 import com.lu4p.fokuslauncher.ui.util.clickableWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.rememberBooleanChangeWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.rememberClickWithSystemSound
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -29,9 +30,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.NavigateNext
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.ChatBubble
@@ -41,27 +42,18 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Translate
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenuItem
+import com.lu4p.fokuslauncher.ui.components.FokusAlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuDefaults
-import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -73,6 +65,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
@@ -87,24 +80,141 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.AppShortcutAction
-import com.lu4p.fokuslauncher.ui.drawer.groupAppsIntoProfileSections
-import com.lu4p.fokuslauncher.ui.drawer.profileGroupedAppItems
-import com.lu4p.fokuslauncher.ui.drawer.sortAppsAlphabeticallyByProfileSection
+import com.lu4p.fokuslauncher.ui.drawer.GroupedAppPickerDialog
 import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
 import com.lu4p.fokuslauncher.data.model.HomeDateFormatStyle
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.utils.LockScreenHelper
-import com.lu4p.fokuslauncher.utils.containsNormalizedSearch
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
+import com.lu4p.fokuslauncher.ui.settings.components.SettingsDropdown
+import com.lu4p.fokuslauncher.ui.settings.components.SettingsRow
+import com.lu4p.fokuslauncher.ui.settings.components.SettingsToggleRow
 import com.lu4p.fokuslauncher.ui.theme.composeFontFamilyFromStoredName
+import com.lu4p.fokuslauncher.ui.util.OnResumeEffect
 import com.lu4p.fokuslauncher.ui.util.formatShortcutTargetDisplay
+import android.app.Activity
+import androidx.annotation.StringRes
+import androidx.compose.ui.graphics.vector.ImageVector
+
+private data class SubpageNavRow(
+        @param:StringRes val labelRes: Int,
+        val subtitle: String? = null,
+        val onClick: () -> Unit,
+)
+
+private data class SwipeTargetPick(
+        val pickerKey: String,
+        @param:StringRes val labelRes: Int,
+        val target: ShortcutTarget?,
+        val onClear: () -> Unit,
+)
+
+private data class PreferredAppPickerRow(
+        @param:StringRes val labelRes: Int,
+        val packageName: String,
+        val pickerKey: String,
+        val onClear: () -> Unit,
+)
+
+private data class DeviceControlToggleRow(
+        @param:StringRes val labelRes: Int,
+        val subtitle: String,
+        val checked: Boolean,
+        val onCheckedChange: (Boolean) -> Unit,
+)
+
+private data class CommunityLink(
+        val icon: ImageVector,
+        val titleRes: Int,
+        val subtitleRes: Int,
+        val url: String,
+)
+
+private val communityLinks =
+        listOf(
+                CommunityLink(
+                        Icons.Filled.Star,
+                        R.string.settings_github_title,
+                        R.string.settings_github_subtitle,
+                        "https://github.com/luantak/FokusLauncher",
+                ),
+                CommunityLink(
+                        Icons.Outlined.Translate,
+                        R.string.settings_weblate_title,
+                        R.string.settings_weblate_subtitle,
+                        "https://hosted.weblate.org/engage/fokus-launcher/",
+                ),
+                CommunityLink(
+                        Icons.Filled.ChatBubble,
+                        R.string.settings_matrix_title,
+                        R.string.settings_matrix_subtitle,
+                        "https://matrix.to/#/#fokus:matrix.org",
+                ),
+        )
+
+private fun Context.hasCoarseLocationPermission(): Boolean =
+        ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) ==
+                PackageManager.PERMISSION_GRANTED
+
+private fun <T> LazyListScope.manageableAppsSection(
+        headerRes: Int,
+        emptyTextRes: Int,
+        apps: List<T>,
+        key: (T) -> Any,
+        label: (T) -> String,
+        subtitle: (T) -> String,
+        onRowClick: (T) -> Unit,
+        trailingContent: @Composable RowScope.(T) -> Unit,
+) {
+    item { SectionHeader(stringResource(headerRes)) }
+    if (apps.isEmpty()) {
+        item { EmptySettingsStateText(text = stringResource(emptyTextRes)) }
+    } else {
+        items(apps, key = key) { app ->
+            SettingsRow(
+                    label = label(app),
+                    subtitle = subtitle(app),
+                    subtitleStyle = MaterialTheme.typography.labelMedium,
+                    onClick = { onRowClick(app) },
+                    trailing = { trailingContent(app) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun rememberCoarseLocationPermission(context: Context, activity: Activity?): Pair<Boolean, () -> Unit> {
+    var granted by remember { mutableStateOf(context.hasCoarseLocationPermission()) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    OnResumeEffect(lifecycleOwner) { granted = context.hasCoarseLocationPermission() }
+    val launcher =
+            rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.RequestPermission(),
+            ) {
+                granted = context.hasCoarseLocationPermission()
+                if (!granted &&
+                                activity != null &&
+                                !ActivityCompat.shouldShowRequestPermissionRationale(
+                                        activity,
+                                        Manifest.permission.ACCESS_COARSE_LOCATION,
+                                )
+                ) {
+                    context.startActivity(
+                            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                data = Uri.fromParts("package", context.packageName, null)
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                    )
+                }
+            }
+    val request = remember(launcher) { { launcher.launch(Manifest.permission.ACCESS_COARSE_LOCATION) } }
+    return granted to request
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -125,29 +235,9 @@ fun SettingsScreen(
     val context = LocalContext.current
     val resources = LocalResources.current
     val activity = LocalActivity.current
-    val lifecycleOwner = LocalLifecycleOwner.current
 
-    var hasCoarseLocationPermission by remember {
-        mutableStateOf(
-            ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        )
-    }
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                hasCoarseLocationPermission =
-                    ContextCompat.checkSelfPermission(
-                        context,
-                        Manifest.permission.ACCESS_COARSE_LOCATION
-                    ) == PackageManager.PERMISSION_GRANTED
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
+    val (hasCoarseLocationPermission, requestCoarseLocation) =
+            rememberCoarseLocationPermission(context, activity)
 
     // Dialog states
     val showAppPickerFor = remember { mutableStateOf<String?>(null) } // swipeLeft/swipeRight/weather
@@ -162,71 +252,25 @@ fun SettingsScreen(
         }
     }
 
-    val locationPermissionLauncher =
-            rememberLauncherForActivityResult(
-                    contract = ActivityResultContracts.RequestPermission()
-            ) {
-                hasCoarseLocationPermission =
-                        ContextCompat.checkSelfPermission(
-                                context,
-                                Manifest.permission.ACCESS_COARSE_LOCATION
-                        ) == PackageManager.PERMISSION_GRANTED
-                if (!hasCoarseLocationPermission &&
-                                activity != null &&
-                                !ActivityCompat.shouldShowRequestPermissionRationale(
-                                        activity,
-                                        Manifest.permission.ACCESS_COARSE_LOCATION
-                                )) {
-                        context.startActivity(
-                                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                                        .apply {
-                                                data =
-                                                        Uri.fromParts(
-                                                                "package",
-                                                                context.packageName,
-                                                                null
-                                                        )
-                                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                        }
-                        )
-                }
-            }
-
     Column(modifier = Modifier
         .fillMaxSize()
         .background(backgroundScrim)
         .navigationBarsPadding()
         .testTag("settings_screen")
     ) {
-        TopAppBar(
-                title = {
-                    Text(stringResource(R.string.settings_title), color = MaterialTheme.colorScheme.onBackground)
-                },
-                navigationIcon = {
-                    FokusIconButton(onClick = onNavigateBack) {
-                        Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.action_back),
-                                tint = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
-                },
-                colors =
-                        TopAppBarDefaults.topAppBarColors(
-                                containerColor = MaterialTheme.colorScheme.background
-                        )
+        FokusSettingsTopBar(
+                titleText = stringResource(R.string.settings_title),
+                onNavigateBack = onNavigateBack,
+                containerColor = MaterialTheme.colorScheme.background,
         )
 
         SettingsScreenContent(
+                viewModel = viewModel,
                 uiState = uiState,
                 installedFontFamilies = installedFontFamilies,
                 context = context,
                 resources = resources,
                 hasCoarseLocationPermission = hasCoarseLocationPermission,
-                onShowStatusBarChanged = viewModel::setShowStatusBar,
-                onAllowLandscapeRotationChanged = viewModel::setAllowLandscapeRotation,
-                onAppLocaleTagChanged = viewModel::setAppLocaleTag,
-                onLauncherFontFamilyChanged = viewModel::setLauncherFontFamilyName,
                 onPickWallpaper = { wallpaperPickerLauncher.launch("image/*") },
                 onSetBlackWallpaper = {
                     viewModel.setBlackWallpaper()
@@ -238,21 +282,9 @@ fun SettingsScreen(
                 onEditRightShortcuts = onEditRightShortcuts,
                 onEditCategories = onEditCategories,
                 onDrawerDotSearchSettings = onDrawerDotSearchSettings,
-                onRequestLocationPermission = {
-                    locationPermissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
-                },
+                onRequestLocationPermission = requestCoarseLocation,
                 onShowAppPicker = { showAppPickerFor.value = it },
                 onShowResetConfirm = { showResetConfirm.value = true },
-                onUnhideApp = viewModel::unhideApp,
-                onRemoveRename = viewModel::removeRename,
-                onDrawerSidebarCategoriesChanged = viewModel::setDrawerSidebarCategories,
-                onDrawerCategorySidebarOnLeftChanged = viewModel::setDrawerCategorySidebarOnLeft,
-                onDrawerAppSortModeChanged = viewModel::setDrawerAppSortMode,
-                onHomeAlignmentChanged = viewModel::setHomeAlignment,
-                onClearWeatherApp = { viewModel.setPreferredWeatherApp("") },
-                onClearSwipeLeftTarget = { viewModel.setSwipeLeftTarget(null) },
-                onClearSwipeRightTarget = { viewModel.setSwipeRightTarget(null) },
-                createLogShareIntent = viewModel::createLogShareIntent
         )
     }
 
@@ -282,15 +314,12 @@ fun SettingsScreen(
 
 @Composable
 private fun SettingsScreenContent(
+        viewModel: SettingsViewModel,
         uiState: SettingsUiState,
         installedFontFamilies: List<String>,
         context: Context,
         resources: Resources,
         hasCoarseLocationPermission: Boolean,
-        onShowStatusBarChanged: (Boolean) -> Unit,
-        onAllowLandscapeRotationChanged: (Boolean) -> Unit,
-        onAppLocaleTagChanged: (String) -> Unit,
-        onLauncherFontFamilyChanged: (String) -> Unit,
         onPickWallpaper: () -> Unit,
         onSetBlackWallpaper: () -> Unit,
         onOpenHomeWidgetsSettings: () -> Unit,
@@ -302,161 +331,176 @@ private fun SettingsScreenContent(
         onRequestLocationPermission: () -> Unit,
         onShowAppPicker: (String) -> Unit,
         onShowResetConfirm: () -> Unit,
-        onUnhideApp: (String, String) -> Unit,
-        onRemoveRename: (String, String) -> Unit,
-        onDrawerSidebarCategoriesChanged: (Boolean) -> Unit,
-        onDrawerCategorySidebarOnLeftChanged: (Boolean) -> Unit,
-        onDrawerAppSortModeChanged: (DrawerAppSortMode) -> Unit,
-        onHomeAlignmentChanged: (HomeAlignment) -> Unit,
-        onClearWeatherApp: () -> Unit,
-        onClearSwipeLeftTarget: () -> Unit,
-        onClearSwipeRightTarget: () -> Unit,
-        createLogShareIntent: suspend () -> Intent?
 ) {
+    val homeScreenSubpageRows =
+            listOf(
+                    SubpageNavRow(
+                            R.string.settings_home_widgets,
+                            stringResource(R.string.settings_home_widgets_subtitle),
+                            onOpenHomeWidgetsSettings,
+                    ),
+                    SubpageNavRow(
+                            R.string.settings_accessibility,
+                            stringResource(R.string.settings_accessibility_subtitle),
+                            onOpenDeviceControlSettings,
+                    ),
+                    SubpageNavRow(
+                            R.string.settings_edit_home_screen,
+                            onClick = onEditHomeScreen,
+                    ),
+                    SubpageNavRow(
+                            R.string.settings_edit_shortcuts,
+                            pluralStringResource(
+                                    R.plurals.settings_shortcuts_configured,
+                                    uiState.rightSideShortcuts.size,
+                                    uiState.rightSideShortcuts.size
+                            ),
+                            onEditRightShortcuts,
+                    ),
+            )
+    val drawerSubpageRows =
+            listOf(
+                    SubpageNavRow(
+                            R.string.settings_edit_app_categories,
+                            pluralStringResource(
+                                    R.plurals.settings_categories_count,
+                                    uiState.categoryDefinitions.size,
+                                    uiState.categoryDefinitions.size
+                            ),
+                            onEditCategories,
+                    ),
+                    SubpageNavRow(
+                            R.string.settings_dot_search_title,
+                            stringResource(R.string.settings_dot_search_subtitle),
+                            onDrawerDotSearchSettings,
+                    ),
+            )
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         item { SectionHeader(stringResource(R.string.settings_section_appearance)) }
-        item {
+        items(
+                listOf(
+                        Triple(
+                                R.string.settings_show_status_bar,
+                                uiState.showStatusBar,
+                                viewModel::setShowStatusBar,
+                        ),
+                        Triple(
+                                R.string.settings_allow_landscape_rotation,
+                                uiState.allowLandscapeRotation,
+                                viewModel::setAllowLandscapeRotation,
+                        ),
+                ),
+                key = { it.first },
+        ) { (labelRes, checked, onChange) ->
             SettingsToggleRow(
-                    label = stringResource(R.string.settings_show_status_bar),
-                    checked = uiState.showStatusBar,
-                    onCheckedChange = onShowStatusBarChanged
-            )
-        }
-        item {
-            SettingsToggleRow(
-                    label = stringResource(R.string.settings_allow_landscape_rotation),
-                    checked = uiState.allowLandscapeRotation,
-                    onCheckedChange = onAllowLandscapeRotationChanged
+                    label = stringResource(labelRes),
+                    checked = checked,
+                    onCheckedChange = onChange,
             )
         }
         item {
             AppLanguageDropdown(
                     currentTag = uiState.appLocaleTag,
-                    onTagSelected = onAppLocaleTagChanged
+                    onTagSelected = viewModel::setAppLocaleTag
             )
         }
         item {
             LauncherFontFamilyDropdown(
                     currentFamilyName = uiState.launcherFontFamilyName,
                     installedFamilies = installedFontFamilies,
-                    onFamilySelected = onLauncherFontFamilyChanged
+                    onFamilySelected = viewModel::setLauncherFontFamilyName
             )
         }
         item {
-            SimpleSettingsRow(
+            SettingsRow(
                     label = stringResource(R.string.settings_set_background_image),
-                    onClick = onPickWallpaper
+                    verticalPadding = 14.dp,
+                    onClick = onPickWallpaper,
             )
         }
         item {
-            SimpleSettingsRow(
+            SettingsRow(
                     label = stringResource(R.string.settings_set_black_wallpaper),
-                    onClick = onSetBlackWallpaper
+                    verticalPadding = 14.dp,
+                    onClick = onSetBlackWallpaper,
             )
         }
         item { SettingsDivider() }
 
         item { SectionHeader(stringResource(R.string.settings_section_home_screen)) }
-        item {
-            SettingsSubpageNavigationRow(
-                    label = stringResource(R.string.settings_home_widgets),
-                    subtitle = stringResource(R.string.settings_home_widgets_subtitle),
-                    onClick = onOpenHomeWidgetsSettings
-            )
-        }
-        item {
-            SettingsActionRow(
-                    label = stringResource(R.string.settings_accessibility),
-                    subtitle = stringResource(R.string.settings_accessibility_subtitle),
-                    onClick = onOpenDeviceControlSettings
-            )
-        }
-        item {
-            SettingsSubpageNavigationRow(
-                    label = stringResource(R.string.settings_edit_home_screen),
-                    onClick = onEditHomeScreen
-            )
-        }
-        item {
-            SettingsSubpageNavigationRow(
-                    label = stringResource(R.string.settings_edit_shortcuts),
-                    subtitle =
-                            pluralStringResource(
-                                    R.plurals.settings_shortcuts_configured,
-                                    uiState.rightSideShortcuts.size,
-                                    uiState.rightSideShortcuts.size
-                            ),
-                    onClick = onEditRightShortcuts
+        items(
+                homeScreenSubpageRows,
+                key = { it.labelRes },
+        ) { row ->
+            SettingsRow(
+                    label = stringResource(row.labelRes),
+                    subtitle = row.subtitle,
+                    verticalPadding = 14.dp,
+                    onClick = row.onClick,
+                    trailing = { SubpageChevron() },
             )
         }
         item {
             HomeAlignmentRow(
                     currentAlignment = uiState.homeAlignment,
-                    onAlignmentChanged = onHomeAlignmentChanged
+                    onAlignmentChanged = viewModel::setHomeAlignment
             )
         }
         item {
-            Column {
-                if (!hasCoarseLocationPermission) {
-                    LocationWeatherRow(onEnableClick = onRequestLocationPermission)
-                } else {
-                    val weatherAppLabel =
-                            formatWeatherAppLabel(
-                                    context,
-                                    resources,
-                                    uiState.preferredWeatherAppPackage,
-                                    uiState.allApps
-                            )
-                    ShortcutTargetRow(
-                            label = stringResource(R.string.settings_weather_app),
-                            currentTarget = weatherAppLabel,
-                            onPickApp = { onShowAppPicker("weather") },
-                            onClear = onClearWeatherApp
-                    )
-                }
-            }
+            WeatherAppSettingRow(
+                    hasCoarseLocationPermission = hasCoarseLocationPermission,
+                    onRequestLocationPermission = onRequestLocationPermission,
+                    context = context,
+                    resources = resources,
+                    preferredWeatherAppPackage = uiState.preferredWeatherAppPackage,
+                    allApps = uiState.allApps,
+                    onPickApp = { onShowAppPicker("weather") },
+                    onClear = { viewModel.setPreferredWeatherApp("") },
+            )
         }
-        item {
+        items(
+                listOf(
+                        SwipeTargetPick(
+                                "swipeLeft",
+                                R.string.settings_swipe_left,
+                                uiState.swipeLeftTarget,
+                                { viewModel.setSwipeLeftTarget(null) },
+                        ),
+                        SwipeTargetPick(
+                                "swipeRight",
+                                R.string.settings_swipe_right,
+                                uiState.swipeRightTarget,
+                                { viewModel.setSwipeRightTarget(null) },
+                        ),
+                ),
+                key = { it.pickerKey },
+        ) { row ->
             ShortcutTargetRow(
-                    label = stringResource(R.string.settings_swipe_left),
+                    label = stringResource(row.labelRes),
                     currentTarget =
                             formatShortcutTarget(
                                     context,
                                     resources,
-                                    uiState.swipeLeftTarget,
+                                    row.target,
                                     uiState.allApps
                             ),
-                    onPickApp = { onShowAppPicker("swipeLeft") },
-                    onClear = onClearSwipeLeftTarget
-            )
-        }
-        item {
-            ShortcutTargetRow(
-                    label = stringResource(R.string.settings_swipe_right),
-                    currentTarget =
-                            formatShortcutTarget(
-                                    context,
-                                    resources,
-                                    uiState.swipeRightTarget,
-                                    uiState.allApps
-                            ),
-                    onPickApp = { onShowAppPicker("swipeRight") },
-                    onClear = onClearSwipeRightTarget
+                    onPickApp = { onShowAppPicker(row.pickerKey) },
+                    onClear = row.onClear,
             )
         }
         item { SettingsDivider() }
 
         item { SectionHeader(stringResource(R.string.settings_section_app_drawer)) }
-        item {
-            SettingsSubpageNavigationRow(
-                    label = stringResource(R.string.settings_edit_app_categories),
-                    subtitle =
-                            pluralStringResource(
-                                    R.plurals.settings_categories_count,
-                                    uiState.categoryDefinitions.size,
-                                    uiState.categoryDefinitions.size
-                            ),
-                    onClick = onEditCategories
+        items(
+                drawerSubpageRows,
+                key = { it.labelRes },
+        ) { row ->
+            SettingsRow(
+                    label = stringResource(row.labelRes),
+                    subtitle = row.subtitle,
+                    verticalPadding = 14.dp,
+                    onClick = row.onClick,
+                    trailing = { SubpageChevron() },
             )
         }
         item {
@@ -464,14 +508,14 @@ private fun SettingsScreenContent(
                     label = stringResource(R.string.settings_drawer_sidebar_categories),
                     subtitle = stringResource(R.string.settings_drawer_sidebar_categories_subtitle),
                     checked = uiState.drawerSidebarCategories,
-                    onCheckedChange = onDrawerSidebarCategoriesChanged
+                    onCheckedChange = viewModel::setDrawerSidebarCategories
             )
         }
         if (uiState.drawerSidebarCategories) {
             item {
                 DrawerCategoryRailSideRow(
                         railOnLeft = uiState.drawerCategorySidebarOnLeft,
-                        onRailOnLeftChanged = onDrawerCategorySidebarOnLeftChanged
+                        onRailOnLeftChanged = viewModel::setDrawerCategorySidebarOnLeft
                 )
             }
         }
@@ -479,93 +523,81 @@ private fun SettingsScreenContent(
             DrawerAppSortRow(
                     currentMode = uiState.drawerAppSortMode,
                     showCustomSortOption = uiState.drawerSidebarCategories,
-                    onModeChanged = onDrawerAppSortModeChanged
-            )
-        }
-        item {
-            SettingsSubpageNavigationRow(
-                    label = stringResource(R.string.settings_dot_search_title),
-                    subtitle = stringResource(R.string.settings_dot_search_subtitle),
-                    onClick = onDrawerDotSearchSettings
+                    onModeChanged = viewModel::setDrawerAppSortMode
             )
         }
         item { SettingsDivider() }
 
-        item { SectionHeader(stringResource(R.string.settings_section_hidden_apps)) }
-        if (uiState.hiddenApps.isEmpty()) {
-            item {
-                EmptySettingsStateText(text = stringResource(R.string.settings_no_hidden_apps))
-            }
-        } else {
-            items(uiState.hiddenApps) { hiddenApp ->
-                HiddenAppRow(
-                        app = hiddenApp,
-                        onUnhide = { onUnhideApp(hiddenApp.packageName, hiddenApp.profileKey) }
-                )
-            }
-        }
+        manageableAppsSection(
+                headerRes = R.string.settings_section_hidden_apps,
+                emptyTextRes = R.string.settings_no_hidden_apps,
+                apps = uiState.hiddenApps,
+                key = { "${it.packageName}|${it.profileKey}" },
+                label = { it.label },
+                subtitle = { app ->
+                    app.profileLabel?.let { pl -> "$pl • ${app.packageName}" } ?: app.packageName
+                },
+                onRowClick = { viewModel.unhideApp(it.packageName, it.profileKey) },
+                trailingContent = {
+                    Spacer(Modifier.width(8.dp))
+                    Icon(
+                            Icons.Default.Visibility,
+                            stringResource(R.string.cd_unhide_app),
+                            tint = MaterialTheme.colorScheme.secondary,
+                    )
+                },
+        )
         item { SettingsDivider() }
 
-        item { SectionHeader(stringResource(R.string.settings_section_renamed_apps)) }
-        if (uiState.renamedApps.isEmpty()) {
-            item {
-                EmptySettingsStateText(text = stringResource(R.string.settings_no_renamed_apps))
-            }
-        } else {
-            items(uiState.renamedApps) { renamedApp ->
-                RenamedAppRow(
-                        packageName = renamedApp.packageName,
-                        profileLabel = renamedApp.profileLabel,
-                        customName = renamedApp.customName,
-                        onRemoveRename = {
-                            onRemoveRename(renamedApp.packageName, renamedApp.profileKey)
-                        }
-                )
-            }
-        }
+        manageableAppsSection(
+                headerRes = R.string.settings_section_renamed_apps,
+                emptyTextRes = R.string.settings_no_renamed_apps,
+                apps = uiState.renamedApps,
+                key = { "${it.packageName}|${it.profileKey}" },
+                label = { it.customName },
+                subtitle = { app ->
+                    app.profileLabel?.let { pl -> "$pl • ${app.packageName}" } ?: app.packageName
+                },
+                onRowClick = { viewModel.removeRename(it.packageName, it.profileKey) },
+                trailingContent = {
+                    Spacer(Modifier.width(8.dp))
+                    Icon(
+                            Icons.Default.Close,
+                            stringResource(R.string.cd_remove_rename),
+                            tint = MaterialTheme.colorScheme.secondary,
+                    )
+                },
+        )
         item { SettingsDivider() }
 
         item { SectionHeader(stringResource(R.string.settings_connect_section)) }
-        item {
-            ExternalLinkRow(
-                    icon = Icons.Filled.Star,
-                    title = stringResource(R.string.settings_github_title),
-                    subtitle = stringResource(R.string.settings_github_subtitle),
+        items(communityLinks, key = { it.url }) { link ->
+            SettingsRow(
+                    label = stringResource(link.titleRes),
+                    subtitle = stringResource(link.subtitleRes),
+                    verticalPadding = 14.dp,
+                    leading = {
+                        Icon(
+                                imageVector = link.icon,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp),
+                        )
+                    },
+                    trailing = {
+                        Icon(
+                                imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                                contentDescription = stringResource(R.string.cd_open_link),
+                                tint = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.size(18.dp),
+                        )
+                    },
                     onClick = {
                         context.startActivity(
-                                Intent(Intent.ACTION_VIEW, "https://github.com/luantak/FokusLauncher".toUri())
+                                Intent(Intent.ACTION_VIEW, link.url.toUri())
                                         .apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
                         )
-                    }
-            )
-        }
-        item {
-            ExternalLinkRow(
-                    icon = Icons.Outlined.Translate,
-                    title = stringResource(R.string.settings_weblate_title),
-                    subtitle = stringResource(R.string.settings_weblate_subtitle),
-                    onClick = {
-                        context.startActivity(
-                                Intent(
-                                                Intent.ACTION_VIEW,
-                                                "https://hosted.weblate.org/engage/fokus-launcher/".toUri()
-                                        )
-                                        .apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
-                        )
-                    }
-            )
-        }
-        item {
-            ExternalLinkRow(
-                    icon = Icons.Filled.ChatBubble,
-                    title = stringResource(R.string.settings_matrix_title),
-                    subtitle = stringResource(R.string.settings_matrix_subtitle),
-                    onClick = {
-                        context.startActivity(
-                                Intent(Intent.ACTION_VIEW, "https://matrix.to/#/#fokus:matrix.org".toUri())
-                                        .apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
-                        )
-                    }
+                    },
             )
         }
         item { SettingsDivider() }
@@ -574,11 +606,24 @@ private fun SettingsScreenContent(
         item {
             ExportLogsRow(
                     context = context,
-                    createLogShareIntent = createLogShareIntent
+                    createLogShareIntent = viewModel::createLogShareIntent
             )
         }
         item {
-            ResetAllDataRow(onClick = onShowResetConfirm)
+            SettingsRow(
+                    label = stringResource(R.string.settings_reset_all_data),
+                    labelColor = MaterialTheme.colorScheme.error,
+                    verticalPadding = 14.dp,
+                    leading = {
+                        Icon(
+                                Icons.Default.Restore,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(24.dp),
+                        )
+                    },
+                    onClick = onShowResetConfirm,
+            )
         }
         item { Spacer(Modifier.height(32.dp)) }
     }
@@ -596,7 +641,7 @@ private fun SettingsScreenDialogs(
         onAppPicked: (String, String) -> Unit
 ) {
     if (showResetConfirm) {
-        AlertDialog(
+        FokusAlertDialog(
                 onDismissRequest = onDismissResetConfirm,
                 title = {
                     Text(stringResource(R.string.settings_reset_confirm_title), color = MaterialTheme.colorScheme.onBackground)
@@ -625,7 +670,6 @@ private fun SettingsScreenDialogs(
                         Text(stringResource(R.string.action_cancel), color = MaterialTheme.colorScheme.primary)
                     }
                 },
-                containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
     }
 
@@ -644,13 +688,15 @@ private fun SettingsScreenDialogs(
                 )
             }
             else -> {
-                AppPickerDialog(
-                        allApps = uiState.allApps,
-                        onSelect = { packageName ->
-                            onAppPicked(target, packageName)
+                GroupedAppPickerDialog(
+                        apps = uiState.allApps,
+                        title = stringResource(R.string.settings_app_picker_title),
+                        keyPrefix = "settings_app_pick",
+                        onSelect = { app ->
+                            onAppPicked(target, app.packageName)
                             onDismissPicker()
                         },
-                        onDismiss = onDismissPicker
+                        onDismiss = onDismissPicker,
                 )
             }
         }
@@ -668,54 +714,10 @@ fun HomeWidgetsSettingsScreen(
     val context = LocalContext.current
     val resources = LocalResources.current
     val activity = LocalActivity.current
-    val lifecycleOwner = LocalLifecycleOwner.current
     val showAppPickerFor = remember { mutableStateOf<String?>(null) }
 
-    var hasCoarseLocationPermission by remember {
-        mutableStateOf(
-                ContextCompat.checkSelfPermission(
-                        context,
-                        Manifest.permission.ACCESS_COARSE_LOCATION
-                ) == PackageManager.PERMISSION_GRANTED
-        )
-    }
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                hasCoarseLocationPermission =
-                        ContextCompat.checkSelfPermission(
-                                context,
-                                Manifest.permission.ACCESS_COARSE_LOCATION
-                        ) == PackageManager.PERMISSION_GRANTED
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
-
-    val locationPermissionLauncher =
-            rememberLauncherForActivityResult(
-                    contract = ActivityResultContracts.RequestPermission()
-            ) {
-                hasCoarseLocationPermission =
-                        ContextCompat.checkSelfPermission(
-                                context,
-                                Manifest.permission.ACCESS_COARSE_LOCATION
-                        ) == PackageManager.PERMISSION_GRANTED
-                if (!hasCoarseLocationPermission &&
-                                activity != null &&
-                                !ActivityCompat.shouldShowRequestPermissionRationale(
-                                        activity,
-                                        Manifest.permission.ACCESS_COARSE_LOCATION
-                                )) {
-                    context.startActivity(
-                            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                                data = Uri.fromParts("package", context.packageName, null)
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            }
-                    )
-                }
-            }
+    val (hasCoarseLocationPermission, requestCoarseLocation) =
+            rememberCoarseLocationPermission(context, activity)
 
     Column(
             modifier =
@@ -724,133 +726,107 @@ fun HomeWidgetsSettingsScreen(
                             .navigationBarsPadding()
                             .testTag("home_widgets_settings_screen")
     ) {
-        TopAppBar(
-                title = {
-                    Text(
-                            stringResource(R.string.settings_home_widgets),
-                            color = MaterialTheme.colorScheme.onBackground
-                    )
-                },
-                navigationIcon = {
-                    FokusIconButton(onClick = onNavigateBack) {
-                        Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.action_back),
-                                tint = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
-                },
-                colors =
-                        TopAppBarDefaults.topAppBarColors(
-                                containerColor = MaterialTheme.colorScheme.background
-                        )
+        FokusSettingsTopBar(
+                titleText = stringResource(R.string.settings_home_widgets),
+                onNavigateBack = onNavigateBack,
+                containerColor = MaterialTheme.colorScheme.background,
         )
 
         LazyColumn(modifier = Modifier.fillMaxSize()) {
-            item {
+            items(
+                    listOf(
+                            Triple(R.string.settings_show_home_clock, uiState.showHomeClock, viewModel::setShowHomeClock),
+                            Triple(R.string.settings_show_home_date, uiState.showHomeDate, viewModel::setShowHomeDate),
+                    ),
+                    key = { it.first },
+            ) { (labelRes, checked, onChange) ->
                 SettingsToggleRow(
-                        label = stringResource(R.string.settings_show_home_clock),
-                        checked = uiState.showHomeClock,
-                        onCheckedChange = { viewModel.setShowHomeClock(it) }
-                )
-            }
-            item {
-                SettingsToggleRow(
-                        label = stringResource(R.string.settings_show_home_date),
-                        checked = uiState.showHomeDate,
-                        onCheckedChange = { viewModel.setShowHomeDate(it) }
+                        label = stringResource(labelRes),
+                        checked = checked,
+                        onCheckedChange = onChange,
                 )
             }
             item {
                 HomeDateFormatDropdown(
                         currentStyle = uiState.homeDateFormatStyle,
                         enabled = uiState.showHomeDate,
-                        onStyleSelected = { viewModel.setHomeDateFormatStyle(it) }
+                        onStyleSelected = viewModel::setHomeDateFormatStyle,
                 )
             }
-            item {
+            items(
+                    listOf(
+                            Triple(R.string.settings_show_home_weather, uiState.showHomeWeather, viewModel::setShowHomeWeather),
+                            Triple(R.string.settings_show_home_battery, uiState.showHomeBattery, viewModel::setShowHomeBattery),
+                    ),
+                    key = { it.first },
+            ) { (labelRes, checked, onChange) ->
                 SettingsToggleRow(
-                        label = stringResource(R.string.settings_show_home_weather),
-                        checked = uiState.showHomeWeather,
-                        onCheckedChange = { viewModel.setShowHomeWeather(it) }
-                )
-            }
-            item {
-                SettingsToggleRow(
-                        label = stringResource(R.string.settings_show_home_battery),
-                        checked = uiState.showHomeBattery,
-                        onCheckedChange = { viewModel.setShowHomeBattery(it) }
+                        label = stringResource(labelRes),
+                        checked = checked,
+                        onCheckedChange = onChange,
                 )
             }
             item { SettingsDivider() }
             item {
-                Column {
-                    if (!hasCoarseLocationPermission) {
-                        LocationWeatherRow(onEnableClick = {
-                            locationPermissionLauncher.launch(
-                                    Manifest.permission.ACCESS_COARSE_LOCATION
-                            )
-                        })
-                    } else {
-                        val weatherAppLabel =
-                                formatWeatherAppLabel(
-                                        context,
-                                        resources,
-                                        uiState.preferredWeatherAppPackage,
-                                        uiState.allApps
-                                )
-                        ShortcutTargetRow(
-                                label = stringResource(R.string.settings_weather_app),
-                                currentTarget = weatherAppLabel,
-                                onPickApp = { showAppPickerFor.value = "weather" },
-                                onClear = { viewModel.setPreferredWeatherApp("") }
-                        )
-                    }
-                }
-            }
-            item {
-                val clockLabel =
-                        formatWidgetAppOverrideLabel(
-                                resources,
-                                uiState.preferredClockAppPackage,
-                                uiState.allApps
-                        )
-                ShortcutTargetRow(
-                        label = stringResource(R.string.settings_widget_clock_app),
-                        currentTarget = clockLabel,
-                        onPickApp = { showAppPickerFor.value = "clock" },
-                        onClear = { viewModel.setPreferredClockApp("") }
+                WeatherAppSettingRow(
+                        hasCoarseLocationPermission = hasCoarseLocationPermission,
+                        onRequestLocationPermission = requestCoarseLocation,
+                        context = context,
+                        resources = resources,
+                        preferredWeatherAppPackage = uiState.preferredWeatherAppPackage,
+                        allApps = uiState.allApps,
+                        onPickApp = { showAppPickerFor.value = "weather" },
+                        onClear = { viewModel.setPreferredWeatherApp("") },
                 )
             }
-            item {
-                val calendarLabel =
-                        formatWidgetAppOverrideLabel(
-                                resources,
-                                uiState.preferredCalendarAppPackage,
-                                uiState.allApps
-                        )
+            items(
+                    listOf(
+                            PreferredAppPickerRow(
+                                    R.string.settings_widget_clock_app,
+                                    uiState.preferredClockAppPackage,
+                                    "clock",
+                                    { viewModel.setPreferredClockApp("") },
+                            ),
+                            PreferredAppPickerRow(
+                                    R.string.settings_widget_calendar_app,
+                                    uiState.preferredCalendarAppPackage,
+                                    "calendar",
+                                    { viewModel.setPreferredCalendarApp("") },
+                            ),
+                    ),
+                    key = { it.labelRes },
+            ) { row ->
                 ShortcutTargetRow(
-                        label = stringResource(R.string.settings_widget_calendar_app),
-                        currentTarget = calendarLabel,
-                        onPickApp = { showAppPickerFor.value = "calendar" },
-                        onClear = { viewModel.setPreferredCalendarApp("") }
+                        label = stringResource(row.labelRes),
+                        currentTarget =
+                                formatPreferredAppLabel(
+                                        context,
+                                        resources,
+                                        row.packageName,
+                                        uiState.allApps,
+                                        ::formatWidgetAppEmptyLabel,
+                                ),
+                        onPickApp = { showAppPickerFor.value = row.pickerKey },
+                        onClear = row.onClear,
                 )
             }
         }
     }
 
     showAppPickerFor.value?.let { pickerTarget ->
-        AppPickerDialog(
-                allApps = uiState.allApps,
-                onSelect = { packageName ->
+        GroupedAppPickerDialog(
+                apps = uiState.allApps,
+                title = stringResource(R.string.settings_app_picker_title),
+                keyPrefix = "settings_app_pick",
+                onSelect = { app ->
                     when (pickerTarget) {
-                        "weather" -> viewModel.setPreferredWeatherApp(packageName)
-                        "clock" -> viewModel.setPreferredClockApp(packageName)
-                        "calendar" -> viewModel.setPreferredCalendarApp(packageName)
+                        "weather" -> viewModel.setPreferredWeatherApp(app.packageName)
+                        "clock" -> viewModel.setPreferredClockApp(app.packageName)
+                        "calendar" -> viewModel.setPreferredCalendarApp(app.packageName)
                     }
                     showAppPickerFor.value = null
                 },
-                onDismiss = { showAppPickerFor.value = null }
+                onDismiss = { showAppPickerFor.value = null },
         )
     }
 }
@@ -864,18 +840,9 @@ fun DeviceControlSettingsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
     var accessibilityResumeTick by remember { mutableIntStateOf(0) }
-
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                accessibilityResumeTick++
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    OnResumeEffect(lifecycleOwner) { accessibilityResumeTick++ }
 
     val lockAccessibilityOn =
             remember(accessibilityResumeTick) {
@@ -888,6 +855,22 @@ fun DeviceControlSettingsScreen(
         }
     }
 
+    val deviceControlToggleRows =
+            listOf(
+                    DeviceControlToggleRow(
+                            R.string.settings_double_tap_to_lock,
+                            stringResource(R.string.settings_double_tap_to_lock_subtitle),
+                            uiState.doubleTapEmptyLock,
+                            viewModel::setDoubleTapEmptyLock,
+                    ),
+                    DeviceControlToggleRow(
+                            R.string.settings_return_home_after_long_lock,
+                            stringResource(R.string.settings_return_home_after_long_lock_subtitle),
+                            uiState.longLockReturnHome,
+                            viewModel::setLongLockReturnHome,
+                    ),
+            )
+
     Column(
             modifier = Modifier
                     .fillMaxSize()
@@ -895,26 +878,10 @@ fun DeviceControlSettingsScreen(
                     .navigationBarsPadding()
                     .testTag("device_control_settings_screen")
     ) {
-        TopAppBar(
-                title = {
-                    Text(
-                            stringResource(R.string.settings_accessibility_page_title),
-                            color = MaterialTheme.colorScheme.onBackground
-                    )
-                },
-                navigationIcon = {
-                    FokusIconButton(onClick = onNavigateBack) {
-                        Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.action_back),
-                                tint = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
-                },
-                colors =
-                        TopAppBarDefaults.topAppBarColors(
-                                containerColor = MaterialTheme.colorScheme.background
-                        )
+        FokusSettingsTopBar(
+                titleText = stringResource(R.string.settings_accessibility_page_title),
+                onNavigateBack = onNavigateBack,
+                containerColor = MaterialTheme.colorScheme.background,
         )
 
         LazyColumn(modifier = Modifier.fillMaxSize()) {
@@ -934,27 +901,16 @@ fun DeviceControlSettingsScreen(
                 )
             }
 
-            item {
+            items(
+                    deviceControlToggleRows,
+                    key = { it.labelRes },
+            ) { row ->
                 SettingsToggleRow(
-                        label = stringResource(R.string.settings_double_tap_to_lock),
-                        subtitle =
-                                stringResource(R.string.settings_double_tap_to_lock_subtitle),
-                        checked = uiState.doubleTapEmptyLock,
-                        onCheckedChange = { enabled -> viewModel.setDoubleTapEmptyLock(enabled) },
-                        enabled = lockAccessibilityOn
-                )
-            }
-
-            item {
-                SettingsToggleRow(
-                        label = stringResource(R.string.settings_return_home_after_long_lock),
-                        subtitle =
-                                stringResource(
-                                        R.string.settings_return_home_after_long_lock_subtitle
-                                ),
-                        checked = uiState.longLockReturnHome,
-                        onCheckedChange = { enabled -> viewModel.setLongLockReturnHome(enabled) },
-                        enabled = lockAccessibilityOn
+                        label = stringResource(row.labelRes),
+                        subtitle = row.subtitle,
+                        checked = row.checked,
+                        onCheckedChange = row.onCheckedChange,
+                        enabled = lockAccessibilityOn,
                 )
             }
 
@@ -970,78 +926,6 @@ fun DeviceControlSettingsScreen(
     }
 }
 
-// =========================  SUB-COMPOSABLES  =========================
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun SettingsToggleRow(
-        label: String,
-        checked: Boolean,
-        onCheckedChange: (Boolean) -> Unit,
-        subtitle: String? = null,
-        enabled: Boolean = true
-) {
-    Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier =
-                    Modifier.fillMaxWidth()
-                            .clickableWithSystemSound(enabled = enabled) { onCheckedChange(!checked) }
-                            .padding(horizontal = 24.dp, vertical = 12.dp)
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                    text = label,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color =
-                            if (enabled) MaterialTheme.colorScheme.onBackground
-                            else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.38f)
-            )
-            if (!subtitle.isNullOrEmpty()) {
-                Spacer(Modifier.height(4.dp))
-                Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.secondary
-                )
-            }
-        }
-        Spacer(Modifier.width(16.dp))
-        Switch(
-                checked = checked,
-                onCheckedChange = rememberBooleanChangeWithSystemSound(onCheckedChange),
-                enabled = enabled
-        )
-    }
-}
-
-private val SettingsPickerCorner = RoundedCornerShape(12.dp)
-
-@Composable
-private fun settingsPickerOutlinedFieldColors() =
-        OutlinedTextFieldDefaults.colors(
-                focusedTextColor = MaterialTheme.colorScheme.onBackground,
-                unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
-                disabledTextColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.55f),
-                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.38f),
-                disabledBorderColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.22f),
-                focusedTrailingIconColor = MaterialTheme.colorScheme.onBackground,
-                unfocusedTrailingIconColor = MaterialTheme.colorScheme.onBackground,
-                disabledTrailingIconColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f),
-                cursorColor = MaterialTheme.colorScheme.primary,
-        )
-
-@Composable
-private fun settingsPickerMenuItemColors() =
-        MenuDefaults.itemColors(
-                textColor = MaterialTheme.colorScheme.onBackground,
-                leadingIconColor = MaterialTheme.colorScheme.onBackground,
-                trailingIconColor = MaterialTheme.colorScheme.onBackground,
-        )
-
 /**
  * Endonym: name of the language written in that language (e.g. English, Polski), independent of
  * app UI locale.
@@ -1055,23 +939,6 @@ private fun languageAutonym(localeTag: String): String {
     }
 }
 
-@Composable
-private fun homeDateFormatStyleLabel(style: HomeDateFormatStyle): String =
-        when (style) {
-            HomeDateFormatStyle.SYSTEM_DEFAULT ->
-                    stringResource(R.string.settings_home_date_format_system)
-            HomeDateFormatStyle.US_SLASHES ->
-                    stringResource(R.string.settings_home_date_format_us_slashes)
-            HomeDateFormatStyle.EU_SLASHES ->
-                    stringResource(R.string.settings_home_date_format_eu_slashes)
-            HomeDateFormatStyle.EU_DOTS ->
-                    stringResource(R.string.settings_home_date_format_eu_dots)
-            HomeDateFormatStyle.WEEKDAY_MONTH_ABBR ->
-                    stringResource(R.string.settings_home_date_format_weekday_month)
-            HomeDateFormatStyle.MONTH_LONG ->
-                    stringResource(R.string.settings_home_date_format_month_long)
-        }
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HomeDateFormatDropdown(
@@ -1079,93 +946,29 @@ private fun HomeDateFormatDropdown(
         enabled: Boolean,
         onStyleSelected: (HomeDateFormatStyle) -> Unit
 ) {
-    val options =
-            remember {
-                listOf(
-                        HomeDateFormatStyle.SYSTEM_DEFAULT,
-                        HomeDateFormatStyle.US_SLASHES,
-                        HomeDateFormatStyle.EU_SLASHES,
-                        HomeDateFormatStyle.EU_DOTS,
-                        HomeDateFormatStyle.WEEKDAY_MONTH_ABBR,
-                        HomeDateFormatStyle.MONTH_LONG
-                )
-            }
+    val options = remember { HomeDateFormatStyle.entries }
     var expanded by remember { mutableStateOf(false) }
     val onDateFormatExpandedChange =
             rememberBooleanChangeWithSystemSound { newExpanded ->
                 if (enabled) expanded = newExpanded
             }
-    val selectedLabel = homeDateFormatStyleLabel(currentStyle)
-    Column(
-            modifier =
-                    Modifier.fillMaxWidth()
-                            .padding(horizontal = 24.dp, vertical = 12.dp)
-    ) {
-        Text(
-                text = stringResource(R.string.settings_home_date_format),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onBackground
-        )
-        Spacer(Modifier.height(12.dp))
-        ExposedDropdownMenuBox(
-                expanded = expanded && enabled,
-                onExpandedChange = onDateFormatExpandedChange
-        ) {
-            OutlinedTextField(
-                    modifier =
-                            Modifier.menuAnchor(
-                                            ExposedDropdownMenuAnchorType.PrimaryNotEditable,
-                                            enabled = enabled
-                                    )
-                                    .fillMaxWidth(),
-                    value = selectedLabel,
-                    onValueChange = { _ -> },
-                    readOnly = true,
-                    enabled = enabled,
-                    singleLine = true,
-                    shape = SettingsPickerCorner,
-                    textStyle = MaterialTheme.typography.bodyLarge,
-                    trailingIcon = {
-                        ExposedDropdownMenuDefaults.TrailingIcon(
-                                expanded = expanded && enabled
-                        )
-                    },
-                    colors = settingsPickerOutlinedFieldColors()
-            )
-            ExposedDropdownMenu(
-                    expanded = expanded && enabled,
-                    onDismissRequest = { expanded = false },
-                    shape = SettingsPickerCorner,
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    tonalElevation = 0.dp,
-                    shadowElevation = 8.dp,
-                    border =
-                            BorderStroke(
-                                    width = 1.dp,
-                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.14f)
-                            ),
-            ) {
-                options.forEach { style ->
-                    DropdownMenuItem(
-                            text = {
-                                Text(
-                                        text = homeDateFormatStyleLabel(style),
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.onBackground,
-                                )
-                            },
-                            onClick =
-                                    rememberClickWithSystemSound {
-                                        onStyleSelected(style)
-                                        expanded = false
-                                    },
-                            colors = settingsPickerMenuItemColors(),
-                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
-                    )
-                }
-            }
-        }
-    }
+    SettingsDropdown(
+            title = stringResource(R.string.settings_home_date_format),
+            options = options,
+            expanded = expanded,
+            onExpandedChange = onDateFormatExpandedChange,
+            selectedDisplayText = stringResource(currentStyle.labelRes),
+            fieldEnabled = enabled,
+            menuExpanded = expanded && enabled,
+            itemContent = { style ->
+                Text(
+                        text = stringResource(style.labelRes),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onBackground,
+                )
+            },
+            onItemSelected = onStyleSelected,
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -1192,65 +995,21 @@ private fun AppLanguageDropdown(
     val selectedDisplayText =
             options.find { (tag, _) -> tag == currentTag }?.second
                     ?: if (currentTag.isBlank()) systemDefaultLabel else languageAutonym(currentTag)
-    Column(
-            modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 12.dp)
-    ) {
-        Text(
-                text = stringResource(R.string.settings_language_label),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onBackground
-        )
-        Spacer(Modifier.height(12.dp))
-        ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = onLanguageExpandedChange) {
-            OutlinedTextField(
-                    modifier =
-                            Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
-                                    .fillMaxWidth(),
-                    value = selectedDisplayText,
-                    onValueChange = { _ -> },
-                    readOnly = true,
-                    singleLine = true,
-                    shape = SettingsPickerCorner,
-                    textStyle = MaterialTheme.typography.bodyLarge,
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                    colors = settingsPickerOutlinedFieldColors()
-            )
-            ExposedDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false },
-                    shape = SettingsPickerCorner,
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    tonalElevation = 0.dp,
-                    shadowElevation = 8.dp,
-                    border =
-                            BorderStroke(
-                                    width = 1.dp,
-                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.14f)
-                            ),
-            ) {
-                options.forEach { (storageTag, label) ->
-                    DropdownMenuItem(
-                            text = {
-                                Text(
-                                        text = label,
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.onBackground,
-                                )
-                            },
-                            onClick =
-                                    rememberClickWithSystemSound {
-                                        onTagSelected(storageTag)
-                                        expanded = false
-                                    },
-                            colors = settingsPickerMenuItemColors(),
-                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
-                    )
-                }
-            }
-        }
-    }
+    SettingsDropdown(
+            title = stringResource(R.string.settings_language_label),
+            options = options,
+            expanded = expanded,
+            onExpandedChange = onLanguageExpandedChange,
+            selectedDisplayText = selectedDisplayText,
+            itemContent = { (_, label) ->
+                Text(
+                        text = label,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onBackground,
+                )
+            },
+            onItemSelected = { (storageTag, _) -> onTagSelected(storageTag) },
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -1278,74 +1037,53 @@ private fun LauncherFontFamilyDropdown(
     val selectedLabel =
             options.find { (value, _) -> value == currentFamilyName }?.second
                     ?: currentFamilyName.ifBlank { systemDefault }
-    Column(
-            modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 12.dp)
-    ) {
+    SettingsDropdown(
+            title = stringResource(R.string.settings_font_label),
+            options = options,
+            expanded = expanded,
+            onExpandedChange = onFontExpandedChange,
+            selectedDisplayText = selectedLabel,
+            textStyle =
+                    MaterialTheme.typography.bodyLarge.copy(
+                            fontFamily = composeFontFamilyFromStoredName(currentFamilyName)
+                    ),
+            itemContent = { (storageValue, label) ->
+                Text(
+                        text = label,
+                        style =
+                                MaterialTheme.typography.bodyLarge.copy(
+                                        fontFamily =
+                                                composeFontFamilyFromStoredName(storageValue)
+                                ),
+                        color = MaterialTheme.colorScheme.onBackground,
+                )
+            },
+            onItemSelected = { (storageValue, _) -> onFamilySelected(storageValue) },
+    )
+}
+
+@Composable
+private fun SettingsLabeledSegmentedSection(
+        title: String,
+        subtitle: String?,
+        content: @Composable () -> Unit
+) {
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp)) {
         Text(
-                text = stringResource(R.string.settings_font_label),
+                text = title,
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onBackground
         )
-        Spacer(Modifier.height(12.dp))
-        ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = onFontExpandedChange) {
-            OutlinedTextField(
-                    modifier =
-                            Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
-                                    .fillMaxWidth(),
-                    value = selectedLabel,
-                    onValueChange = { _ -> },
-                    readOnly = true,
-                    singleLine = true,
-                    shape = SettingsPickerCorner,
-                    textStyle =
-                            MaterialTheme.typography.bodyLarge.copy(
-                                    fontFamily =
-                                            composeFontFamilyFromStoredName(currentFamilyName)
-                            ),
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                    colors = settingsPickerOutlinedFieldColors()
+        if (subtitle != null) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.secondary
             )
-            ExposedDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false },
-                    shape = SettingsPickerCorner,
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    tonalElevation = 0.dp,
-                    shadowElevation = 8.dp,
-                    border =
-                            BorderStroke(
-                                    width = 1.dp,
-                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.14f)
-                            ),
-            ) {
-                options.forEach { (storageValue, label) ->
-                    DropdownMenuItem(
-                            text = {
-                                Text(
-                                        text = label,
-                                        style =
-                                                MaterialTheme.typography.bodyLarge.copy(
-                                                        fontFamily =
-                                                                composeFontFamilyFromStoredName(
-                                                                        storageValue
-                                                                )
-                                                ),
-                                        color = MaterialTheme.colorScheme.onBackground,
-                                )
-                            },
-                            onClick =
-                                    rememberClickWithSystemSound {
-                                        onFamilySelected(storageValue)
-                                        expanded = false
-                                    },
-                            colors = settingsPickerMenuItemColors(),
-                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
-                    )
-                }
-            }
         }
+        Spacer(Modifier.height(12.dp))
+        content()
     }
 }
 
@@ -1355,21 +1093,10 @@ private fun DrawerCategoryRailSideRow(
         railOnLeft: Boolean,
         onRailOnLeftChanged: (Boolean) -> Unit
 ) {
-    Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp)
+    SettingsLabeledSegmentedSection(
+            title = stringResource(R.string.settings_drawer_category_rail_side),
+            subtitle = stringResource(R.string.settings_drawer_category_rail_side_subtitle),
     ) {
-        Text(
-                text = stringResource(R.string.settings_drawer_category_rail_side),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onBackground
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-                text = stringResource(R.string.settings_drawer_category_rail_side_subtitle),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.secondary
-        )
-        Spacer(Modifier.height(12.dp))
         SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
             SegmentedButton(
                     selected = railOnLeft,
@@ -1391,6 +1118,7 @@ private fun DrawerCategoryRailSideRow(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DrawerAppSortRow(
         currentMode: DrawerAppSortMode,
@@ -1403,30 +1131,17 @@ private fun DrawerAppSortRow(
                 else DrawerAppSortMode.entries.filterNot { it == DrawerAppSortMode.CUSTOM }
             }
     val coercedMode =
-            remember(currentMode, showCustomSortOption) {
+            remember(currentMode, showCustomSortOption, modes) {
                 if (!showCustomSortOption && currentMode == DrawerAppSortMode.CUSTOM) {
                     DrawerAppSortMode.ALPHABETICAL
                 } else {
                     currentMode
                 }
             }
-    Column(
-            modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 12.dp)
+    SettingsLabeledSegmentedSection(
+            title = stringResource(R.string.settings_drawer_app_sort),
+            subtitle = stringResource(R.string.settings_drawer_app_sort_subtitle),
     ) {
-        Text(
-                text = stringResource(R.string.settings_drawer_app_sort),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onBackground
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-                text = stringResource(R.string.settings_drawer_app_sort_subtitle),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.secondary
-        )
-        Spacer(Modifier.height(12.dp))
         SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
             modes.forEachIndexed { index, mode ->
                 SegmentedButton(
@@ -1438,18 +1153,7 @@ private fun DrawerAppSortRow(
                                         count = modes.size
                                 )
                 ) {
-                    Text(
-                            stringResource(
-                                    when (mode) {
-                                        DrawerAppSortMode.ALPHABETICAL ->
-                                                R.string.settings_drawer_app_sort_alphabetical
-                                        DrawerAppSortMode.MOST_OPENED ->
-                                                R.string.settings_drawer_app_sort_most_opened
-                                        DrawerAppSortMode.CUSTOM ->
-                                                R.string.settings_drawer_app_sort_custom
-                                    }
-                            )
-                    )
+                    Text(stringResource(mode.labelRes))
                 }
             }
         }
@@ -1471,103 +1175,39 @@ private fun LongLockThresholdRow(
                     currentMinutes,
                     currentMinutes
             )
-    Column(
-            modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 12.dp)
-    ) {
-        Text(
-                text = stringResource(R.string.settings_long_lock_duration),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onBackground
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-                text = stringResource(R.string.settings_long_lock_duration_subtitle),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.secondary
-        )
-        Spacer(Modifier.height(12.dp))
-        ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = onLongLockExpandedChange) {
-            OutlinedTextField(
-                    modifier =
-                            Modifier.menuAnchor(
-                                            ExposedDropdownMenuAnchorType.PrimaryNotEditable,
-                                            enabled = true
-                                    )
-                                    .fillMaxWidth(),
-                    value = selectedLabel,
-                    onValueChange = { _ -> },
-                    readOnly = true,
-                    singleLine = true,
-                    shape = SettingsPickerCorner,
-                    textStyle = MaterialTheme.typography.bodyLarge,
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                    colors = settingsPickerOutlinedFieldColors()
-            )
-            ExposedDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false },
-                    shape = SettingsPickerCorner,
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    tonalElevation = 0.dp,
-                    shadowElevation = 8.dp,
-                    border =
-                            BorderStroke(
-                                    width = 1.dp,
-                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.14f)
-                            ),
-            ) {
-                options.forEach { minutes ->
-                    DropdownMenuItem(
-                            text = {
-                                Text(
-                                        text =
-                                                pluralStringResource(
-                                                        R.plurals.settings_long_lock_duration_minutes,
-                                                        minutes,
-                                                        minutes
-                                                ),
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.onBackground
-                                )
-                            },
-                            onClick =
-                                    rememberClickWithSystemSound {
-                                        onMinutesSelected(minutes)
-                                        expanded = false
-                                    },
-                            colors = settingsPickerMenuItemColors(),
-                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
-                    )
-                }
-            }
-        }
-    }
+    SettingsDropdown(
+            title = stringResource(R.string.settings_long_lock_duration),
+            subtitle = stringResource(R.string.settings_long_lock_duration_subtitle),
+            options = options,
+            expanded = expanded,
+            onExpandedChange = onLongLockExpandedChange,
+            selectedDisplayText = selectedLabel,
+            itemContent = { minutes ->
+                Text(
+                        text =
+                                pluralStringResource(
+                                        R.plurals.settings_long_lock_duration_minutes,
+                                        minutes,
+                                        minutes
+                                ),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onBackground
+                )
+            },
+            onItemSelected = onMinutesSelected,
+    )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HomeAlignmentRow(
         currentAlignment: HomeAlignment,
         onAlignmentChanged: (HomeAlignment) -> Unit
 ) {
-    Column(
-            modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 12.dp)
+    SettingsLabeledSegmentedSection(
+            title = stringResource(R.string.home_alignment_title),
+            subtitle = stringResource(R.string.home_alignment_subtitle),
     ) {
-        Text(
-                text = stringResource(R.string.home_alignment_title),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onBackground
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-                text = stringResource(R.string.home_alignment_subtitle),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.secondary
-        )
-        Spacer(Modifier.height(12.dp))
         SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
             HomeAlignment.entries.forEachIndexed { index, alignment ->
                 SegmentedButton(
@@ -1581,19 +1221,21 @@ private fun HomeAlignmentRow(
                                 count = HomeAlignment.entries.size
                         )
                 ) {
-                    Text(
-                            stringResource(
-                                    when (alignment) {
-                                        HomeAlignment.LEFT -> R.string.home_alignment_left
-                                        HomeAlignment.CENTER -> R.string.home_alignment_center
-                                        HomeAlignment.RIGHT -> R.string.home_alignment_right
-                                    }
-                            )
-                    )
+                    Text(stringResource(alignment.labelRes))
                 }
             }
         }
     }
+}
+
+@Composable
+private fun SubpageChevron() {
+    Icon(
+            imageVector = Icons.AutoMirrored.Filled.NavigateNext,
+            contentDescription = stringResource(R.string.cd_open_subpage),
+            tint = MaterialTheme.colorScheme.secondary,
+            modifier = Modifier.size(22.dp),
+    )
 }
 
 @Composable
@@ -1618,73 +1260,6 @@ private fun SettingsDivider() {
 }
 
 @Composable
-private fun SettingsActionRow(
-        label: String,
-        subtitle: String,
-        onClick: () -> Unit
-) {
-    SettingsSubpageNavigationRow(label = label, subtitle = subtitle, onClick = onClick)
-}
-
-@Composable
-private fun SettingsSubpageNavigationRow(
-        label: String,
-        subtitle: String? = null,
-        onClick: () -> Unit,
-) {
-    Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier =
-                    Modifier.fillMaxWidth()
-                            .clickableWithSystemSound(onClick = onClick)
-                            .padding(horizontal = 24.dp, vertical = 14.dp)
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                    text = label,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onBackground
-            )
-            if (!subtitle.isNullOrEmpty()) {
-                Spacer(Modifier.height(4.dp))
-                Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.secondary
-                )
-            }
-        }
-        Icon(
-                imageVector = Icons.AutoMirrored.Filled.NavigateNext,
-                contentDescription = stringResource(R.string.cd_open_subpage),
-                tint = MaterialTheme.colorScheme.secondary,
-                modifier = Modifier.size(22.dp)
-        )
-    }
-}
-
-@Composable
-private fun SimpleSettingsRow(
-        label: String,
-        onClick: () -> Unit
-) {
-    Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier =
-                    Modifier.fillMaxWidth()
-                            .clickableWithSystemSound(onClick = onClick)
-                            .padding(horizontal = 24.dp, vertical = 14.dp)
-    ) {
-        Text(
-                text = label,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.weight(1f)
-        )
-    }
-}
-
-@Composable
 private fun EmptySettingsStateText(text: String) {
     Text(
             text = text,
@@ -1701,106 +1276,75 @@ private fun ExportLogsRow(
 ) {
     val scope = rememberCoroutineScope()
     val activity = LocalActivity.current
-    val shareChooserTitle =
-            stringResource(R.string.settings_export_logs_share_chooser)
+    val shareChooserTitle = stringResource(R.string.settings_export_logs_share_chooser)
     val exportLogsFailedToast = stringResource(R.string.toast_export_logs_failed)
-    Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier =
-                    Modifier.fillMaxWidth()
-                            .clickableWithSystemSound {
-                                scope.launch {
-                                    val shareIntent = createLogShareIntent()
-                                    if (shareIntent != null && activity != null) {
-                                        activity.startActivity(
-                                                Intent.createChooser(
-                                                        shareIntent,
-                                                        shareChooserTitle
-                                                )
-                                        )
-                                    } else {
-                                        Toast.makeText(
-                                                        context,
-                                                        exportLogsFailedToast,
-                                                        Toast.LENGTH_SHORT
-                                                )
-                                                .show()
-                                    }
-                                }
-                            }
-                            .padding(horizontal = 24.dp, vertical = 14.dp)
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                    text = stringResource(R.string.settings_export_logs_title),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onBackground
-            )
-            Text(
-                    text = stringResource(R.string.settings_export_logs_subtitle),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.secondary
-            )
-        }
-    }
+    SettingsRow(
+            label = stringResource(R.string.settings_export_logs_title),
+            subtitle = stringResource(R.string.settings_export_logs_subtitle),
+            verticalPadding = 14.dp,
+            onClick = {
+                scope.launch {
+                    val shareIntent = createLogShareIntent()
+                    if (shareIntent != null && activity != null) {
+                        activity.startActivity(
+                                Intent.createChooser(shareIntent, shareChooserTitle)
+                        )
+                    } else {
+                        Toast.makeText(context, exportLogsFailedToast, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            },
+    )
 }
 
-@Composable
-private fun ResetAllDataRow(onClick: () -> Unit) {
-    Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier =
-                    Modifier.fillMaxWidth()
-                            .clickableWithSystemSound(onClick = onClick)
-                            .padding(horizontal = 24.dp, vertical = 14.dp)
-    ) {
-        Icon(
-                Icons.Default.Restore,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.error,
-                modifier = Modifier.size(24.dp)
-        )
-        Spacer(Modifier.width(16.dp))
-        Text(
-                text = stringResource(R.string.settings_reset_all_data),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.error
-        )
-    }
-}
-
-// --- Location for weather row (shown only when permission disabled) ---
+// --- Weather app (location gate + shortcut row) ---
 
 @Composable
-private fun LocationWeatherRow(onEnableClick: () -> Unit) {
-    Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier =
-                    Modifier.fillMaxWidth()
-                            .clickableWithSystemSound(onClick = onEnableClick)
-                            .padding(horizontal = 24.dp, vertical = 12.dp)
-    ) {
-        Icon(
-                imageVector = Icons.Outlined.LocationOn,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp)
-        )
-        Spacer(Modifier.width(16.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                    text = stringResource(R.string.settings_weather_location_disabled),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onBackground
+private fun WeatherAppSettingRow(
+        hasCoarseLocationPermission: Boolean,
+        onRequestLocationPermission: () -> Unit,
+        context: Context,
+        resources: Resources,
+        preferredWeatherAppPackage: String,
+        allApps: List<AppInfo>,
+        onPickApp: () -> Unit,
+        onClear: () -> Unit,
+) {
+    Column {
+        if (!hasCoarseLocationPermission) {
+            SettingsRow(
+                    label = stringResource(R.string.settings_weather_location_disabled),
+                    subtitle = stringResource(R.string.settings_weather_location_disabled_subtitle),
+                    onClick = onRequestLocationPermission,
+                    leading = {
+                        Icon(
+                                imageVector = Icons.Outlined.LocationOn,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp),
+                        )
+                    },
+                    trailing = {
+                        FokusTextButton(onClick = onRequestLocationPermission) {
+                            Text(stringResource(R.string.settings_weather_location_enable_button))
+                        }
+                    },
             )
-            Text(
-                    text = stringResource(R.string.settings_weather_location_disabled_subtitle),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.secondary
+        } else {
+            val weatherAppLabel =
+                    formatPreferredAppLabel(
+                            context,
+                            resources,
+                            preferredWeatherAppPackage,
+                            allApps,
+                            ::formatWeatherAppEmptyLabel,
+                    )
+            ShortcutTargetRow(
+                    label = stringResource(R.string.settings_weather_app),
+                    currentTarget = weatherAppLabel,
+                    onPickApp = onPickApp,
+                    onClear = onClear,
             )
-        }
-        FokusTextButton(onClick = onEnableClick) {
-            Text(stringResource(R.string.settings_weather_location_enable_button))
         }
     }
 }
@@ -1842,209 +1386,33 @@ private fun ShortcutTargetRow(
     }
 }
 
-// --- Hidden / Renamed rows (unchanged) ---
-
-@Composable
-private fun HiddenAppRow(app: HiddenAppInfo, onUnhide: () -> Unit) {
-    Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier =
-                    Modifier.fillMaxWidth()
-                            .clickableWithSystemSound(onClick = onUnhide)
-                            .padding(horizontal = 24.dp, vertical = 12.dp)
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                    app.label,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onBackground
-            )
-            val secondary =
-                    app.profileLabel?.let { "$it • ${app.packageName}" } ?: app.packageName
-            Text(
-                    secondary,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.secondary
-            )
-        }
-        Spacer(Modifier.width(8.dp))
-        Icon(
-                Icons.Default.Visibility,
-                stringResource(R.string.cd_unhide_app),
-                tint = MaterialTheme.colorScheme.secondary
-        )
-    }
-}
-
-@Composable
-private fun RenamedAppRow(
-        packageName: String,
-        profileLabel: String?,
-        customName: String,
-        onRemoveRename: () -> Unit
-) {
-    Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier =
-                    Modifier.fillMaxWidth()
-                            .clickableWithSystemSound(onClick = onRemoveRename)
-                            .padding(horizontal = 24.dp, vertical = 12.dp)
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                    customName,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onBackground
-            )
-            Text(
-                    profileLabel?.let { "$it • $packageName" } ?: packageName,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.secondary
-            )
-        }
-        Spacer(Modifier.width(8.dp))
-        Icon(
-                Icons.Default.Close,
-                stringResource(R.string.cd_remove_rename),
-                tint = MaterialTheme.colorScheme.secondary
-        )
-    }
-}
-
-// --- External link row for Connect section ---
-
-@Composable
-private fun ExternalLinkRow(
-        icon: androidx.compose.ui.graphics.vector.ImageVector,
-        title: String,
-        subtitle: String,
-        onClick: () -> Unit
-) {
-    Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier =
-                    Modifier.fillMaxWidth()
-                            .clickableWithSystemSound(onClick = onClick)
-                            .padding(horizontal = 24.dp, vertical = 14.dp)
-    ) {
-        Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp)
-        )
-        Spacer(Modifier.width(16.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onBackground
-            )
-            Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.secondary
-            )
-        }
-        Icon(
-                imageVector = Icons.AutoMirrored.Filled.OpenInNew,
-                contentDescription = stringResource(R.string.cd_open_link),
-                tint = MaterialTheme.colorScheme.secondary,
-                modifier = Modifier.size(18.dp)
-        )
-    }
-}
-
 // =====================  DIALOGS  =====================
 
-@Composable
-private fun AppPickerDialog(
-        allApps: List<AppInfo>,
-        onSelect: (String) -> Unit,
-        onDismiss: () -> Unit
-) {
-    var filter by remember { mutableStateOf("") }
-    val context = LocalContext.current
-    val filtered =
-            remember(filter, allApps) {
-                if (filter.isBlank()) allApps
-                else allApps.filter { it.label.containsNormalizedSearch(filter) }
-            }
-    val filteredSections =
-            remember(filtered, context) {
-                groupAppsIntoProfileSections(context, filtered, ::sortAppsAlphabeticallyByProfileSection)
-            }
-
-    AlertDialog(
-            onDismissRequest = onDismiss,
-            title = {
-                Text(stringResource(R.string.settings_app_picker_title), color = MaterialTheme.colorScheme.onBackground)
-            },
-            text = {
-                Column {
-                    OutlinedTextField(
-                            value = filter,
-                            onValueChange = { filter = it },
-                            label = { Text(stringResource(R.string.search)) },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    LazyColumn(modifier = Modifier.height(300.dp)) {
-                        profileGroupedAppItems(
-                                sections = filteredSections,
-                                keyPrefix = "settings_app_pick",
-                                horizontalPadding = 8.dp,
-                        ) { app ->
-                            Text(
-                                    text = app.label,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                    modifier =
-                                            Modifier.fillMaxWidth()
-                                                    .clickableWithSystemSound { onSelect(app.packageName) }
-                                                    .padding(vertical = 10.dp, horizontal = 8.dp)
-                            )
-                        }
-                    }
-                }
-            },
-            confirmButton = {},
-            dismissButton = {
-                FokusTextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
-            },
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-    )
-}
-
-private fun formatWidgetAppOverrideLabel(
-        resources: Resources,
-        packageName: String,
-        allApps: List<AppInfo>
-): String {
-    if (packageName.isNotBlank()) {
-        return allApps.find { it.packageName == packageName }?.label ?: packageName
-    }
-    return resources.getString(R.string.settings_weather_app_system_default)
-}
-
-private fun formatWeatherAppLabel(
+private fun formatPreferredAppLabel(
         context: Context,
         resources: Resources,
         packageName: String,
-        allApps: List<AppInfo>
+        allApps: List<AppInfo>,
+        emptyLabel: (Context, Resources) -> String,
 ): String {
     if (packageName.isNotBlank()) {
         return allApps.find { it.packageName == packageName }?.label ?: packageName
     }
-    val hasSystemWeatherApp = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-        val weatherIntent = Intent(Intent.ACTION_MAIN).apply {
-            addCategory(Intent.CATEGORY_APP_WEATHER)
-        }
-        weatherIntent.resolveActivity(context.packageManager) != null
-    } else {
-        false
-    }
+    return emptyLabel(context, resources)
+}
+
+private fun formatWidgetAppEmptyLabel(@Suppress("UNUSED_PARAMETER") context: Context, resources: Resources): String =
+        resources.getString(R.string.settings_weather_app_system_default)
+
+private fun formatWeatherAppEmptyLabel(context: Context, resources: Resources): String {
+    val hasSystemWeatherApp =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                Intent(Intent.ACTION_MAIN)
+                        .apply { addCategory(Intent.CATEGORY_APP_WEATHER) }
+                        .resolveActivity(context.packageManager) != null
+            } else {
+                false
+            }
     return if (hasSystemWeatherApp) {
         resources.getString(R.string.settings_weather_app_system_default)
     } else {

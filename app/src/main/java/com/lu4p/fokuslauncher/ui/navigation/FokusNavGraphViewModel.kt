@@ -4,8 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.stateIn
+import com.lu4p.fokuslauncher.ui.util.stateWhileSubscribedIn
 import javax.inject.Inject
 
 @HiltViewModel
@@ -13,6 +12,9 @@ class FokusNavGraphViewModel @Inject constructor(
     preferencesManager: PreferencesManager
 ) : ViewModel() {
 
-    val hasCompletedOnboarding = preferencesManager.hasCompletedOnboardingFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+    val hasCompletedOnboarding =
+            preferencesManager.hasCompletedOnboardingFlow.stateWhileSubscribedIn(
+                    viewModelScope,
+                    false,
+            )
 }

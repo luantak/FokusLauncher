@@ -32,7 +32,7 @@ import com.lu4p.fokuslauncher.ui.components.FokusTextButton
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,11 +45,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.R
+import com.lu4p.fokuslauncher.ui.util.OnResumeEffect
 import com.lu4p.fokuslauncher.ui.util.formatShortcutTargetDisplay
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.ui.settings.ShortcutActionPickerDialog
@@ -66,17 +65,7 @@ fun OnboardingScreen(
     val isLastStep by viewModel.isLastStep.collectAsStateWithLifecycle()
     val showEditHomeApps by viewModel.showEditHomeApps.collectAsStateWithLifecycle()
 
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                viewModel.recheckDefaultLauncher()
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
-    }
+    OnResumeEffect(lifecycleOwner) { viewModel.recheckDefaultLauncher() }
 
     // Create HomeViewModel for the edit screen when needed
     val homeViewModel: HomeViewModel? = if (showEditHomeApps) hiltViewModel() else null
@@ -113,7 +102,7 @@ fun OnboardingScreen(
                     onAllow = {
                         locationPermissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
                     },
-                    onSkip = { viewModel.onSkipLocation() }
+                    onSkip = { viewModel.onNext() }
                 )
                 OnboardingStep.SET_DEFAULT_LAUNCHER -> SetDefaultStep(
                     onSetDefault = { viewModel.openDefaultLauncherSettings() },
@@ -121,7 +110,7 @@ fun OnboardingScreen(
                 )
                 OnboardingStep.CUSTOMIZE_HOME -> CustomizeStep(
                     onChooseApps = { viewModel.onChooseApps() },
-                    onSkip = { viewModel.onSkip() }
+                    onSkip = { viewModel.onNext() }
                 )
                 OnboardingStep.SWIPE_SHORTCUTS -> {
                     val swipeState by viewModel.swipeShortcutsState.collectAsStateWithLifecycle()
@@ -129,7 +118,7 @@ fun OnboardingScreen(
                         swipeState = swipeState,
                         onSetSwipeLeft = { viewModel.setSwipeLeftTarget(it) },
                         onSetSwipeRight = { viewModel.setSwipeRightTarget(it) },
-                        onSkip = { viewModel.onSkip() }
+                        onSkip = { viewModel.onNext() }
                     )
                 }
                 OnboardingStep.QUICK_TIPS -> QuickTipsStep(
@@ -160,10 +149,7 @@ fun OnboardingScreen(
 
         // Show EditHomeAppsScreen as full-screen overlay during onboarding
         if (showEditHomeApps && homeViewModel != null) {
-            remember(homeViewModel) {
-                homeViewModel.startEditingHomeApps()
-                true
-            }
+            LaunchedEffect(homeViewModel) { homeViewModel.startEditingHomeApps() }
             EditHomeAppsScreen(
                 viewModel = homeViewModel,
                 onNavigateBack = { viewModel.onEditHomeAppsDismissed() },
@@ -174,16 +160,22 @@ fun OnboardingScreen(
 }
 
 @Composable
+private fun OnboardingStepTitle(text: String) {
+    Text(
+            text = text,
+            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.onBackground,
+            textAlign = TextAlign.Center,
+    )
+}
+
+@Composable
 private fun WelcomeStep(onGetStarted: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = stringResource(R.string.onboarding_welcome_title),
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onBackground
-        )
+        OnboardingStepTitle(stringResource(R.string.onboarding_welcome_title))
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = stringResource(R.string.onboarding_welcome_subtitle),
@@ -213,11 +205,7 @@ private fun BackgroundStep(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = stringResource(R.string.onboarding_background_title),
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onBackground
-        )
+        OnboardingStepTitle(stringResource(R.string.onboarding_background_title))
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = stringResource(R.string.onboarding_background_subtitle),
@@ -306,11 +294,7 @@ private fun LocationStep(
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(48.dp).padding(bottom = 16.dp)
         )
-        Text(
-            text = stringResource(R.string.onboarding_location_title),
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onBackground
-        )
+        OnboardingStepTitle(stringResource(R.string.onboarding_location_title))
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = stringResource(R.string.onboarding_location_subtitle),
@@ -348,11 +332,7 @@ private fun SetDefaultStep(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = stringResource(R.string.onboarding_set_default_title),
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onBackground
-        )
+        OnboardingStepTitle(stringResource(R.string.onboarding_set_default_title))
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = stringResource(R.string.onboarding_set_default_subtitle),
@@ -390,11 +370,7 @@ private fun CustomizeStep(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = stringResource(R.string.onboarding_customize_title),
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onBackground
-        )
+        OnboardingStepTitle(stringResource(R.string.onboarding_customize_title))
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = stringResource(R.string.onboarding_customize_subtitle),
@@ -438,11 +414,7 @@ private fun SwipeShortcutsStep(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = stringResource(R.string.onboarding_swipe_title),
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onBackground
-        )
+        OnboardingStepTitle(stringResource(R.string.onboarding_swipe_title))
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = stringResource(R.string.onboarding_swipe_subtitle),
@@ -561,11 +533,7 @@ private fun QuickTipsStep(onDone: () -> Unit) {
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = stringResource(R.string.onboarding_tips_title),
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onBackground
-        )
+        OnboardingStepTitle(stringResource(R.string.onboarding_tips_title))
         Spacer(modifier = Modifier.height(24.dp))
         TipRow(
             icon = Icons.Default.ArrowUpward,

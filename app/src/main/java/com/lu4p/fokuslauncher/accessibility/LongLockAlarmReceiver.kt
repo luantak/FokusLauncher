@@ -6,8 +6,8 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import com.lu4p.fokuslauncher.MainActivity
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
+import com.lu4p.fokuslauncher.utils.tryStartLauncherMainActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -39,33 +39,13 @@ class LongLockAlarmReceiver : BroadcastReceiver() {
                 }
 
                 Log.d(TAG, "Alarm fired while device is still locked; attempting launcher foreground")
-                val launched =
-                        runCatching {
-                            appContext.startActivity(
-                                    Intent(Intent.ACTION_MAIN).apply {
-                                        addCategory(Intent.CATEGORY_HOME)
-                                        component =
-                                                android.content.ComponentName(
-                                                        appContext,
-                                                        MainActivity::class.java,
-                                                )
-                                        addFlags(
-                                                Intent.FLAG_ACTIVITY_NEW_TASK or
-                                                        Intent.FLAG_ACTIVITY_SINGLE_TOP or
-                                                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                                                        Intent.FLAG_ACTIVITY_NO_ANIMATION
-                                        )
-                                    }
-                            )
-                            Log.d(TAG, "Long-lock alarm launched launcher activity")
-                            true
-                        }.getOrElse {
-                            Log.d(
-                                    TAG,
-                                    "Long-lock alarm failed to launch launcher: ${it.javaClass.simpleName}",
-                            )
-                            false
-                        }
+                val (launched, launchErr) = appContext.tryStartLauncherMainActivity()
+                if (launched) Log.d(TAG, "Long-lock alarm launched launcher activity")
+                else
+                    Log.d(
+                            TAG,
+                            "Long-lock alarm failed to launch launcher: $launchErr",
+                    )
 
                 if (launched) {
                     preferencesManager.clearLongLockLastScreenOffAtMs()

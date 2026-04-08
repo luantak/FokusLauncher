@@ -3,15 +3,15 @@ package com.lu4p.fokuslauncher.accessibility
 import android.accessibilityservice.AccessibilityService
 import android.app.AlarmManager
 import android.content.BroadcastReceiver
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
-import com.lu4p.fokuslauncher.MainActivity
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
+import com.lu4p.fokuslauncher.utils.registerBroadcastReceiverNotExported
+import com.lu4p.fokuslauncher.utils.tryStartLauncherMainActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -84,26 +84,25 @@ class LockScreenAccessibilityService : AccessibilityService() {
 
         val lockedAt = preferencesManager.getLongLockLastScreenOffAtMs()
         if (lockedAt <= 0L) return
-        val thresholdMinutes = preferencesManager.getLongLockReturnHomeThresholdMinutes()
-        val thresholdMs = thresholdMinutes * 60_000L
+        val thresholdMs =
+                longLockThresholdMs(preferencesManager.getLongLockReturnHomeThresholdMinutes())
         val elapsedMs = System.currentTimeMillis() - lockedAt
         if (elapsedMs < thresholdMs) return
 
-        Log.d(
-                tag,
-                "Threshold met via $trigger after ${elapsedMs}ms, attempting to return home"
-        )
+        Log.d(tag, "Threshold met via $trigger after ${elapsedMs}ms, attempting to return home")
 
         val returnedHome = performGlobalAction(GLOBAL_ACTION_HOME)
         Log.d(tag, "GLOBAL_ACTION_HOME result for $trigger: $returnedHome")
 
         val launchedLauncher =
-                if (!returnedHome) {
-                    Log.d(tag, "GLOBAL_ACTION_HOME failed, falling back to explicit activity launch")
-                    bringLauncherToFront()
-                } else {
-                    false
-                }
+                !returnedHome &&
+                        run {
+                            Log.d(
+                                    tag,
+                                    "GLOBAL_ACTION_HOME failed, falling back to explicit activity launch"
+                            )
+                            bringLauncherToFront()
+                        }
 
         if (returnedHome || launchedLauncher) {
             preferencesManager.clearLongLockLastScreenOffAtMs()
@@ -111,8 +110,8 @@ class LockScreenAccessibilityService : AccessibilityService() {
     }
 
     private suspend fun scheduleLockedReturnHome(lockedAtMs: Long) {
-        val thresholdMinutes = preferencesManager.getLongLockReturnHomeThresholdMinutes()
-        val thresholdMs = thresholdMinutes * 60_000L
+        val thresholdMs =
+                longLockThresholdMs(preferencesManager.getLongLockReturnHomeThresholdMinutes())
         val triggerAtMs = lockedAtMs + thresholdMs
         val alarmManager = getSystemService(AlarmManager::class.java)
         if (alarmManager == null) return
@@ -124,10 +123,7 @@ class LockScreenAccessibilityService : AccessibilityService() {
                         createIfMissing = true,
                 )
                         ?: return
-        Log.d(
-                tag,
-                "Scheduling locked return-home alarm in ${thresholdMs}ms at triggerAt=${triggerAtMs}",
-        )
+        Log.d(tag, "Scheduling locked return-home alarm in ${thresholdMs}ms at triggerAt=$triggerAtMs")
         alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMs, pendingIntent)
     }
 
@@ -141,25 +137,10 @@ class LockScreenAccessibilityService : AccessibilityService() {
     }
 
     private fun bringLauncherToFront(): Boolean {
-        return runCatching {
-            startActivity(
-                    Intent(Intent.ACTION_MAIN).apply {
-                        addCategory(Intent.CATEGORY_HOME)
-                        component = ComponentName(this@LockScreenAccessibilityService, MainActivity::class.java)
-                        addFlags(
-                                Intent.FLAG_ACTIVITY_NEW_TASK or
-                                        Intent.FLAG_ACTIVITY_SINGLE_TOP or
-                                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                                        Intent.FLAG_ACTIVITY_NO_ANIMATION
-                        )
-                    }
-            )
-            Log.d(tag, "Explicit launcher activity start succeeded")
-            true
-        }.getOrElse {
-            Log.d(tag, "Explicit launcher activity start failed: ${it.javaClass.simpleName}")
-            false
-        }
+        val (ok, err) = tryStartLauncherMainActivity()
+        if (ok) Log.d(tag, "Explicit launcher activity start succeeded")
+        else Log.d(tag, "Explicit launcher activity start failed: $err")
+        return ok
     }
 
     private fun cancelScheduledReturnHomeAlarm() {
@@ -181,12 +162,7 @@ class LockScreenAccessibilityService : AccessibilityService() {
                     addAction(Intent.ACTION_SCREEN_OFF)
                     addAction(Intent.ACTION_USER_PRESENT)
                 }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(screenStateReceiver, filter, RECEIVER_NOT_EXPORTED)
-        } else {
-            @Suppress("DEPRECATION")
-            registerReceiver(screenStateReceiver, filter)
-        }
+        registerBroadcastReceiverNotExported(screenStateReceiver, filter)
         screenStateReceiverRegistered = true
     }
 
@@ -195,6 +171,8 @@ class LockScreenAccessibilityService : AccessibilityService() {
         runCatching { unregisterReceiver(screenStateReceiver) }
         screenStateReceiverRegistered = false
     }
+
+    private fun longLockThresholdMs(minutes: Int): Long = minutes * 60_000L
 
     companion object {
         @Volatile private var instance: LockScreenAccessibilityService? = null

@@ -1,12 +1,14 @@
 package com.lu4p.fokuslauncher.data.model
 
 import android.os.UserHandle
+import androidx.annotation.StringRes
+import com.lu4p.fokuslauncher.R
 
-enum class DrawerAppSortMode {
-    ALPHABETICAL,
-    MOST_OPENED,
+enum class DrawerAppSortMode(@param:StringRes val labelRes: Int) {
+    ALPHABETICAL(R.string.settings_drawer_app_sort_alphabetical),
+    MOST_OPENED(R.string.settings_drawer_app_sort_most_opened),
     /** Manual order (drag in drawer). Only honored when the vertical category sidebar is enabled. */
-    CUSTOM;
+    CUSTOM(R.string.settings_drawer_app_sort_custom);
 
     companion object {
         fun fromStorage(value: String?): DrawerAppSortMode =

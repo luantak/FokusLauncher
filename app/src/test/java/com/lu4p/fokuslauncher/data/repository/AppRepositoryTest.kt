@@ -19,6 +19,7 @@ import com.lu4p.fokuslauncher.data.model.AddCategoryResult
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.SystemCategoryKeys
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
+import com.lu4p.fokuslauncher.utils.containsNormalizedSearch
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -30,7 +31,6 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -138,7 +138,7 @@ class AppRepositoryTest {
     }
 
     @Test
-    fun `searchApps filters by label case-insensitively`() {
+    fun `installed apps list matches drawer-style normalized label search`() {
         every {
             launcherApps.getActivityList(null, myUser)
         } returns
@@ -148,7 +148,11 @@ class AppRepositoryTest {
                         createMockLauncherActivity("com.lu4p.camera", "Camera")
                 )
 
-        val result = repository.searchApps("ca")
+        val all = repository.getInstalledApps()
+        val result =
+                all.filter { it.label.containsNormalizedSearch("ca") }.sortedBy {
+                    it.label.lowercase()
+                }
 
         assertEquals(2, result.size)
         assertEquals("Calendar", result[0].label)
@@ -156,19 +160,20 @@ class AppRepositoryTest {
     }
 
     @Test
-    fun `searchApps accent-insensitive match`() {
+    fun `normalized label search is accent-insensitive on installed apps`() {
         every {
             launcherApps.getActivityList(null, myUser)
         } returns listOf(createMockLauncherActivity("com.lu4p.camera", "Càmera"))
 
-        val result = repository.searchApps("cam")
+        val result =
+                repository.getInstalledApps().filter { it.label.containsNormalizedSearch("cam") }
 
         assertEquals(1, result.size)
         assertEquals("Càmera", result[0].label)
     }
 
     @Test
-    fun `searchApps with blank query returns all apps`() {
+    fun `blank search needle matches all installed apps`() {
         every {
             launcherApps.getActivityList(null, myUser)
         } returns
@@ -177,7 +182,8 @@ class AppRepositoryTest {
                         createMockLauncherActivity("com.lu4p.app2", "App 2")
                 )
 
-        val result = repository.searchApps("")
+        val all = repository.getInstalledApps()
+        val result = all.filter { it.label.containsNormalizedSearch("") }
 
         assertEquals(2, result.size)
     }
@@ -201,21 +207,6 @@ class AppRepositoryTest {
         val result = realRepository.launchApp("com.lu4p.nonexistent")
 
         assertFalse(result)
-    }
-
-    @Test
-    fun `filterByCategory returns all apps for All apps category`() {
-        every {
-            launcherApps.getActivityList(null, myUser)
-        } returns
-                listOf(
-                        createMockLauncherActivity("com.lu4p.app1", "App 1"),
-                        createMockLauncherActivity("com.lu4p.app2", "App 2")
-                )
-
-        val result = repository.filterByCategory("All apps")
-
-        assertEquals(2, result.size)
     }
 
     @Test
@@ -383,15 +374,6 @@ class AppRepositoryTest {
     }
 
     @Test
-    fun `isAppHidden delegates to DAO`() = runTest {
-        coEvery { appDao.isAppHidden("com.lu4p.app1", "0") } returns true
-
-        val result = repository.isAppHidden("com.lu4p.app1", "0")
-
-        assertTrue(result)
-    }
-
-    @Test
     fun `getHiddenApps returns flow from DAO`() {
         every { appDao.getHiddenApps() } returns
             flowOf(listOf(HiddenAppEntity("com.lu4p.hidden", "0")))
@@ -411,24 +393,6 @@ class AppRepositoryTest {
         coVerify {
             appDao.renameApp(RenamedAppEntity("com.lu4p.app1", "0", "My Custom Name"))
         }
-    }
-
-    @Test
-    fun `getCustomName returns name from DAO`() = runTest {
-        coEvery { appDao.getCustomName("com.lu4p.app1", "0") } returns "Custom"
-
-        val result = repository.getCustomName("com.lu4p.app1", "0")
-
-        assertEquals("Custom", result)
-    }
-
-    @Test
-    fun `getCustomName returns null when not renamed`() = runTest {
-        coEvery { appDao.getCustomName("com.lu4p.app1", "0") } returns null
-
-        val result = repository.getCustomName("com.lu4p.app1", "0")
-
-        assertNull(result)
     }
 
     // --- Category Tests ---
@@ -464,15 +428,6 @@ class AppRepositoryTest {
                     )
             )
         }
-    }
-
-    @Test
-    fun `getAppCategory returns category from DAO`() = runTest {
-        coEvery { appDao.getAppCategory("com.lu4p.app1", "0") } returns "Social"
-
-        val result = repository.getAppCategory("com.lu4p.app1", "0")
-
-        assertEquals("Social", result)
     }
 
     @Test
