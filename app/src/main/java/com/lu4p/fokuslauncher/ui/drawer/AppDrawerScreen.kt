@@ -861,8 +861,12 @@ fun AppDrawerContent(
                             DRAWER_TOP_INSET_BUFFER
             )
 
+    val hasNonAllAppsCategory =
+            uiState.categories.any {
+                !it.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true)
+            }
     val categorySwipeModifier =
-            if (uiState.categories.size > 1) {
+            if (hasNonAllAppsCategory) {
                 Modifier.pointerInput(Unit) {
                     var accumulated = 0f
                     detectHorizontalDragGestures(
@@ -1036,7 +1040,7 @@ fun AppDrawerContent(
                                 onToggleReorderApps = onToggleDrawerReorderApps
                         )
                     }
-                    if (uiState.categories.size > 1) {
+                    if (hasNonAllAppsCategory) {
                         CategoryChips(
                                 categories = uiState.categories,
                                 selectedCategory = uiState.selectedCategory,

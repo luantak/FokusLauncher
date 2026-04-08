@@ -9,6 +9,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import com.lu4p.fokuslauncher.data.model.AppInfo
+import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import com.lu4p.fokuslauncher.ui.theme.FokusLauncherTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -93,6 +94,29 @@ class AppDrawerScreenTest {
         composeTestRule.onNodeWithTag("category_chips").assertIsDisplayed()
         composeTestRule.onNodeWithText("All apps").assertIsDisplayed()
         composeTestRule.onNodeWithText("Productivity").assertIsDisplayed()
+    }
+
+    @Test
+    fun appDrawer_hidesCategoryChips_whenAllAppsIsTheOnlyDrawerCategory() {
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                AppDrawerContent(
+                    uiState =
+                        singleProfileState(testApps).copy(
+                            categories = listOf(ReservedCategoryNames.ALL_APPS)
+                        ),
+                    onSearchQueryChanged = {},
+                    onCategorySelected = {},
+                    onAppClick = {},
+                    onSettingsClick = {}
+                )
+            }
+        }
+
+        composeTestRule.onAllNodesWithTag("category_chips").fetchSemanticsNodes().also {
+            assertEquals(0, it.size)
+        }
+        composeTestRule.onNodeWithText("Atom").assertIsDisplayed()
     }
 
     @Test

@@ -1271,7 +1271,11 @@ constructor(
             }
             addAll(definedSansSyntheticUncategorized)
             addAll(extrasFiltered)
-            if (hasUncategorizedApps) add(ReservedCategoryNames.UNCATEGORIZED)
+            // Vertical sidebar lists uncategorized as its own bucket; chip mode is always "All apps"
+            // first and blank-category apps stay in that list (issue #57).
+            if (hasUncategorizedApps && !includeAllAppsSection) {
+                add(ReservedCategoryNames.UNCATEGORIZED)
+            }
             if (privateSpaceLast && includePrivate) add(ReservedCategoryNames.PRIVATE)
         }
     }

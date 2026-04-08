@@ -12,6 +12,7 @@ import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.DotSearchTargetPreference
 import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
+import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.data.repository.RemovedApp
@@ -384,6 +385,29 @@ class AppDrawerViewModelTest {
         assertTrue(state.categories.contains("Productivity"))
         assertTrue(state.categories.contains("Finance"))
         assertTrue(state.categories.contains("Social"))
+    }
+
+    @Test
+    fun `horizontal chip drawer omits Uncategorized even when some apps lack a category`() {
+        assertFalse(viewModel.uiState.value.useSidebarCategoryDrawer)
+        val state = viewModel.uiState.value
+        assertTrue(state.allApps.any { it.category.isBlank() })
+        assertFalse(
+                state.categories.any {
+                    it.equals(ReservedCategoryNames.UNCATEGORIZED, ignoreCase = true)
+                }
+        )
+    }
+
+    @Test
+    fun `vertical sidebar drawer includes Uncategorized when some apps lack a category`() {
+        drawerSidebarCategoriesFlow.value = true
+        awaitState("Uncategorized in sidebar categories") { s ->
+            s.useSidebarCategoryDrawer &&
+                    s.categories.any {
+                        it.equals(ReservedCategoryNames.UNCATEGORIZED, ignoreCase = true)
+                    }
+        }
     }
 
     @Test
