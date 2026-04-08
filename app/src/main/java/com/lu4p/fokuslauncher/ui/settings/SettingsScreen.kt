@@ -99,7 +99,6 @@ import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
 import com.lu4p.fokuslauncher.data.model.HomeDateFormatStyle
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
-import com.lu4p.fokuslauncher.utils.BatteryOptimizationHelper
 import com.lu4p.fokuslauncher.utils.LockScreenHelper
 import com.lu4p.fokuslauncher.utils.containsNormalizedSearch
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
@@ -904,17 +903,11 @@ fun DeviceControlSettingsScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     var accessibilityResumeTick by remember { mutableIntStateOf(0) }
-    var ignoringBatteryOptimizations by remember {
-        mutableStateOf(BatteryOptimizationHelper.isIgnoringBatteryOptimizations(context))
-    }
-    var pendingEnableLongLock by remember { mutableStateOf(false) }
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 accessibilityResumeTick++
-                ignoringBatteryOptimizations =
-                        BatteryOptimizationHelper.isIgnoringBatteryOptimizations(context)
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -926,19 +919,10 @@ fun DeviceControlSettingsScreen(
                 LockScreenHelper.isLockAccessibilityServiceEnabled(context)
             }
 
-    LaunchedEffect(lockAccessibilityOn, ignoringBatteryOptimizations, uiState.longLockReturnHome) {
-        if (uiState.longLockReturnHome &&
-                        (!lockAccessibilityOn || !ignoringBatteryOptimizations)) {
+    LaunchedEffect(lockAccessibilityOn, uiState.longLockReturnHome) {
+        if (uiState.longLockReturnHome && !lockAccessibilityOn) {
             viewModel.setLongLockReturnHome(false)
         }
-    }
-
-    LaunchedEffect(lockAccessibilityOn, ignoringBatteryOptimizations, pendingEnableLongLock) {
-        if (!pendingEnableLongLock) return@LaunchedEffect
-        if (lockAccessibilityOn && ignoringBatteryOptimizations) {
-            viewModel.setLongLockReturnHome(true)
-        }
-        pendingEnableLongLock = false
     }
 
     Column(
@@ -1006,22 +990,12 @@ fun DeviceControlSettingsScreen(
                                         R.string.settings_return_home_after_long_lock_subtitle
                                 ),
                         checked = uiState.longLockReturnHome,
-                        onCheckedChange = { enabled ->
-                            if (!enabled) {
-                                pendingEnableLongLock = false
-                                viewModel.setLongLockReturnHome(false)
-                            } else if (!ignoringBatteryOptimizations) {
-                                pendingEnableLongLock = true
-                                BatteryOptimizationHelper.openBatteryOptimizationSettings(context)
-                            } else {
-                                viewModel.setLongLockReturnHome(true)
-                            }
-                        },
+                        onCheckedChange = { enabled -> viewModel.setLongLockReturnHome(enabled) },
                         enabled = lockAccessibilityOn
                 )
             }
 
-            if (lockAccessibilityOn && ignoringBatteryOptimizations && uiState.longLockReturnHome) {
+            if (lockAccessibilityOn && uiState.longLockReturnHome) {
                 item {
                     LongLockThresholdRow(
                             currentMinutes = uiState.longLockReturnHomeThresholdMinutes,

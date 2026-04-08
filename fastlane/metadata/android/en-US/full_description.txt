@@ -30,7 +30,7 @@ On Android 15 and above (API 35+), Fokus supports Android's Private Space with l
 
 These features only work if you turn on accessibility for Fokus in Android settings.
 
-Double tap to lock can turn off the screen from empty home space. Return home after long lock can bring Fokus to the foreground when you unlock after the device stayed locked longer than a threshold you choose; that option also needs battery optimization disabled for reliable timing.
+Double tap to lock can turn off the screen from empty home space. Return home after long lock can bring Fokus back to the foreground on unlock once the device stayed locked longer than a threshold you choose.
 
 <b>First-Run Onboarding</b>
 

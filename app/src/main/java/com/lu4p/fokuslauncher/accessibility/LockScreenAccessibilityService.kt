@@ -1,6 +1,7 @@
 package com.lu4p.fokuslauncher.accessibility
 
 import android.accessibilityservice.AccessibilityService
+import android.app.AlarmManager
 import android.app.KeyguardManager
 import android.content.BroadcastReceiver
 import android.content.ComponentName
@@ -14,10 +15,8 @@ import com.lu4p.fokuslauncher.MainActivity
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
@@ -31,7 +30,6 @@ class LockScreenAccessibilityService : AccessibilityService() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private lateinit var preferencesManager: PreferencesManager
     private var screenStateReceiverRegistered = false
-    private var scheduledReturnHomeJob: Job? = null
 
     private val screenStateReceiver =
             object : BroadcastReceiver() {
@@ -58,7 +56,7 @@ class LockScreenAccessibilityService : AccessibilityService() {
     }
 
     override fun onDestroy() {
-        scheduledReturnHomeJob?.cancel()
+        cancelScheduledReturnHomeAlarm()
         unregisterScreenStateReceiver()
         serviceScope.cancel()
         if (instance === this) instance = null
@@ -74,13 +72,13 @@ class LockScreenAccessibilityService : AccessibilityService() {
     }
 
     private suspend fun handleUserPresent() {
-        clearPendingLockTracking("user_present")
         maybeReturnHome(trigger = "user_present")
+        clearPendingLockTracking("user_present")
     }
 
     private suspend fun maybeReturnHome(trigger: String) {
         if (!preferencesManager.getLongLockReturnHomeEnabled()) {
-            scheduledReturnHomeJob?.cancel()
+            cancelScheduledReturnHomeAlarm()
             preferencesManager.clearLongLockLastScreenOffAtMs()
             return
         }
@@ -117,25 +115,28 @@ class LockScreenAccessibilityService : AccessibilityService() {
     }
 
     private suspend fun scheduleLockedReturnHome(lockedAtMs: Long) {
-        scheduledReturnHomeJob?.cancel()
         val thresholdMinutes = preferencesManager.getLongLockReturnHomeThresholdMinutes()
         val thresholdMs = thresholdMinutes * 60_000L
-        Log.d(tag, "Scheduling locked return-home in ${thresholdMs}ms")
-        scheduledReturnHomeJob =
-                serviceScope.launch {
-                    delay(thresholdMs)
-                    val latestLockedAt = preferencesManager.getLongLockLastScreenOffAtMs()
-                    if (latestLockedAt != lockedAtMs || latestLockedAt <= 0L) return@launch
-                    if (!isDeviceCurrentlyLocked()) {
-                        clearPendingLockTracking("scheduled_unlocked")
-                        return@launch
-                    }
-                    maybeReturnHome(trigger = "scheduled_locked")
-                }
+        val triggerAtMs = lockedAtMs + thresholdMs
+        val alarmManager = getSystemService(AlarmManager::class.java)
+        if (alarmManager == null) return
+        cancelScheduledReturnHomeAlarm()
+        val pendingIntent =
+                LongLockAlarmReceiver.createPendingIntent(
+                        context = this,
+                        lockedAtMs = lockedAtMs,
+                        createIfMissing = true,
+                )
+                        ?: return
+        Log.d(
+                tag,
+                "Scheduling locked return-home alarm in ${thresholdMs}ms at triggerAt=${triggerAtMs}",
+        )
+        alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMs, pendingIntent)
     }
 
     private suspend fun clearPendingLockTracking(reason: String) {
-        scheduledReturnHomeJob?.cancel()
+        cancelScheduledReturnHomeAlarm()
         val lockedAt = preferencesManager.getLongLockLastScreenOffAtMs()
         if (lockedAt > 0L) {
             Log.d(tag, "Clearing pending lock tracking via $reason")
@@ -168,6 +169,18 @@ class LockScreenAccessibilityService : AccessibilityService() {
             Log.d(tag, "Explicit launcher activity start failed: ${it.javaClass.simpleName}")
             false
         }
+    }
+
+    private fun cancelScheduledReturnHomeAlarm() {
+        val alarmManager = getSystemService(AlarmManager::class.java) ?: return
+        val pendingIntent =
+                LongLockAlarmReceiver.createPendingIntent(
+                        context = this,
+                        createIfMissing = false,
+                )
+                        ?: return
+        alarmManager.cancel(pendingIntent)
+        pendingIntent.cancel()
     }
 
     private fun registerScreenStateReceiver() {

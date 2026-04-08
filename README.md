@@ -77,8 +77,7 @@ These features need Android's accessibility service.
 **Double tap to lock** locks the screen from a double-tap on empty home space.
 **Return home after long lock** notices when the device stayed locked with the
 screen off longer than a threshold you set (default 15 minutes) and brings Fokus
-to the foreground on unlock so you start on the home screen. That second option
-also needs battery optimization disabled for reliable timing.
+to the foreground on unlock so you start on the home screen.
 
 ## First-Run Experience
 
@@ -129,15 +128,14 @@ preferences, and Navigation Compose for screen flow.
 
 ## Permissions
 
-| Permission                             | Purpose                                                                           |
-| -------------------------------------- | --------------------------------------------------------------------------------- |
-| `REQUEST_DELETE_PACKAGES`              | Trigger uninstall flow from launcher actions                                      |
-| `INTERNET`                             | Fetch weather data                                                                |
-| `ACCESS_COARSE_LOCATION`               | Show location-based weather (runtime prompt)                                      |
-| `ACCESS_HIDDEN_PROFILES`               | Private Space apps in the drawer when unlocked                                    |
-| `EXPAND_STATUS_BAR`                    | Open notification shade from swipe-down gestures                                  |
-| `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` | Prompt to disable battery optimization (required for return home after long lock) |
-| `SET_WALLPAPER`                        | Set image or solid black wallpaper from settings                                  |
+| Permission                | Purpose                                          |
+| ------------------------- | ------------------------------------------------ |
+| `REQUEST_DELETE_PACKAGES` | Trigger uninstall flow from launcher actions     |
+| `INTERNET`                | Fetch weather data                               |
+| `ACCESS_COARSE_LOCATION`  | Show location-based weather (runtime prompt)     |
+| `ACCESS_HIDDEN_PROFILES`  | Private Space apps in the drawer when unlocked   |
+| `EXPAND_STATUS_BAR`       | Open notification shade from swipe-down gestures |
+| `SET_WALLPAPER`           | Set image or solid black wallpaper from settings |
 
 **Double tap to lock** and **return home after long lock** require the optional
 accessibility service.
