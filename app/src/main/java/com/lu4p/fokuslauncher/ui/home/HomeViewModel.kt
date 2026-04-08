@@ -347,12 +347,12 @@ class HomeViewModel @Inject constructor(
         }
         _appNameMap.value = apps.associate { appMetadataKey(it.packageName, it.userHandle) to it.label }
         _allInstalledApps.value = apps
-        val installedPackages = apps.map { it.packageName }.toSet()
+        val installedAppKeys = apps.map { appMetadataKey(it.packageName, it.userHandle) }.toSet()
         val currentFavorites = rawFavorites.value
         val updatedFavorites =
                 currentFavorites.filter {
                     it.packageName == ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE ||
-                            it.packageName in installedPackages ||
+                            appMetadataKey(it.packageName, it.profileKey) in installedAppKeys ||
                             appRepository.hasLaunchableActivities(
                                     it.packageName,
                                     it.profileKey
@@ -364,7 +364,7 @@ class HomeViewModel @Inject constructor(
         val recoveredViaLaunchCheck =
                 updatedFavorites.any {
                     it.packageName != ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE &&
-                            it.packageName !in installedPackages
+                            appMetadataKey(it.packageName, it.profileKey) !in installedAppKeys
                 }
         return recoveredViaLaunchCheck
     }
@@ -419,7 +419,8 @@ class HomeViewModel @Inject constructor(
         if (existing >= 0) {
             current.removeAt(existing)
         } else {
-            val resolvedName = _renameMap.value[app.packageName] ?: app.label
+            val resolvedName =
+                _renameMap.value[appMetadataKey(app.packageName, profileKey)] ?: app.label
             current.add(
                 FavoriteApp(
                     label = resolvedName,

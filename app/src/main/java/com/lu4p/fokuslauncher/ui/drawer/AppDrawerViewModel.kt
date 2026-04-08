@@ -19,7 +19,7 @@ import com.lu4p.fokuslauncher.ui.components.MinimalIcons
 import com.lu4p.fokuslauncher.utils.DotSearchParsed
 import com.lu4p.fokuslauncher.utils.DotSearchSyntax
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
-import com.lu4p.fokuslauncher.utils.containsNormalizedSearch
+import com.lu4p.fokuslauncher.utils.normalizedForSearch
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -240,6 +240,11 @@ constructor(
                                 categories = categories,
                                 skipAllAppsCategory = sidebarEnabled
                         )
+                maybePersistMergedCustomOrder(
+                        allApps = state.allApps,
+                        privateApps = state.privateSpaceApps,
+                        useSidebarCategoryDrawer = sidebarEnabled
+                )
                 val filteredContent =
                         buildFilteredDrawerContent(
                                 allApps = state.allApps,
@@ -296,6 +301,11 @@ constructor(
                                 } else {
                                     sortPrivateSpaceAppsCachedSuspend(state.privateSpaceApps)
                                 }
+                        maybePersistMergedCustomOrder(
+                                allApps = state.allApps,
+                                privateApps = reorderedPrivate,
+                                useSidebarCategoryDrawer = state.useSidebarCategoryDrawer
+                        )
                         val filteredContent =
                                 buildFilteredDrawerContent(
                                         allApps = state.allApps,
@@ -453,6 +463,11 @@ constructor(
                             categories = categories,
                             skipAllAppsCategory = stateSnapshot.useSidebarCategoryDrawer
                     )
+            maybePersistMergedCustomOrder(
+                    allApps = visible,
+                    privateApps = privateAppsFiltered,
+                    useSidebarCategoryDrawer = stateSnapshot.useSidebarCategoryDrawer
+            )
             val filteredContent =
                     buildFilteredDrawerContent(
                             allApps = visible,
@@ -506,6 +521,11 @@ constructor(
                             categories = categories,
                             skipAllAppsCategory = stateSnapshot.useSidebarCategoryDrawer
                     )
+            maybePersistMergedCustomOrder(
+                    allApps = visible,
+                    privateApps = privateApps,
+                    useSidebarCategoryDrawer = stateSnapshot.useSidebarCategoryDrawer
+            )
             val filteredContent =
                     buildFilteredDrawerContent(
                             allApps = visible,
@@ -965,6 +985,11 @@ constructor(
                             categories = categories,
                             skipAllAppsCategory = state.useSidebarCategoryDrawer
                     )
+            maybePersistMergedCustomOrder(
+                    allApps = state.allApps,
+                    privateApps = apps,
+                    useSidebarCategoryDrawer = state.useSidebarCategoryDrawer
+            )
             val filteredContent =
                     buildFilteredDrawerContent(
                             allApps = state.allApps,
@@ -1208,6 +1233,7 @@ constructor(
             query: String,
             category: String
     ): List<DrawerProfileSectionUi> {
+        val normalizedQuery = query.normalizedForSearch()
         if (category.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true)) {
             return sections.map { it.copy(apps = emptyList()) }
         }
@@ -1219,7 +1245,7 @@ constructor(
         return sections.map { section ->
             var apps = section.apps
             if (query.isNotBlank()) {
-                apps = apps.filter { it.label.containsNormalizedSearch(query) }
+                apps = apps.filter { it.normalizedLabel.contains(normalizedQuery) }
             }
             if (category.isNotBlank() && !category.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true)) {
                 apps =
@@ -1249,7 +1275,8 @@ constructor(
         return if (query.isBlank()) {
             privateApps
         } else {
-            privateApps.filter { it.label.containsNormalizedSearch(query) }
+            val normalizedQuery = query.normalizedForSearch()
+            privateApps.filter { it.normalizedLabel.contains(normalizedQuery) }
         }
     }
 
@@ -1342,13 +1369,6 @@ constructor(
             rawSearchQuery: String,
             category: String
     ): FilteredDrawerContent {
-        if (latestDrawerSortMode == DrawerAppSortMode.CUSTOM && _uiState.value.useSidebarCategoryDrawer) {
-            val merged = mergeCustomOrderMaps(allApps, privateApps, latestCustomOrderByProfile)
-            if (merged != latestCustomOrderByProfile) {
-                latestCustomOrderByProfile = merged
-                preferencesManager.setDrawerCustomAppOrder(merged)
-            }
-        }
         val sections = buildProfileSectionsSuspend(allApps)
         val trimmed = rawSearchQuery.trimStart()
         val filterQuery =
@@ -1368,6 +1388,19 @@ constructor(
                                     privateApps = privateApps
                             )
             )
+        }
+    }
+
+    private suspend fun maybePersistMergedCustomOrder(
+            allApps: List<AppInfo>,
+            privateApps: List<AppInfo>,
+            useSidebarCategoryDrawer: Boolean
+    ) {
+        if (latestDrawerSortMode != DrawerAppSortMode.CUSTOM || !useSidebarCategoryDrawer) return
+        val merged = mergeCustomOrderMaps(allApps, privateApps, latestCustomOrderByProfile)
+        if (merged != latestCustomOrderByProfile) {
+            latestCustomOrderByProfile = merged
+            preferencesManager.setDrawerCustomAppOrder(merged)
         }
     }
 

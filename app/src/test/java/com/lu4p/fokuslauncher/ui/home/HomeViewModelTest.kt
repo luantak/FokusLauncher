@@ -579,6 +579,64 @@ class HomeViewModelTest {
     }
 
     @Test
+    fun `toggleAppOnHomeScreen uses profile aware rename key`() {
+        val workHandle = mockk<android.os.UserHandle>()
+        every { workHandle.hashCode() } returns 42
+        every { appRepository.getAllRenamedApps() } returns
+            flowOf(listOf(com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity(
+                packageName = "com.lu4p.chrome",
+                profileKey = "42",
+                customName = "Chrome Work Custom"
+            )))
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.toggleAppOnHomeScreen(
+            AppInfo(
+                packageName = "com.lu4p.chrome",
+                label = "Chrome Work",
+                icon = null,
+                userHandle = workHandle
+            )
+        )
+
+        assertEquals("Chrome Work Custom", viewModel.editFavorites.value.single().label)
+        assertEquals("42", viewModel.editFavorites.value.single().profileKey)
+    }
+
+    @Test
+    fun `refreshInstalledApps prunes favorites missing from one profile only`() {
+        every { preferencesManager.favoritesFlow } returns flowOf(
+            listOf(
+                FavoriteApp(label = "Chrome", packageName = "com.lu4p.chrome", iconName = "circle", profileKey = "0"),
+                FavoriteApp(label = "Chrome Work", packageName = "com.lu4p.chrome", iconName = "circle", profileKey = "42")
+            )
+        )
+        every { appRepository.getInstalledApps() } returns
+            listOf(AppInfo(packageName = "com.lu4p.chrome", label = "Chrome", icon = null))
+        every { appRepository.hasLaunchableActivities("com.lu4p.chrome", "42") } returns false
+
+        val viewModel = createViewModel()
+        val collectJob = CoroutineScope(testDispatcher).launch { viewModel.favorites.collect { } }
+        testDispatcher.scheduler.runCurrent()
+
+        viewModel.refreshInstalledApps()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify {
+            preferencesManager.setFavorites(
+                match { favorites ->
+                    favorites.size == 1 &&
+                        favorites.single().packageName == "com.lu4p.chrome" &&
+                        favorites.single().profileKey == "0"
+                }
+            )
+        }
+        collectJob.cancel()
+    }
+
+    @Test
     fun `openClockApp launches clock safely`() {
         val viewModel = createViewModel()
         viewModel.openClockApp()
