@@ -2,7 +2,6 @@ package com.lu4p.fokuslauncher.accessibility
 
 import android.accessibilityservice.AccessibilityService
 import android.app.AlarmManager
-import android.app.KeyguardManager
 import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
@@ -99,10 +98,7 @@ class LockScreenAccessibilityService : AccessibilityService() {
         Log.d(tag, "GLOBAL_ACTION_HOME result for $trigger: $returnedHome")
 
         val launchedLauncher =
-                if (trigger == "scheduled_locked") {
-                    Log.d(tag, "Attempting explicit launcher foreground while device remains locked")
-                    bringLauncherToFront()
-                } else if (!returnedHome) {
+                if (!returnedHome) {
                     Log.d(tag, "GLOBAL_ACTION_HOME failed, falling back to explicit activity launch")
                     bringLauncherToFront()
                 } else {
@@ -142,11 +138,6 @@ class LockScreenAccessibilityService : AccessibilityService() {
             Log.d(tag, "Clearing pending lock tracking via $reason")
             preferencesManager.clearLongLockLastScreenOffAtMs()
         }
-    }
-
-    private fun isDeviceCurrentlyLocked(): Boolean {
-        val keyguardManager = getSystemService(KeyguardManager::class.java) ?: return false
-        return keyguardManager.isDeviceLocked || keyguardManager.isKeyguardLocked
     }
 
     private fun bringLauncherToFront(): Boolean {

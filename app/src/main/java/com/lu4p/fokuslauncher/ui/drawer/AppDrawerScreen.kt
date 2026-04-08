@@ -150,6 +150,18 @@ private fun applyOptimisticPrivateSwap(
     return apps
 }
 
+private fun profileSectionsOrderKey(sections: List<DrawerProfileSectionUi>): String =
+        sections.joinToString(separator = "|") { section ->
+            buildString {
+                append(section.id)
+                append(':')
+                append(section.apps.joinToString(separator = ",") { appListStableKey(it) })
+            }
+        }
+
+private fun appOrderKey(apps: List<AppInfo>): String =
+        apps.joinToString(separator = ",") { appListStableKey(it) }
+
 /** Horizontal swipe distance (px) to move to the next/previous category in the app list. */
 private const val DRAWER_CATEGORY_SWIPE_THRESHOLD_PX = 120f
 private val DRAWER_MIN_TOP_PADDING = 48.dp
@@ -264,8 +276,14 @@ private fun DrawerAppListColumn(
     val itemHeightPx = with(LocalDensity.current) { 56.dp.toPx() }
     var optimisticProfileSections by remember { mutableStateOf<List<DrawerProfileSectionUi>?>(null) }
     var optimisticPrivateApps by remember { mutableStateOf<List<AppInfo>?>(null) }
+    val profileSectionsOrderSignature = remember(uiState.filteredProfileSections) {
+        profileSectionsOrderKey(uiState.filteredProfileSections)
+    }
+    val privateAppsOrderSignature = remember(uiState.filteredPrivateSpaceApps) {
+        appOrderKey(uiState.filteredPrivateSpaceApps)
+    }
 
-    LaunchedEffect(allowCustomDragReorder) {
+    LaunchedEffect(allowCustomDragReorder, profileSectionsOrderSignature, privateAppsOrderSignature) {
         if (!allowCustomDragReorder) {
             optimisticProfileSections = null
             optimisticPrivateApps = null
@@ -332,6 +350,7 @@ private fun DrawerAppListColumn(
                 ) { index ->
                     val app = section.apps[index]
                     val currentIndex by rememberUpdatedState(index)
+                    val latestSectionApps = rememberUpdatedState(section.apps)
                     val isDraggedRow =
                             allowCustomDragReorder &&
                                     section.id == draggedProfileSectionId &&
@@ -387,13 +406,8 @@ private fun DrawerAppListColumn(
                                                                 onVerticalDrag = { change, amount ->
                                                                     change.consume()
                                                                     val sectionApps =
-                                                                            latestDisplayProfileSections
-                                                                                    .find {
-                                                                                        it.id == section.id
-                                                                                    }
-                                                                                    ?.apps
+                                                                            latestSectionApps.value
                                                                     if (draggedProfileSectionId == section.id &&
-                                                                                    sectionApps != null &&
                                                                                     draggedProfileIndex in
                                                                                             sectionApps.indices
                                                                     ) {
@@ -637,18 +651,22 @@ fun AppDrawerScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val view = LocalView.current
-    val onCloseUpdated by rememberUpdatedState(onClose)
-    val closeAndReset: () -> Unit = {
-        viewModel.resetSearchState()
-        onCloseUpdated()
+    val onCloseUpdated = rememberUpdatedState(onClose)
+    val closeAndReset = remember(viewModel) {
+        {
+            viewModel.resetSearchState()
+            onCloseUpdated.value()
+        }
     }
     // Defer closing until after startActivity is processed so the drawer exit animation does not
     // run in the same frame as the launch handoff (smoother transition, avoids perceived "close
     // before open").
-    val closeAndResetAfterLaunch: () -> Unit = {
-        view.post {
-            viewModel.resetSearchState()
-            onCloseUpdated()
+    val closeAndResetAfterLaunch = remember(view, viewModel) {
+        {
+            view.post {
+                viewModel.resetSearchState()
+                onCloseUpdated.value()
+            }
         }
     }
 
