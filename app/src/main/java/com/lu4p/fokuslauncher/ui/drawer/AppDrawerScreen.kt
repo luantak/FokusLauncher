@@ -299,21 +299,6 @@ private fun DrawerDropdownMenuItem(
 }
 
 @Composable
-private fun DrawerDropdownMenuItem(
-        text: @Composable () -> Unit,
-        onClick: () -> Unit,
-        leadingIcon: @Composable () -> Unit,
-        testTag: String,
-) {
-    DropdownMenuItem(
-            text = text,
-            onClick = rememberClickWithSystemSound(onClick),
-            leadingIcon = leadingIcon,
-            modifier = Modifier.testTag(testTag),
-    )
-}
-
-@Composable
 private fun DrawerOverflowMenu(
         uiState: AppDrawerUiState,
         onMenuToggle: () -> Unit,
