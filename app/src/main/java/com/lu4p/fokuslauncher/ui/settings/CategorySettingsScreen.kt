@@ -87,7 +87,9 @@ fun CategorySettingsScreen(
             }
     val canAddCategory = inlineFieldFailure == null && normalizedNewCategory.isNotBlank()
     val categories =
-            remember(uiState.allApps, uiState.categoryDefinitions) { deriveEditableCategories(uiState) }
+            remember(uiState.allApps, uiState.categoryDefinitions) {
+                editableCategoriesForSettings(uiState)
+            }
     var localCategories by remember(categories) { mutableStateOf(categories) }
     val appCounts = remember(uiState.allApps) { buildCategoryCounts(uiState) }
     var categoryIconPickerFor by remember { mutableStateOf<String?>(null) }
@@ -487,16 +489,6 @@ private fun CategoryAppRow(
             )
         }
     }
-}
-
-private fun deriveEditableCategories(uiState: SettingsUiState): List<String> {
-    val orderedDefined = uiState.categoryDefinitions.distinct()
-    val dynamic =
-            uiState.allApps
-                    .mapNotNull { app -> app.category.takeIf { it.isNotBlank() } }
-                    .toSet()
-    val extras = (dynamic - orderedDefined.toSet()).toList().sorted()
-    return orderedDefined + extras
 }
 
 private fun buildCategoryCounts(uiState: SettingsUiState): Map<String, Int> {

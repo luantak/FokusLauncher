@@ -352,14 +352,18 @@ private fun SettingsScreenContent(
                             onEditRightShortcuts,
                     ),
             )
+    val editableCategoryCount =
+            remember(uiState.allApps, uiState.categoryDefinitions) {
+                editableCategoriesForSettings(uiState).size
+            }
     val drawerSubpageRows =
             listOf(
                     SubpageNavRow(
                             R.string.settings_edit_app_categories,
                             pluralStringResource(
                                     R.plurals.settings_categories_count,
-                                    uiState.categoryDefinitions.size,
-                                    uiState.categoryDefinitions.size
+                                    editableCategoryCount,
+                                    editableCategoryCount
                             ),
                             onEditCategories,
                     ),
