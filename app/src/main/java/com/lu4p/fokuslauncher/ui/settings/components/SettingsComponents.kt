@@ -49,7 +49,7 @@ internal fun SettingsToggleRow(
         enabled: Boolean = true
 ) {
     Row(
-            verticalAlignment = Alignment.Top,
+            verticalAlignment = Alignment.CenterVertically,
             modifier =
                     Modifier.fillMaxWidth()
                             .clickableWithSystemSound(enabled = enabled) { onCheckedChange(!checked) }
@@ -77,7 +77,6 @@ internal fun SettingsToggleRow(
                 checked = checked,
                 onCheckedChange = rememberBooleanChangeWithSystemSound(onCheckedChange),
                 enabled = enabled,
-                modifier = Modifier.padding(top = 2.dp),
         )
     }
 }
