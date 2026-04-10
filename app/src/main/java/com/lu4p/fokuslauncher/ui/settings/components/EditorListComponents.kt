@@ -69,7 +69,7 @@ fun ProfileBadgeSubtitle(profileBadge: String?) {
 }
 
 @Composable
-fun RowScope.EditorUncheckedLeadingSpacers() {
+fun EditorUncheckedLeadingSpacers() {
     Spacer(modifier = Modifier.size(24.dp))
     Spacer(modifier = Modifier.width(8.dp))
 }

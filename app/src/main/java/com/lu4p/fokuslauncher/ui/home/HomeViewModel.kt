@@ -8,7 +8,6 @@ import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.location.LocationManager
 import android.os.BatteryManager
-import android.os.Build
 import android.os.Process
 import android.os.UserHandle
 import android.provider.AlarmClock
@@ -349,7 +348,7 @@ class HomeViewModel @Inject constructor(
         _appNameMap.value = apps.associate { appMetadataKey(it.packageName, it.userHandle) to it.label }
     }
 
-    private suspend fun loadInstalledAppsForEditing(
+    private fun loadInstalledAppsForEditing(
         includeShortcutActions: Boolean = false
     ) {
         val apps = appRepository.getInstalledApps()
@@ -963,7 +962,7 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private suspend fun launchableMissingFavoriteKeysSubset(
+    private fun launchableMissingFavoriteKeysSubset(
             nonSentinelFavorites: List<FavoriteApp>,
             missingFavoriteKeys: Set<String>,
     ): Set<String> {

@@ -80,8 +80,8 @@ internal fun SettingsToggleRow(
 @Composable
 internal fun SettingsRow(
         label: String,
-        subtitle: String? = null,
         modifier: Modifier = Modifier,
+        subtitle: String? = null,
         horizontalPadding: Dp = 24.dp,
         verticalPadding: Dp = 12.dp,
         labelStyle: TextStyle = MaterialTheme.typography.bodyLarge,
