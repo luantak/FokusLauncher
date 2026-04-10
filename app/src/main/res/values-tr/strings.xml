@@ -134,7 +134,7 @@
         <item quantity="other">%d kısayollar ayarlandı</item>
     </plurals>
     <string name="settings_show_status_bar">Durum çubuğunu göster</string>
-    <string name="settings_allow_landscape_rotation">Yatay döndürmeye izin ver</string>
+    <string name="settings_allow_landscape_rotation">Yatay kullanıma izin ver</string>
     <string name="settings_language_label">Dil</string>
     <string name="settings_language_system_default">Sistem varsayılanı</string>
     <string name="settings_set_background_image">Arka plan resmini ayarla</string>

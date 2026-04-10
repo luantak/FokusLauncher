@@ -7,12 +7,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
+import com.lu4p.fokuslauncher.ui.components.LauncherIcon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -179,7 +178,7 @@ private fun ReorderableShortcutList(
                                     .heightIn(min = 56.dp)
                                     .graphicsLayer { translationY = reorderState.translationYForIndex(index) }
                                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.Top
             ) {
                 EditorDragHandleReorderIcon(
                         reorderState = reorderState,
@@ -196,13 +195,13 @@ private fun ReorderableShortcutList(
                         onCheckedChange =
                                 rememberBooleanChangeWithSystemSound { _ -> onToggleChecked(shortcut) },
                 ) {
-                    Icon(
+                    LauncherIcon(
                             imageVector = MinimalIcons.iconFor(shortcut.iconName),
                             contentDescription = stringResource(R.string.cd_change_icon),
                             tint = MaterialTheme.colorScheme.onBackground,
+                            iconSize = 40.dp,
                             modifier =
-                                    Modifier.size(40.dp)
-                                            .clickableWithSystemSound { onOpenIconPicker(index) }
+                                    Modifier.clickableWithSystemSound { onOpenIconPicker(index) },
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Column(modifier = Modifier.weight(1f)) {
@@ -237,7 +236,7 @@ private fun ReorderableShortcutList(
                             Modifier.fillMaxWidth()
                                     .heightIn(min = 56.dp)
                                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.Top
             ) {
                 EditorUncheckedLeadingSpacers()
                 EditorStandardCheckboxGutter(

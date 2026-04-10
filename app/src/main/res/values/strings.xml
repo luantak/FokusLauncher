@@ -143,7 +143,7 @@
     <string name="settings_title">Settings</string>
     <string name="settings_section_appearance">Appearance</string>
     <string name="settings_show_status_bar">Show status bar</string>
-    <string name="settings_allow_landscape_rotation">Allow landscape rotation</string>
+    <string name="settings_allow_landscape_rotation">Allow landscape</string>
     <string name="settings_language_label">Language</string>
     <string name="settings_language_system_default">System default</string>
     <string name="settings_set_background_image">Set background image</string>
@@ -180,6 +180,9 @@
     <string name="accessibility_lock_service_description">Optional feature you turn on in Android accessibility settings. Used only to lock the screen (double-tap) and return to this launcher after long locks if you enable that. Does not read screen content or collect data from other apps.</string>
     <string name="double_tap_lock_failed">Could not lock the device</string>
     <string name="settings_edit_home_screen">Edit home screen</string>
+    <!-- Short labels beside edit icon (sheets); chevron subpages use settings_edit_* titles -->
+    <string name="settings_nav_home_screen">Home screen</string>
+    <string name="settings_nav_shortcuts">Shortcuts</string>
     <string name="settings_edit_shortcuts">Edit shortcuts</string>
     <string name="settings_weather_app">Weather app</string>
     <string name="settings_swipe_left">Swipe left</string>
@@ -235,6 +238,8 @@
     <string name="settings_reset_confirm_message">This will clear favorites, shortcuts, hidden apps, renamed apps, and all other settings. The app will return to its initial state.</string>
     <string name="settings_app_picker_title">Select app</string>
     <string name="settings_font_label">Font</string>
+    <string name="settings_font_size_label">Font size</string>
+    <string name="settings_font_size_subtitle">Stacks with your device font size</string>
 
     <plurals name="settings_shortcuts_configured">
         <item quantity="one">%d shortcut configured</item>

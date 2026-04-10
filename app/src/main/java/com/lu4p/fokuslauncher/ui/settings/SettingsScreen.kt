@@ -14,6 +14,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import com.lu4p.fokuslauncher.ui.components.FokusIconButton
 import com.lu4p.fokuslauncher.ui.components.FokusTextButton
+import com.lu4p.fokuslauncher.ui.components.LauncherIcon
 import com.lu4p.fokuslauncher.ui.util.rememberBooleanChangeWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.rememberClickWithSystemSound
 import androidx.compose.foundation.layout.Column
@@ -38,20 +39,22 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Translate
 import com.lu4p.fokuslauncher.ui.components.FokusAlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -61,14 +64,17 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.background
 import com.lu4p.fokuslauncher.R
+import com.lu4p.fokuslauncher.data.model.LauncherFontScale
 import java.text.Collator
 import java.util.Locale
 import androidx.core.app.ActivityCompat
@@ -90,6 +96,7 @@ import com.lu4p.fokuslauncher.ui.settings.components.SettingsDropdown
 import com.lu4p.fokuslauncher.ui.settings.components.SettingsRow
 import com.lu4p.fokuslauncher.ui.settings.components.SettingsToggleRow
 import com.lu4p.fokuslauncher.ui.theme.composeFontFamilyFromStoredName
+import com.lu4p.fokuslauncher.ui.theme.launcherIconDp
 import com.lu4p.fokuslauncher.ui.util.OnResumeEffect
 import com.lu4p.fokuslauncher.ui.util.formatShortcutTargetDisplay
 import android.app.Activity
@@ -407,6 +414,12 @@ private fun SettingsScreenContent(
             )
         }
         item {
+            LauncherFontSizeSlider(
+                    currentScale = uiState.launcherFontScale,
+                    onScaleChange = viewModel::setLauncherFontScale,
+            )
+        }
+        item {
             SettingsRow(
                     label = stringResource(R.string.settings_set_background_image),
                     verticalPadding = 14.dp,
@@ -533,10 +546,11 @@ private fun SettingsScreenContent(
                 onRowClick = { viewModel.unhideApp(it.packageName, it.profileKey) },
                 trailingContent = {
                     Spacer(Modifier.width(8.dp))
-                    Icon(
+                    LauncherIcon(
                             Icons.Default.Visibility,
                             stringResource(R.string.cd_unhide_app),
                             tint = MaterialTheme.colorScheme.secondary,
+                            iconSize = 24.dp,
                     )
                 },
         )
@@ -554,10 +568,11 @@ private fun SettingsScreenContent(
                 onRowClick = { viewModel.removeRename(it.packageName, it.profileKey) },
                 trailingContent = {
                     Spacer(Modifier.width(8.dp))
-                    Icon(
+                    LauncherIcon(
                             Icons.Default.Close,
                             stringResource(R.string.cd_remove_rename),
                             tint = MaterialTheme.colorScheme.secondary,
+                            iconSize = 24.dp,
                     )
                 },
         )
@@ -570,19 +585,19 @@ private fun SettingsScreenContent(
                     subtitle = stringResource(link.subtitleRes),
                     verticalPadding = 14.dp,
                     leading = {
-                        Icon(
+                        LauncherIcon(
                                 imageVector = link.icon,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(24.dp),
+                                iconSize = 24.dp,
                         )
                     },
                     trailing = {
-                        Icon(
+                        LauncherIcon(
                                 imageVector = Icons.AutoMirrored.Filled.OpenInNew,
                                 contentDescription = stringResource(R.string.cd_open_link),
                                 tint = MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier.size(18.dp),
+                                iconSize = 18.dp,
                         )
                     },
                     onClick = {
@@ -608,11 +623,11 @@ private fun SettingsScreenContent(
                     labelColor = MaterialTheme.colorScheme.error,
                     verticalPadding = 14.dp,
                     leading = {
-                        Icon(
+                        LauncherIcon(
                                 Icons.Default.Restore,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.size(24.dp),
+                                iconSize = 24.dp,
                         )
                     },
                     onClick = onShowResetConfirm,
@@ -1053,6 +1068,58 @@ private fun LauncherFontFamilyDropdown(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun LauncherFontSizeSlider(
+        currentScale: Float,
+        onScaleChange: (Float) -> Unit,
+) {
+    val synced = LauncherFontScale.snapToStep(currentScale)
+    var pending by remember { mutableFloatStateOf(synced) }
+    LaunchedEffect(synced) { pending = synced }
+
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp)) {
+        Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(
+                    text = stringResource(R.string.settings_font_size_label),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.weight(1f),
+            )
+            Text(
+                    text = String.format(Locale.US, "%.1fx", pending),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.primary,
+            )
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(
+                text = stringResource(R.string.settings_font_size_subtitle),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.secondary,
+        )
+        Spacer(Modifier.height(12.dp))
+        Slider(
+                value = pending,
+                onValueChange = { raw ->
+                    pending = LauncherFontScale.snapToStep(raw)
+                },
+                onValueChangeFinished = {
+                    val v = LauncherFontScale.snapToStep(pending)
+                    if (v != synced) {
+                        onScaleChange(v)
+                    }
+                },
+                valueRange = LauncherFontScale.MIN..LauncherFontScale.MAX,
+                steps = LauncherFontScale.SLIDER_STEPS,
+                modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
 @Composable
 private fun SettingsLabeledSegmentedSection(
         title: String,
@@ -1221,11 +1288,11 @@ private fun HomeAlignmentRow(
 
 @Composable
 private fun SubpageChevron() {
-    Icon(
+    LauncherIcon(
             imageVector = Icons.AutoMirrored.Filled.NavigateNext,
             contentDescription = stringResource(R.string.cd_open_subpage),
             tint = MaterialTheme.colorScheme.secondary,
-            modifier = Modifier.size(22.dp),
+            iconSize = 22.dp,
     )
 }
 
@@ -1233,9 +1300,13 @@ private fun SubpageChevron() {
 private fun SectionHeader(title: String) {
     Text(
             text = title,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)
+            style =
+                    MaterialTheme.typography.labelLarge.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            letterSpacing = 0.8.sp,
+                    ),
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(start = 24.dp, top = 20.dp, end = 24.dp, bottom = 8.dp),
     )
 }
 
@@ -1308,11 +1379,11 @@ private fun WeatherAppSettingRow(
                     subtitle = stringResource(R.string.settings_weather_location_disabled_subtitle),
                     onClick = onRequestLocationPermission,
                     leading = {
-                        Icon(
+                        LauncherIcon(
                                 imageVector = Icons.Outlined.LocationOn,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(24.dp),
+                                iconSize = 24.dp,
                         )
                     },
                     trailing = {
@@ -1350,7 +1421,7 @@ private fun ShortcutTargetRow(
         onClear: () -> Unit
 ) {
     Row(
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.Top,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp)
     ) {
         Column(modifier = Modifier.weight(1f)) {
@@ -1365,14 +1436,32 @@ private fun ShortcutTargetRow(
                     color = MaterialTheme.colorScheme.secondary
             )
         }
-        FokusTextButton(onClick = onPickApp) { Text(stringResource(R.string.action_change)) }
-        FokusIconButton(onClick = onClear, modifier = Modifier.size(36.dp)) {
-            Icon(
-                    Icons.Default.Close,
-                    stringResource(R.string.action_clear),
-                    tint = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.size(18.dp)
-            )
+        Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(top = 2.dp),
+        ) {
+            FokusIconButton(
+                    onClick = onPickApp,
+                    modifier = Modifier.size(36.dp.launcherIconDp()),
+            ) {
+                LauncherIcon(
+                        Icons.Outlined.Edit,
+                        stringResource(R.string.action_change),
+                        tint = MaterialTheme.colorScheme.primary,
+                        iconSize = 20.dp,
+                )
+            }
+            FokusIconButton(
+                    onClick = onClear,
+                    modifier = Modifier.size(36.dp.launcherIconDp()),
+            ) {
+                LauncherIcon(
+                        Icons.Default.Close,
+                        stringResource(R.string.action_clear),
+                        tint = MaterialTheme.colorScheme.error,
+                        iconSize = 18.dp,
+                )
+            }
         }
     }
 }

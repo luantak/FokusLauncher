@@ -31,20 +31,18 @@ import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -95,6 +93,7 @@ import com.lu4p.fokuslauncher.ui.components.CategoryIconPickerDialog
 import com.lu4p.fokuslauncher.ui.components.DrawerCategorySidebar
 import com.lu4p.fokuslauncher.ui.components.FokusBottomSheet
 import com.lu4p.fokuslauncher.ui.components.FokusIconButton
+import com.lu4p.fokuslauncher.ui.components.LauncherIcon
 import com.lu4p.fokuslauncher.ui.components.FokusTextButton
 import com.lu4p.fokuslauncher.ui.components.MinimalIcons
 import com.lu4p.fokuslauncher.ui.components.SearchBar
@@ -210,14 +209,13 @@ private fun LazyItemScope.ReorderableDrawerAppRow(
             verticalAlignment = Alignment.CenterVertically,
     ) {
         if (allowCustomDragReorder) {
-            Icon(
+            LauncherIcon(
                     imageVector = Icons.Default.DragHandle,
                     contentDescription = stringResource(R.string.cd_drag_to_reorder),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    iconSize = 24.dp,
                     modifier =
-                            Modifier.padding(start = 8.dp)
-                                    .size(24.dp)
-                                    .then(dragHandleModifier),
+                            Modifier.padding(start = 8.dp).then(dragHandleModifier),
             )
             Spacer(modifier = Modifier.width(4.dp))
         }
@@ -284,10 +282,11 @@ private fun DrawerOverflowMenu(
 ) {
     Box(modifier = modifier) {
         FokusIconButton(onClick = onMenuToggle, modifier = Modifier.testTag("settings_button")) {
-            Icon(
+            LauncherIcon(
                     imageVector = Icons.Default.MoreVert,
                     contentDescription = stringResource(R.string.cd_menu),
-                    tint = MaterialTheme.colorScheme.onBackground
+                    tint = MaterialTheme.colorScheme.onBackground,
+                    iconSize = 24.dp,
             )
         }
         DropdownMenu(
@@ -311,12 +310,13 @@ private fun DrawerOverflowMenu(
                         },
                         onClick = onPrivateSpaceToggle,
                         leadingIcon = {
-                            Icon(
+                            LauncherIcon(
                                     imageVector =
                                             if (uiState.isPrivateSpaceUnlocked)
                                                     Icons.Default.LockOpen
                                             else Icons.Default.Lock,
-                                    contentDescription = null
+                                    contentDescription = null,
+                                    iconSize = 24.dp,
                             )
                         },
                         testTag = "menu_private_space",
@@ -337,9 +337,10 @@ private fun DrawerOverflowMenu(
                         },
                         onClick = onToggleReorderApps,
                         leadingIcon = {
-                            Icon(
+                            LauncherIcon(
                                     imageVector = Icons.Default.DragHandle,
-                                    contentDescription = null
+                                    contentDescription = null,
+                                    iconSize = 24.dp,
                             )
                         },
                         testTag = "menu_reorder_apps",
@@ -349,9 +350,10 @@ private fun DrawerOverflowMenu(
                     text = { Text(stringResource(R.string.drawer_menu_launcher_settings)) },
                     onClick = onSettingsClick,
                     leadingIcon = {
-                        Icon(
+                        LauncherIcon(
                                 imageVector = Icons.Default.Settings,
-                                contentDescription = null
+                                contentDescription = null,
+                                iconSize = 24.dp,
                         )
                     },
                     testTag = "menu_settings",
@@ -988,11 +990,12 @@ fun AppDrawerContent(
                                         onClick = { showSearch = !showSearch },
                                         modifier = Modifier.testTag("drawer_search_icon")
                                 ) {
-                                    Icon(
+                                    LauncherIcon(
                                             imageVector = Icons.Default.Search,
                                             contentDescription =
                                                     stringResource(R.string.search_apps),
-                                            tint = MaterialTheme.colorScheme.onBackground
+                                            tint = MaterialTheme.colorScheme.onBackground,
+                                            iconSize = 24.dp,
                                     )
                                 }
                                 overflowMenu()
@@ -1116,9 +1119,10 @@ fun CategoryActionSheet(
 
             if (showEditApps) {
                 SheetActionRow(
-                        label = stringResource(R.string.category_action_edit_apps),
+                        label = stringResource(R.string.category_apps_screen_section_in_category),
                         onClick = onEditApps,
-                        icon = Icons.Default.Apps,
+                        icon = Icons.Outlined.Edit,
+                        iconContentDescription = stringResource(R.string.category_action_edit_apps),
                         testTag = "category_action_edit_apps",
                 )
             }
@@ -1128,11 +1132,11 @@ fun CategoryActionSheet(
                     onClick = { showIconPickerDialog = true },
                     testTag = "category_action_choose_icon",
                     leadingContent = {
-                        Icon(
+                        LauncherIcon(
                                 imageVector = MinimalIcons.iconFor(drawerRailIconKey),
                                 contentDescription =
                                         stringResource(R.string.icon_picker_current_icon),
-                                modifier = Modifier.size(28.dp),
+                                iconSize = 28.dp,
                                 tint = MaterialTheme.colorScheme.onBackground,
                         )
                     },

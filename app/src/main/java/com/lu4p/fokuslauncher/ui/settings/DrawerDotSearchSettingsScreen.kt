@@ -16,10 +16,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.outlined.Edit
 import com.lu4p.fokuslauncher.ui.components.FokusAlertDialog
+import com.lu4p.fokuslauncher.ui.components.LauncherIcon
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import com.lu4p.fokuslauncher.ui.components.FokusIconButton
 import com.lu4p.fokuslauncher.ui.components.FokusTextButton
@@ -37,6 +38,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.lu4p.fokuslauncher.ui.theme.launcherIconDp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.R
@@ -114,7 +116,11 @@ fun DrawerDotSearchSettingsScreen(
                                     showAddShortcutChoice = true
                                 }
                 ) {
-                    Icon(Icons.Default.Add, stringResource(R.string.settings_dot_search_add_alias))
+                    LauncherIcon(
+                            Icons.Default.Add,
+                            stringResource(R.string.settings_dot_search_add_alias),
+                            iconSize = 24.dp,
+                    )
                 }
             }
     ) { padding ->
@@ -186,10 +192,11 @@ fun DrawerDotSearchSettingsScreen(
                         )
                     }
                     FokusIconButton(onClick = { viewModel.removeAlias(entry.key) }) {
-                        Icon(
+                        LauncherIcon(
                                 Icons.Default.Close,
                                 stringResource(R.string.cd_remove_alias),
-                                tint = MaterialTheme.colorScheme.error
+                                tint = MaterialTheme.colorScheme.error,
+                                iconSize = 24.dp,
                         )
                     }
                 }
@@ -357,18 +364,31 @@ private fun DotSearchTargetSettingsRow(
                 color = MaterialTheme.colorScheme.secondary
         )
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            FokusTextButton(onClick = onPickApp) { Text(stringResource(R.string.action_change)) }
+            FokusIconButton(
+                    onClick = onPickApp,
+                    modifier = Modifier.size(36.dp.launcherIconDp()),
+            ) {
+                LauncherIcon(
+                        Icons.Outlined.Edit,
+                        stringResource(R.string.action_change),
+                        tint = MaterialTheme.colorScheme.primary,
+                        iconSize = 20.dp,
+                )
+            }
             FokusTextButton(onClick = onPickUrlTemplate) {
                 Text(stringResource(R.string.settings_dot_search_url_template))
             }
             Spacer(modifier = Modifier.weight(1f))
             if (onClear != null) {
-                FokusIconButton(onClick = onClear, modifier = Modifier.size(36.dp)) {
-                    Icon(
+                FokusIconButton(
+                        onClick = onClear,
+                        modifier = Modifier.size(36.dp.launcherIconDp()),
+                ) {
+                    LauncherIcon(
                             Icons.Default.Close,
                             stringResource(R.string.action_clear),
                             tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(18.dp)
+                            iconSize = 18.dp,
                     )
                 }
             }

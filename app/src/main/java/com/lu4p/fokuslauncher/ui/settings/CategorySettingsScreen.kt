@@ -17,11 +17,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
+import com.lu4p.fokuslauncher.ui.components.LauncherIcon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -63,6 +64,7 @@ import com.lu4p.fokuslauncher.ui.components.CategoryIconPickerDialog
 import com.lu4p.fokuslauncher.ui.components.EditorScreenScaffold
 import com.lu4p.fokuslauncher.ui.components.MinimalIcons
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
+import com.lu4p.fokuslauncher.ui.theme.launcherIconDp
 import com.lu4p.fokuslauncher.ui.util.categoryChipDisplayLabel
 import com.lu4p.fokuslauncher.ui.util.resolvedCategoryDrawerIconName
 import com.lu4p.fokuslauncher.utils.containsNormalizedSearch
@@ -239,21 +241,21 @@ private fun ReorderableCategoryList(
                                     .clickableWithSystemSound { onEditCategoryApps(category) }
                                     .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
-                Icon(
+                LauncherIcon(
                         imageVector = Icons.Default.DragHandle,
                         contentDescription = stringResource(R.string.cd_drag_to_reorder),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        iconSize = 24.dp,
                         modifier =
-                                Modifier.size(24.dp)
-                                        .verticalReorderDragHandle(
-                                                reorderState,
-                                                index,
-                                                categories.lastIndex,
-                                                { from, to -> currentOnReorder(from, to) },
-                                                onReorderReset,
-                                                category,
-                                                categories.size,
-                                        )
+                                Modifier.verticalReorderDragHandle(
+                                        reorderState,
+                                        index,
+                                        categories.lastIndex,
+                                        { from, to -> currentOnReorder(from, to) },
+                                        onReorderReset,
+                                        category,
+                                        categories.size,
+                                ),
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 if (showDrawerCategoryIcons) {
@@ -265,23 +267,25 @@ private fun ReorderableCategoryList(
                             )
                     FokusIconButton(
                             onClick = { onOpenCategoryIconPicker(category) },
-                            modifier = Modifier.size(40.dp)
+                            modifier = Modifier.size(40.dp.launcherIconDp()),
                     ) {
-                        Icon(
+                        LauncherIcon(
                                 imageVector = MinimalIcons.iconFor(railIconName),
                                 contentDescription = stringResource(R.string.category_icon_picker_title),
-                                tint = MaterialTheme.colorScheme.onSurface
+                                tint = MaterialTheme.colorScheme.onSurface,
+                                iconSize = 24.dp,
                         )
                     }
                     FokusIconButton(
                             onClick = { onResetCategoryDrawerIcon(category) },
-                            modifier = Modifier.size(40.dp)
+                            modifier = Modifier.size(40.dp.launcherIconDp()),
                     ) {
-                        Icon(
+                        LauncherIcon(
                                 imageVector = Icons.Default.Restore,
                                 contentDescription =
                                         stringResource(R.string.category_action_reset_icon),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                iconSize = 24.dp,
                         )
                     }
                     Spacer(modifier = Modifier.width(4.dp))
@@ -298,14 +302,20 @@ private fun ReorderableCategoryList(
                             color = MaterialTheme.colorScheme.secondary
                     )
                 }
-                FokusTextButton(onClick = { onEditCategoryApps(category) }) {
-                    Text(stringResource(R.string.category_edit_apps))
+                FokusIconButton(onClick = { onEditCategoryApps(category) }) {
+                    LauncherIcon(
+                            imageVector = Icons.Outlined.Edit,
+                            contentDescription = stringResource(R.string.category_edit_apps),
+                            tint = MaterialTheme.colorScheme.primary,
+                            iconSize = 24.dp,
+                    )
                 }
                 FokusIconButton(onClick = { onDelete(category) }) {
-                    Icon(
+                    LauncherIcon(
                             imageVector = Icons.Default.Delete,
                             contentDescription = stringResource(R.string.cd_delete_category),
-                            tint = MaterialTheme.colorScheme.error
+                            tint = MaterialTheme.colorScheme.error,
+                            iconSize = 24.dp,
                     )
                 }
             }

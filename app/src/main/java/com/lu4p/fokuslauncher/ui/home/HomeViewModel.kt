@@ -27,6 +27,7 @@ import com.lu4p.fokuslauncher.data.model.appMetadataKey
 import com.lu4p.fokuslauncher.data.model.appProfileKey
 import com.lu4p.fokuslauncher.data.model.HomeDateFormatStyle
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
+import com.lu4p.fokuslauncher.data.model.LauncherFontScale
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.model.WeatherData
@@ -74,12 +75,15 @@ data class HomeUiState(
     val isDefaultLauncher: Boolean = true,
     val homeAlignment: HomeAlignment = HomeAlignment.LEFT,
     val doubleTapEmptyLockEnabled: Boolean = false,
+    val launcherFontScale: Float = LauncherFontScale.DEFAULT,
 )
 
 data class HomeClockUiState(
     val currentTime: String = "",
     val currentDate: String = "",
     val batteryPercent: Int = 0,
+    /** When false, the home clock may render AM/PM smaller than the time (12h formats). */
+    val is24HourFormat: Boolean = true,
 )
 
 data class HomeWeatherUiState(
@@ -229,6 +233,7 @@ class HomeViewModel @Inject constructor(
         registerTimezoneChangedReceiver()
         updateBattery()
         observeHomeAlignment()
+        observeLauncherFontScale()
         observeHomeDateFormatStyle()
         observeHomeWidgetItemPreferences()
         observeWeatherRefreshTriggers()
@@ -568,7 +573,8 @@ class HomeViewModel @Inject constructor(
                     current.copy(
                         currentTime = timeFormat.format(now),
                         currentDate =
-                                formatHomeDate(now, locale, _homeDateFormatStyle.value)
+                                formatHomeDate(now, locale, _homeDateFormatStyle.value),
+                        is24HourFormat = is24Hour,
                     )
                 if (updated != current) {
                     _clockUiState.value = updated
@@ -645,6 +651,12 @@ class HomeViewModel @Inject constructor(
     private fun observeHomeAlignment() {
         observeFlow(preferencesManager.homeAlignmentFlow) { alignment ->
             _uiState.value = _uiState.value.copy(homeAlignment = alignment)
+        }
+    }
+
+    private fun observeLauncherFontScale() {
+        observeFlow(preferencesManager.launcherFontScaleFlow) { scale ->
+            _uiState.value = _uiState.value.copy(launcherFontScale = scale)
         }
     }
 

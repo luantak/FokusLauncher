@@ -6,19 +6,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
 val FokusTypography = Typography(
-    // Home clock (12h + AM/PM needs horizontal room; 24h stays balanced at same size)
+    // Home clock (12h + AM/PM on one row; only consumer of displayLarge in the launcher)
     displayLarge = TextStyle(
         fontWeight = FontWeight.Light,
-        fontSize = 58.sp,
-        lineHeight = 64.sp,
-        letterSpacing = (-0.3).sp,
+        fontSize = 66.sp,
+        lineHeight = 74.sp,
+        letterSpacing = (-0.35).sp,
         color = White
     ),
-    // Date / Battery text
+    // Date / Battery row, weather temperature, some settings headers
     titleMedium = TextStyle(
         fontWeight = FontWeight.Normal,
-        fontSize = 16.sp,
-        lineHeight = 24.sp,
+        fontSize = 18.sp,
+        lineHeight = 28.sp,
         color = LightGray
     ),
     // App list item text (home screen favorites)

@@ -5,6 +5,7 @@ import android.os.UserHandle
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -12,6 +13,7 @@ import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.model.drawerOpenCountKey
 import com.lu4p.fokuslauncher.data.model.LauncherFontPreferences
+import com.lu4p.fokuslauncher.data.model.LauncherFontScale
 import com.lu4p.fokuslauncher.data.model.SystemCategoryKeys
 import com.lu4p.fokuslauncher.data.model.HomeDateFormatStyle
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
@@ -91,6 +93,7 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         private val ONBOARDING_REACHED_SET_DEFAULT_KEY = booleanPreferencesKey("onboarding_reached_set_default")
         private val HOME_ALIGNMENT_KEY = stringPreferencesKey("home_alignment")
         private val LAUNCHER_FONT_FAMILY_KEY = stringPreferencesKey("launcher_font_family")
+        private val LAUNCHER_FONT_SCALE_KEY = floatPreferencesKey("launcher_font_scale")
         private val ALLOW_LANDSCAPE_ROTATION_KEY =
                 booleanPreferencesKey("allow_landscape_rotation")
         private val DOUBLE_TAP_EMPTY_LOCK_KEY =
@@ -476,6 +479,22 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         context.fokusLauncherPreferencesDataStore.edit { prefs ->
             if (trimmed.isEmpty()) prefs.remove(LAUNCHER_FONT_FAMILY_KEY)
             else prefs[LAUNCHER_FONT_FAMILY_KEY] = trimmed
+        }
+    }
+
+    val launcherFontScaleFlow: Flow<Float> =
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
+                LauncherFontScale.fromStorage(prefs[LAUNCHER_FONT_SCALE_KEY])
+            }
+
+    suspend fun setLauncherFontScale(scale: Float) {
+        val normalized = LauncherFontScale.snapToStep(scale)
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            if (normalized == LauncherFontScale.DEFAULT) {
+                prefs.remove(LAUNCHER_FONT_SCALE_KEY)
+            } else {
+                prefs[LAUNCHER_FONT_SCALE_KEY] = normalized
+            }
         }
     }
 

@@ -17,6 +17,7 @@ import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import com.lu4p.fokuslauncher.data.model.appMetadataKey
 import com.lu4p.fokuslauncher.data.model.appProfileKey
 import com.lu4p.fokuslauncher.data.font.SystemFontFamiliesProvider
+import com.lu4p.fokuslauncher.data.model.LauncherFontScale
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.repository.AppRepository
@@ -78,6 +79,7 @@ data class SettingsUiState(
         val drawerAppSortMode: DrawerAppSortMode = DrawerAppSortMode.ALPHABETICAL,
         val homeAlignment: HomeAlignment = HomeAlignment.LEFT,
         val launcherFontFamilyName: String = "",
+        val launcherFontScale: Float = LauncherFontScale.DEFAULT,
         /** BCP-47 tag; empty = system default. */
         val appLocaleTag: String = "",
         val allowLandscapeRotation: Boolean = false,
@@ -212,12 +214,14 @@ constructor(
             val lookPrefsFlow =
                     combine(
                             preferencesManager.launcherFontFamilyFlow,
+                            preferencesManager.launcherFontScaleFlow,
                             preferencesManager.appLocaleTagFlow,
                             preferencesManager.homeAlignmentFlow,
                             preferencesManager.allowLandscapeRotationFlow,
-                    ) { font, localeTag, homeAlignment, allowLandscape ->
+                    ) { font, fontScale, localeTag, homeAlignment, allowLandscape ->
                         LookPrefs(
                                 launcherFontFamilyName = font,
+                                launcherFontScale = fontScale,
                                 appLocaleTag = localeTag,
                                 homeAlignment = homeAlignment,
                                 allowLandscapeRotation = allowLandscape,
@@ -320,6 +324,7 @@ constructor(
                         drawerAppSortMode = drawer.drawerAppSortMode,
                         homeAlignment = look.homeAlignment,
                         launcherFontFamilyName = look.launcherFontFamilyName,
+                        launcherFontScale = look.launcherFontScale,
                         appLocaleTag = look.appLocaleTag,
                         allowLandscapeRotation = look.allowLandscapeRotation,
                         doubleTapEmptyLock = lockRail.doubleTapEmptyLock,
@@ -371,6 +376,7 @@ constructor(
 
     private data class LookPrefs(
             val launcherFontFamilyName: String,
+            val launcherFontScale: Float,
             val appLocaleTag: String,
             val homeAlignment: HomeAlignment,
             val allowLandscapeRotation: Boolean,
@@ -633,6 +639,9 @@ constructor(
 
     fun setLauncherFontFamilyName(familyName: String) =
             launchPreferences { setLauncherFontFamilyName(familyName) }
+
+    fun setLauncherFontScale(scale: Float) =
+            launchPreferences { setLauncherFontScale(scale) }
 
     fun setAppLocaleTag(tag: String) {
         viewModelScope.launch {

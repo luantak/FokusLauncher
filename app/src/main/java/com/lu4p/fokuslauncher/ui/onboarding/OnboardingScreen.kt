@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.TouchApp
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -449,8 +450,16 @@ private fun SwipeShortcutsStep(
                     color = MaterialTheme.colorScheme.secondary
                 )
             }
-            FokusTextButton(onClick = { showAppPickerFor.value = "swipeLeft" }) {
-                Text(stringResource(R.string.onboarding_swipe_change))
+            FokusIconButton(
+                    onClick = { showAppPickerFor.value = "swipeLeft" },
+                    modifier = Modifier.size(36.dp),
+            ) {
+                Icon(
+                        Icons.Outlined.Edit,
+                        stringResource(R.string.onboarding_swipe_change),
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp),
+                )
             }
             FokusIconButton(onClick = { onSetSwipeLeft(null) }, modifier = Modifier.size(36.dp)) {
                 Icon(
@@ -487,8 +496,16 @@ private fun SwipeShortcutsStep(
                     color = MaterialTheme.colorScheme.secondary
                 )
             }
-            FokusTextButton(onClick = { showAppPickerFor.value = "swipeRight" }) {
-                Text(stringResource(R.string.onboarding_swipe_change))
+            FokusIconButton(
+                    onClick = { showAppPickerFor.value = "swipeRight" },
+                    modifier = Modifier.size(36.dp),
+            ) {
+                Icon(
+                        Icons.Outlined.Edit,
+                        stringResource(R.string.onboarding_swipe_change),
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp),
+                )
             }
             FokusIconButton(onClick = { onSetSwipeRight(null) }, modifier = Modifier.size(36.dp)) {
                 Icon(

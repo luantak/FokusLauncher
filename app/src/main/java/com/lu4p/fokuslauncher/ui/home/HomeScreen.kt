@@ -16,12 +16,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.TouchApp
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -36,10 +37,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.lu4p.fokuslauncher.R
+import com.lu4p.fokuslauncher.data.model.LauncherFontScale
+import androidx.compose.ui.unit.Dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -57,6 +62,7 @@ import com.lu4p.fokuslauncher.ui.components.FokusOutlinedButton
 import com.lu4p.fokuslauncher.ui.components.MinimalIcons
 import com.lu4p.fokuslauncher.ui.components.SheetActionRow
 import com.lu4p.fokuslauncher.ui.components.WeatherWidget
+import com.lu4p.fokuslauncher.ui.theme.LocalLauncherFontScale
 import com.lu4p.fokuslauncher.ui.util.OnResumeEffect
 import com.lu4p.fokuslauncher.ui.util.clickableNoRippleWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.combinedClickableWithSystemSound
@@ -214,7 +220,8 @@ fun HomeScreenContent(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 32.dp)
-                .padding(top = 80.dp)
+                .statusBarsPadding()
+                .padding(top = 48.dp)
                 .navigationBarsPadding()
                 .padding(bottom = 48.dp)
         ) {
@@ -254,6 +261,7 @@ fun HomeScreenContent(
                 favorites = favorites,
                 installedApps = installedApps,
                 rightSideShortcuts = rightSideShortcuts,
+                launcherFontScale = uiState.launcherFontScale,
                 onLabelClick = onLabelClick,
                 onLabelLongPress = onLabelLongPress,
                 onIconClick = onIconClick
@@ -269,6 +277,57 @@ fun HomeScreenContent(
     }
 }
 
+/**
+ * Clock [TopStart], weather [TopEnd] on the full content width. Baseline-based placement was wrong:
+ * the clock’s first baseline sits far below the top, which shoved weather down into the AM/PM
+ * cluster. A small top inset on weather matches roughly where [displayLarge] glyphs start.
+ */
+@Composable
+private fun HomeClockWeatherHeader(
+        clockUiState: HomeClockUiState,
+        weatherUiState: HomeWeatherUiState,
+        showWeather: Boolean,
+        onClockClick: () -> Unit,
+        onWeatherClick: () -> Unit,
+) {
+    val density = LocalDensity.current
+    val clockStyle = MaterialTheme.typography.displayLarge
+    val weatherTopPad =
+            remember(clockStyle, density.density, density.fontScale) {
+                val lead =
+                        ((clockStyle.lineHeight.value - clockStyle.fontSize.value) / 2f)
+                                .coerceAtLeast(0f)
+                with(density) { lead.sp.toDp() }
+            }
+    val launcherScale =
+            LocalLauncherFontScale.current.coerceIn(LauncherFontScale.MIN, LauncherFontScale.MAX)
+    // Use padding (not offset): offset does not change layout height, so the header Box and
+    // parents can clip or resolve hits as if the weather were still at y=0.
+    val weatherLowerInset =
+            remember(density.density, density.fontScale, launcherScale) {
+                with(density) { (10f * launcherScale).sp.toDp() } + 8.dp
+            }
+    Box(modifier = Modifier.fillMaxWidth()) {
+        if (showWeather) {
+            WeatherWidget(
+                    weather = weatherUiState.weather,
+                    useFahrenheit = weatherUiState.weatherUseFahrenheit,
+                    prominent = false,
+                    onClick = onWeatherClick,
+                    modifier =
+                            Modifier.align(Alignment.TopEnd)
+                                    .padding(top = weatherTopPad + weatherLowerInset),
+            )
+        }
+        ClockWidget(
+                time = clockUiState.currentTime,
+                is24HourFormat = clockUiState.is24HourFormat,
+                onClick = onClockClick,
+                modifier = Modifier.align(Alignment.TopStart).testTag("clock_widget"),
+        )
+    }
+}
+
 @Composable
 private fun HomeWidgetsSection(
     uiState: HomeUiState,
@@ -280,43 +339,42 @@ private fun HomeWidgetsSection(
 ) {
     val showClock = uiState.showHomeClock
     val showWeather = uiState.showHomeWeather && weatherUiState.showWeatherWidget
-    if (showClock || showWeather) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement =
-                    when {
-                        showClock && showWeather -> Arrangement.SpaceBetween
-                        showWeather -> Arrangement.End
-                        else -> Arrangement.Start
-                    },
-            verticalAlignment = Alignment.Top
-        ) {
-            if (showClock) {
-                ClockWidget(
-                    time = clockUiState.currentTime,
-                    onClick = onClockClick,
-                    modifier = Modifier.testTag("clock_widget")
-                )
-            }
-            if (showWeather) {
+    val showDateOrBattery = uiState.showHomeDate || uiState.showHomeBattery
+
+    when {
+        showClock -> {
+            HomeClockWeatherHeader(
+                    clockUiState = clockUiState,
+                    weatherUiState = weatherUiState,
+                    showWeather = showWeather,
+                    onClockClick = onClockClick,
+                    onWeatherClick = onWeatherClick,
+            )
+        }
+        showWeather -> {
+            Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically,
+            ) {
                 WeatherWidget(
-                    weather = weatherUiState.weather,
-                    useFahrenheit = weatherUiState.weatherUseFahrenheit,
-                    onClick = onWeatherClick,
-                    modifier = Modifier.padding(top = 10.dp)
+                        weather = weatherUiState.weather,
+                        useFahrenheit = weatherUiState.weatherUseFahrenheit,
+                        prominent = false,
+                        onClick = onWeatherClick,
                 )
             }
         }
     }
 
-    if (uiState.showHomeDate || uiState.showHomeBattery) {
+    if (showDateOrBattery) {
         DateBatteryRow(
-            date = clockUiState.currentDate,
-            batteryPercent = clockUiState.batteryPercent,
-            showDate = uiState.showHomeDate,
-            showBattery = uiState.showHomeBattery,
-            onDateClick = onDateClick,
-            modifier = Modifier.testTag("date_battery_row")
+                date = clockUiState.currentDate,
+                batteryPercent = clockUiState.batteryPercent,
+                showDate = uiState.showHomeDate,
+                showBattery = uiState.showHomeBattery,
+                onDateClick = onDateClick,
+                modifier = Modifier.fillMaxWidth().testTag("date_battery_row"),
         )
     }
 }
@@ -351,14 +409,20 @@ private fun FavoritesList(
 private fun ShortcutIconsColumn(
     shortcuts: List<HomeShortcut>,
     onIconClick: (HomeShortcut) -> Unit,
+    iconSize: Dp,
+    verticalSpacing: Dp,
     modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(20.dp),
+        verticalArrangement = Arrangement.spacedBy(verticalSpacing),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        RightShortcutIcons(shortcuts = shortcuts, onIconClick = onIconClick)
+        RightShortcutIcons(
+                shortcuts = shortcuts,
+                onIconClick = onIconClick,
+                iconSize = iconSize,
+        )
     }
 }
 
@@ -368,10 +432,19 @@ private fun HomeFavoritesSection(
     favorites: List<FavoriteApp>,
     installedApps: List<AppInfo>,
     rightSideShortcuts: List<HomeShortcut>,
+    launcherFontScale: Float,
     onLabelClick: (FavoriteApp) -> Unit,
     onLabelLongPress: (FavoriteApp) -> Unit,
     onIconClick: (HomeShortcut) -> Unit,
 ) {
+    val sc =
+            launcherFontScale.coerceIn(LauncherFontScale.MIN, LauncherFontScale.MAX)
+    val shortcutIconSize = (24f * sc).dp
+    val shortcutIconSpacingH = (24f * sc).dp
+    val shortcutIconSpacingV = (20f * sc).dp
+    val shortcutGutter = (24f * sc).dp
+    val shortcutRowTopSpacer = (4f * sc).dp
+
     val listModifier =
         Modifier.fillMaxWidth().testTag("favorites_list")
     when (homeAlignment) {
@@ -388,14 +461,15 @@ private fun HomeFavoritesSection(
                     onLabelLongPress = onLabelLongPress,
                 )
                 if (rightSideShortcuts.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(shortcutRowTopSpacer))
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(24.dp),
+                        horizontalArrangement = Arrangement.spacedBy(shortcutIconSpacingH),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         RightShortcutIcons(
-                            shortcuts = rightSideShortcuts,
-                            onIconClick = onIconClick,
+                                shortcuts = rightSideShortcuts,
+                                onIconClick = onIconClick,
+                                iconSize = shortcutIconSize,
                         )
                     }
                 }
@@ -407,7 +481,7 @@ private fun HomeFavoritesSection(
             Row(
                     modifier = listModifier,
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Bottom,
+                    verticalAlignment = Alignment.Top,
             ) {
                 val favs: @Composable () -> Unit = {
                     FavoritesList(
@@ -423,15 +497,17 @@ private fun HomeFavoritesSection(
                     ShortcutIconsColumn(
                             shortcuts = rightSideShortcuts,
                             onIconClick = onIconClick,
+                            iconSize = shortcutIconSize,
+                            verticalSpacing = shortcutIconSpacingV,
                     )
                 }
                 if (homeAlignment == HomeAlignment.LEFT) {
                     favs()
-                    Spacer(modifier = Modifier.width(24.dp))
+                    Spacer(modifier = Modifier.width(shortcutGutter))
                     icons()
                 } else {
                     icons()
-                    Spacer(modifier = Modifier.width(24.dp))
+                    Spacer(modifier = Modifier.width(shortcutGutter))
                     favs()
                 }
             }
@@ -443,6 +519,7 @@ private fun HomeFavoritesSection(
 private fun RightShortcutIcons(
     shortcuts: List<HomeShortcut>,
     onIconClick: (HomeShortcut) -> Unit,
+    iconSize: Dp,
 ) {
     shortcuts.reversed().forEachIndexed { index, shortcut ->
         Icon(
@@ -450,7 +527,7 @@ private fun RightShortcutIcons(
             contentDescription = stringResource(R.string.cd_shortcut_icon),
             tint = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier
-                .size(24.dp)
+                .size(iconSize)
                 .clickableNoRippleWithSystemSound { onIconClick(shortcut) }
                 .testTag("right_shortcut_icon_$index")
         )
@@ -542,15 +619,15 @@ private fun HomeScreenLongPressSheet(
         sheetState = sheetState,
     ) {
             SheetActionRow(
-                label = stringResource(R.string.settings_edit_home_screen),
+                label = stringResource(R.string.settings_nav_home_screen),
                 onClick = onEditHomeScreen,
-                icon = Icons.Default.Home,
+                icon = Icons.Outlined.Edit,
                 iconContentDescription = stringResource(R.string.cd_edit_home_screen),
             )
             SheetActionRow(
-                label = stringResource(R.string.settings_edit_shortcuts),
+                label = stringResource(R.string.settings_nav_shortcuts),
                 onClick = onEditShortcuts,
-                icon = Icons.Filled.TouchApp,
+                icon = Icons.Outlined.Edit,
                 iconContentDescription = stringResource(R.string.settings_edit_shortcuts),
             )
             SheetActionRow(

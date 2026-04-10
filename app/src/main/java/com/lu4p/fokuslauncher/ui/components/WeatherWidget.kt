@@ -9,37 +9,52 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.lu4p.fokuslauncher.data.model.WeatherData
 
 /**
  * Compact weather widget showing temperature and icon.
- * Displayed in the top-right of the home screen.
+ * [prominent] uses [bodyLarge] for emoji and temperature so the chip reads larger while staying
+ * one line (matches [DateBatteryRow] when not prominent: both use [titleMedium]).
  */
 @Composable
 fun WeatherWidget(
     weather: WeatherData?,
     modifier: Modifier = Modifier,
     useFahrenheit: Boolean = false,
+    prominent: Boolean = false,
     onClick: () -> Unit = {}
 ) {
-    val suffix = if (useFahrenheit) "°F" else "°C"
-    val weatherEmoji = weather?.weatherEmoji ?: "☁️"
+    val suffix = if (useFahrenheit) "\u00B0F" else "\u00B0C"
+    val weatherEmoji = weather?.weatherEmoji ?: "\u2601\uFE0F"
     val temperatureText = weather?.let { "${it.temperature}$suffix" } ?: "--$suffix"
+    val tempStyle =
+            (if (prominent) MaterialTheme.typography.bodyLarge else MaterialTheme.typography.titleMedium)
+                    .copy(fontWeight = FontWeight.SemiBold)
+    val textColor = MaterialTheme.colorScheme.onBackground
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .clickableNoRippleWithSystemSound(onClick = onClick)
             .testTag("weather_widget")
     ) {
-        Text(text = weatherEmoji, fontSize = 18.sp)
-        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+            text = weatherEmoji,
+            style = tempStyle,
+            color = textColor,
+            maxLines = 1,
+            overflow = TextOverflow.Clip,
+        )
+        Spacer(modifier = Modifier.width(if (prominent) 8.dp else 4.dp))
         Text(
             text = temperatureText,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground
+            style = tempStyle,
+            color = textColor,
+            maxLines = 1,
+            overflow = TextOverflow.Clip,
         )
     }
 }
