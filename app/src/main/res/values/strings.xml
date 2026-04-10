@@ -177,7 +177,7 @@
     <string name="settings_long_lock_duration">Long lock duration</string>
     <string name="settings_long_lock_duration_subtitle">How long the device must stay locked before Fokus returns to your home screen on unlock.</string>
     <string name="accessibility_lock_service_label">Fokus device control</string>
-    <string name="accessibility_lock_service_description">Optional feature you turn on in Android accessibility settings. Used only to lock the screen (double-tap) and return to this launcher after long locks if you enable that. Does not read screen content or collect data from other apps.</string>
+    <string name="accessibility_lock_service_description">Supports optional double-tap lock on the Fokus home screen and returning to this launcher after a long lock when you enable that in the app. Does not read screen content from other apps or collect their data.</string>
     <!-- Stand-alone AccessibilityService prominent disclosure (Play User Data policy); do not merge with other privacy copy -->
     <string name="accessibility_prominent_disclosure_title">Accessibility service</string>
     <string name="accessibility_prominent_disclosure_body">Fokus uses AccessibilityService only for optional double-tap lock and return home after a long lock (if you turn that on). It does not read other apps’ screens. Processing stays on your device; we do not sell it, upload it, or use it for ads or analytics. You enable or disable the service in Android settings.</string>
