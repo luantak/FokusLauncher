@@ -110,7 +110,7 @@
     <string name="settings_return_home_after_long_lock_subtitle">Efter oplåsning: Vis startskærmen, hvis enheden har været låst i længere tid</string>
     <string name="settings_long_lock_duration">Varighed for Langtidslås</string>
     <string name="settings_long_lock_duration_subtitle">Hvor længe enheden skal forblive låst, før Fokus vender tilbage til startskærmen ved oplåsning.</string>
-    <string name="accessibility_lock_service_description">Giver Fokus Launcher tilladelse til at låse skærmen og vende tilbage til startskærmen efter længere tids lås.</string>
+    <string name="accessibility_lock_service_description">Understøtter valgfrit dobbelttryk for at låse på Fokus-startskærmen og at vende tilbage til denne launcher efter lang tids lås, når du slår det til i appen. Læser ikke skærmindhold fra andre apps eller indsamler deres data.</string>
     <string name="double_tap_lock_failed">Kunne ikke låse enheden</string>
     <string name="settings_edit_home_screen">Tilpas startskærm</string>
     <string name="settings_edit_shortcuts">Tilpas genveje</string>

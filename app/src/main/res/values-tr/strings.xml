@@ -101,7 +101,7 @@
     <string name="settings_return_home_after_long_lock_subtitle">Kilidi açtıktan sonra, cihaz yeterince uzun süre kilitli kaldıysa launcher\'ı gösterin</string>
     <string name="settings_long_lock_duration">Uzun kilit süresi</string>
     <string name="settings_long_lock_duration_subtitle">Cihazın kilidi açıldığında Fokus\'un ana ekrana dönmesi için cihazın ne kadar süre kilitli kalması gerekiyor.</string>
-    <string name="accessibility_lock_service_description">Fokus Launcher\'ın ekranı kilitlemesine ve uzun süreli kilitlenmelerden sonra launcher\'a geri dönmesine olanak tanır.</string>
+    <string name="accessibility_lock_service_description">Fokus ana ekranında isteğe bağlı çift dokunarak kilitlemeyi ve uygulamada açarsanız uzun süre kilitlendikten sonra bu başlatıcıya dönmeyi sağlar. Diğer uygulamaların ekran içeriğini okumaz ve verilerini toplamaz.</string>
     <string name="double_tap_lock_failed">Cihaz kilitlenemedi</string>
     <string name="settings_edit_home_screen">Ana ekranı düzenle</string>
     <string name="settings_edit_shortcuts">Kısayolları düzenle</string>
