@@ -217,13 +217,14 @@ fun FokusNavGraph(
         }
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Transparent)
-    ) {
-        // ── Main navigation (Home + Settings) ──────────────────────
-        NavHost(
+    Box(Modifier.fillMaxSize()) {
+        Box(
+                modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Transparent)
+        ) {
+            // ── Main navigation (Home + Settings) ──────────────────────
+            NavHost(
             navController = navController,
             startDestination = Routes.HOME,
             enterTransition = { fadeIn(tween(ANIM_DURATION)) },
@@ -559,6 +560,7 @@ fun FokusNavGraph(
                     backgroundScrim = Color.Black
                 )
             }
+        }
         }
     }
 }

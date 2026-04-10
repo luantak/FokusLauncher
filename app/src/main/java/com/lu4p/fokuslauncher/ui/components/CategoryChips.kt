@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -88,11 +89,8 @@ fun CategoryChips(
                                 ),
                         border =
                                 FilterChipDefaults.filterChipBorder(
-                                        borderColor =
-                                                MaterialTheme.colorScheme.onSurface.copy(
-                                                        alpha = 0.28f
-                                                ),
-                                        selectedBorderColor = MaterialTheme.colorScheme.primary,
+                                        borderColor = Color.Transparent,
+                                        selectedBorderColor = Color.Transparent,
                                         enabled = true,
                                         selected = isSelected
                                 )
