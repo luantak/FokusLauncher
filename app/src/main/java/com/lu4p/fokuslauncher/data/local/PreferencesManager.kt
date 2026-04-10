@@ -89,6 +89,12 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         private val DRAWER_DOT_SEARCH_DEFAULT_KEY = stringPreferencesKey("drawer_dot_search_default")
         /** JSON object: single-character key → {"profileKey":"0","target":"app:…"}. */
         private val DRAWER_DOT_SEARCH_ALIASES_KEY = stringPreferencesKey("drawer_dot_search_aliases")
+        /**
+         * When true (default), typing until only one app matches launches it automatically.
+         * When false, single-match search only filters the list; user taps or confirms to launch.
+         */
+        private val DRAWER_SEARCH_AUTO_LAUNCH_KEY =
+                booleanPreferencesKey("drawer_search_auto_launch")
         private val HAS_COMPLETED_ONBOARDING_KEY = booleanPreferencesKey("has_completed_onboarding")
         private val ONBOARDING_REACHED_SET_DEFAULT_KEY = booleanPreferencesKey("onboarding_reached_set_default")
         private val HOME_ALIGNMENT_KEY = stringPreferencesKey("home_alignment")
@@ -415,6 +421,11 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
             else prefs[DRAWER_DOT_SEARCH_ALIASES_KEY] = serializeDrawerDotSearchAliases(current)
         }
     }
+
+    val drawerSearchAutoLaunchFlow: Flow<Boolean> =
+            prefFlow(DRAWER_SEARCH_AUTO_LAUNCH_KEY, true)
+    suspend fun setDrawerSearchAutoLaunch(enabled: Boolean) =
+            setPref(DRAWER_SEARCH_AUTO_LAUNCH_KEY, enabled)
 
     val drawerAppOpenCountsFlow: Flow<Map<String, Int>> =
             context.fokusLauncherPreferencesDataStore.data.map { prefs ->

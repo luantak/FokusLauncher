@@ -234,6 +234,7 @@ constructor(
 
     private var drawerDotSearchDefault: DotSearchTargetPreference = DotSearchTargetPreference()
     private var drawerDotSearchAliases: Map<Char, DotSearchTargetPreference> = emptyMap()
+    private var drawerSearchAutoLaunchEnabled: Boolean = true
 
     /**
      * Package/profile pairs removed via [applyImmediatePackageRemoval] before the next successful
@@ -260,6 +261,7 @@ constructor(
         observeDrawerCategoryRailAndIcons()
         observeDrawerSortOpenCountsAndCustomOrder()
         observeDrawerDotSearchPreferences()
+        observeDrawerSearchAutoLaunch()
         refreshPrivateSpaceState()
         observePrivateSpaceChanges()
         scheduleDrawerCachePrewarm()
@@ -274,6 +276,14 @@ constructor(
                         drawerDotSearchDefault = default
                         drawerDotSearchAliases = aliases
                     }.collect { }
+        }
+    }
+
+    private fun observeDrawerSearchAutoLaunch() {
+        viewModelScope.launch {
+            preferencesManager.drawerSearchAutoLaunchFlow.collect { enabled ->
+                drawerSearchAutoLaunchEnabled = enabled
+            }
         }
     }
 
@@ -655,6 +665,7 @@ constructor(
                     // Dot-prefixed queries are handled via IME / dot-search, not single-app auto-launch.
                     val browseMode = query.startsWith(" ")
                     if (requestId == searchQueryRequestId &&
+                                    drawerSearchAutoLaunchEnabled &&
                                     !browseMode &&
                                     !trimmed.startsWith(".") &&
                                     trimmed.isNotBlank() &&

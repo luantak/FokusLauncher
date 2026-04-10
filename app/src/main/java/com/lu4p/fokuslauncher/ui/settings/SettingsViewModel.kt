@@ -72,6 +72,8 @@ data class SettingsUiState(
         val homeDateFormatStyle: HomeDateFormatStyle = HomeDateFormatStyle.SYSTEM_DEFAULT,
         /** Vertical category sidebar in the app drawer. */
         val drawerSidebarCategories: Boolean = false,
+        /** Launch the app when search narrows to a single match (drawer search). */
+        val drawerSearchAutoLaunch: Boolean = true,
         /** When true, category rail is on the left; default false places it on the right. */
         val drawerCategorySidebarOnLeft: Boolean = false,
         /** Normalized category key → [MinimalIcons] name for the drawer sidebar rail. */
@@ -197,18 +199,28 @@ constructor(
                     }
             val drawerPrefsFlow =
                     combine(
-                            preferencesManager.swipeRightTargetFlow,
-                            preferencesManager.preferredWeatherAppFlow,
-                            preferencesManager.showStatusBarFlow,
-                            preferencesManager.drawerSidebarCategoriesFlow,
-                            preferencesManager.drawerAppSortModeFlow,
-                    ) { swipeRight, weatherPkg, showStatusBar, sidebarCategories, sortMode ->
+                            combine(
+                                    preferencesManager.swipeRightTargetFlow,
+                                    preferencesManager.preferredWeatherAppFlow,
+                                    preferencesManager.showStatusBarFlow,
+                            ) { swipeRight, weatherPkg, showStatusBar ->
+                                Triple(swipeRight, weatherPkg, showStatusBar)
+                            },
+                            combine(
+                                    preferencesManager.drawerSidebarCategoriesFlow,
+                                    preferencesManager.drawerAppSortModeFlow,
+                                    preferencesManager.drawerSearchAutoLaunchFlow,
+                            ) { sidebarCategories, sortMode, searchAutoLaunch ->
+                                Triple(sidebarCategories, sortMode, searchAutoLaunch)
+                            },
+                    ) { swipeAndWeather, drawerLayout ->
                         DrawerPrefs(
-                                swipeRightTarget = swipeRight,
-                                preferredWeatherAppPackage = weatherPkg,
-                                showStatusBar = showStatusBar,
-                                drawerSidebarCategories = sidebarCategories,
-                                drawerAppSortMode = sortMode,
+                                swipeRightTarget = swipeAndWeather.first,
+                                preferredWeatherAppPackage = swipeAndWeather.second,
+                                showStatusBar = swipeAndWeather.third,
+                                drawerSidebarCategories = drawerLayout.first,
+                                drawerAppSortMode = drawerLayout.second,
+                                drawerSearchAutoLaunch = drawerLayout.third,
                         )
                     }
             val lookPrefsFlow =
@@ -319,6 +331,7 @@ constructor(
                         showHomeBattery = homeWidgetItems.showBattery,
                         homeDateFormatStyle = homeWidgetItems.homeDateFormatStyle,
                         drawerSidebarCategories = drawer.drawerSidebarCategories,
+                        drawerSearchAutoLaunch = drawer.drawerSearchAutoLaunch,
                         drawerCategorySidebarOnLeft = lockRail.drawerCategorySidebarOnLeft,
                         categoryDrawerIconOverrides = lockRail.categoryDrawerIconOverrides,
                         drawerAppSortMode = drawer.drawerAppSortMode,
@@ -372,6 +385,7 @@ constructor(
             val showStatusBar: Boolean,
             val drawerSidebarCategories: Boolean,
             val drawerAppSortMode: DrawerAppSortMode,
+            val drawerSearchAutoLaunch: Boolean,
     )
 
     private data class LookPrefs(
@@ -609,6 +623,9 @@ constructor(
             preferencesManager.setDrawerSidebarCategories(enabled)
         }
     }
+
+    fun setDrawerSearchAutoLaunch(enabled: Boolean) =
+            launchPreferences { setDrawerSearchAutoLaunch(enabled) }
 
     fun setDrawerCategorySidebarOnLeft(onLeft: Boolean) =
             launchPreferences { setDrawerCategorySidebarOnLeft(onLeft) }
