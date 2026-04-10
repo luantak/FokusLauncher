@@ -12,8 +12,8 @@ import java.util.Locale
 
 @Composable
 fun DrawerListSectionDivider(
-        horizontalPadding: Dp = 24.dp,
         modifier: Modifier = Modifier,
+        horizontalPadding: Dp = 24.dp,
 ) {
     HorizontalDivider(
             modifier = modifier.padding(horizontal = horizontalPadding, vertical = 8.dp),
@@ -24,8 +24,8 @@ fun DrawerListSectionDivider(
 @Composable
 fun DrawerListSectionHeader(
         text: String,
-        horizontalPadding: Dp = 24.dp,
         modifier: Modifier = Modifier,
+        horizontalPadding: Dp = 24.dp,
 ) {
     Text(
             text = text.uppercase(Locale.getDefault()),

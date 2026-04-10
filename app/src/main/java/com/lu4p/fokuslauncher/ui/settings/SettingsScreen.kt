@@ -14,11 +14,9 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import com.lu4p.fokuslauncher.ui.components.FokusIconButton
 import com.lu4p.fokuslauncher.ui.components.FokusTextButton
-import com.lu4p.fokuslauncher.ui.util.clickableWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.rememberBooleanChangeWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.rememberClickWithSystemSound
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -47,11 +45,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -65,7 +61,6 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
@@ -464,14 +459,12 @@ private fun SettingsScreenContent(
                                 "swipeLeft",
                                 R.string.settings_swipe_left,
                                 uiState.swipeLeftTarget,
-                                { viewModel.setSwipeLeftTarget(null) },
-                        ),
+                        ) { viewModel.setSwipeLeftTarget(null) },
                         SwipeTargetPick(
                                 "swipeRight",
                                 R.string.settings_swipe_right,
                                 uiState.swipeRightTarget,
-                                { viewModel.setSwipeRightTarget(null) },
-                        ),
+                        ) { viewModel.setSwipeRightTarget(null) },
                 ),
                 key = { it.pickerKey },
         ) { row ->
@@ -785,14 +778,12 @@ fun HomeWidgetsSettingsScreen(
                                     R.string.settings_widget_clock_app,
                                     uiState.preferredClockAppPackage,
                                     "clock",
-                                    { viewModel.setPreferredClockApp("") },
-                            ),
+                            ) { viewModel.setPreferredClockApp("") },
                             PreferredAppPickerRow(
                                     R.string.settings_widget_calendar_app,
                                     uiState.preferredCalendarAppPackage,
                                     "calendar",
-                                    { viewModel.setPreferredCalendarApp("") },
-                            ),
+                            ) { viewModel.setPreferredCalendarApp("") },
                     ),
                     key = { it.labelRes },
             ) { row ->
@@ -1401,7 +1392,7 @@ private fun formatPreferredAppLabel(
     return emptyLabel(context, resources)
 }
 
-private fun formatWidgetAppEmptyLabel(@Suppress("UNUSED_PARAMETER") context: Context, resources: Resources): String =
+private fun formatWidgetAppEmptyLabel(context: Context, resources: Resources): String =
         resources.getString(R.string.settings_weather_app_system_default)
 
 private fun formatWeatherAppEmptyLabel(context: Context, resources: Resources): String {

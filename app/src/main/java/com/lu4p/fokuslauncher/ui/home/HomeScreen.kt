@@ -59,7 +59,6 @@ import com.lu4p.fokuslauncher.ui.components.SheetActionRow
 import com.lu4p.fokuslauncher.ui.components.WeatherWidget
 import com.lu4p.fokuslauncher.ui.util.OnResumeEffect
 import com.lu4p.fokuslauncher.ui.util.clickableNoRippleWithSystemSound
-import com.lu4p.fokuslauncher.ui.util.clickableWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.combinedClickableWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.LocalSystemClickSound
 import com.lu4p.fokuslauncher.utils.LockScreenHelper

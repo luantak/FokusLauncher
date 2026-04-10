@@ -113,8 +113,7 @@ class LockScreenAccessibilityService : AccessibilityService() {
         val thresholdMs =
                 longLockThresholdMs(preferencesManager.getLongLockReturnHomeThresholdMinutes())
         val triggerAtMs = lockedAtMs + thresholdMs
-        val alarmManager = getSystemService(AlarmManager::class.java)
-        if (alarmManager == null) return
+        val alarmManager = getSystemService(AlarmManager::class.java) ?: return
         cancelScheduledReturnHomeAlarm()
         val pendingIntent =
                 LongLockAlarmReceiver.createPendingIntent(
