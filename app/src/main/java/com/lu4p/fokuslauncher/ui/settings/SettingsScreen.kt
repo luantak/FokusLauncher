@@ -1145,7 +1145,8 @@ private fun DrawerCategoryRailSideRow(
                     selected = railOnLeft,
                     onClick =
                             rememberClickWithSystemSound { onRailOnLeftChanged(true) },
-                    shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
+                    shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                    icon = {},
             ) {
                 Text(stringResource(R.string.settings_drawer_rail_position_left))
             }
@@ -1153,7 +1154,8 @@ private fun DrawerCategoryRailSideRow(
                     selected = !railOnLeft,
                     onClick =
                             rememberClickWithSystemSound { onRailOnLeftChanged(false) },
-                    shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
+                    shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                    icon = {},
             ) {
                 Text(stringResource(R.string.settings_drawer_rail_position_right))
             }
@@ -1199,7 +1201,8 @@ private fun DrawerAppSortRow(
                                 SegmentedButtonDefaults.itemShape(
                                         index = index,
                                         count = modes.size
-                                )
+                                ),
+                        icon = {},
                 ) {
                     Box(
                             modifier = Modifier.fillMaxWidth().fillMaxHeight(),
@@ -1278,7 +1281,8 @@ private fun HomeAlignmentRow(
                         shape = SegmentedButtonDefaults.itemShape(
                                 index = index,
                                 count = HomeAlignment.entries.size
-                        )
+                        ),
+                        icon = {},
                 ) {
                     Text(stringResource(alignment.labelRes))
                 }
