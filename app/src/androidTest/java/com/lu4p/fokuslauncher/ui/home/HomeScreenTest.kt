@@ -283,4 +283,32 @@ class HomeScreenTest {
         composeTestRule.onAllNodesWithText("88%").assertCountEquals(0)
         composeTestRule.onAllNodesWithText("22°C").assertCountEquals(0)
     }
+
+    @Test
+    fun homeScreen_rightShortcuts_alignToBottomOfFavorites() {
+        val shortcuts = testRightSideShortcuts.take(2)
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                HomeScreenContent(
+                        uiState = HomeUiState(),
+                        clockUiState = clock(),
+                        weatherUiState = weatherOff,
+                        favorites = testFavorites,
+                        rightSideShortcuts = shortcuts,
+                        onLabelClick = {},
+                        onLabelLongPress = {},
+                        onIconClick = {}
+                )
+            }
+        }
+
+        val bottomFavorite =
+                composeTestRule.onNodeWithText("Finance").fetchSemanticsNode().boundsInRoot.bottom
+        val bottomShortcut =
+                composeTestRule.onNodeWithTag("right_shortcut_icon_1")
+                        .fetchSemanticsNode()
+                        .boundsInRoot.bottom
+
+        assertTrue(bottomShortcut >= bottomFavorite - 1f)
+    }
 }
