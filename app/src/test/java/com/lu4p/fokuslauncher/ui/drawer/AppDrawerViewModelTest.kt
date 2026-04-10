@@ -63,6 +63,7 @@ class AppDrawerViewModelTest {
     private val drawerAppOpenCountsFlow = MutableStateFlow<Map<String, Int>>(emptyMap())
     private val drawerCustomAppOrderFlow = MutableStateFlow<Map<String, List<String>>>(emptyMap())
     private val drawerSidebarCategoriesFlow = MutableStateFlow(false)
+    private val drawerSearchAutoLaunchFlow = MutableStateFlow(true)
     private val drawerDotSearchDefaultFlow = MutableStateFlow(DotSearchTargetPreference())
     private val drawerDotSearchAliasesFlow =
             MutableStateFlow<Map<Char, DotSearchTargetPreference>>(emptyMap())
@@ -116,6 +117,7 @@ class AppDrawerViewModelTest {
         every { preferencesManager.drawerAppOpenCountsFlow } returns drawerAppOpenCountsFlow
         every { preferencesManager.drawerCustomAppOrderFlow } returns drawerCustomAppOrderFlow
         every { preferencesManager.drawerSidebarCategoriesFlow } returns drawerSidebarCategoriesFlow
+        every { preferencesManager.drawerSearchAutoLaunchFlow } returns drawerSearchAutoLaunchFlow
         coEvery { preferencesManager.setDrawerAppSortMode(any()) } coAnswers {
             drawerAppSortModeFlow.value = invocation.args[0] as DrawerAppSortMode
         }
@@ -212,6 +214,16 @@ class AppDrawerViewModelTest {
         verify { appRepository.launchApp("com.lu4p.atom") }
         // Search should be cleared after auto-launch
         assertEquals("", viewModel.uiState.value.searchQuery)
+    }
+
+    @Test
+    fun `single search result does not auto-launch when preference disabled`() {
+        drawerSearchAutoLaunchFlow.value = false
+
+        viewModel.onSearchQueryChanged("Atom")
+
+        verify(exactly = 0) { appRepository.launchApp("com.lu4p.atom") }
+        assertEquals("Atom", viewModel.uiState.value.searchQuery)
     }
 
     @Test

@@ -497,6 +497,14 @@ private fun SettingsScreenContent(
                     onCheckedChange = viewModel::setDrawerSidebarCategories
             )
         }
+        item {
+            SettingsToggleRow(
+                    label = stringResource(R.string.settings_drawer_search_auto_launch),
+                    subtitle = stringResource(R.string.settings_drawer_search_auto_launch_subtitle),
+                    checked = uiState.drawerSearchAutoLaunch,
+                    onCheckedChange = viewModel::setDrawerSearchAutoLaunch
+            )
+        }
         if (uiState.drawerSidebarCategories) {
             item {
                 DrawerCategoryRailSideRow(
