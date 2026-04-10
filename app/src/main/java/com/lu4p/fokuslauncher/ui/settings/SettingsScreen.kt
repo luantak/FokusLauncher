@@ -17,10 +17,13 @@ import com.lu4p.fokuslauncher.ui.components.FokusTextButton
 import com.lu4p.fokuslauncher.ui.components.LauncherIcon
 import com.lu4p.fokuslauncher.ui.util.rememberBooleanChangeWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.rememberClickWithSystemSound
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -65,6 +68,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
@@ -1163,18 +1168,34 @@ private fun DrawerAppSortRow(
             title = stringResource(R.string.settings_drawer_app_sort),
             subtitle = stringResource(R.string.settings_drawer_app_sort_subtitle),
     ) {
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+        SingleChoiceSegmentedButtonRow(
+                modifier =
+                        Modifier.fillMaxWidth()
+                                .height(IntrinsicSize.Max)
+        ) {
             modes.forEachIndexed { index, mode ->
                 SegmentedButton(
                         selected = coercedMode == mode,
                         onClick = rememberClickWithSystemSound { onModeChanged(mode) },
+                        modifier = Modifier.weight(1f).fillMaxHeight(),
                         shape =
                                 SegmentedButtonDefaults.itemShape(
                                         index = index,
                                         count = modes.size
                                 )
                 ) {
-                    Text(stringResource(mode.labelRes))
+                    Box(
+                            modifier = Modifier.fillMaxWidth().fillMaxHeight(),
+                            contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                                text = stringResource(mode.labelRes),
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
                 }
             }
         }
