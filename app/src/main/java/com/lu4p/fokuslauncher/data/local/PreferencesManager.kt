@@ -97,6 +97,12 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
                 booleanPreferencesKey("drawer_search_auto_launch")
         private val HAS_COMPLETED_ONBOARDING_KEY = booleanPreferencesKey("has_completed_onboarding")
         private val ONBOARDING_REACHED_SET_DEFAULT_KEY = booleanPreferencesKey("onboarding_reached_set_default")
+        /**
+         * User completed the in-app prominent AccessibilityService disclosure (checkbox + continue).
+         * Required for Google Play User Data policy when [android.accessibilityservice] is declared.
+         */
+        private val ACCESSIBILITY_PROMINENT_DISCLOSURE_ACCEPTED_KEY =
+                booleanPreferencesKey("accessibility_prominent_disclosure_accepted")
         private val HOME_ALIGNMENT_KEY = stringPreferencesKey("home_alignment")
         private val LAUNCHER_FONT_FAMILY_KEY = stringPreferencesKey("launcher_font_family")
         private val LAUNCHER_FONT_SCALE_KEY = floatPreferencesKey("launcher_font_scale")
@@ -464,6 +470,13 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         return context.fokusLauncherPreferencesDataStore.data.map { prefs ->
             prefs[ONBOARDING_REACHED_SET_DEFAULT_KEY] ?: false
         }.first()
+    }
+
+    val accessibilityProminentDisclosureAcceptedFlow: Flow<Boolean> =
+            prefFlow(ACCESSIBILITY_PROMINENT_DISCLOSURE_ACCEPTED_KEY, false)
+
+    suspend fun setAccessibilityProminentDisclosureAccepted(accepted: Boolean) {
+        setPref(ACCESSIBILITY_PROMINENT_DISCLOSURE_ACCEPTED_KEY, accepted)
     }
 
     // --- Home alignment ---

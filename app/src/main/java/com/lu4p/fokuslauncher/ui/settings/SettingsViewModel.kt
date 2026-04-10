@@ -48,7 +48,9 @@ import com.lu4p.fokuslauncher.ui.components.MinimalIcons
 import com.lu4p.fokuslauncher.ui.drawer.isDrawerWorkProfileApp
 import com.lu4p.fokuslauncher.ui.drawer.profileOriginLabelForApp
 import com.lu4p.fokuslauncher.ui.util.categoryChipDisplayLabel
+import com.lu4p.fokuslauncher.ui.util.stateWhileSubscribedIn
 import com.lu4p.fokuslauncher.utils.AppDiagnosticLogExporter
+import com.lu4p.fokuslauncher.utils.LockScreenHelper
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
 import com.lu4p.fokuslauncher.utils.WallpaperHelper
 
@@ -119,6 +121,12 @@ constructor(
 
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
+
+    val accessibilityProminentDisclosureAccepted =
+            preferencesManager.accessibilityProminentDisclosureAcceptedFlow.stateWhileSubscribedIn(
+                    viewModelScope,
+                    false,
+            )
 
     private val _addCategoryResults = MutableSharedFlow<AddCategoryResult>(extraBufferCapacity = 1)
     val addCategoryResults: SharedFlow<AddCategoryResult> = _addCategoryResults.asSharedFlow()
@@ -578,6 +586,13 @@ constructor(
 
     fun setLongLockReturnHomeThresholdMinutes(minutes: Int) =
             launchPreferences { setLongLockReturnHomeThresholdMinutes(minutes) }
+
+    fun acceptAccessibilityProminentDisclosureAndOpenSettings() {
+        viewModelScope.launch {
+            preferencesManager.setAccessibilityProminentDisclosureAccepted(true)
+            LockScreenHelper.openAccessibilitySettings(context)
+        }
+    }
 
     fun setShowHomeClock(show: Boolean) = launchPreferences { setShowHomeClock(show) }
 
