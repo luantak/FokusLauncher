@@ -236,13 +236,9 @@ fun SettingsScreen(
     val installedFontFamilies by viewModel.installedFontFamilies.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val resources = LocalResources.current
-    val activity = LocalActivity.current
-
-    val (hasCoarseLocationPermission, requestCoarseLocation) =
-            rememberCoarseLocationPermission(context, activity)
 
     // Dialog states
-    val showAppPickerFor = remember { mutableStateOf<String?>(null) } // swipeLeft/swipeRight/weather
+    val showAppPickerFor = remember { mutableStateOf<String?>(null) } // swipeLeft/swipeRight
     val showResetConfirm = remember { mutableStateOf(false) }
 
     val wallpaperPickerLauncher = rememberLauncherForActivityResult(
@@ -272,7 +268,6 @@ fun SettingsScreen(
                 installedFontFamilies = installedFontFamilies,
                 context = context,
                 resources = resources,
-                hasCoarseLocationPermission = hasCoarseLocationPermission,
                 onPickWallpaper = { wallpaperPickerLauncher.launch("image/*") },
                 onSetBlackWallpaper = {
                     viewModel.setBlackWallpaper()
@@ -284,7 +279,6 @@ fun SettingsScreen(
                 onEditRightShortcuts = onEditRightShortcuts,
                 onEditCategories = onEditCategories,
                 onDrawerDotSearchSettings = onDrawerDotSearchSettings,
-                onRequestLocationPermission = requestCoarseLocation,
                 onShowAppPicker = { showAppPickerFor.value = it },
                 onShowResetConfirm = { showResetConfirm.value = true },
         )
@@ -306,11 +300,6 @@ fun SettingsScreen(
                     "swipeRight" -> viewModel.setSwipeRightTarget(action.target)
                 }
             },
-            onAppPicked = { target, packageName ->
-                when (target) {
-                    "weather" -> viewModel.setPreferredWeatherApp(packageName)
-                }
-            }
     )
 }
 
@@ -321,7 +310,6 @@ private fun SettingsScreenContent(
         installedFontFamilies: List<String>,
         context: Context,
         resources: Resources,
-        hasCoarseLocationPermission: Boolean,
         onPickWallpaper: () -> Unit,
         onSetBlackWallpaper: () -> Unit,
         onOpenHomeWidgetsSettings: () -> Unit,
@@ -330,7 +318,6 @@ private fun SettingsScreenContent(
         onEditRightShortcuts: () -> Unit,
         onEditCategories: () -> Unit,
         onDrawerDotSearchSettings: () -> Unit,
-        onRequestLocationPermission: () -> Unit,
         onShowAppPicker: (String) -> Unit,
         onShowResetConfirm: () -> Unit,
 ) {
@@ -452,18 +439,6 @@ private fun SettingsScreenContent(
             HomeAlignmentRow(
                     currentAlignment = uiState.homeAlignment,
                     onAlignmentChanged = viewModel::setHomeAlignment
-            )
-        }
-        item {
-            WeatherAppSettingRow(
-                    hasCoarseLocationPermission = hasCoarseLocationPermission,
-                    onRequestLocationPermission = onRequestLocationPermission,
-                    context = context,
-                    resources = resources,
-                    preferredWeatherAppPackage = uiState.preferredWeatherAppPackage,
-                    allApps = uiState.allApps,
-                    onPickApp = { onShowAppPicker("weather") },
-                    onClear = { viewModel.setPreferredWeatherApp("") },
             )
         }
         items(
@@ -646,7 +621,6 @@ private fun SettingsScreenDialogs(
         onResetConfirmed: suspend () -> Unit,
         onDismissPicker: () -> Unit,
         onShortcutTargetSelected: (String, AppShortcutAction) -> Unit,
-        onAppPicked: (String, String) -> Unit
 ) {
     if (showResetConfirm) {
         FokusAlertDialog(
@@ -695,18 +669,7 @@ private fun SettingsScreenDialogs(
                         onDismiss = onDismissPicker
                 )
             }
-            else -> {
-                GroupedAppPickerDialog(
-                        apps = uiState.allApps,
-                        title = stringResource(R.string.settings_app_picker_title),
-                        keyPrefix = "settings_app_pick",
-                        onSelect = { app ->
-                            onAppPicked(target, app.packageName)
-                            onDismissPicker()
-                        },
-                        onDismiss = onDismissPicker,
-                )
-            }
+            else -> onDismissPicker()
         }
     }
 }
