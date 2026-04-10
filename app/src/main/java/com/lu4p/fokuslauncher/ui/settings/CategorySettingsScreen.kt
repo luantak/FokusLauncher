@@ -19,7 +19,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.filled.DragHandle
-import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import com.lu4p.fokuslauncher.ui.components.LauncherIcon
@@ -156,7 +155,6 @@ fun CategorySettingsScreen(
                     showDrawerCategoryIcons = uiState.drawerSidebarCategories,
                     categoryDrawerIconOverrides = uiState.categoryDrawerIconOverrides,
                     onOpenCategoryIconPicker = { categoryIconPickerFor = it },
-                    onResetCategoryDrawerIcon = { viewModel.clearCategoryDrawerIcon(it) },
                     onReorder = { from, to ->
                         val reordered = localCategories.toMutableList()
                         val item = reordered.removeAt(from)
@@ -213,7 +211,6 @@ private fun ReorderableCategoryList(
         showDrawerCategoryIcons: Boolean,
         categoryDrawerIconOverrides: Map<String, String>,
         onOpenCategoryIconPicker: (String) -> Unit,
-        onResetCategoryDrawerIcon: (String) -> Unit,
         onReorder: (Int, Int) -> Unit,
         onReorderFinished: (List<String>) -> Unit,
         onEditCategoryApps: (String) -> Unit,
@@ -275,18 +272,6 @@ private fun ReorderableCategoryList(
                                 imageVector = MinimalIcons.iconFor(railIconName),
                                 contentDescription = stringResource(R.string.category_icon_picker_title),
                                 tint = MaterialTheme.colorScheme.onSurface,
-                                iconSize = 24.dp,
-                        )
-                    }
-                    FokusIconButton(
-                            onClick = { onResetCategoryDrawerIcon(category) },
-                            modifier = Modifier.size(40.dp.launcherIconDp()),
-                    ) {
-                        LauncherIcon(
-                                imageVector = Icons.Default.Restore,
-                                contentDescription =
-                                        stringResource(R.string.category_action_reset_icon),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 iconSize = 24.dp,
                         )
                     }
