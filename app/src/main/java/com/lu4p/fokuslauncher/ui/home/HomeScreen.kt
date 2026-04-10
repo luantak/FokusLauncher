@@ -23,7 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -620,15 +620,15 @@ private fun HomeScreenLongPressSheet(
         sheetState = sheetState,
     ) {
             SheetActionRow(
-                label = stringResource(R.string.settings_nav_home_screen),
+                label = stringResource(R.string.settings_edit_home_screen),
                 onClick = onEditHomeScreen,
-                icon = Icons.Outlined.Edit,
+                icon = Icons.Default.Home,
                 iconContentDescription = stringResource(R.string.cd_edit_home_screen),
             )
             SheetActionRow(
-                label = stringResource(R.string.settings_nav_shortcuts),
+                label = stringResource(R.string.settings_edit_shortcuts),
                 onClick = onEditShortcuts,
-                icon = Icons.Outlined.Edit,
+                icon = Icons.Filled.TouchApp,
                 iconContentDescription = stringResource(R.string.settings_edit_shortcuts),
             )
             SheetActionRow(
