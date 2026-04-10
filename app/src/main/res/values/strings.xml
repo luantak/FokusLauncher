@@ -248,6 +248,11 @@
         <item quantity="other">%d shortcuts configured</item>
     </plurals>
 
+    <plurals name="settings_home_screen_apps_count">
+        <item quantity="one">%d app on home screen</item>
+        <item quantity="other">%d apps on home screen</item>
+    </plurals>
+
     <plurals name="settings_long_lock_duration_minutes">
         <item quantity="one">%d minute</item>
         <item quantity="other">%d minutes</item>
