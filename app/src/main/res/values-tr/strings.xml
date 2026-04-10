@@ -191,8 +191,8 @@
     <string name="drawer_filter_uncategorized">Kategorize edilmemiş</string>
     <string name="category_icon_picker_title">Kategori simgesi</string>
     <string name="category_action_reset_icon">Simgeyi varsayılana sıfırla</string>
-    <string name="settings_drawer_sidebar_categories">Yan kategori bölmesini göster</string>
-    <string name="settings_drawer_sidebar_categories_subtitle">Arama kutusunu dikey kategori yan bölmesi ile değiştir. Uygulamaları bulmak için arama simgesini kullanın.</string>
+    <string name="settings_drawer_sidebar_categories">Yan kategori bölmesini kullan</string>
+    <string name="settings_drawer_sidebar_categories_subtitle">Arama kutusunu dikey kategori yan bölmesi ile değiştir.</string>
     <string name="settings_drawer_category_rail_side">Kategori yan bölmesi pozisyonu</string>
     <string name="settings_drawer_category_rail_side_subtitle">Varsayılan olarak, kenar çubuğu sağda yer alır. Çekmecedeki bir kategoriye uzun süre basılı tutarak simgesini değiştirebilirsiniz.</string>
     <string name="settings_drawer_rail_position_left">Sol</string>

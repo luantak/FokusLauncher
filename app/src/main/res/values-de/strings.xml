@@ -151,8 +151,8 @@
     <string name="settings_swipe_right">Nach rechts wischen</string>
     <string name="settings_edit_app_categories">App-Kategorien bearbeiten</string>
     <string name="settings_section_app_drawer">App-Drawer</string>
-    <string name="settings_drawer_sidebar_categories">Kategorien-Seitenleiste anzeigen</string>
-    <string name="settings_drawer_sidebar_categories_subtitle">Ersetzt die Suchleiste durch eine vertikale Kategorien-Seitenleiste. Zum Suchen das Lupen-Symbol verwenden.</string>
+    <string name="settings_drawer_sidebar_categories">Kategorien-Seitenleiste verwenden</string>
+    <string name="settings_drawer_sidebar_categories_subtitle">Ersetzt die Suchleiste durch eine vertikale Kategorien-Seitenleiste.</string>
     <string name="settings_drawer_category_rail_side">Position der Kategorien-Seitenleiste</string>
     <string name="settings_drawer_category_rail_side_subtitle">Standardmäßig ist die Seitenleiste rechts. Eine Kategorie in der Schublade lange drücken, um ihr Symbol zu ändern.</string>
     <string name="settings_drawer_rail_position_left">Links</string>

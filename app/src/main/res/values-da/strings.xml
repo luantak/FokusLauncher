@@ -119,8 +119,8 @@
     <string name="settings_swipe_right">Stryg til højre</string>
     <string name="settings_edit_app_categories">Tilpas appkategorier</string>
     <string name="settings_section_app_drawer">Appskuffe</string>
-    <string name="settings_drawer_sidebar_categories">Vis kategori sidebar</string>
-    <string name="settings_drawer_sidebar_categories_subtitle">Erstatter søgefeltet med en lodret kategorisidebjælke. Brug søgeikonet til at finde apps.</string>
+    <string name="settings_drawer_sidebar_categories">Brug kategori sidebar</string>
+    <string name="settings_drawer_sidebar_categories_subtitle">Erstatter søgefeltet med en lodret kategorisidebjælke.</string>
     <string name="settings_drawer_category_rail_side">Kategori sidebar position</string>
     <string name="settings_drawer_category_rail_side_subtitle">Som standard er sidebjælken til højre. Tryk længe på en kategori i appskuffen for at skifte ikonet.</string>
     <string name="settings_drawer_rail_position_left">Venstre</string>

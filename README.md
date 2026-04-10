@@ -53,7 +53,7 @@ targets.
 
 Search and categories narrow the list quickly, and you can define and assign
 categories in settings. A single matching app can launch on search. **Category
-sidebar** (Settings → **Show category sidebar**) swaps the bar for a vertical
+sidebar** (Settings → **Use category sidebar**) swaps the bar for a vertical
 category rail. Use the search icon for text search, pick left or right
 placement, long-press a category to change its icon. **Dot search** sends the
 search field to the web or an app: `. query` for the default target,

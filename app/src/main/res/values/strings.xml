@@ -189,8 +189,8 @@
     <string name="settings_swipe_right">Swipe right</string>
     <string name="settings_edit_app_categories">Edit app categories</string>
     <string name="settings_section_app_drawer">App drawer</string>
-    <string name="settings_drawer_sidebar_categories">Show category sidebar</string>
-    <string name="settings_drawer_sidebar_categories_subtitle">Replaces the search bar with a vertical category sidebar. Use the search icon to find apps.</string>
+    <string name="settings_drawer_sidebar_categories">Use category sidebar</string>
+    <string name="settings_drawer_sidebar_categories_subtitle">Replaces the search bar with a vertical category sidebar.</string>
     <string name="settings_drawer_search_auto_launch">Auto launch apps</string>
     <string name="settings_drawer_search_auto_launch_subtitle">When only one app matches your search, open it automatically.</string>
     <string name="settings_drawer_category_rail_side">Category sidebar position</string>

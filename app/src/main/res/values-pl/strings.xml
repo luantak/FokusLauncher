@@ -153,8 +153,8 @@
     <string name="settings_swipe_right">Przesunięcie w prawo</string>
     <string name="settings_edit_app_categories">Edytuj kategorie aplikacji</string>
     <string name="settings_section_app_drawer">Szuflada aplikacji</string>
-    <string name="settings_drawer_sidebar_categories">Pasek kategorii w szufladzie</string>
-    <string name="settings_drawer_sidebar_categories_subtitle">Zamienia pasek wyszukiwania na pionowy pasek boczny z kategoriami. Używaj ikony szukania do wyszukiwania aplikacji.</string>
+    <string name="settings_drawer_sidebar_categories">Użyj paska kategorii w szufladzie</string>
+    <string name="settings_drawer_sidebar_categories_subtitle">Zamienia pasek wyszukiwania na pionowy pasek boczny z kategoriami.</string>
     <string name="settings_drawer_category_rail_side">Strona paska kategorii</string>
     <string name="settings_drawer_category_rail_side_subtitle">Domyślnie po prawej. Przytrzymaj kategorię w szufladzie, aby zmienić ikonę.</string>
     <string name="settings_drawer_rail_position_left">Lewa</string>
