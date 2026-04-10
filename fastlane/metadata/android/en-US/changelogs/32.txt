@@ -1,0 +1,4 @@
+New setting to disable automatically opening the first app drawer search result.
+Custom Font size can now be set for the launcher.
+If the same app exists for Work and for Personal, each copy can be indepentently renamed and hidden.
+Various ui/ux improvements.
