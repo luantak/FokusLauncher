@@ -84,7 +84,7 @@
     <string name="settings_title">Indstillinger</string>
     <string name="settings_section_appearance">Udseende</string>
     <string name="settings_show_status_bar">Vis statuslinjen</string>
-    <string name="settings_allow_landscape_rotation">Tillad landskabsvisning</string>
+    <string name="settings_allow_landscape_rotation">Tillad landskab</string>
     <string name="settings_language_label">Sprog</string>
     <string name="settings_language_system_default">Brug systemstandard</string>
     <string name="settings_set_background_image">Vælg baggrundsbillede</string>

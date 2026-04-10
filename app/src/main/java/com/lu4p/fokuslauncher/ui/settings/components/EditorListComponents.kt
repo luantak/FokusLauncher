@@ -9,24 +9,31 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.Icon
+import com.lu4p.fokuslauncher.ui.components.LauncherIcon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.ui.util.VerticalSlotReorderState
+import com.lu4p.fokuslauncher.ui.theme.launcherIconDp
 import com.lu4p.fokuslauncher.ui.util.verticalReorderDragHandle
 
 @Composable
 fun EditorSectionHeader(@StringRes textRes: Int) {
     Text(
             text = stringResource(textRes),
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            style =
+                    MaterialTheme.typography.labelLarge.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            letterSpacing = 0.8.sp,
+                    ),
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 6.dp),
     )
 }
 
@@ -39,20 +46,20 @@ fun EditorDragHandleReorderIcon(
         onReset: () -> Unit,
         vararg pointerInputKeys: Any?,
 ) {
-    Icon(
+    LauncherIcon(
             imageVector = Icons.Default.DragHandle,
             contentDescription = stringResource(R.string.cd_drag_to_reorder),
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            iconSize = 24.dp,
             modifier =
-                    Modifier.size(24.dp)
-                            .verticalReorderDragHandle(
-                                    reorderState,
-                                    index,
-                                    lastIndex,
-                                    onReorder,
-                                    onReset,
-                                    *pointerInputKeys,
-                            ),
+                    Modifier.verticalReorderDragHandle(
+                            reorderState,
+                            index,
+                            lastIndex,
+                            onReorder,
+                            onReset,
+                            *pointerInputKeys,
+                    ),
     )
 }
 
@@ -70,7 +77,7 @@ fun ProfileBadgeSubtitle(profileBadge: String?) {
 
 @Composable
 fun EditorUncheckedLeadingSpacers() {
-    Spacer(modifier = Modifier.size(24.dp))
+    Spacer(modifier = Modifier.size(24.dp.launcherIconDp()))
     Spacer(modifier = Modifier.width(8.dp))
 }
 

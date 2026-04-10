@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -74,10 +73,11 @@ fun SheetInlineRenameTitleRow(
                                         Modifier.testTag(editButtonTestTag)
                                 else Modifier,
                 ) {
-                    Icon(
+                    LauncherIcon(
                             imageVector = Icons.Default.Edit,
                             contentDescription = editIconContentDescription,
                             tint = MaterialTheme.colorScheme.onBackground,
+                            iconSize = 24.dp,
                     )
                 }
             }

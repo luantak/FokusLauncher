@@ -11,11 +11,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -29,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.lu4p.fokuslauncher.ui.components.LauncherIcon
 import com.lu4p.fokuslauncher.ui.util.clickableWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.rememberBooleanChangeWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.rememberClickWithSystemSound
@@ -45,7 +49,7 @@ internal fun SettingsToggleRow(
         enabled: Boolean = true
 ) {
     Row(
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.Top,
             modifier =
                     Modifier.fillMaxWidth()
                             .clickableWithSystemSound(enabled = enabled) { onCheckedChange(!checked) }
@@ -72,7 +76,8 @@ internal fun SettingsToggleRow(
         Switch(
                 checked = checked,
                 onCheckedChange = rememberBooleanChangeWithSystemSound(onCheckedChange),
-                enabled = enabled
+                enabled = enabled,
+                modifier = Modifier.padding(top = 2.dp),
         )
     }
 }
@@ -106,7 +111,7 @@ internal fun SettingsRow(
                         padded
                     }
             )
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = rowModifier) {
+    Row(verticalAlignment = Alignment.Top, modifier = rowModifier) {
         leading?.invoke(this)
         if (leading != null) {
             Spacer(Modifier.width(16.dp))
@@ -180,7 +185,13 @@ internal fun SettingsReadOnlyExposedDropdown(
                 shape = SettingsPickerCorner,
                 textStyle = textStyle,
                 trailingIcon = {
-                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = menuExpanded)
+                    IconButton(onClick = { onExpandedChange(!menuExpanded) }) {
+                        LauncherIcon(
+                                imageVector = Icons.Filled.ArrowDropDown,
+                                contentDescription = null,
+                                iconSize = 24.dp,
+                        )
+                    }
                 },
                 colors = settingsPickerOutlinedFieldColors()
         )

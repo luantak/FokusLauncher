@@ -118,7 +118,7 @@
     <string name="settings_title">Ustawienia</string>
     <string name="settings_section_appearance">Wygląd</string>
     <string name="settings_show_status_bar">Pokaż pasek stanu</string>
-    <string name="settings_allow_landscape_rotation">Zezwól na obrót do trybu poziomego</string>
+    <string name="settings_allow_landscape_rotation">Zezwól na tryb poziomy</string>
     <string name="settings_language_label">Język</string>
     <string name="settings_language_system_default">Domyślny systemu</string>
     <string name="settings_set_background_image">Ustaw obraz tła</string>

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
@@ -73,7 +74,11 @@ fun GroupedAppPickerDialog(
                 val labelColor = MaterialTheme.colorScheme.onBackground
                 val rowPad =
                         Modifier.fillMaxWidth().padding(vertical = 10.dp, horizontal = 8.dp)
-                LazyColumn(modifier = Modifier.height(300.dp)) {
+                LazyColumn(
+                        modifier =
+                                Modifier.fillMaxWidth()
+                                        .heightIn(min = 200.dp, max = 420.dp)
+                ) {
                     profileGroupedAppItems(
                             sections = filteredSections,
                             keyPrefix = keyPrefix,

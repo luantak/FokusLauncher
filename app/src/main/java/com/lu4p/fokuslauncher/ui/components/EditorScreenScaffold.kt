@@ -13,7 +13,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
+import com.lu4p.fokuslauncher.ui.components.LauncherIcon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -76,11 +76,12 @@ fun EditorScreenScaffold(
                         containerColor = MaterialTheme.colorScheme.surface,
                         actions = {
                             FokusIconButton(onClick = onDone) {
-                                Icon(
+                                LauncherIcon(
                                         imageVector = Icons.Default.Check,
                                         contentDescription =
                                                 stringResource(R.string.action_done),
                                         tint = MaterialTheme.colorScheme.onBackground,
+                                        iconSize = 24.dp,
                                 )
                             }
                         },

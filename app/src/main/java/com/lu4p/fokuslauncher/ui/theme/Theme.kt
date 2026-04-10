@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.text.font.FontFamily
+import com.lu4p.fokuslauncher.data.model.LauncherFontScale
 import com.lu4p.fokuslauncher.ui.util.ProvideSystemClickSound
 
 private val FokusColorScheme = darkColorScheme(
@@ -36,10 +37,19 @@ private val FokusColorScheme = darkColorScheme(
 @Composable
 fun FokusLauncherTheme(
         fontFamily: FontFamily = FontFamily.Default,
+        fontScale: Float = 1f,
         content: @Composable () -> Unit
 ) {
-    val typography = remember(fontFamily) { fokusTypographyForLauncher(fontFamily) }
-    CompositionLocalProvider(LocalOverscrollFactory provides null) {
+    val typography =
+            remember(fontFamily, fontScale) { fokusTypographyForLauncher(fontFamily, fontScale) }
+    val resolvedIconScale =
+            remember(fontScale) {
+                fontScale.coerceIn(LauncherFontScale.MIN, LauncherFontScale.MAX)
+            }
+    CompositionLocalProvider(
+            LocalOverscrollFactory provides null,
+            LocalLauncherFontScale provides resolvedIconScale,
+    ) {
         ProvideSystemClickSound {
             MaterialTheme(colorScheme = FokusColorScheme, typography = typography, content = content)
         }
