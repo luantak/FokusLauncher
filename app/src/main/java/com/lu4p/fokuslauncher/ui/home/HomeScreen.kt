@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -267,7 +268,7 @@ fun HomeScreenContent(
                 onIconClick = onIconClick
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(4.dp))
         }
 
         HomeDefaultLauncherBanner(
@@ -414,7 +415,7 @@ private fun ShortcutIconsColumn(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier,
+        modifier = modifier.wrapContentHeight(align = Alignment.Bottom),
         verticalArrangement = Arrangement.spacedBy(verticalSpacing),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -443,7 +444,7 @@ private fun HomeFavoritesSection(
     val shortcutIconSpacingH = (24f * sc).dp
     val shortcutIconSpacingV = (20f * sc).dp
     val shortcutGutter = (24f * sc).dp
-    val shortcutRowTopSpacer = (4f * sc).dp
+    val shortcutRowTopSpacer = (20f * sc).dp
 
     val listModifier =
         Modifier.fillMaxWidth().testTag("favorites_list")
@@ -481,7 +482,7 @@ private fun HomeFavoritesSection(
             Row(
                     modifier = listModifier,
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Top,
+                    verticalAlignment = Alignment.Bottom,
             ) {
                 val favs: @Composable () -> Unit = {
                     FavoritesList(
