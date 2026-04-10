@@ -340,7 +340,12 @@ private fun SettingsScreenContent(
                     ),
                     SubpageNavRow(
                             R.string.settings_edit_home_screen,
-                            onClick = onEditHomeScreen,
+                            pluralStringResource(
+                                    R.plurals.settings_home_screen_apps_count,
+                                    uiState.favorites.size,
+                                    uiState.favorites.size,
+                            ),
+                            onEditHomeScreen,
                     ),
                     SubpageNavRow(
                             R.string.settings_edit_shortcuts,
