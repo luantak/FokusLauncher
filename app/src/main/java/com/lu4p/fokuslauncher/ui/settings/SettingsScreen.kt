@@ -500,18 +500,18 @@ private fun SettingsScreenContent(
         }
         item {
             SettingsToggleRow(
-                    label = stringResource(R.string.settings_drawer_sidebar_categories),
-                    subtitle = stringResource(R.string.settings_drawer_sidebar_categories_subtitle),
-                    checked = uiState.drawerSidebarCategories,
-                    onCheckedChange = viewModel::setDrawerSidebarCategories
-            )
-        }
-        item {
-            SettingsToggleRow(
                     label = stringResource(R.string.settings_drawer_search_auto_launch),
                     subtitle = stringResource(R.string.settings_drawer_search_auto_launch_subtitle),
                     checked = uiState.drawerSearchAutoLaunch,
                     onCheckedChange = viewModel::setDrawerSearchAutoLaunch
+            )
+        }
+        item {
+            SettingsToggleRow(
+                    label = stringResource(R.string.settings_drawer_sidebar_categories),
+                    subtitle = stringResource(R.string.settings_drawer_sidebar_categories_subtitle),
+                    checked = uiState.drawerSidebarCategories,
+                    onCheckedChange = viewModel::setDrawerSidebarCategories
             )
         }
         if (uiState.drawerSidebarCategories) {
