@@ -178,7 +178,7 @@ private fun ReorderableShortcutList(
                                     .heightIn(min = 56.dp)
                                     .graphicsLayer { translationY = reorderState.translationYForIndex(index) }
                                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.Top
+                    verticalAlignment = Alignment.CenterVertically
             ) {
                 EditorDragHandleReorderIcon(
                         reorderState = reorderState,
@@ -236,7 +236,7 @@ private fun ReorderableShortcutList(
                             Modifier.fillMaxWidth()
                                     .heightIn(min = 56.dp)
                                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.Top
+                    verticalAlignment = Alignment.CenterVertically
             ) {
                 EditorUncheckedLeadingSpacers()
                 EditorStandardCheckboxGutter(
