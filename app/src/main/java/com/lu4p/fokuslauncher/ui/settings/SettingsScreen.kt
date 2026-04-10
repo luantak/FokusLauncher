@@ -12,6 +12,7 @@ import android.provider.Settings
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import com.lu4p.fokuslauncher.ui.components.AccessibilityProminentDisclosureOverlay
 import com.lu4p.fokuslauncher.ui.components.FokusIconButton
 import com.lu4p.fokuslauncher.ui.components.FokusTextButton
 import com.lu4p.fokuslauncher.ui.components.LauncherIcon
@@ -830,7 +831,9 @@ fun DeviceControlSettingsScreen(
         backgroundScrim: Color = FokusBackdrop.ScrimColorWithoutBlur
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val accessibilityDisclosureAccepted by viewModel.accessibilityProminentDisclosureAccepted.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    var showAccessibilityProminentDisclosure by remember { mutableStateOf(false) }
     var accessibilityResumeTick by remember { mutableIntStateOf(0) }
     val lifecycleOwner = LocalLifecycleOwner.current
     OnResumeEffect(lifecycleOwner) { accessibilityResumeTick++ }
@@ -862,57 +865,76 @@ fun DeviceControlSettingsScreen(
                     ),
             )
 
-    Column(
+    Box(
             modifier = Modifier
                     .fillMaxSize()
                     .background(backgroundScrim)
                     .navigationBarsPadding()
                     .testTag("device_control_settings_screen")
     ) {
-        FokusSettingsTopBar(
-                titleText = stringResource(R.string.settings_accessibility_page_title),
-                onNavigateBack = onNavigateBack,
-                containerColor = MaterialTheme.colorScheme.background,
-        )
+        Column(modifier = Modifier.fillMaxSize()) {
+            FokusSettingsTopBar(
+                    titleText = stringResource(R.string.settings_accessibility_page_title),
+                    onNavigateBack = onNavigateBack,
+                    containerColor = MaterialTheme.colorScheme.background,
+            )
 
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
-            item {
-                SettingsToggleRow(
-                        label = stringResource(R.string.settings_accessibility_permission),
-                        subtitle =
-                                stringResource(
-                                        if (lockAccessibilityOn) {
-                                            R.string.settings_accessibility_permission_enabled
-                                        } else {
-                                            R.string.settings_accessibility_permission_disabled
-                                        }
-                                ),
-                        checked = lockAccessibilityOn,
-                        onCheckedChange = { LockScreenHelper.openAccessibilitySettings(context) }
-                )
-            }
-
-            items(
-                    deviceControlToggleRows,
-                    key = { it.labelRes },
-            ) { row ->
-                SettingsToggleRow(
-                        label = stringResource(row.labelRes),
-                        subtitle = row.subtitle,
-                        checked = row.checked,
-                        onCheckedChange = row.onCheckedChange,
-                        enabled = lockAccessibilityOn,
-                )
-            }
-
-            if (lockAccessibilityOn && uiState.longLockReturnHome) {
+            LazyColumn(modifier = Modifier.weight(1f).fillMaxWidth()) {
                 item {
-                    LongLockThresholdRow(
-                            currentMinutes = uiState.longLockReturnHomeThresholdMinutes,
-                            onMinutesSelected = viewModel::setLongLockReturnHomeThresholdMinutes
+                    SettingsToggleRow(
+                            label = stringResource(R.string.settings_accessibility_permission),
+                            subtitle =
+                                    stringResource(
+                                            if (lockAccessibilityOn) {
+                                                R.string.settings_accessibility_permission_enabled
+                                            } else {
+                                                R.string.settings_accessibility_permission_disabled
+                                            }
+                                    ),
+                            checked = lockAccessibilityOn,
+                            onCheckedChange = {
+                                when {
+                                    !lockAccessibilityOn && !accessibilityDisclosureAccepted ->
+                                            showAccessibilityProminentDisclosure = true
+                                    else ->
+                                            LockScreenHelper.openAccessibilitySettings(context)
+                                }
+                            }
                     )
                 }
+
+                items(
+                        deviceControlToggleRows,
+                        key = { it.labelRes },
+                ) { row ->
+                    SettingsToggleRow(
+                            label = stringResource(row.labelRes),
+                            subtitle = row.subtitle,
+                            checked = row.checked,
+                            onCheckedChange = row.onCheckedChange,
+                            enabled = lockAccessibilityOn,
+                    )
+                }
+
+                if (lockAccessibilityOn && uiState.longLockReturnHome) {
+                    item {
+                        LongLockThresholdRow(
+                                currentMinutes = uiState.longLockReturnHomeThresholdMinutes,
+                                onMinutesSelected = viewModel::setLongLockReturnHomeThresholdMinutes
+                        )
+                    }
+                }
             }
+        }
+
+        if (showAccessibilityProminentDisclosure) {
+            AccessibilityProminentDisclosureOverlay(
+                    onAccept = {
+                        showAccessibilityProminentDisclosure = false
+                        viewModel.acceptAccessibilityProminentDisclosureAndOpenSettings()
+                    },
+                    onNotNow = { showAccessibilityProminentDisclosure = false },
+            )
         }
     }
 }
