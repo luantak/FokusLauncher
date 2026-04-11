@@ -6,6 +6,9 @@ object FokusBackdrop {
     // Single source of truth for overlay intensity in each mode.
     private const val OVERLAY_STRENGTH_WITH_BLUR = 0.26f
     private const val OVERLAY_STRENGTH_WITHOUT_BLUR = 0.50f
+    /** Darker Compose scrim behind the app drawer (home still uses wallpaper only). */
+    private const val DRAWER_OVERLAY_STRENGTH_WITH_BLUR = 0.44f
+    private const val DRAWER_OVERLAY_STRENGTH_WITHOUT_BLUR = 0.70f
     // Dim ratio is still mode-specific because Android's window dim
     // does not visually match Compose scrim 1:1.
     private const val WINDOW_DIM_SCALE_WITH_BLUR = 0.23076923f // 0.06 / 0.26
@@ -20,6 +23,13 @@ object FokusBackdrop {
 
     fun scrimColor(blurEnabled: Boolean): Color =
         if (blurEnabled) ScrimColorWithBlur else ScrimColorWithoutBlur
+
+    fun drawerOverlayScrimColor(blurEnabled: Boolean): Color =
+            Color.Black.copy(
+                    alpha =
+                            if (blurEnabled) DRAWER_OVERLAY_STRENGTH_WITH_BLUR
+                            else DRAWER_OVERLAY_STRENGTH_WITHOUT_BLUR
+            )
 
     fun windowDimAmount(blurEnabled: Boolean): Float =
         if (blurEnabled) WINDOW_DIM_AMOUNT_WITH_BLUR else WINDOW_DIM_AMOUNT_WITHOUT_BLUR

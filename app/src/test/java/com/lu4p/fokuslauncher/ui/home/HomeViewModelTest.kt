@@ -12,10 +12,12 @@ import android.content.pm.ResolveInfo
 import android.os.BatteryManager
 import android.os.Build
 import android.text.format.DateFormat
+import com.lu4p.fokuslauncher.data.local.HomeWidgetVisibility
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.HomeDateFormatStyle
+import com.lu4p.fokuslauncher.data.model.LauncherFontScale
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
@@ -97,6 +99,10 @@ class HomeViewModelTest {
         every { preferencesManager.rightSideShortcutsFlow } returns flowOf(emptyList())
         every { preferencesManager.preferredWeatherAppFlow } returns flowOf("")
         every { preferencesManager.homeAlignmentFlow } returns flowOf(HomeAlignment.LEFT)
+        every { preferencesManager.launcherFontScaleFlow } returns
+                flowOf(LauncherFontScale.DEFAULT)
+        every { preferencesManager.homeWidgetVisibilityFlow } returns
+                flowOf(HomeWidgetVisibility(true, true, true, true))
         every { preferencesManager.showHomeClockFlow } returns flowOf(true)
         every { preferencesManager.showHomeDateFlow } returns flowOf(true)
         every { preferencesManager.showHomeWeatherFlow } returns flowOf(true)

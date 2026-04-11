@@ -34,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -68,6 +69,10 @@ import com.lu4p.fokuslauncher.ui.util.clickableNoRippleWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.combinedClickableWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.LocalSystemClickSound
 import com.lu4p.fokuslauncher.utils.LockScreenHelper
+
+/** Strong full-screen gradient scrim so clock and labels stay readable on busy wallpapers. */
+private const val HOME_WALLPAPER_SCRIM_TOP_ALPHA = 0.22f
+private const val HOME_WALLPAPER_SCRIM_BOTTOM_ALPHA = 0.58f
 
 @Composable
 fun HomeScreen(
@@ -215,6 +220,23 @@ fun HomeScreenContent(
             )
             .testTag("home_screen")
     ) {
+        Box(
+                Modifier.fillMaxSize()
+                        .background(
+                                Brush.verticalGradient(
+                                        colors =
+                                                listOf(
+                                                        Color.Black.copy(
+                                                                alpha = HOME_WALLPAPER_SCRIM_TOP_ALPHA
+                                                        ),
+                                                        Color.Black.copy(
+                                                                alpha =
+                                                                        HOME_WALLPAPER_SCRIM_BOTTOM_ALPHA
+                                                        ),
+                                                ),
+                                ),
+                        ),
+        )
 
         Column(
             modifier = Modifier
