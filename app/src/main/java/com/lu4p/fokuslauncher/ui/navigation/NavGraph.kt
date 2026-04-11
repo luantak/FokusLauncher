@@ -185,7 +185,7 @@ fun FokusNavGraph(
             }
         }
     }
-    val overlayScrimColor = FokusBackdrop.scrimColor(crossWindowBlurEnabled)
+    val overlayScrimColor = FokusBackdrop.drawerOverlayScrimColor(crossWindowBlurEnabled)
 
     LaunchedEffect(shouldApplyWindowEffects, crossWindowBlurEnabled, activity) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
