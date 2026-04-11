@@ -95,9 +95,11 @@ import com.lu4p.fokuslauncher.ui.drawer.GroupedAppPickerDialog
 import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
 import com.lu4p.fokuslauncher.data.model.HomeDateFormatStyle
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
+import com.lu4p.fokuslauncher.data.model.LauncherVisualStyle
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.utils.LockScreenHelper
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
+import com.lu4p.fokuslauncher.ui.theme.settingsPreviewColor
 import com.lu4p.fokuslauncher.ui.settings.components.SettingsDropdown
 import com.lu4p.fokuslauncher.ui.settings.components.SettingsRow
 import com.lu4p.fokuslauncher.ui.settings.components.SettingsToggleRow
@@ -422,6 +424,20 @@ private fun SettingsScreenContent(
             )
         }
         item {
+            LauncherVisualStyleDropdown(
+                    currentStyle = uiState.launcherVisualStyle,
+                    onStyleSelected = viewModel::setLauncherVisualStyle,
+            )
+        }
+        item {
+            SettingsToggleRow(
+                    label = stringResource(R.string.settings_glow_label),
+                    checked = uiState.launcherGlowEnabled,
+                    onCheckedChange = viewModel::setLauncherGlowEnabled,
+                    subtitle = stringResource(R.string.settings_glow_subtitle),
+            )
+        }
+        item {
             SettingsRow(
                     label = stringResource(R.string.settings_set_background_image),
                     verticalPadding = 14.dp,
@@ -618,6 +634,7 @@ private fun SettingsScreenContent(
         item {
             SettingsRow(
                     label = stringResource(R.string.settings_reset_all_data),
+                    labelStyle = MaterialTheme.typography.bodyLarge.copy(shadow = null),
                     labelColor = MaterialTheme.colorScheme.error,
                     verticalPadding = 14.dp,
                     leading = {
@@ -626,6 +643,7 @@ private fun SettingsScreenContent(
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.error,
                                 iconSize = 24.dp,
+                                suppressGlow = true,
                         )
                     },
                     onClick = onShowResetConfirm,
@@ -667,7 +685,11 @@ private fun SettingsScreenDialogs(
                                 }
                             }
                     ) {
-                        Text(stringResource(R.string.action_reset), color = MaterialTheme.colorScheme.error)
+                        Text(
+                                stringResource(R.string.action_reset),
+                                style = MaterialTheme.typography.labelLarge.copy(shadow = null),
+                                color = MaterialTheme.colorScheme.error,
+                        )
                     }
                 },
                 dismissButton = {
@@ -1127,6 +1149,41 @@ private fun LauncherFontSizeSlider(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun LauncherVisualStyleDropdown(
+        currentStyle: LauncherVisualStyle,
+        onStyleSelected: (LauncherVisualStyle) -> Unit,
+) {
+    val options = remember { LauncherVisualStyle.entries.toList() }
+    var expanded by remember { mutableStateOf(false) }
+    val onExpandedChange = rememberBooleanChangeWithSystemSound { expanded = it }
+    val selectedLabel = stringResource(currentStyle.labelRes)
+    val fieldPreviewColor = currentStyle.settingsPreviewColor()
+    SettingsDropdown(
+            title = stringResource(R.string.settings_visual_style_label),
+            subtitle = stringResource(R.string.settings_visual_style_subtitle),
+            options = options,
+            expanded = expanded,
+            onExpandedChange = onExpandedChange,
+            selectedDisplayText = selectedLabel,
+            fieldTextColor = fieldPreviewColor,
+            menuItemTextColor = { it.settingsPreviewColor() },
+            itemContent = { style ->
+                Text(
+                        text = stringResource(style.labelRes),
+                        style =
+                                MaterialTheme.typography.bodyLarge.copy(
+                                        shadow = null,
+                                        color = Color.Unspecified,
+                                ),
+                        color = style.settingsPreviewColor(),
+                )
+            },
+            onItemSelected = onStyleSelected,
+    )
+}
+
 @Composable
 private fun SettingsLabeledSegmentedSection(
         title: String,
@@ -1487,6 +1544,7 @@ private fun ShortcutTargetRow(
                         stringResource(R.string.action_clear),
                         tint = MaterialTheme.colorScheme.error,
                         iconSize = 18.dp,
+                        suppressGlow = true,
                 )
             }
         }

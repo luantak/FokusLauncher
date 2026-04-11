@@ -17,6 +17,8 @@ import com.lu4p.fokuslauncher.data.model.LauncherFontScale
 import com.lu4p.fokuslauncher.data.model.SystemCategoryKeys
 import com.lu4p.fokuslauncher.data.model.HomeDateFormatStyle
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
+import com.lu4p.fokuslauncher.data.model.LauncherAppearance
+import com.lu4p.fokuslauncher.data.model.LauncherVisualStyle
 import com.lu4p.fokuslauncher.data.model.DotSearchTargetPreference
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
@@ -104,6 +106,8 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         private val ACCESSIBILITY_PROMINENT_DISCLOSURE_ACCEPTED_KEY =
                 booleanPreferencesKey("accessibility_prominent_disclosure_accepted")
         private val HOME_ALIGNMENT_KEY = stringPreferencesKey("home_alignment")
+        private val LAUNCHER_VISUAL_STYLE_KEY = stringPreferencesKey("launcher_visual_style")
+        private val LAUNCHER_GLOW_ENABLED_KEY = booleanPreferencesKey("launcher_glow_enabled")
         private val LAUNCHER_FONT_FAMILY_KEY = stringPreferencesKey("launcher_font_family")
         private val LAUNCHER_FONT_SCALE_KEY = floatPreferencesKey("launcher_font_scale")
         private val ALLOW_LANDSCAPE_ROTATION_KEY =
@@ -488,6 +492,44 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
 
     suspend fun setHomeAlignment(alignment: HomeAlignment) =
             setPref(HOME_ALIGNMENT_KEY, alignment.name)
+
+    /**
+     * Color style and glow from a **single** preferences read so they never disagree between
+     * emissions (avoids brief wrong combinations from separate flows).
+     */
+    val launcherAppearanceFlow: Flow<LauncherAppearance> =
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
+                val visualStyle =
+                        LauncherVisualStyle.fromString(prefs[LAUNCHER_VISUAL_STYLE_KEY] ?: "")
+                val glowStored = prefs[LAUNCHER_GLOW_ENABLED_KEY]
+                val glowEnabled =
+                        if (glowStored != null) {
+                            glowStored == true
+                        } else {
+                            visualStyle != LauncherVisualStyle.CLASSIC
+                        }
+                LauncherAppearance(visualStyle = visualStyle, glowEnabled = glowEnabled)
+            }
+
+    val launcherVisualStyleFlow: Flow<LauncherVisualStyle> =
+            launcherAppearanceFlow.map { it.visualStyle }
+
+    /**
+     * Text/icon glow when enabled. If the key was never written, defaults to **on** for non-Classic
+     * visual styles (migration) and **off** for Classic.
+     */
+    val launcherGlowEnabledFlow: Flow<Boolean> = launcherAppearanceFlow.map { it.glowEnabled }
+
+    suspend fun setLauncherVisualStyle(style: LauncherVisualStyle) {
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            if (style == LauncherVisualStyle.CLASSIC) prefs.remove(LAUNCHER_VISUAL_STYLE_KEY)
+            else prefs[LAUNCHER_VISUAL_STYLE_KEY] = style.name
+        }
+    }
+
+    suspend fun setLauncherGlowEnabled(enabled: Boolean) {
+        setPref(LAUNCHER_GLOW_ENABLED_KEY, enabled)
+    }
 
     // --- Launcher text (system fonts + scale) ---
 

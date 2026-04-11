@@ -20,6 +20,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.LauncherFontScale
+import com.lu4p.fokuslauncher.data.model.LauncherAppearance
+import com.lu4p.fokuslauncher.data.model.LauncherVisualStyle
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.ui.navigation.FokusNavGraph
 import com.lu4p.fokuslauncher.ui.navigation.LauncherHomeCoordinatorViewModel
@@ -84,6 +86,14 @@ class MainActivity : AppCompatActivity() {
             val launcherFontScale by produceState(LauncherFontScale.DEFAULT) {
                 preferencesManager.launcherFontScaleFlow.collect { value = it }
             }
+            val launcherAppearance by produceState(
+                    LauncherAppearance(
+                            visualStyle = LauncherVisualStyle.CLASSIC,
+                            glowEnabled = false,
+                    )
+            ) {
+                preferencesManager.launcherAppearanceFlow.collect { value = it }
+            }
             val appLocaleTag by produceState("") {
                 preferencesManager.appLocaleTagFlow.collect { value = it }
             }
@@ -91,6 +101,8 @@ class MainActivity : AppCompatActivity() {
                 FokusLauncherTheme(
                         fontFamily = composeFontFamilyFromStoredName(launcherFontFamilyName),
                         fontScale = launcherFontScale,
+                        visualStyle = launcherAppearance.visualStyle,
+                        glowEnabled = launcherAppearance.glowEnabled,
                 ) {
                     FokusNavGraph()
                 }

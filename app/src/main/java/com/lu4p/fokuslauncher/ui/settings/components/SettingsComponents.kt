@@ -145,6 +145,24 @@ private fun settingsPickerOutlinedFieldColors() =
         )
 
 @Composable
+private fun settingsPickerOutlinedFieldColorsForFieldText(fieldTextColor: Color) =
+        OutlinedTextFieldDefaults.colors(
+                focusedTextColor = fieldTextColor,
+                unfocusedTextColor = fieldTextColor,
+                disabledTextColor = fieldTextColor.copy(alpha = 0.55f),
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.38f),
+                disabledBorderColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.22f),
+                focusedTrailingIconColor = MaterialTheme.colorScheme.onBackground,
+                unfocusedTrailingIconColor = MaterialTheme.colorScheme.onBackground,
+                disabledTrailingIconColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f),
+                cursorColor = MaterialTheme.colorScheme.primary,
+        )
+
+@Composable
 private fun settingsPickerMenuItemColors() =
         MenuDefaults.itemColors(
                 textColor = MaterialTheme.colorScheme.onBackground,
@@ -162,6 +180,7 @@ internal fun SettingsReadOnlyExposedDropdown(
         menuExpanded: Boolean = expanded,
         textStyle: TextStyle = MaterialTheme.typography.bodyLarge,
         textFieldModifier: Modifier = Modifier,
+        fieldTextColor: Color? = null,
         menuContent: @Composable ColumnScope.() -> Unit
 ) {
     ExposedDropdownMenuBox(
@@ -192,7 +211,12 @@ internal fun SettingsReadOnlyExposedDropdown(
                         )
                     }
                 },
-                colors = settingsPickerOutlinedFieldColors()
+                colors =
+                        if (fieldTextColor != null) {
+                            settingsPickerOutlinedFieldColorsForFieldText(fieldTextColor)
+                        } else {
+                            settingsPickerOutlinedFieldColors()
+                        }
         )
         ExposedDropdownMenu(
                 expanded = menuExpanded,
@@ -224,6 +248,7 @@ internal fun SettingsLabeledDropdown(
         menuExpanded: Boolean = expanded,
         textStyle: TextStyle = MaterialTheme.typography.bodyLarge,
         textFieldModifier: Modifier = Modifier,
+        fieldTextColor: Color? = null,
         menuContent: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
@@ -251,6 +276,7 @@ internal fun SettingsLabeledDropdown(
                 menuExpanded = menuExpanded,
                 textStyle = textStyle,
                 textFieldModifier = textFieldModifier,
+                fieldTextColor = fieldTextColor,
                 menuContent = menuContent,
         )
     }
@@ -269,6 +295,8 @@ internal fun <T> SettingsDropdown(
         menuExpanded: Boolean = expanded,
         textStyle: TextStyle = MaterialTheme.typography.bodyLarge,
         textFieldModifier: Modifier = Modifier,
+        fieldTextColor: Color? = null,
+        menuItemTextColor: ((T) -> Color)? = null,
         itemContent: @Composable (T) -> Unit,
         onItemSelected: (T) -> Unit,
 ) {
@@ -282,8 +310,20 @@ internal fun <T> SettingsDropdown(
             menuExpanded = menuExpanded,
             textStyle = textStyle,
             textFieldModifier = textFieldModifier,
+            fieldTextColor = fieldTextColor,
     ) {
         options.forEach { option ->
+            val itemColors =
+                    if (menuItemTextColor != null) {
+                        val c = menuItemTextColor(option)
+                        MenuDefaults.itemColors(
+                                textColor = c,
+                                leadingIconColor = c,
+                                trailingIconColor = c,
+                        )
+                    } else {
+                        settingsPickerMenuItemColors()
+                    }
             DropdownMenuItem(
                     text = { itemContent(option) },
                     onClick =
@@ -291,7 +331,7 @@ internal fun <T> SettingsDropdown(
                                 onItemSelected(option)
                                 onExpandedChange(false)
                             },
-                    colors = settingsPickerMenuItemColors(),
+                    colors = itemColors,
                     contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
             )
         }
