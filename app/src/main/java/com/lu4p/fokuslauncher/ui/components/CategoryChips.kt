@@ -10,6 +10,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -71,7 +72,8 @@ fun CategoryChips(
                         label = {
                             Text(
                                     text = categoryChipDisplayLabel(context, category),
-                                    style = chipTypography,
+                                    style = chipTypography.copy(shadow = null),
+                                    color = LocalContentColor.current,
                                     fontWeight = chipWeight,
                             )
                         },

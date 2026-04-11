@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -26,7 +25,6 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -60,6 +58,7 @@ import com.lu4p.fokuslauncher.ui.components.ClockWidget
 import com.lu4p.fokuslauncher.ui.components.DateBatteryRow
 import com.lu4p.fokuslauncher.ui.components.FokusBottomSheet
 import com.lu4p.fokuslauncher.ui.components.FokusOutlinedButton
+import com.lu4p.fokuslauncher.ui.components.LauncherIcon
 import com.lu4p.fokuslauncher.ui.components.MinimalIcons
 import com.lu4p.fokuslauncher.ui.components.SheetActionRow
 import com.lu4p.fokuslauncher.ui.components.WeatherWidget
@@ -523,14 +522,14 @@ private fun RightShortcutIcons(
     iconSize: Dp,
 ) {
     shortcuts.reversed().forEachIndexed { index, shortcut ->
-        Icon(
-            imageVector = MinimalIcons.iconFor(shortcut.iconName),
-            contentDescription = stringResource(R.string.cd_shortcut_icon),
-            tint = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier
-                .size(iconSize)
-                .clickableNoRippleWithSystemSound { onIconClick(shortcut) }
-                .testTag("right_shortcut_icon_$index")
+        LauncherIcon(
+                imageVector = MinimalIcons.iconFor(shortcut.iconName),
+                contentDescription = stringResource(R.string.cd_shortcut_icon),
+                tint = MaterialTheme.colorScheme.onBackground,
+                iconSize = iconSize,
+                modifier =
+                        Modifier.clickableNoRippleWithSystemSound { onIconClick(shortcut) }
+                                .testTag("right_shortcut_icon_$index"),
         )
     }
 }

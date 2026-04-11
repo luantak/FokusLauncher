@@ -1145,6 +1145,7 @@ fun CategoryActionSheet(
                     onClick = onResetCategoryIcon,
                     icon = Icons.Default.Restore,
                     testTag = "category_action_reset_icon",
+                    destructive = true,
             )
             if (showEditApps) {
                 SheetActionRow(

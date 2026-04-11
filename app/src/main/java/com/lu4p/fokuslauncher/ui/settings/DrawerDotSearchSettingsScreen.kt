@@ -197,6 +197,7 @@ fun DrawerDotSearchSettingsScreen(
                                 stringResource(R.string.cd_remove_alias),
                                 tint = MaterialTheme.colorScheme.error,
                                 iconSize = 24.dp,
+                                suppressGlow = true,
                         )
                     }
                 }
@@ -389,6 +390,7 @@ private fun DotSearchTargetSettingsRow(
                             stringResource(R.string.action_clear),
                             tint = MaterialTheme.colorScheme.error,
                             iconSize = 18.dp,
+                            suppressGlow = true,
                     )
                 }
             }
@@ -428,7 +430,11 @@ private fun DotSearchUrlTemplateDialog(
                             isError = error != null,
                             supportingText = {
                                 error?.let { err ->
-                                    Text(err, color = MaterialTheme.colorScheme.error)
+                                    Text(
+                                            err,
+                                            style = MaterialTheme.typography.bodySmall.copy(shadow = null),
+                                            color = MaterialTheme.colorScheme.error,
+                                    )
                                 }
                             },
                             modifier = Modifier.fillMaxWidth()

@@ -36,8 +36,11 @@ fun SheetActionRow(
         "SheetActionRow requires icon or leadingContent"
     }
     val tint =
-        if (destructive) MaterialTheme.colorScheme.error
-        else MaterialTheme.colorScheme.onBackground
+            if (destructive) MaterialTheme.colorScheme.error
+            else MaterialTheme.colorScheme.onBackground
+    val labelStyle =
+            if (destructive) MaterialTheme.typography.bodyLarge.copy(shadow = null)
+            else MaterialTheme.typography.bodyLarge
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier =
@@ -51,18 +54,19 @@ fun SheetActionRow(
             leadingContent != null -> leadingContent()
             else ->
                 LauncherIcon(
-                    imageVector = icon!!,
-                    contentDescription = iconContentDescription,
-                    tint = tint,
-                    iconSize = 24.dp,
+                        imageVector = icon!!,
+                        contentDescription = iconContentDescription,
+                        tint = tint,
+                        iconSize = 24.dp,
+                        suppressGlow = destructive,
                 )
         }
         Spacer(modifier = Modifier.width(16.dp))
         Text(
-            text = label,
-            style = MaterialTheme.typography.bodyLarge,
-            color = tint,
-            modifier = labelModifier,
+                text = label,
+                style = labelStyle,
+                color = tint,
+                modifier = labelModifier,
         )
     }
 }

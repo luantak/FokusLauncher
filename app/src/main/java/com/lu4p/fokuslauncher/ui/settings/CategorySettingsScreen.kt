@@ -303,6 +303,7 @@ private fun ReorderableCategoryList(
                             contentDescription = stringResource(R.string.cd_delete_category),
                             tint = MaterialTheme.colorScheme.error,
                             iconSize = 24.dp,
+                            suppressGlow = true,
                     )
                 }
             }

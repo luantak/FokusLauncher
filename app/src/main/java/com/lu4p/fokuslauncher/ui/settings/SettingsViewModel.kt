@@ -18,6 +18,7 @@ import com.lu4p.fokuslauncher.data.model.appMetadataKey
 import com.lu4p.fokuslauncher.data.model.appProfileKey
 import com.lu4p.fokuslauncher.data.font.SystemFontFamiliesProvider
 import com.lu4p.fokuslauncher.data.model.LauncherFontScale
+import com.lu4p.fokuslauncher.data.model.LauncherVisualStyle
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.repository.AppRepository
@@ -84,6 +85,9 @@ data class SettingsUiState(
         val homeAlignment: HomeAlignment = HomeAlignment.LEFT,
         val launcherFontFamilyName: String = "",
         val launcherFontScale: Float = LauncherFontScale.DEFAULT,
+        val launcherVisualStyle: LauncherVisualStyle = LauncherVisualStyle.CLASSIC,
+        /** Text shadow + icon halo; independent of [launcherVisualStyle]. */
+        val launcherGlowEnabled: Boolean = false,
         /** BCP-47 tag; empty = system default. */
         val appLocaleTag: String = "",
         val allowLandscapeRotation: Boolean = false,
@@ -231,17 +235,31 @@ constructor(
                                 drawerSearchAutoLaunch = drawerLayout.third,
                         )
                     }
-            val lookPrefsFlow =
+            val fontVisualFlow =
                     combine(
                             preferencesManager.launcherFontFamilyFlow,
                             preferencesManager.launcherFontScaleFlow,
+                            preferencesManager.launcherAppearanceFlow,
+                    ) { font, fontScale, appearance ->
+                        FontVisualPrefs(
+                                family = font,
+                                scale = fontScale,
+                                visualStyle = appearance.visualStyle,
+                                glowEnabled = appearance.glowEnabled,
+                        )
+                    }
+            val lookPrefsFlow =
+                    combine(
+                            fontVisualFlow,
                             preferencesManager.appLocaleTagFlow,
                             preferencesManager.homeAlignmentFlow,
                             preferencesManager.allowLandscapeRotationFlow,
-                    ) { font, fontScale, localeTag, homeAlignment, allowLandscape ->
+                    ) { fontVisual, localeTag, homeAlignment, allowLandscape ->
                         LookPrefs(
-                                launcherFontFamilyName = font,
-                                launcherFontScale = fontScale,
+                                launcherFontFamilyName = fontVisual.family,
+                                launcherFontScale = fontVisual.scale,
+                                launcherVisualStyle = fontVisual.visualStyle,
+                                launcherGlowEnabled = fontVisual.glowEnabled,
                                 appLocaleTag = localeTag,
                                 homeAlignment = homeAlignment,
                                 allowLandscapeRotation = allowLandscape,
@@ -346,6 +364,8 @@ constructor(
                         homeAlignment = look.homeAlignment,
                         launcherFontFamilyName = look.launcherFontFamilyName,
                         launcherFontScale = look.launcherFontScale,
+                        launcherVisualStyle = look.launcherVisualStyle,
+                        launcherGlowEnabled = look.launcherGlowEnabled,
                         appLocaleTag = look.appLocaleTag,
                         allowLandscapeRotation = look.allowLandscapeRotation,
                         doubleTapEmptyLock = lockRail.doubleTapEmptyLock,
@@ -396,9 +416,18 @@ constructor(
             val drawerSearchAutoLaunch: Boolean,
     )
 
+    private data class FontVisualPrefs(
+            val family: String,
+            val scale: Float,
+            val visualStyle: LauncherVisualStyle,
+            val glowEnabled: Boolean,
+    )
+
     private data class LookPrefs(
             val launcherFontFamilyName: String,
             val launcherFontScale: Float,
+            val launcherVisualStyle: LauncherVisualStyle,
+            val launcherGlowEnabled: Boolean,
             val appLocaleTag: String,
             val homeAlignment: HomeAlignment,
             val allowLandscapeRotation: Boolean,
@@ -651,6 +680,12 @@ constructor(
 
     fun setLauncherFontScale(scale: Float) =
             launchPreferences { setLauncherFontScale(scale) }
+
+    fun setLauncherVisualStyle(style: LauncherVisualStyle) =
+            launchPreferences { setLauncherVisualStyle(style) }
+
+    fun setLauncherGlowEnabled(enabled: Boolean) =
+            launchPreferences { setLauncherGlowEnabled(enabled) }
 
     fun setAppLocaleTag(tag: String) {
         viewModelScope.launch {

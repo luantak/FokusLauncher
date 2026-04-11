@@ -248,6 +248,15 @@
     <string name="settings_font_label">Font</string>
     <string name="settings_font_size_label">Font size</string>
     <string name="settings_font_size_subtitle">Stacks with your device font size</string>
+    <string name="settings_visual_style_label">Color style</string>
+    <string name="settings_visual_style_subtitle">Neon or classic text and icon colors</string>
+    <string name="settings_glow_label">Glow</string>
+    <string name="settings_glow_subtitle">Soft halo on text and icons (works with any color style)</string>
+    <string name="visual_style_classic">Classic</string>
+    <string name="visual_style_neon_cyan">Neon cyan</string>
+    <string name="visual_style_neon_magenta">Neon violet</string>
+    <string name="visual_style_neon_lime">Neon green</string>
+    <string name="visual_style_neon_amber">Neon coral</string>
 
     <plurals name="settings_shortcuts_configured">
         <item quantity="one">%d shortcut configured</item>
