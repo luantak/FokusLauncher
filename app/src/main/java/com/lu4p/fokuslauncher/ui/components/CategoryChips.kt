@@ -23,8 +23,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.lu4p.fokuslauncher.ui.util.categoryChipDisplayLabel
 import com.lu4p.fokuslauncher.ui.util.rememberClickWithSystemSound
-import com.lu4p.fokuslauncher.ui.theme.ChipBackground
-
 @Composable
 fun CategoryChips(
         categories: List<String>,
@@ -80,7 +78,8 @@ fun CategoryChips(
                         shape = RoundedCornerShape(20.dp),
                         colors =
                                 FilterChipDefaults.filterChipColors(
-                                        containerColor = ChipBackground,
+                                        containerColor =
+                                                MaterialTheme.colorScheme.surfaceVariant,
                                         selectedContainerColor =
                                                 MaterialTheme.colorScheme.primary,
                                         labelColor = MaterialTheme.colorScheme.onSurface,
