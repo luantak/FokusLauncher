@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import com.lu4p.fokuslauncher.ui.theme.withLauncherTextGlowRecolored
 import com.lu4p.fokuslauncher.ui.util.clickableWithSystemSound
 import androidx.compose.ui.unit.dp
 
@@ -39,8 +40,11 @@ fun SheetActionRow(
             if (destructive) MaterialTheme.colorScheme.error
             else MaterialTheme.colorScheme.onBackground
     val labelStyle =
-            if (destructive) MaterialTheme.typography.bodyLarge.copy(shadow = null)
-            else MaterialTheme.typography.bodyLarge
+            if (destructive) {
+                MaterialTheme.typography.bodyLarge.withLauncherTextGlowRecolored(tint)
+            } else {
+                MaterialTheme.typography.bodyLarge
+            }
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier =
@@ -58,7 +62,6 @@ fun SheetActionRow(
                         contentDescription = iconContentDescription,
                         tint = tint,
                         iconSize = 24.dp,
-                        suppressGlow = destructive,
                 )
         }
         Spacer(modifier = Modifier.width(16.dp))
