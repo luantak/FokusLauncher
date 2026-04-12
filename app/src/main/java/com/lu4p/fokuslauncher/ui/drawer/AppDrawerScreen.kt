@@ -43,6 +43,7 @@ import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -265,6 +266,12 @@ private fun DrawerDropdownMenuItem(
             onClick = rememberClickWithSystemSound(onClick),
             leadingIcon = leadingIcon,
             modifier = Modifier.testTag(testTag),
+            colors =
+                    MenuDefaults.itemColors(
+                            textColor = MaterialTheme.colorScheme.onBackground,
+                            leadingIconColor = MaterialTheme.colorScheme.onBackground,
+                            trailingIconColor = MaterialTheme.colorScheme.onBackground,
+                    ),
     )
 }
 
