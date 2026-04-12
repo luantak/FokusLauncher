@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import com.lu4p.fokuslauncher.data.model.LauncherFontScale
 import com.lu4p.fokuslauncher.data.model.LauncherVisualStyle
 
 /**
@@ -79,8 +80,9 @@ fun fokusTypographyForLauncher(
 ): Typography {
     val base = FokusTypography
     val palette = visualStyle.neonPalette()
-    fun tune(style: TextStyle): TextStyle {
-        var t = style.withLauncherFontScale(fontScale).withLauncherFont(fontFamily)
+    val homeClockScale = fontScale.coerceAtMost(LauncherFontScale.CLOCK_MAX)
+    fun tune(style: TextStyle, scale: Float = fontScale): TextStyle {
+        var t = style.withLauncherFontScale(scale).withLauncherFont(fontFamily)
         val isMuted = style.color == LightGray
         if (palette != null) {
             t =
@@ -97,7 +99,7 @@ fun fokusTypographyForLauncher(
                         else -> White
                     }
             val shadowColor = glowSource.copy(alpha = 1f)
-            val blurBoost = fontScale.coerceIn(0.85f, 1.45f)
+            val blurBoost = scale.coerceIn(0.85f, 1.45f)
             val blur =
                     (when {
                         isMuted -> 28f
@@ -121,7 +123,7 @@ fun fokusTypographyForLauncher(
         return t
     }
     return base.copy(
-            displayLarge = tune(base.displayLarge),
+            displayLarge = tune(base.displayLarge, homeClockScale),
             displayMedium = tune(base.displayMedium),
             displaySmall = tune(base.displaySmall),
             headlineLarge = tune(base.headlineLarge),

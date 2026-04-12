@@ -6,6 +6,8 @@ import kotlin.math.round
 object LauncherFontScale {
     const val MIN: Float = 0.7f
     const val MAX: Float = 1.5f
+    /** Upper bound for [androidx.compose.material3.Typography.displayLarge] (home clock) only. */
+    const val CLOCK_MAX: Float = 1.2f
     const val STEP: Float = 0.1f
     const val DEFAULT: Float = 1.0f
 
