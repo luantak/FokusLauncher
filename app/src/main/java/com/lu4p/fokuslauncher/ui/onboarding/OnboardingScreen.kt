@@ -91,13 +91,8 @@ fun OnboardingScreen(
                     onGetStarted = { viewModel.onNext() }
                 )
                 OnboardingStep.BACKGROUND -> BackgroundStep(
-                    onChooseBlack = {
-                        viewModel.setBlackWallpaper()
-                        viewModel.onNext()
-                    },
-                    onChooseWallpaper = {
-                        viewModel.onNext()
-                    }
+                    onChooseBlack = { viewModel.onBackgroundChooseBlack() },
+                    onChooseWallpaper = { viewModel.onBackgroundChooseWallpaper() }
                 )
                 OnboardingStep.LOCATION -> LocationStep(
                     onAllow = {

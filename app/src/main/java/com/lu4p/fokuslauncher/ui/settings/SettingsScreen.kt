@@ -433,14 +433,24 @@ private fun SettingsScreenContent(
             LauncherVisualStyleDropdown(
                     currentStyle = uiState.launcherVisualStyle,
                     onStyleSelected = viewModel::setLauncherVisualStyle,
+                    homeUsesPhotoWallpaper = uiState.homeUsesPhotoWallpaper,
             )
         }
         item {
             SettingsToggleRow(
                     label = stringResource(R.string.settings_glow_label),
-                    checked = uiState.launcherGlowEnabled,
+                    checked =
+                            uiState.launcherGlowEnabled && !uiState.homeUsesPhotoWallpaper,
                     onCheckedChange = viewModel::setLauncherGlowEnabled,
-                    subtitle = stringResource(R.string.settings_glow_subtitle),
+                    subtitle =
+                            stringResource(
+                                    if (uiState.homeUsesPhotoWallpaper) {
+                                        R.string.settings_look_locked_image_wallpaper
+                                    } else {
+                                        R.string.settings_glow_subtitle
+                                    }
+                            ),
+                    enabled = !uiState.homeUsesPhotoWallpaper,
             )
         }
         item {
@@ -1166,22 +1176,31 @@ private fun LauncherFontSizeSlider(
 private fun LauncherVisualStyleDropdown(
         currentStyle: LauncherVisualStyle,
         onStyleSelected: (LauncherVisualStyle) -> Unit,
+        homeUsesPhotoWallpaper: Boolean,
 ) {
     val options = remember { LauncherVisualStyle.entries.toList() }
     var expanded by remember { mutableStateOf(false) }
     val onExpandedChange = rememberBooleanChangeWithSystemSound { expanded = it }
-    val selectedLabel = stringResource(currentStyle.labelRes)
-    val fieldPreviewColor = currentStyle.settingsPreviewColor()
+    LaunchedEffect(homeUsesPhotoWallpaper) {
+        if (homeUsesPhotoWallpaper) expanded = false
+    }
+    val displayStyle =
+            if (homeUsesPhotoWallpaper) LauncherVisualStyle.CLASSIC else currentStyle
+    val selectedLabel = stringResource(displayStyle.labelRes)
+    val fieldPreviewColor = displayStyle.settingsPreviewColor()
+    val lockedSubtitle = stringResource(R.string.settings_look_locked_image_wallpaper)
+    val normalSubtitle = stringResource(R.string.settings_visual_style_subtitle)
     val menuGlowEnabled = LocalLauncherIconGlow.current.enabled
     val menuFontBlurBoost =
             LocalLauncherFontScale.current.coerceIn(LauncherFontScale.MIN, LauncherFontScale.MAX)
                     .coerceIn(0.85f, 1.45f)
     SettingsDropdown(
             title = stringResource(R.string.settings_visual_style_label),
-            subtitle = stringResource(R.string.settings_visual_style_subtitle),
+            subtitle = if (homeUsesPhotoWallpaper) lockedSubtitle else normalSubtitle,
             options = options,
             expanded = expanded,
             onExpandedChange = onExpandedChange,
+            fieldEnabled = !homeUsesPhotoWallpaper,
             selectedDisplayText = selectedLabel,
             fieldTextColor = fieldPreviewColor,
             menuItemTextColor = { it.settingsPreviewColor() },
