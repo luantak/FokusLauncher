@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,18 +25,27 @@ import com.lu4p.fokuslauncher.ui.theme.launcherIconDp
  * icons follow the launcher font size setting.
  *
  * @param suppressGlow When true, skips the neon halo (e.g. destructive / error-colored icons).
+ * @param tint Icon color; when null, uses [LocalContentColor] without glow, or
+ *     [MaterialTheme.colorScheme.onSurface] when glow is enabled so popups/menus match the theme.
  */
 @Composable
 fun LauncherIcon(
         imageVector: ImageVector,
         contentDescription: String?,
         modifier: Modifier = Modifier,
-        tint: Color = LocalContentColor.current,
+        tint: Color? = null,
         iconSize: Dp = 24.dp,
         suppressGlow: Boolean = false,
 ) {
     val glowSpec = LocalLauncherIconGlow.current
     val glow = if (suppressGlow) LauncherIconGlowSpec.None else glowSpec
+    val resolvedTint =
+            tint
+                    ?: if (glow.enabled) {
+                        MaterialTheme.colorScheme.onSurface
+                    } else {
+                        LocalContentColor.current
+                    }
     val painter = rememberVectorPainter(imageVector)
     val scaledSize = iconSize.launcherIconDp()
     if (!glow.enabled) {
@@ -43,7 +53,7 @@ fun LauncherIcon(
                 painter = painter,
                 contentDescription = contentDescription,
                 modifier = modifier.size(scaledSize),
-                tint = tint,
+                tint = resolvedTint,
         )
         return
     }
@@ -91,7 +101,7 @@ fun LauncherIcon(
                 painter = painter,
                 contentDescription = contentDescription,
                 modifier = Modifier.fillMaxSize(),
-                tint = tint,
+                tint = resolvedTint,
         )
     }
 }
