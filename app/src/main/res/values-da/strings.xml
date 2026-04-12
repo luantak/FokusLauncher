@@ -14,7 +14,6 @@
     <string name="drawer_section_clone_profile">Parallelle apps</string>
     <string name="drawer_section_private_space">Privatrum</string>
     <string name="search">Søg</string>
-    <string name="search_apps_hint">Søg efter apps…</string>
     <string name="search_apps">Søg efter apps</string>
     <string name="search_apps_and_actions">Søg efter apps og handlinger</string>
     <string name="action_back">Tilbage</string>

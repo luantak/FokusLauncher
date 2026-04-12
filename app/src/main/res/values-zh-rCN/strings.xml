@@ -7,7 +7,6 @@
     <string name="drawer_private_space_lock">锁定私密空间</string>
     <string name="drawer_private_space_unlock">解锁私密空间</string>
     <string name="search">搜索</string>
-    <string name="search_apps_hint">搜索应用……</string>
     <string name="search_apps">搜索应用</string>
     <string name="action_back">返回</string>
     <string name="action_done">完成</string>
