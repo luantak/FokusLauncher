@@ -9,5 +9,8 @@ val DarkGray = Color(0xFF1A1A1A)
 val ChipBackground = Color(0xFF2A2A2A)
 val Transparent = Color.Transparent
 
-/** Error / delete / reset — fixed red so neon accents never replace destructive color. */
+/** Error / delete / reset in Classic and for M3 surfaces that should stay readable. */
 val DestructiveRed = Color(0xFFFF5449)
+
+/** Brighter, saturated red for destructive actions when a neon visual preset is active (matches glow hues). */
+val NeonDestructiveRed = Color(0xFFFF3D4D)

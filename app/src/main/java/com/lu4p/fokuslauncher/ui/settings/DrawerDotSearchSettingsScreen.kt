@@ -46,6 +46,7 @@ import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.ui.drawer.GroupedAppPickerDialog
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
+import com.lu4p.fokuslauncher.ui.theme.withLauncherTextGlowRecolored
 import com.lu4p.fokuslauncher.ui.util.formatShortcutTargetDisplay
 import com.lu4p.fokuslauncher.ui.util.rememberClickWithSystemSound
 
@@ -197,7 +198,6 @@ fun DrawerDotSearchSettingsScreen(
                                 stringResource(R.string.cd_remove_alias),
                                 tint = MaterialTheme.colorScheme.error,
                                 iconSize = 24.dp,
-                                suppressGlow = true,
                         )
                     }
                 }
@@ -390,7 +390,6 @@ private fun DotSearchTargetSettingsRow(
                             stringResource(R.string.action_clear),
                             tint = MaterialTheme.colorScheme.error,
                             iconSize = 18.dp,
-                            suppressGlow = true,
                     )
                 }
             }
@@ -432,7 +431,12 @@ private fun DotSearchUrlTemplateDialog(
                                 error?.let { err ->
                                     Text(
                                             err,
-                                            style = MaterialTheme.typography.bodySmall.copy(shadow = null),
+                                            style =
+                                                    MaterialTheme.typography.bodySmall
+                                                            .withLauncherTextGlowRecolored(
+                                                                    MaterialTheme.colorScheme
+                                                                            .error
+                                                            ),
                                             color = MaterialTheme.colorScheme.error,
                                     )
                                 }

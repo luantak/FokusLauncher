@@ -43,6 +43,16 @@ private fun TextStyle.withLauncherFont(fontFamily: FontFamily): TextStyle = copy
 fun TextStyle.withoutLauncherTextGlow(): TextStyle =
         copy(shadow = Shadow(color = Color.Transparent, offset = Offset.Zero, blurRadius = 0f))
 
+/**
+ * Keeps blur/offset from an existing launcher glow [shadow] but tints it [glowColor] (e.g. error red).
+ * No-ops when there is no shadow or blur is zero.
+ */
+fun TextStyle.withLauncherTextGlowRecolored(glowColor: Color): TextStyle {
+    val s = shadow ?: return this
+    if (s.blurRadius <= 0f) return this
+    return copy(shadow = s.copy(color = glowColor.copy(alpha = 1f)))
+}
+
 private fun TextStyle.withLauncherFontScale(scale: Float): TextStyle {
     if (scale == 1f) return this
     fun scaled(u: TextUnit): TextUnit =

@@ -30,7 +30,7 @@ import com.lu4p.fokuslauncher.ui.theme.launcherIconDp
  * [Icon] with size in **dp** scaled by [com.lu4p.fokuslauncher.ui.theme.LocalLauncherFontScale] so
  * icons follow the launcher font size setting.
  *
- * @param suppressGlow When true, skips the neon halo (e.g. destructive / error-colored icons).
+ * @param suppressGlow When true, skips the neon halo (flat icon on a busy background, etc.).
  * @param tint Icon color; when null, uses [LocalContentColor] without glow, or
  *     [MaterialTheme.colorScheme.onSurface] when glow is enabled so popups/menus match the theme.
  *     When glow is on and [tint] is non-null, halo layers use the same color as the glyph so

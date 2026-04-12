@@ -48,7 +48,7 @@ fun fokusColorSchemeFor(style: LauncherVisualStyle): ColorScheme {
             onBackground = palette.primary,
             onSurface = palette.primary,
             onSurfaceVariant = palette.muted,
-            error = DestructiveRed,
+            error = NeonDestructiveRed,
             onError = Black,
             errorContainer = Color(0xFF93000A),
             onErrorContainer = Color(0xFFFFDAD4),

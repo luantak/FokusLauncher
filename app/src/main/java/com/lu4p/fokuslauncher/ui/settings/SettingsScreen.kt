@@ -104,6 +104,7 @@ import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
 import com.lu4p.fokuslauncher.ui.theme.LocalLauncherFontScale
 import com.lu4p.fokuslauncher.ui.theme.LocalLauncherIconGlow
 import com.lu4p.fokuslauncher.ui.theme.settingsPreviewColor
+import com.lu4p.fokuslauncher.ui.theme.withLauncherTextGlowRecolored
 import com.lu4p.fokuslauncher.ui.theme.withoutLauncherTextGlow
 import com.lu4p.fokuslauncher.ui.settings.components.SettingsDropdown
 import com.lu4p.fokuslauncher.ui.settings.components.SettingsRow
@@ -639,7 +640,10 @@ private fun SettingsScreenContent(
         item {
             SettingsRow(
                     label = stringResource(R.string.settings_reset_all_data),
-                    labelStyle = MaterialTheme.typography.bodyLarge.copy(shadow = null),
+                    labelStyle =
+                            MaterialTheme.typography.bodyLarge.withLauncherTextGlowRecolored(
+                                    MaterialTheme.colorScheme.error
+                            ),
                     labelColor = MaterialTheme.colorScheme.error,
                     verticalPadding = 14.dp,
                     leading = {
@@ -648,7 +652,6 @@ private fun SettingsScreenContent(
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.error,
                                 iconSize = 24.dp,
-                                suppressGlow = true,
                         )
                     },
                     onClick = onShowResetConfirm,
@@ -692,7 +695,11 @@ private fun SettingsScreenDialogs(
                     ) {
                         Text(
                                 stringResource(R.string.action_reset),
-                                style = MaterialTheme.typography.labelLarge.copy(shadow = null),
+                                style =
+                                        MaterialTheme.typography.labelLarge
+                                                .withLauncherTextGlowRecolored(
+                                                        MaterialTheme.colorScheme.error
+                                                ),
                                 color = MaterialTheme.colorScheme.error,
                         )
                     }
@@ -1566,7 +1573,6 @@ private fun ShortcutTargetRow(
                         stringResource(R.string.action_clear),
                         tint = MaterialTheme.colorScheme.error,
                         iconSize = 18.dp,
-                        suppressGlow = true,
                 )
             }
         }
