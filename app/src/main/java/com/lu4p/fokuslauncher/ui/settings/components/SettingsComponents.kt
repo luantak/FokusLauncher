@@ -1,7 +1,11 @@
 package com.lu4p.fokuslauncher.ui.settings.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -17,12 +21,9 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,9 +31,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.lu4p.fokuslauncher.data.model.LauncherFontScale
 import com.lu4p.fokuslauncher.ui.components.LauncherIcon
+import com.lu4p.fokuslauncher.ui.theme.LocalLauncherFontScale
+import com.lu4p.fokuslauncher.ui.theme.LocalLauncherIconGlow
 import com.lu4p.fokuslauncher.ui.theme.withoutLauncherTextGlow
 import com.lu4p.fokuslauncher.ui.util.clickableWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.rememberBooleanChangeWithSystemSound
@@ -128,42 +133,6 @@ internal fun SettingsRow(
 }
 
 @Composable
-private fun settingsPickerOutlinedFieldColors() =
-        OutlinedTextFieldDefaults.colors(
-                focusedTextColor = MaterialTheme.colorScheme.onBackground,
-                unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
-                disabledTextColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.55f),
-                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.38f),
-                disabledBorderColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.22f),
-                focusedTrailingIconColor = MaterialTheme.colorScheme.onBackground,
-                unfocusedTrailingIconColor = MaterialTheme.colorScheme.onBackground,
-                disabledTrailingIconColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f),
-                cursorColor = MaterialTheme.colorScheme.primary,
-        )
-
-@Composable
-private fun settingsPickerOutlinedFieldColorsForFieldText(fieldTextColor: Color) =
-        OutlinedTextFieldDefaults.colors(
-                focusedTextColor = fieldTextColor,
-                unfocusedTextColor = fieldTextColor,
-                disabledTextColor = fieldTextColor.copy(alpha = 0.55f),
-                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.38f),
-                disabledBorderColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.22f),
-                focusedTrailingIconColor = MaterialTheme.colorScheme.onBackground,
-                unfocusedTrailingIconColor = MaterialTheme.colorScheme.onBackground,
-                disabledTrailingIconColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f),
-                cursorColor = MaterialTheme.colorScheme.primary,
-        )
-
-@Composable
 private fun settingsPickerMenuItemColors() =
         MenuDefaults.itemColors(
                 textColor = MaterialTheme.colorScheme.onBackground,
@@ -184,41 +153,84 @@ internal fun SettingsReadOnlyExposedDropdown(
         fieldTextColor: Color? = null,
         menuContent: @Composable ColumnScope.() -> Unit
 ) {
+    val launcherGlowEnabled = LocalLauncherIconGlow.current.enabled
+    // Match a standard single-line outlined field (~56dp); typography already scales with font
+    // size — avoid multiplying shell dp by [LocalLauncherFontScale] or the bar becomes very tall.
+    val fieldHeight = if (launcherGlowEnabled) 58.dp else 56.dp
+    val fieldHorizontalPadding = PaddingValues(start = 16.dp, end = 4.dp)
+    val selectedTextGlowPadding = if (launcherGlowEnabled) 2.dp else 0.dp
+    val resolvedTextStyle =
+            if (launcherGlowEnabled) textStyle else textStyle.withoutLauncherTextGlow()
+    val outlineColor =
+            when {
+                !fieldEnabled -> MaterialTheme.colorScheme.onBackground.copy(alpha = 0.22f)
+                menuExpanded -> MaterialTheme.colorScheme.primary
+                else -> MaterialTheme.colorScheme.onBackground.copy(alpha = 0.38f)
+            }
+    val outlineWidth = if (menuExpanded && fieldEnabled) 2.dp else 1.dp
     ExposedDropdownMenuBox(
             expanded = menuExpanded,
             onExpandedChange = onExpandedChange
     ) {
-        OutlinedTextField(
+        // Plain Text (not OutlinedTextField) so soft text shadow / glow is not clipped to a rect.
+        Box(
                 modifier =
                         textFieldModifier
                                 .menuAnchor(
                                         ExposedDropdownMenuAnchorType.PrimaryNotEditable,
                                         enabled = fieldEnabled
                                 )
-                                .fillMaxWidth(),
-                value = selectedDisplayText,
-                onValueChange = { _ -> },
-                readOnly = true,
-                enabled = fieldEnabled,
-                singleLine = true,
-                shape = SettingsPickerCorner,
-                textStyle = textStyle.withoutLauncherTextGlow(),
-                trailingIcon = {
-                    IconButton(onClick = { onExpandedChange(!menuExpanded) }) {
-                        LauncherIcon(
-                                imageVector = Icons.Filled.ArrowDropDown,
-                                contentDescription = null,
-                                iconSize = 24.dp,
-                        )
-                    }
-                },
-                colors =
-                        if (fieldTextColor != null) {
-                            settingsPickerOutlinedFieldColorsForFieldText(fieldTextColor)
-                        } else {
-                            settingsPickerOutlinedFieldColors()
-                        }
-        )
+                                .fillMaxWidth()
+        ) {
+            Row(
+                    modifier =
+                            Modifier.fillMaxWidth()
+                                    .height(fieldHeight)
+                                    .background(
+                                            MaterialTheme.colorScheme.surfaceVariant,
+                                            SettingsPickerCorner,
+                                    )
+                                    .border(
+                                            BorderStroke(outlineWidth, outlineColor),
+                                            SettingsPickerCorner,
+                                    )
+                                    .padding(fieldHorizontalPadding),
+                    verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                        text = selectedDisplayText,
+                        modifier =
+                                Modifier.weight(1f)
+                                        .padding(vertical = selectedTextGlowPadding),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        style = resolvedTextStyle,
+                        color =
+                                when {
+                                    fieldTextColor != null && fieldEnabled -> fieldTextColor
+                                    fieldTextColor != null -> fieldTextColor.copy(alpha = 0.55f)
+                                    !fieldEnabled ->
+                                            MaterialTheme.colorScheme.onBackground.copy(
+                                                    alpha = 0.55f
+                                            )
+                                    else -> Color.Unspecified
+                                },
+                )
+                IconButton(
+                        onClick = { onExpandedChange(!menuExpanded) },
+                        enabled = fieldEnabled,
+                ) {
+                    LauncherIcon(
+                            imageVector = Icons.Filled.ArrowDropDown,
+                            contentDescription = null,
+                            iconSize = 24.dp,
+                            tint =
+                                    if (fieldEnabled) MaterialTheme.colorScheme.onBackground
+                                    else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f),
+                    )
+                }
+            }
+        }
         ExposedDropdownMenu(
                 expanded = menuExpanded,
                 onDismissRequest = { onExpandedChange(false) },
@@ -313,6 +325,17 @@ internal fun <T> SettingsDropdown(
             textFieldModifier = textFieldModifier,
             fieldTextColor = fieldTextColor,
     ) {
+        val menuGlowEnabled = LocalLauncherIconGlow.current.enabled
+        val menuFontScale =
+                LocalLauncherFontScale.current.coerceIn(LauncherFontScale.MIN, LauncherFontScale.MAX)
+        val menuItemVerticalPadding =
+                ((if (menuGlowEnabled) 14f else 8f) * menuFontScale).dp
+        val menuItemHorizontalPadding = (16f * menuFontScale).dp
+        val menuItemContentPadding =
+                PaddingValues(
+                        horizontal = menuItemHorizontalPadding,
+                        vertical = menuItemVerticalPadding,
+                )
         options.forEach { option ->
             val itemColors =
                     if (menuItemTextColor != null) {
@@ -333,7 +356,7 @@ internal fun <T> SettingsDropdown(
                                 onExpandedChange(false)
                             },
                     colors = itemColors,
-                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
+                    contentPadding = menuItemContentPadding,
             )
         }
     }
