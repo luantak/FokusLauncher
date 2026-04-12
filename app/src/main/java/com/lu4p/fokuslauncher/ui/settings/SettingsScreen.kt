@@ -67,7 +67,9 @@ import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -99,7 +101,10 @@ import com.lu4p.fokuslauncher.data.model.LauncherVisualStyle
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.utils.LockScreenHelper
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
+import com.lu4p.fokuslauncher.ui.theme.LocalLauncherFontScale
+import com.lu4p.fokuslauncher.ui.theme.LocalLauncherIconGlow
 import com.lu4p.fokuslauncher.ui.theme.settingsPreviewColor
+import com.lu4p.fokuslauncher.ui.theme.withoutLauncherTextGlow
 import com.lu4p.fokuslauncher.ui.settings.components.SettingsDropdown
 import com.lu4p.fokuslauncher.ui.settings.components.SettingsRow
 import com.lu4p.fokuslauncher.ui.settings.components.SettingsToggleRow
@@ -1160,6 +1165,10 @@ private fun LauncherVisualStyleDropdown(
     val onExpandedChange = rememberBooleanChangeWithSystemSound { expanded = it }
     val selectedLabel = stringResource(currentStyle.labelRes)
     val fieldPreviewColor = currentStyle.settingsPreviewColor()
+    val menuGlowEnabled = LocalLauncherIconGlow.current.enabled
+    val menuFontBlurBoost =
+            LocalLauncherFontScale.current.coerceIn(LauncherFontScale.MIN, LauncherFontScale.MAX)
+                    .coerceIn(0.85f, 1.45f)
     SettingsDropdown(
             title = stringResource(R.string.settings_visual_style_label),
             subtitle = stringResource(R.string.settings_visual_style_subtitle),
@@ -1170,14 +1179,27 @@ private fun LauncherVisualStyleDropdown(
             fieldTextColor = fieldPreviewColor,
             menuItemTextColor = { it.settingsPreviewColor() },
             itemContent = { style ->
+                val preview = style.settingsPreviewColor()
+                val itemTextStyle =
+                        if (menuGlowEnabled) {
+                            MaterialTheme.typography.bodyLarge.copy(
+                                    color = Color.Unspecified,
+                                    shadow =
+                                            Shadow(
+                                                    color = preview.copy(alpha = 1f),
+                                                    offset = Offset.Zero,
+                                                    blurRadius = 40f * menuFontBlurBoost,
+                                            ),
+                            )
+                        } else {
+                            MaterialTheme.typography.bodyLarge
+                                    .copy(color = Color.Unspecified)
+                                    .withoutLauncherTextGlow()
+                        }
                 Text(
                         text = stringResource(style.labelRes),
-                        style =
-                                MaterialTheme.typography.bodyLarge.copy(
-                                        shadow = null,
-                                        color = Color.Unspecified,
-                                ),
-                        color = style.settingsPreviewColor(),
+                        style = itemTextStyle,
+                        color = preview,
                 )
             },
             onItemSelected = onStyleSelected,
