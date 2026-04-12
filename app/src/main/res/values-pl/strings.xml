@@ -17,7 +17,6 @@
     <string name="drawer_section_private_space">Prywatna przestrzeń</string>
     <!-- Search -->
     <string name="search">Szukaj</string>
-    <string name="search_apps_hint">Wyszukaj aplikacje…</string>
     <string name="search_apps">Wyszukaj aplikacje</string>
     <string name="search_apps_and_actions">Wyszukaj aplikacje i akcje</string>
     <!-- Common actions -->

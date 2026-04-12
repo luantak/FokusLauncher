@@ -1009,9 +1009,6 @@ fun AppDrawerContent(
                                 OutlinedTextField(
                                         value = uiState.searchQuery,
                                         onValueChange = onSearchQueryChanged,
-                                        placeholder = {
-                                            Text(stringResource(R.string.search_apps_hint))
-                                        },
                                         singleLine = true,
                                         keyboardOptions =
                                                 KeyboardOptions(imeAction = ImeAction.Search),
@@ -1048,7 +1045,6 @@ fun AppDrawerContent(
                         SearchBar(
                                 query = uiState.searchQuery,
                                 onQueryChange = onSearchQueryChanged,
-                                placeholder = stringResource(R.string.search_apps_hint),
                                 focusRequester = focusRequester,
                                 onImeAction = onSearchImeAction,
                                 modifier =

@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 fun SearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
-    placeholder: String,
+    placeholder: String = "",
     modifier: Modifier = Modifier,
     focusRequester: FocusRequester? = null,
     /** Invoked when the user presses Go/Done/Search on the IME (keyboard “enter”). */
@@ -47,7 +47,7 @@ fun SearchBar(
                 onSearch = { onImeAction?.invoke() }
             ),
         decorationBox = { innerTextField ->
-            if (query.isEmpty()) {
+            if (query.isEmpty() && placeholder.isNotEmpty()) {
                 androidx.compose.material3.Text(
                     text = placeholder,
                     style = MaterialTheme.typography.bodyMedium,

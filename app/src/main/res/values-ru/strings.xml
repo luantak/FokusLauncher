@@ -10,7 +10,6 @@
     <string name="drawer_section_other_profile">Другой профиль</string>
     <string name="drawer_section_clone_profile">Параллельные приложения</string>
     <string name="search">Поиск</string>
-    <string name="search_apps_hint">Поиск приложений…</string>
     <string name="search_apps">Поиск приложений</string>
     <string name="search_apps_and_actions">Поиск приложений и действий</string>
     <string name="action_back">Назад</string>
