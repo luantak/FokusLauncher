@@ -2,6 +2,7 @@ package com.lu4p.fokuslauncher.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.DeviceFontFamilyName
@@ -37,6 +38,10 @@ fun composeFontFamilyFromStoredName(storedName: String?): FontFamily {
 }
 
 private fun TextStyle.withLauncherFont(fontFamily: FontFamily): TextStyle = copy(fontFamily = fontFamily)
+
+/** Clears the soft text shadow applied when launcher glow is enabled. */
+fun TextStyle.withoutLauncherTextGlow(): TextStyle =
+        copy(shadow = Shadow(color = Color.Transparent, offset = Offset.Zero, blurRadius = 0f))
 
 private fun TextStyle.withLauncherFontScale(scale: Float): TextStyle {
     if (scale == 1f) return this
