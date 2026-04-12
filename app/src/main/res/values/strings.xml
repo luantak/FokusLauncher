@@ -257,6 +257,7 @@
     <string name="visual_style_neon_magenta">Neon violet</string>
     <string name="visual_style_neon_lime">Neon green</string>
     <string name="visual_style_neon_amber">Neon coral</string>
+    <string name="visual_style_neon_pink">Neon pink</string>
 
     <plurals name="settings_shortcuts_configured">
         <item quantity="one">%d shortcut configured</item>

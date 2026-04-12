@@ -17,6 +17,8 @@ fun LauncherVisualStyle.neonPalette(): NeonPalette? =
                     NeonPalette(primary = Color(0xFF58FF7A), muted = Color(0xFF78C892))
             LauncherVisualStyle.NEON_AMBER ->
                     NeonPalette(primary = Color(0xFFFF8F70), muted = Color(0xFFD9A894))
+            LauncherVisualStyle.NEON_PINK ->
+                    NeonPalette(primary = Color(0xFFFF4D9A), muted = Color(0xFFD088B0))
         }
 
 /** Primary accent as shown in settings (Classic = launcher white). */

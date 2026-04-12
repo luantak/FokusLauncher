@@ -9,7 +9,8 @@ enum class LauncherVisualStyle(@param:StringRes val labelRes: Int) {
     NEON_CYAN(R.string.visual_style_neon_cyan),
     NEON_MAGENTA(R.string.visual_style_neon_magenta),
     NEON_LIME(R.string.visual_style_neon_lime),
-    NEON_AMBER(R.string.visual_style_neon_amber);
+    NEON_AMBER(R.string.visual_style_neon_amber),
+    NEON_PINK(R.string.visual_style_neon_pink);
 
     companion object {
         fun fromString(value: String): LauncherVisualStyle {
