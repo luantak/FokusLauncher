@@ -73,9 +73,12 @@ import com.lu4p.fokuslauncher.ui.util.combinedClickableWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.LocalSystemClickSound
 import com.lu4p.fokuslauncher.utils.LockScreenHelper
 
-/** Strong full-screen gradient scrim so clock and labels stay readable on busy wallpapers. */
-private const val HOME_WALLPAPER_SCRIM_TOP_ALPHA = 0.22f
-private const val HOME_WALLPAPER_SCRIM_BOTTOM_ALPHA = 0.58f
+/** Full-screen gradient scrim so clock and labels stay readable on wallpapers. */
+private const val HOME_WALLPAPER_SCRIM_TOP_ALPHA_SOLID = 0.22f
+private const val HOME_WALLPAPER_SCRIM_BOTTOM_ALPHA_SOLID = 0.58f
+/** Heavier scrim when the home background is an image (vs near-black). */
+private const val HOME_WALLPAPER_SCRIM_TOP_ALPHA_PHOTO = 0.36f
+private const val HOME_WALLPAPER_SCRIM_BOTTOM_ALPHA_PHOTO = 0.76f
 
 @Composable
 fun HomeScreen(
@@ -211,6 +214,12 @@ fun HomeScreenContent(
 ) {
     val play = LocalSystemClickSound.current
     val noIndication = remember { MutableInteractionSource() }
+    val scrimTopAlpha =
+            if (uiState.usesPhotoWallpaper) HOME_WALLPAPER_SCRIM_TOP_ALPHA_PHOTO
+            else HOME_WALLPAPER_SCRIM_TOP_ALPHA_SOLID
+    val scrimBottomAlpha =
+            if (uiState.usesPhotoWallpaper) HOME_WALLPAPER_SCRIM_BOTTOM_ALPHA_PHOTO
+            else HOME_WALLPAPER_SCRIM_BOTTOM_ALPHA_SOLID
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -229,13 +238,8 @@ fun HomeScreenContent(
                                 Brush.verticalGradient(
                                         colors =
                                                 listOf(
-                                                        Color.Black.copy(
-                                                                alpha = HOME_WALLPAPER_SCRIM_TOP_ALPHA
-                                                        ),
-                                                        Color.Black.copy(
-                                                                alpha =
-                                                                        HOME_WALLPAPER_SCRIM_BOTTOM_ALPHA
-                                                        ),
+                                                        Color.Black.copy(alpha = scrimTopAlpha),
+                                                        Color.Black.copy(alpha = scrimBottomAlpha),
                                                 ),
                                 ),
                         ),

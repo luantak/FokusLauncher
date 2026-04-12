@@ -8,7 +8,7 @@ object FokusBackdrop {
     private const val OVERLAY_STRENGTH_WITHOUT_BLUR = 0.50f
     /** Darker Compose scrim behind the app drawer (home still uses wallpaper only). */
     private const val DRAWER_OVERLAY_STRENGTH_WITH_BLUR = 0.44f
-    private const val DRAWER_OVERLAY_STRENGTH_WITHOUT_BLUR = 0.70f
+    private const val DRAWER_OVERLAY_STRENGTH_WITHOUT_BLUR = 0.74f
     // Dim ratio is still mode-specific because Android's window dim
     // does not visually match Compose scrim 1:1.
     private const val WINDOW_DIM_SCALE_WITH_BLUR = 0.23076923f // 0.06 / 0.26
