@@ -3,9 +3,7 @@ package com.lu4p.fokuslauncher.ui.components
 import com.lu4p.fokuslauncher.ui.util.clickableNoRippleWithSystemSound
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -48,10 +46,10 @@ fun WeatherWidget(
             .clickableNoRippleWithSystemSound(onClick = onClick)
             .testTag("weather_widget")
     ) {
-        Icon(
+        LauncherIcon(
                 painter = painterResource(weatherMaterialSymbolDrawableRes(iconCode)),
                 contentDescription = null,
-                modifier = Modifier.size(iconSize),
+                iconSize = iconSize,
                 tint = textColor,
         )
         Spacer(modifier = Modifier.width(if (prominent) 8.dp else 4.dp))
