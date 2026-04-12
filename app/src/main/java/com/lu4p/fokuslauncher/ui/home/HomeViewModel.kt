@@ -58,6 +58,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -76,6 +77,8 @@ data class HomeUiState(
     val homeAlignment: HomeAlignment = HomeAlignment.LEFT,
     val doubleTapEmptyLockEnabled: Boolean = false,
     val launcherFontScale: Float = LauncherFontScale.DEFAULT,
+    /** Image / non-black wallpaper — stronger home scrim for readability. */
+    val usesPhotoWallpaper: Boolean = false,
 )
 
 data class HomeClockUiState(
@@ -234,6 +237,7 @@ class HomeViewModel @Inject constructor(
         updateBattery()
         observeHomeAlignment()
         observeLauncherFontScale()
+        observePhotoWallpaper()
         observeHomeDateFormatStyle()
         observeHomeWidgetItemPreferences()
         observeWeatherRefreshTriggers()
@@ -657,6 +661,16 @@ class HomeViewModel @Inject constructor(
     private fun observeLauncherFontScale() {
         observeFlow(preferencesManager.launcherFontScaleFlow) { scale ->
             _uiState.value = _uiState.value.copy(launcherFontScale = scale)
+        }
+    }
+
+    private fun observePhotoWallpaper() {
+        observeFlow(
+                preferencesManager.launcherAppearanceFlow
+                        .map { it.usesPhotoWallpaper }
+                        .distinctUntilChanged()
+        ) { usesPhoto ->
+            _uiState.value = _uiState.value.copy(usesPhotoWallpaper = usesPhoto)
         }
     }
 
