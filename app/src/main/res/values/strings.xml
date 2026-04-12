@@ -251,7 +251,7 @@
     <string name="settings_visual_style_label">Color style</string>
     <string name="settings_visual_style_subtitle">Neon or classic text and icon colors</string>
     <string name="settings_glow_label">Glow</string>
-    <string name="settings_glow_subtitle">Soft halo on text and icons (works with any color style)</string>
+    <string name="settings_glow_subtitle">Soft halo on text and icons</string>
     <string name="visual_style_classic">Classic</string>
     <string name="visual_style_neon_cyan">Neon cyan</string>
     <string name="visual_style_neon_magenta">Neon violet</string>

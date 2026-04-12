@@ -464,7 +464,8 @@ private fun HomeFavoritesSection(
 ) {
     val sc =
             launcherFontScale.coerceIn(LauncherFontScale.MIN, LauncherFontScale.MAX)
-    val shortcutIconSize = (24f * sc).dp
+    // Base dp only: [LauncherIcon] applies [launcherIconDp] so shortcut size tracks font scale once.
+    val shortcutIconSize = 24.dp
     val shortcutIconSpacingH = (24f * sc).dp
     val shortcutIconSpacingV = (20f * sc).dp
     val shortcutGutter = (24f * sc).dp

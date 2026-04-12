@@ -199,7 +199,7 @@ private fun ReorderableShortcutList(
                             imageVector = MinimalIcons.iconFor(shortcut.iconName),
                             contentDescription = stringResource(R.string.cd_change_icon),
                             tint = MaterialTheme.colorScheme.onBackground,
-                            iconSize = 40.dp,
+                            iconSize = 24.dp,
                             modifier =
                                     Modifier.clickableWithSystemSound { onOpenIconPicker(index) },
                     )
