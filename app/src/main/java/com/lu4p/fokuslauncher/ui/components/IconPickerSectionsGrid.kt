@@ -7,7 +7,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import com.lu4p.fokuslauncher.ui.util.clickableWithSystemSound
 import androidx.compose.material3.Text
@@ -53,7 +52,7 @@ fun IconPickerSectionsLazyGrid(
             items(section.names, key = { it }) { name ->
                 when (variant) {
                     IconPickerGridVariant.Dialog ->
-                        Icon(
+                        LauncherIcon(
                                 imageVector = MinimalIcons.iconFor(name),
                                 contentDescription = name,
                                 tint =
@@ -62,20 +61,20 @@ fun IconPickerSectionsLazyGrid(
                                         } else {
                                             MaterialTheme.colorScheme.onSurface
                                         },
+                                iconSize = 40.dp,
                                 modifier =
-                                        Modifier.size(40.dp).clickableWithSystemSound {
-                                            onSelect(name)
-                                        },
+                                        Modifier.clickableWithSystemSound { onSelect(name) },
                         )
                     IconPickerGridVariant.Drawer ->
                         FokusIconButton(
                                 onClick = { onSelect(name) },
                                 modifier = Modifier.size(48.dp),
                         ) {
-                            Icon(
+                            LauncherIcon(
                                     imageVector = MinimalIcons.iconFor(name),
                                     contentDescription = name,
                                     tint = MaterialTheme.colorScheme.onSurface,
+                                    iconSize = 24.dp,
                             )
                         }
                 }

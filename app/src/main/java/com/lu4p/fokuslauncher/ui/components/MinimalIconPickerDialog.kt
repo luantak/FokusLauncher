@@ -5,10 +5,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -66,11 +64,11 @@ fun MinimalIconPickerDialog(
                                             .padding(bottom = 12.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Icon(
+                        LauncherIcon(
                                 imageVector = MinimalIcons.iconFor(storedIconKey),
                                 contentDescription = stringResource(R.string.icon_picker_current_icon),
-                                modifier = Modifier.size(48.dp),
-                                tint = MaterialTheme.colorScheme.primary
+                                tint = MaterialTheme.colorScheme.primary,
+                                iconSize = 48.dp,
                         )
                         Text(
                                 text = stringResource(R.string.icon_picker_current_icon),
