@@ -103,7 +103,7 @@ fun fokusTypographyForLauncher(
             val blur =
                     (when {
                         isMuted -> 28f
-                        style.fontSize == 66.sp && style.lineHeight == 74.sp -> 62f
+                        style.fontSize == 66.sp && style.lineHeight == 74.sp -> 50f // displayLarge / home clock
                         style.fontSize == 24.sp && style.lineHeight == 36.sp -> 44f
                         style.fontSize == 20.sp && style.lineHeight == 32.sp -> 40f
                         style.fontSize == 14.sp && style.lineHeight == 20.sp -> 30f

@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.BlurEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalDensity
@@ -45,6 +46,25 @@ fun LauncherIcon(
         iconSize: Dp = 24.dp,
         suppressGlow: Boolean = false,
 ) {
+    LauncherIcon(
+            painter = rememberVectorPainter(imageVector),
+            contentDescription = contentDescription,
+            modifier = modifier,
+            tint = tint,
+            iconSize = iconSize,
+            suppressGlow = suppressGlow,
+    )
+}
+
+@Composable
+fun LauncherIcon(
+        painter: Painter,
+        contentDescription: String?,
+        modifier: Modifier = Modifier,
+        tint: Color? = null,
+        iconSize: Dp = 24.dp,
+        suppressGlow: Boolean = false,
+) {
     val glowSpec = LocalLauncherIconGlow.current
     val glow = if (suppressGlow) LauncherIconGlowSpec.None else glowSpec
     val resolvedTint =
@@ -62,7 +82,6 @@ fun LauncherIcon(
             } else {
                 glow.haloColor
             }
-    val painter = rememberVectorPainter(imageVector)
     val scaledSize = iconSize.launcherIconDp()
     if (!glow.enabled) {
         Icon(
