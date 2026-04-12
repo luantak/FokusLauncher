@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.text.font.FontFamily
 import com.lu4p.fokuslauncher.data.model.LauncherFontScale
 import com.lu4p.fokuslauncher.data.model.LauncherVisualStyle
@@ -47,6 +48,7 @@ fun fokusColorSchemeFor(style: LauncherVisualStyle): ColorScheme {
             secondary = palette.muted,
             onBackground = palette.primary,
             onSurface = palette.primary,
+            surfaceVariant = palette.primary.copy(alpha = 0.09f).compositeOver(Black),
             onSurfaceVariant = palette.muted,
             error = NeonDestructiveRed,
             onError = Black,
