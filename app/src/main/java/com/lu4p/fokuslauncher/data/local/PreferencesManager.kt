@@ -556,8 +556,11 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
      * wallpapers are detected without going through Fokus picker/onboarding.
      */
     suspend fun syncHomeUsesPhotoWallpaperFromSystemWallpaper() {
-        val isBlack = WallpaperHelper.isHomeWallpaperEffectivelyBlack(context)
-        setHomeUsesPhotoWallpaper(usesPhoto = !isBlack)
+        when (WallpaperHelper.homeWallpaperEffectivelyBlackOrNull(context)) {
+            null -> Unit
+            true -> setHomeUsesPhotoWallpaper(usesPhoto = false)
+            false -> setHomeUsesPhotoWallpaper(usesPhoto = true)
+        }
     }
 
     // --- Launcher text (system fonts + scale) ---

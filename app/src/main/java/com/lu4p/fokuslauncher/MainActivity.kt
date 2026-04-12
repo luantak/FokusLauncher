@@ -66,7 +66,7 @@ class MainActivity : AppCompatActivity() {
         window.decorView.overScrollMode = View.OVER_SCROLL_NEVER
         applySystemBarsAppearance()
         lifecycleScope.launch {
-            repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+            repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.RESUMED) {
                 withContext(Dispatchers.IO) {
                     preferencesManager.syncHomeUsesPhotoWallpaperFromSystemWallpaper()
                 }
