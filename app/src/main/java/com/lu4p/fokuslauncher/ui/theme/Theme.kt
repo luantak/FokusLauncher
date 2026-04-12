@@ -20,6 +20,8 @@ private val FokusColorSchemeClassic = darkColorScheme(
         onPrimary = Black,
         secondary = LightGray,
         onSecondary = Black,
+        secondaryContainer = ChipBackground,
+        onSecondaryContainer = White,
         background = Transparent,
         onBackground = White,
         surface = Transparent,
@@ -43,12 +45,17 @@ private val FokusColorSchemeClassic = darkColorScheme(
 
 fun fokusColorSchemeFor(style: LauncherVisualStyle): ColorScheme {
     val palette = style.neonPalette() ?: return FokusColorSchemeClassic
+    val sheetSurface = palette.primary.copy(alpha = 0.09f).compositeOver(Black)
+    val segmentSelectedSurface =
+            palette.primary.copy(alpha = 0.22f).compositeOver(Black)
     return FokusColorSchemeClassic.copy(
             primary = palette.primary,
             secondary = palette.muted,
             onBackground = palette.primary,
             onSurface = palette.primary,
-            surfaceVariant = palette.primary.copy(alpha = 0.09f).compositeOver(Black),
+            secondaryContainer = segmentSelectedSurface,
+            onSecondaryContainer = palette.primary,
+            surfaceVariant = sheetSurface,
             onSurfaceVariant = palette.muted,
             error = NeonDestructiveRed,
             onError = Black,
