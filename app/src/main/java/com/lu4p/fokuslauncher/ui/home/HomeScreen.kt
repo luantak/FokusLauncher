@@ -74,11 +74,11 @@ import com.lu4p.fokuslauncher.ui.util.LocalSystemClickSound
 import com.lu4p.fokuslauncher.utils.LockScreenHelper
 
 /** Full-screen gradient scrim so clock and labels stay readable on wallpapers. */
-private const val HOME_WALLPAPER_SCRIM_TOP_ALPHA_SOLID = 0.22f
-private const val HOME_WALLPAPER_SCRIM_BOTTOM_ALPHA_SOLID = 0.58f
+private const val HOME_WALLPAPER_SCRIM_TOP_ALPHA_SOLID = 0.17f
+private const val HOME_WALLPAPER_SCRIM_BOTTOM_ALPHA_SOLID = 0.45f
 /** Heavier scrim when the home background is an image (vs near-black). */
-private const val HOME_WALLPAPER_SCRIM_TOP_ALPHA_PHOTO = 0.36f
-private const val HOME_WALLPAPER_SCRIM_BOTTOM_ALPHA_PHOTO = 0.76f
+private const val HOME_WALLPAPER_SCRIM_TOP_ALPHA_PHOTO = 0.28f
+private const val HOME_WALLPAPER_SCRIM_BOTTOM_ALPHA_PHOTO = 0.59f
 
 @Composable
 fun HomeScreen(
