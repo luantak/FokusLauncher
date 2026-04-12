@@ -33,6 +33,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.lu4p.fokuslauncher.ui.components.LauncherIcon
+import com.lu4p.fokuslauncher.ui.theme.withoutLauncherTextGlow
 import com.lu4p.fokuslauncher.ui.util.clickableWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.rememberBooleanChangeWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.rememberClickWithSystemSound
@@ -201,7 +202,7 @@ internal fun SettingsReadOnlyExposedDropdown(
                 enabled = fieldEnabled,
                 singleLine = true,
                 shape = SettingsPickerCorner,
-                textStyle = textStyle,
+                textStyle = textStyle.withoutLauncherTextGlow(),
                 trailingIcon = {
                     IconButton(onClick = { onExpandedChange(!menuExpanded) }) {
                         LauncherIcon(
