@@ -352,6 +352,7 @@ internal fun <T> SettingsDropdown(
                     text = { itemContent(option) },
                     onClick =
                             rememberClickWithSystemSound {
+                                if (!fieldEnabled) return@rememberClickWithSystemSound
                                 onItemSelected(option)
                                 onExpandedChange(false)
                             },

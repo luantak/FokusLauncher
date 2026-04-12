@@ -94,8 +94,21 @@ class OnboardingViewModel @Inject constructor(
         viewModelScope.launch { preferencesManager.setSwipeRightTarget(target) }
     }
 
-    fun setBlackWallpaper() {
-        viewModelScope.launch { WallpaperHelper.setBlackWallpaper(context) }
+    /** Sets solid black wallpaper, records it, then advances (order guaranteed). */
+    fun onBackgroundChooseBlack() {
+        viewModelScope.launch {
+            WallpaperHelper.setBlackWallpaper(context)
+            preferencesManager.setHomeUsesPhotoWallpaper(false)
+            onNext()
+        }
+    }
+
+    /** User kept their existing (typically image) wallpaper; record then advance. */
+    fun onBackgroundChooseWallpaper() {
+        viewModelScope.launch {
+            preferencesManager.setHomeUsesPhotoWallpaper(true)
+            onNext()
+        }
     }
 
     val currentStep: StateFlow<OnboardingStep?> = combine(

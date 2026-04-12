@@ -249,6 +249,7 @@
     <string name="settings_font_size_subtitle">Stacks with your device font size</string>
     <string name="settings_visual_style_label">Color style</string>
     <string name="settings_visual_style_subtitle">Neon or classic text and icon colors</string>
+    <string name="settings_look_locked_image_wallpaper">Not available with an image wallpaper. Set a black background below to use colors and glow.</string>
     <string name="settings_glow_label">Glow</string>
     <string name="settings_glow_subtitle">Soft halo on text and icons</string>
     <string name="visual_style_classic">Classic</string>

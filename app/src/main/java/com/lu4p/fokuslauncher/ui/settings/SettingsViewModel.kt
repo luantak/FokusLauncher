@@ -88,6 +88,8 @@ data class SettingsUiState(
         val launcherVisualStyle: LauncherVisualStyle = LauncherVisualStyle.CLASSIC,
         /** Text shadow + icon halo; independent of [launcherVisualStyle]. */
         val launcherGlowEnabled: Boolean = false,
+        /** True when the home wallpaper is not solid black (image or busy wallpaper). */
+        val homeUsesPhotoWallpaper: Boolean = false,
         /** BCP-47 tag; empty = system default. */
         val appLocaleTag: String = "",
         val allowLandscapeRotation: Boolean = false,
@@ -246,6 +248,7 @@ constructor(
                                 scale = fontScale,
                                 visualStyle = appearance.visualStyle,
                                 glowEnabled = appearance.glowEnabled,
+                                usesPhotoWallpaper = appearance.usesPhotoWallpaper,
                         )
                     }
             val lookPrefsFlow =
@@ -260,6 +263,7 @@ constructor(
                                 launcherFontScale = fontVisual.scale,
                                 launcherVisualStyle = fontVisual.visualStyle,
                                 launcherGlowEnabled = fontVisual.glowEnabled,
+                                homeUsesPhotoWallpaper = fontVisual.usesPhotoWallpaper,
                                 appLocaleTag = localeTag,
                                 homeAlignment = homeAlignment,
                                 allowLandscapeRotation = allowLandscape,
@@ -366,6 +370,7 @@ constructor(
                         launcherFontScale = look.launcherFontScale,
                         launcherVisualStyle = look.launcherVisualStyle,
                         launcherGlowEnabled = look.launcherGlowEnabled,
+                        homeUsesPhotoWallpaper = look.homeUsesPhotoWallpaper,
                         appLocaleTag = look.appLocaleTag,
                         allowLandscapeRotation = look.allowLandscapeRotation,
                         doubleTapEmptyLock = lockRail.doubleTapEmptyLock,
@@ -421,6 +426,7 @@ constructor(
             val scale: Float,
             val visualStyle: LauncherVisualStyle,
             val glowEnabled: Boolean,
+            val usesPhotoWallpaper: Boolean,
     )
 
     private data class LookPrefs(
@@ -428,6 +434,7 @@ constructor(
             val launcherFontScale: Float,
             val launcherVisualStyle: LauncherVisualStyle,
             val launcherGlowEnabled: Boolean,
+            val homeUsesPhotoWallpaper: Boolean,
             val appLocaleTag: String,
             val homeAlignment: HomeAlignment,
             val allowLandscapeRotation: Boolean,
@@ -681,11 +688,19 @@ constructor(
     fun setLauncherFontScale(scale: Float) =
             launchPreferences { setLauncherFontScale(scale) }
 
-    fun setLauncherVisualStyle(style: LauncherVisualStyle) =
-            launchPreferences { setLauncherVisualStyle(style) }
+    fun setLauncherVisualStyle(style: LauncherVisualStyle) {
+        viewModelScope.launch {
+            if (preferencesManager.launcherAppearanceFlow.first().usesPhotoWallpaper) return@launch
+            preferencesManager.setLauncherVisualStyle(style)
+        }
+    }
 
-    fun setLauncherGlowEnabled(enabled: Boolean) =
-            launchPreferences { setLauncherGlowEnabled(enabled) }
+    fun setLauncherGlowEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            if (preferencesManager.launcherAppearanceFlow.first().usesPhotoWallpaper) return@launch
+            preferencesManager.setLauncherGlowEnabled(enabled)
+        }
+    }
 
     fun setAppLocaleTag(tag: String) {
         viewModelScope.launch {
@@ -735,9 +750,9 @@ constructor(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val wallpaperManager = WallpaperManager.getInstance(context)
-                context.contentResolver.openInputStream(uri)?.use { stream ->
-                    wallpaperManager.setStream(stream)
-                }
+                val stream = context.contentResolver.openInputStream(uri) ?: return@launch
+                stream.use { wallpaperManager.setStream(it) }
+                preferencesManager.setHomeUsesPhotoWallpaper(true)
             } catch (e: Exception) {
                 // Ignore or handle error
             }
@@ -745,6 +760,9 @@ constructor(
     }
 
     fun setBlackWallpaper() {
-        viewModelScope.launch { WallpaperHelper.setBlackWallpaper(context) }
+        viewModelScope.launch {
+            WallpaperHelper.setBlackWallpaper(context)
+            preferencesManager.setHomeUsesPhotoWallpaper(false)
+        }
     }
 }

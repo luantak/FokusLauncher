@@ -32,6 +32,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -66,6 +67,9 @@ class MainActivity : AppCompatActivity() {
         applySystemBarsAppearance()
         lifecycleScope.launch {
             repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+                withContext(Dispatchers.IO) {
+                    preferencesManager.syncHomeUsesPhotoWallpaperFromSystemWallpaper()
+                }
                 launch {
                     preferencesManager.showStatusBarFlow.collect { showStatusBar ->
                         shouldShowStatusBar = showStatusBar
@@ -98,11 +102,14 @@ class MainActivity : AppCompatActivity() {
                 preferencesManager.appLocaleTagFlow.collect { value = it }
             }
             ProvideAppLocale(localeTag = appLocaleTag) {
+                val wallpaperIsPhoto = launcherAppearance.usesPhotoWallpaper
                 FokusLauncherTheme(
                         fontFamily = composeFontFamilyFromStoredName(launcherFontFamilyName),
                         fontScale = launcherFontScale,
-                        visualStyle = launcherAppearance.visualStyle,
-                        glowEnabled = launcherAppearance.glowEnabled,
+                        visualStyle =
+                                if (wallpaperIsPhoto) LauncherVisualStyle.CLASSIC
+                                else launcherAppearance.visualStyle,
+                        glowEnabled = launcherAppearance.glowEnabled && !wallpaperIsPhoto,
                 ) {
                     FokusNavGraph()
                 }

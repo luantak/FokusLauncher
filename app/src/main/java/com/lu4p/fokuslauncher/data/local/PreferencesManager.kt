@@ -22,6 +22,7 @@ import com.lu4p.fokuslauncher.data.model.LauncherVisualStyle
 import com.lu4p.fokuslauncher.data.model.DotSearchTargetPreference
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
+import com.lu4p.fokuslauncher.utils.WallpaperHelper
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -108,6 +109,13 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         private val HOME_ALIGNMENT_KEY = stringPreferencesKey("home_alignment")
         private val LAUNCHER_VISUAL_STYLE_KEY = stringPreferencesKey("launcher_visual_style")
         private val LAUNCHER_GLOW_ENABLED_KEY = booleanPreferencesKey("launcher_glow_enabled")
+        /**
+         * True after the user keeps or sets an image wallpaper; false after setting black wallpaper
+         * from the app. Default false so existing installs behave as before until they change
+         * wallpaper via Fokus.
+         */
+        private val HOME_USES_PHOTO_WALLPAPER_KEY =
+                booleanPreferencesKey("home_uses_photo_wallpaper")
         private val LAUNCHER_FONT_FAMILY_KEY = stringPreferencesKey("launcher_font_family")
         private val LAUNCHER_FONT_SCALE_KEY = floatPreferencesKey("launcher_font_scale")
         private val ALLOW_LANDSCAPE_ROTATION_KEY =
@@ -508,7 +516,12 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
                         } else {
                             visualStyle != LauncherVisualStyle.CLASSIC
                         }
-                LauncherAppearance(visualStyle = visualStyle, glowEnabled = glowEnabled)
+                val usesPhotoWallpaper = prefs[HOME_USES_PHOTO_WALLPAPER_KEY] == true
+                LauncherAppearance(
+                        visualStyle = visualStyle,
+                        glowEnabled = glowEnabled,
+                        usesPhotoWallpaper = usesPhotoWallpaper,
+                )
             }
 
     val launcherVisualStyleFlow: Flow<LauncherVisualStyle> =
@@ -529,6 +542,22 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
 
     suspend fun setLauncherGlowEnabled(enabled: Boolean) {
         setPref(LAUNCHER_GLOW_ENABLED_KEY, enabled)
+    }
+
+    suspend fun setHomeUsesPhotoWallpaper(usesPhoto: Boolean) {
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            if (usesPhoto) prefs[HOME_USES_PHOTO_WALLPAPER_KEY] = true
+            else prefs.remove(HOME_USES_PHOTO_WALLPAPER_KEY)
+        }
+    }
+
+    /**
+     * Updates [HOME_USES_PHOTO_WALLPAPER_KEY] from the live system wallpaper so existing image
+     * wallpapers are detected without going through Fokus picker/onboarding.
+     */
+    suspend fun syncHomeUsesPhotoWallpaperFromSystemWallpaper() {
+        val isBlack = WallpaperHelper.isHomeWallpaperEffectivelyBlack(context)
+        setHomeUsesPhotoWallpaper(usesPhoto = !isBlack)
     }
 
     // --- Launcher text (system fonts + scale) ---
