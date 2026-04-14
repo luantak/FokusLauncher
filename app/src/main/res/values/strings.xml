@@ -253,11 +253,15 @@
     <string name="settings_glow_label">Glow</string>
     <string name="settings_glow_subtitle">Soft halo on text and icons</string>
     <string name="visual_style_classic">Classic</string>
-    <string name="visual_style_neon_cyan">Neon cyan</string>
-    <string name="visual_style_neon_magenta">Neon violet</string>
-    <string name="visual_style_neon_lime">Neon green</string>
-    <string name="visual_style_neon_amber">Neon coral</string>
-    <string name="visual_style_neon_pink">Neon pink</string>
+    <string name="visual_style_neon_magenta">Cosmic Violet</string>
+    <string name="visual_style_neon_lime">Terminal Green</string>
+    <string name="visual_style_neon_amber">Coral</string>
+    <string name="visual_style_neon_pink">Hot Pink</string>
+    <string name="visual_style_lavender">Lavender</string>
+    <string name="visual_style_sky">Sky</string>
+    <string name="visual_style_sage">Sage</string>
+    <string name="visual_style_rose">Rose</string>
+    <string name="visual_style_emerald">Emerald</string>
 
     <plurals name="settings_shortcuts_configured">
         <item quantity="one">%d shortcut configured</item>
