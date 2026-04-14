@@ -13,6 +13,9 @@
 .externalNativeBuild
 .cxx
 local.properties
+signing.properties
+signing/pepk-output.zip
+signing/play-upload-key-encrypted.zip
 .vscode
 .keystore
 .cursor
