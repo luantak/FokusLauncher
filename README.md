@@ -37,6 +37,9 @@ with minimal visual noise.
   <a href="fastlane/metadata/android/en-US/images/phoneScreenshots/screenshot-5.png">
     <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/screenshot-5.png" alt="Screenshot 5" width="30%" />
   </a>
+  <a href="fastlane/metadata/android/en-US/images/phoneScreenshots/screenshot-6.png">
+    <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/screenshot-6.png" alt="Screenshot 6" width="30%" />
+  </a>
 </p>
 
 ## Current Feature Set
