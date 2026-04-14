@@ -1167,8 +1167,11 @@ fun CategoryActionSheet(
                 iconOverrides = categoryDrawerIconOverrides,
                 onSelect = { name ->
                     onSetCategoryIcon(name)
+                    showIconPickerDialog = false
                 },
-                onDismiss = { }
+                onDismiss = {
+                    showIconPickerDialog = false
+                },
         )
     }
 }
