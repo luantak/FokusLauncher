@@ -9,8 +9,6 @@ data class NeonPalette(val primary: Color, val muted: Color)
 fun LauncherVisualStyle.neonPalette(): NeonPalette? =
         when (this) {
             LauncherVisualStyle.CLASSIC -> null
-            LauncherVisualStyle.NEON_CYAN ->
-                    NeonPalette(primary = Color(0xFF00FFF0), muted = Color(0xFF5EC8C3))
             LauncherVisualStyle.NEON_MAGENTA ->
                     NeonPalette(primary = Color(0xFFE070FF), muted = Color(0xFFB092D0))
             LauncherVisualStyle.NEON_LIME ->
@@ -18,7 +16,17 @@ fun LauncherVisualStyle.neonPalette(): NeonPalette? =
             LauncherVisualStyle.NEON_AMBER ->
                     NeonPalette(primary = Color(0xFFFF8F70), muted = Color(0xFFD9A894))
             LauncherVisualStyle.NEON_PINK ->
-                    NeonPalette(primary = Color(0xFFFF4D9A), muted = Color(0xFFD088B0))
+                    NeonPalette(primary = Color(0xFFD45080), muted = Color(0xFFA03860))
+            LauncherVisualStyle.LAVENDER ->
+                    NeonPalette(primary = Color(0xFFC49EE8), muted = Color(0xFF9870C0))
+            LauncherVisualStyle.SKY ->
+                    NeonPalette(primary = Color(0xFF87CEEB), muted = Color(0xFF6098B8))
+            LauncherVisualStyle.SAGE ->
+                    NeonPalette(primary = Color(0xFF8FBC8F), muted = Color(0xFF6A9070))
+            LauncherVisualStyle.ROSE ->
+                    NeonPalette(primary = Color(0xFFFB7185), muted = Color(0xFFD04060))
+            LauncherVisualStyle.EMERALD ->
+                    NeonPalette(primary = Color(0xFF10B981), muted = Color(0xFF0A8060))
         }
 
 /** Primary accent as shown in settings (Classic = launcher white). */
