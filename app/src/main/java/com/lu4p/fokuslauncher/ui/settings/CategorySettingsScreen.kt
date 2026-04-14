@@ -175,8 +175,11 @@ fun CategorySettingsScreen(
                 iconOverrides = uiState.categoryDrawerIconOverrides,
                 onSelect = { name ->
                     viewModel.setCategoryDrawerIcon(pickerCategory, name)
+                    categoryIconPickerFor = null
                 },
-                onDismiss = { }
+                onDismiss = {
+                    categoryIconPickerFor = null
+                },
         )
     }
 }
