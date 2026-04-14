@@ -17,6 +17,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
@@ -408,6 +409,24 @@ fun FokusNavGraph(
                 }
                 
                 // ── App Drawer overlay ─────────────────────────────────────
+                // Full-screen scrim must not use the drawer's slide-in: Home is hidden immediately
+                // (alpha 0) while the overlay used to start fully below the screen, which briefly
+                // showed the wallpaper at full brightness before the scrim covered it.
+                AnimatedVisibility(
+                    visible = showDrawer,
+                    enter = EnterTransition.None,
+                    exit = fadeOut(tween(220)),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(overlayScrimColor)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) {}
+                    )
+                }
                 AnimatedVisibility(
                     visible = showDrawer,
                     enter = slideInVertically(
@@ -425,28 +444,18 @@ fun FokusNavGraph(
                         targetOffsetY = { it }     // slide back down
                     )
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(overlayScrimColor)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null
-                            ) {}
-                    ) {
-                        AppDrawerScreen(
-                            viewModel = appDrawerViewModel,
-                            onSettingsClick = {
-                                navController.navigateSingleTop(Routes.SETTINGS)
-                            },
-                            onEditCategoryApps = { category ->
-                                navController.navigateSingleTop(
-                                        "${Routes.SETTINGS_CATEGORY_APPS}/${Uri.encode(category)}"
-                                )
-                            },
-                            onClose = { showDrawer = false }
-                        )
-                    }
+                    AppDrawerScreen(
+                        viewModel = appDrawerViewModel,
+                        onSettingsClick = {
+                            navController.navigateSingleTop(Routes.SETTINGS)
+                        },
+                        onEditCategoryApps = { category ->
+                            navController.navigateSingleTop(
+                                    "${Routes.SETTINGS_CATEGORY_APPS}/${Uri.encode(category)}"
+                            )
+                        },
+                        onClose = { showDrawer = false }
+                    )
                 }
             }
 
