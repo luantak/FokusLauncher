@@ -1,0 +1,5 @@
+Choose your color, with optional glow around text/ icons.
+Move to Material Symbols weather icons (themeable)
+Better text readbilty on bright background images.
+
+Fixes: category icon picker.
