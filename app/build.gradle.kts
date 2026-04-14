@@ -1,3 +1,4 @@
+import java.util.Properties
 import org.gradle.api.GradleException
 
 plugins {
@@ -7,36 +8,90 @@ plugins {
     alias(libs.plugins.compose.compiler)
 }
 
-val releaseKeystorePath = providers.environmentVariable("ANDROID_KEYSTORE_PATH")
-        .orElse(providers.gradleProperty("ANDROID_KEYSTORE_PATH"))
-        .orNull
-val releaseKeystorePassword = providers.environmentVariable("ANDROID_KEYSTORE_PASSWORD")
-        .orElse(providers.gradleProperty("ANDROID_KEYSTORE_PASSWORD"))
-        .orNull
-val releaseKeyAlias = providers.environmentVariable("ANDROID_KEY_ALIAS")
-        .orElse(providers.gradleProperty("ANDROID_KEY_ALIAS"))
-        .orNull
-val releaseKeyPassword = providers.environmentVariable("ANDROID_KEY_PASSWORD")
-        .orElse(providers.gradleProperty("ANDROID_KEY_PASSWORD"))
-        .orNull
-val hasReleaseSigning = !releaseKeystorePath.isNullOrBlank() &&
-        !releaseKeystorePassword.isNullOrBlank() &&
-        !releaseKeyAlias.isNullOrBlank() &&
-        !releaseKeyPassword.isNullOrBlank()
-val missingReleaseSigningInputs = buildList {
-    if (releaseKeystorePath.isNullOrBlank()) add("ANDROID_KEYSTORE_PATH")
-    if (releaseKeystorePassword.isNullOrBlank()) add("ANDROID_KEYSTORE_PASSWORD")
-    if (releaseKeyAlias.isNullOrBlank()) add("ANDROID_KEY_ALIAS")
-    if (releaseKeyPassword.isNullOrBlank()) add("ANDROID_KEY_PASSWORD")
-}
-val isCi = providers.environmentVariable("CI").orNull == "true"
-val isReleaseTaskRequested = gradle.startParameter.taskNames.any {
-    it.contains("release", ignoreCase = true)
+// Gradle only reads gradle.properties from the repo root and ~/.gradle — not from project/.gradle/.
+// Optional gitignored file at repo root: signing.properties (same keys as env / gradle.properties).
+val signingProperties = Properties()
+val signingPropertiesFile = rootProject.file("signing.properties")
+if (signingPropertiesFile.exists()) {
+    signingPropertiesFile.inputStream().use { signingProperties.load(it) }
 }
 
-if (isCi && isReleaseTaskRequested && missingReleaseSigningInputs.isNotEmpty()) {
+fun releaseSigningValue(vararg names: String): String? {
+    for (name in names) {
+        System.getenv(name)?.takeIf { it.isNotBlank() }?.let { return it }
+        signingProperties.getProperty(name)?.trim()?.takeIf { it.isNotEmpty() }?.let { return it }
+        (project.findProperty(name) as String?)?.takeIf { it.isNotBlank() }?.let { return it }
+    }
+    return null
+}
+
+val requestedTaskNames = gradle.startParameter.taskNames.map { it.lowercase() }
+val requiresReleaseBundleSigning = requestedTaskNames.any { it.contains("bundlerelease") }
+val requiresReleaseApkSigning = requestedTaskNames.any { it.contains("assemblerelease") }
+
+val apkKeystorePath = releaseSigningValue("ANDROID_APK_KEYSTORE_PATH", "ANDROID_KEYSTORE_PATH")
+val apkKeystorePassword = releaseSigningValue("ANDROID_APK_KEYSTORE_PASSWORD", "ANDROID_KEYSTORE_PASSWORD")
+val apkKeyAlias = releaseSigningValue("ANDROID_APK_KEY_ALIAS", "ANDROID_KEY_ALIAS")
+val apkKeyPassword = releaseSigningValue("ANDROID_APK_KEY_PASSWORD", "ANDROID_KEY_PASSWORD")
+val hasApkReleaseSigning = !apkKeystorePath.isNullOrBlank() &&
+        !apkKeystorePassword.isNullOrBlank() &&
+        !apkKeyAlias.isNullOrBlank() &&
+        !apkKeyPassword.isNullOrBlank()
+val missingApkReleaseSigningInputs = buildList {
+    if (apkKeystorePath.isNullOrBlank()) add("ANDROID_APK_KEYSTORE_PATH/ANDROID_KEYSTORE_PATH")
+    if (apkKeystorePassword.isNullOrBlank()) add("ANDROID_APK_KEYSTORE_PASSWORD/ANDROID_KEYSTORE_PASSWORD")
+    if (apkKeyAlias.isNullOrBlank()) add("ANDROID_APK_KEY_ALIAS/ANDROID_KEY_ALIAS")
+    if (apkKeyPassword.isNullOrBlank()) add("ANDROID_APK_KEY_PASSWORD/ANDROID_KEY_PASSWORD")
+}
+
+val bundleKeystorePath = releaseSigningValue("ANDROID_BUNDLE_KEYSTORE_PATH", "ANDROID_KEYSTORE_PATH")
+val bundleKeystorePassword = releaseSigningValue("ANDROID_BUNDLE_KEYSTORE_PASSWORD", "ANDROID_KEYSTORE_PASSWORD")
+val bundleKeyAlias = releaseSigningValue("ANDROID_BUNDLE_KEY_ALIAS", "ANDROID_KEY_ALIAS")
+val bundleKeyPassword = releaseSigningValue("ANDROID_BUNDLE_KEY_PASSWORD", "ANDROID_KEY_PASSWORD")
+val hasBundleReleaseSigning = !bundleKeystorePath.isNullOrBlank() &&
+        !bundleKeystorePassword.isNullOrBlank() &&
+        !bundleKeyAlias.isNullOrBlank() &&
+        !bundleKeyPassword.isNullOrBlank()
+val missingBundleReleaseSigningInputs = buildList {
+    if (bundleKeystorePath.isNullOrBlank()) add("ANDROID_BUNDLE_KEYSTORE_PATH/ANDROID_KEYSTORE_PATH")
+    if (bundleKeystorePassword.isNullOrBlank()) add("ANDROID_BUNDLE_KEYSTORE_PASSWORD/ANDROID_KEYSTORE_PASSWORD")
+    if (bundleKeyAlias.isNullOrBlank()) add("ANDROID_BUNDLE_KEY_ALIAS/ANDROID_KEY_ALIAS")
+    if (bundleKeyPassword.isNullOrBlank()) add("ANDROID_BUNDLE_KEY_PASSWORD/ANDROID_KEY_PASSWORD")
+}
+
+if (requiresReleaseApkSigning && missingApkReleaseSigningInputs.isNotEmpty()) {
     throw GradleException(
-            "Release signing is required in CI. Missing: ${missingReleaseSigningInputs.joinToString(", ")}"
+            "APK release signing is required for assembleRelease. " +
+                    "Set ANDROID_APK_KEYSTORE_PATH, ANDROID_APK_KEYSTORE_PASSWORD, ANDROID_APK_KEY_ALIAS, and " +
+                    "ANDROID_APK_KEY_PASSWORD (or the generic ANDROID_KEYSTORE_PATH, ANDROID_KEYSTORE_PASSWORD, " +
+                    "ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD). " +
+                    "Missing: ${missingApkReleaseSigningInputs.joinToString(", ")}"
+    )
+}
+
+if (requiresReleaseBundleSigning && missingBundleReleaseSigningInputs.isNotEmpty()) {
+    throw GradleException(
+            "Bundle release signing is required for bundleRelease. " +
+                    "Set ANDROID_BUNDLE_KEYSTORE_PATH, ANDROID_BUNDLE_KEYSTORE_PASSWORD, ANDROID_BUNDLE_KEY_ALIAS, and " +
+                    "ANDROID_BUNDLE_KEY_PASSWORD (or the generic ANDROID_KEYSTORE_PATH, ANDROID_KEYSTORE_PASSWORD, " +
+                    "ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD). " +
+                    "Missing: ${missingBundleReleaseSigningInputs.joinToString(", ")}"
+    )
+}
+
+val apkAndBundleUseDifferentSigners = hasApkReleaseSigning &&
+        hasBundleReleaseSigning &&
+        (
+                apkKeystorePath != bundleKeystorePath ||
+                        apkKeystorePassword != bundleKeystorePassword ||
+                        apkKeyAlias != bundleKeyAlias ||
+                        apkKeyPassword != bundleKeyPassword
+                )
+
+if (requiresReleaseApkSigning && requiresReleaseBundleSigning && apkAndBundleUseDifferentSigners) {
+    throw GradleException(
+            "assembleRelease and bundleRelease are configured to use different signing keys. " +
+                    "Run them in separate Gradle invocations."
     )
 }
 
@@ -54,19 +109,30 @@ android {
         applicationId = "io.github.luantak.fokuslauncher"
         minSdk = 26
         targetSdk = 36
-        versionCode = 32
-        versionName = "1.3.0"
+        versionCode = 33
+        versionName = "1.3.1"
 
         testInstrumentationRunner = "io.github.luantak.fokuslauncher.HiltTestRunner"
     }
 
-    if (hasReleaseSigning) {
+    if (hasApkReleaseSigning || hasBundleReleaseSigning) {
         signingConfigs {
-            create("release") {
-                storeFile = file(releaseKeystorePath!!)
-                storePassword = releaseKeystorePassword
-                keyAlias = releaseKeyAlias
-                keyPassword = releaseKeyPassword
+            if (hasApkReleaseSigning) {
+                create("releaseApk") {
+                    // Resolve against repo root so paths like ".keystore/release.keystore" work (app/file() would use app/).
+                    storeFile = rootProject.file(apkKeystorePath!!)
+                    storePassword = apkKeystorePassword
+                    keyAlias = apkKeyAlias
+                    keyPassword = apkKeyPassword
+                }
+            }
+            if (hasBundleReleaseSigning) {
+                create("releaseBundle") {
+                    storeFile = rootProject.file(bundleKeystorePath!!)
+                    storePassword = bundleKeystorePassword
+                    keyAlias = bundleKeyAlias
+                    keyPassword = bundleKeyPassword
+                }
             }
         }
     }
@@ -80,8 +146,23 @@ android {
             )
             isDebuggable = false
             isJniDebuggable = false
-            if (hasReleaseSigning) {
-                signingConfig = signingConfigs.getByName("release")
+            // Emit Play Console native debug metadata for dependency-provided .so files.
+            ndk {
+                debugSymbolLevel = "FULL"
+            }
+            when {
+                requiresReleaseBundleSigning && hasBundleReleaseSigning -> {
+                    signingConfig = signingConfigs.getByName("releaseBundle")
+                }
+                requiresReleaseApkSigning && hasApkReleaseSigning -> {
+                    signingConfig = signingConfigs.getByName("releaseApk")
+                }
+                hasBundleReleaseSigning -> {
+                    signingConfig = signingConfigs.getByName("releaseBundle")
+                }
+                hasApkReleaseSigning -> {
+                    signingConfig = signingConfigs.getByName("releaseApk")
+                }
             }
         }
         getByName("debug") {
