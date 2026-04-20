@@ -1035,7 +1035,10 @@ private fun AppLanguageDropdown(
         onTagSelected: (String) -> Unit
 ) {
     val systemDefaultLabel = stringResource(R.string.settings_language_system_default)
-    val supportedLocaleTags = remember { listOf("en", "de", "pl", "ru", "zh-CN", "tr", "da") }
+    val supportedLocaleTags =
+            remember {
+                listOf("en", "de", "pl", "ru", "zh-CN", "tr", "da", "es", "eu", "fi", "pt-BR")
+            }
     val options =
             remember(systemDefaultLabel) {
                 val collator = Collator.getInstance(Locale.ROOT).apply { strength = Collator.PRIMARY }
