@@ -59,9 +59,13 @@ val missingBundleReleaseSigningInputs = buildList {
     if (bundleKeyPassword.isNullOrBlank()) add("ANDROID_BUNDLE_KEY_PASSWORD/ANDROID_KEY_PASSWORD")
 }
 
-if (requiresReleaseApkSigning && missingApkReleaseSigningInputs.isNotEmpty()) {
+// Unsigned release builds (e.g. reproducible builds, F-Droid/IzzyOnDroid) are allowed when no keystore path is set.
+val wantsApkReleaseSigning = !apkKeystorePath.isNullOrBlank()
+val wantsBundleReleaseSigning = !bundleKeystorePath.isNullOrBlank()
+
+if (requiresReleaseApkSigning && wantsApkReleaseSigning && missingApkReleaseSigningInputs.isNotEmpty()) {
     throw GradleException(
-            "APK release signing is required for assembleRelease. " +
+            "APK release signing was requested (keystore path set) but configuration is incomplete. " +
                     "Set ANDROID_APK_KEYSTORE_PATH, ANDROID_APK_KEYSTORE_PASSWORD, ANDROID_APK_KEY_ALIAS, and " +
                     "ANDROID_APK_KEY_PASSWORD (or the generic ANDROID_KEYSTORE_PATH, ANDROID_KEYSTORE_PASSWORD, " +
                     "ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD). " +
@@ -69,9 +73,9 @@ if (requiresReleaseApkSigning && missingApkReleaseSigningInputs.isNotEmpty()) {
     )
 }
 
-if (requiresReleaseBundleSigning && missingBundleReleaseSigningInputs.isNotEmpty()) {
+if (requiresReleaseBundleSigning && wantsBundleReleaseSigning && missingBundleReleaseSigningInputs.isNotEmpty()) {
     throw GradleException(
-            "Bundle release signing is required for bundleRelease. " +
+            "Bundle release signing was requested (keystore path set) but configuration is incomplete. " +
                     "Set ANDROID_BUNDLE_KEYSTORE_PATH, ANDROID_BUNDLE_KEYSTORE_PASSWORD, ANDROID_BUNDLE_KEY_ALIAS, and " +
                     "ANDROID_BUNDLE_KEY_PASSWORD (or the generic ANDROID_KEYSTORE_PATH, ANDROID_KEYSTORE_PASSWORD, " +
                     "ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD). " +
@@ -162,6 +166,9 @@ android {
                 }
                 hasApkReleaseSigning -> {
                     signingConfig = signingConfigs.getByName("releaseApk")
+                }
+                else -> {
+                    signingConfig = null
                 }
             }
         }
