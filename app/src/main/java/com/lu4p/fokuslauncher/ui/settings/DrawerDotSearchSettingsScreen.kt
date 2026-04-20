@@ -207,7 +207,7 @@ fun DrawerDotSearchSettingsScreen(
 
     if (showAddShortcutChoice) {
         FokusAlertDialog(
-                onDismissRequest = { },
+                onDismissRequest = { showAddShortcutChoice = false },
                 title = {
                     Text(
                             stringResource(R.string.settings_dot_search_add_shortcut_title),
@@ -218,6 +218,7 @@ fun DrawerDotSearchSettingsScreen(
                     Column {
                         FokusTextButton(
                                 onClick = {
+                                    showAddShortcutChoice = false
                                     showAliasAppPicker = true
                                 }
                         ) {
@@ -225,6 +226,7 @@ fun DrawerDotSearchSettingsScreen(
                         }
                         FokusTextButton(
                                 onClick = {
+                                    showAddShortcutChoice = false
                                     showAliasCharForUrlTemplate = true
                                 }
                         ) {
@@ -234,7 +236,7 @@ fun DrawerDotSearchSettingsScreen(
                 },
                 confirmButton = {},
                 dismissButton = {
-                    FokusTextButton(onClick = { }) {
+                    FokusTextButton(onClick = { showAddShortcutChoice = false }) {
                         Text(stringResource(R.string.action_cancel))
                     }
                 },
@@ -246,8 +248,11 @@ fun DrawerDotSearchSettingsScreen(
                 apps = uiState.webSearchCapableApps,
                 title = stringResource(R.string.settings_dot_search_pick_default_app),
                 keyPrefix = "dot_search_pick",
-                onSelect = { app -> viewModel.setDefaultFromApp(app) },
-                onDismiss = { },
+                onSelect = { app ->
+                    viewModel.setDefaultFromApp(app)
+                    showDefaultPicker = false
+                },
+                onDismiss = { showDefaultPicker = false },
                 searchLabel = null,
                 emptyStateText = stringResource(R.string.settings_dot_search_no_web_search_apps),
                 useSystemSoundOnItemClick = false,
@@ -262,7 +267,7 @@ fun DrawerDotSearchSettingsScreen(
                 onConfirm = { url ->
                     viewModel.setDefaultFromUrlTemplate(url)
                 },
-                onDismiss = { }
+                onDismiss = { showDefaultUrlTemplate = false }
         )
     }
 
@@ -271,8 +276,11 @@ fun DrawerDotSearchSettingsScreen(
                 apps = uiState.webSearchCapableApps,
                 title = stringResource(R.string.settings_dot_search_pick_alias_app),
                 keyPrefix = "dot_search_pick_alias",
-                onSelect = { app -> pendingAliasApp = app },
-                onDismiss = { },
+                onSelect = { app ->
+                    pendingAliasApp = app
+                    showAliasAppPicker = false
+                },
+                onDismiss = { showAliasAppPicker = false },
                 searchLabel = null,
                 emptyStateText = stringResource(R.string.settings_dot_search_no_web_search_apps),
                 useSystemSoundOnItemClick = false,
@@ -289,9 +297,12 @@ fun DrawerDotSearchSettingsScreen(
                                     toastAliasTaken,
                                     viewModel,
                             )
-                            ?.let { c -> viewModel.setAlias(c, app) }
+                            ?.let { c ->
+                                viewModel.setAlias(c, app)
+                                pendingAliasApp = null
+                            }
                 },
-                onDismiss = { }
+                onDismiss = { pendingAliasApp = null }
         )
     }
 
@@ -305,9 +316,12 @@ fun DrawerDotSearchSettingsScreen(
                                     toastAliasTaken,
                                     viewModel,
                             )
-                            ?.let { c -> pendingUrlAliasChar = c }
+                            ?.let { c ->
+                                pendingUrlAliasChar = c
+                                showAliasCharForUrlTemplate = false
+                            }
                 },
-                onDismiss = { }
+                onDismiss = { showAliasCharForUrlTemplate = false }
         )
     }
 
@@ -319,7 +333,7 @@ fun DrawerDotSearchSettingsScreen(
                 onConfirm = { url ->
                     viewModel.setAliasFromUrlTemplate(ch, url)
                 },
-                onDismiss = { }
+                onDismiss = { pendingUrlAliasChar = null }
         )
     }
 }
@@ -449,8 +463,10 @@ private fun DotSearchUrlTemplateDialog(
                 FokusTextButton(
                         onClick = {
                             if (!DrawerDotSearchSettingsViewModel.isValidDotSearchUrlTemplate(value)) {
+                                error = validationErrorText
                             } else {
                                 onConfirm(value.trim())
+                                onDismiss()
                             }
                         }
                 ) {
