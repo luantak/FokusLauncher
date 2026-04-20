@@ -141,7 +141,7 @@
     <string name="settings_return_home_after_long_lock_subtitle">Zeigt nach dem Entsperren den Launcher an, wenn das Gerät lange genug gesperrt war</string>
     <string name="settings_long_lock_duration">Dauer der langen Sperre</string>
     <string name="settings_long_lock_duration_subtitle">Wie lange das Gerät gesperrt sein muss, bevor Fokus nach dem Entsperren zum Startbildschirm zurückkehrt.</string>
-    <string name="accessibility_lock_service_description">Unterstützt optionales Doppeltippen zum Sperren auf dem Fokus-Startbildschirm und die Rückkehr zu diesem Launcher nach langer Sperre, wenn du das in der App aktivierst. Liest keine Bildschirminhalte anderer Apps und erfasst keine deren Daten.</string>
+    <string name="accessibility_lock_service_description">Erlaubt Fokus Launcher, den Bildschirm zu sperren und nach langen Sperren zum Launcher zurückzukehren.</string>
     <string name="double_tap_lock_failed">Gerät konnte nicht gesperrt werden</string>
     <string name="settings_edit_home_screen">Startbildschirm bearbeiten</string>
     <string name="settings_edit_shortcuts">Schnellzugriffe bearbeiten</string>
