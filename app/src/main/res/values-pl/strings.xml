@@ -10,7 +10,7 @@
     <string name="drawer_private_space_unlock">Odblokuj prywatną przestrzeń</string>
     <!-- App drawer: one section per Android user profile -->
     <string name="drawer_section_personal">Osobiste</string>
-    <string name="drawer_section_work_profile">Służbowe</string>
+    <string name="drawer_section_work_profile">Profil służbowy</string>
     <string name="drawer_section_profile_numbered">Profil %1$d</string>
     <string name="drawer_section_other_profile">Inny profil</string>
     <string name="drawer_section_clone_profile">Sklonowane aplikacje</string>
@@ -143,7 +143,7 @@
     <string name="settings_return_home_after_long_lock_subtitle">Po odblokowaniu pokaż launcher, jeśli urządzenie było zablokowane wystarczająco długo</string>
     <string name="settings_long_lock_duration">Czas długiej blokady</string>
     <string name="settings_long_lock_duration_subtitle">Jak długo urządzenie musi pozostać zablokowane, zanim Fokus po odblokowaniu wróci do ekranu głównego.</string>
-    <string name="accessibility_lock_service_description">Obsługuje opcjonalne podwójne stuknięcie, aby zablokować ekran na ekranie głównym Fokus, oraz powrót do tego launchera po długiej blokadzie, jeśli włączysz to w aplikacji. Nie odczytuje treści ekranu innych aplikacji ani nie zbiera ich danych.</string>
+    <string name="accessibility_lock_service_description">Opcjonalna funkcja do włączenia w ustawieniach ułatwienia dostępu. Używane tylko do blokowania ekranu (podwójne stuknięcie) i powrotu do tego launchera po dłuższym zablokowaniu, jeżeli ta funkcja jest włączona. Nie odczytuje zawartości ekranu ani nie zbiera danych z innych aplikacji.</string>
     <string name="double_tap_lock_failed">Nie udało się zablokować urządzenia</string>
     <string name="settings_edit_home_screen">Edytuj ekran główny</string>
     <string name="settings_edit_shortcuts">Edytuj skróty</string>
@@ -276,4 +276,23 @@
     <string name="settings_home_date_format_weekday_month">Pon DD, YYYY</string>
     <string name="settings_home_date_format_month_long">Miesiąc DD, YYYY</string>
     <string name="settings_drawer_app_sort_custom">Niestandardowy</string>
+    <string name="settings_nav_shortcuts">Skróty</string>
+    <string name="settings_font_size_subtitle">Używa rozmiaru czcionki urządzenia</string>
+    <string name="category_add_error_duplicate">Kategoria nazwana \"%1$s\" już istnieje. Jeżeli wpisałeś przetłumaczone słowo, może ono pasować do domyślnego typu takiego jak Gry lub Media.</string>
+    <string name="settings_nav_home_screen">Ekran główny</string>
+    <string name="category_add_error_reserved_uncategorized">\"Nieskategoryzowane\" to wbudowana lista dla aplikacji bez kategorii. Wybierz inną nazwę.</string>
+    <string name="settings_drawer_search_auto_launch_subtitle">Gdy tylko jedna aplikacja jest w wynikach wyszukiwania, otwórz ją automatycznie.</string>
+    <string name="category_add_error_reserved_work">\"Służbowe\" jest zarezerwowane dla aplikacji z profilu służbowego. Wybierz inną nazwę.</string>
+    <string name="accessibility_lock_service_label">Kontrola urządzenia Fokus</string>
+    <plurals name="settings_home_screen_apps_count">
+        <item quantity="one">%d aplikacja na ekranie głównym</item>
+        <item quantity="few">%d aplikacje na ekranie głównym</item>
+        <item quantity="many">%d aplikacji na ekranie głównym</item>
+        <item quantity="other">%d aplikacji na ekranie głównym</item>
+    </plurals>
+    <string name="category_add_error_reserved_all_apps">\"Wszystkie aplikacje\" to wbudowany filtr szuflady, nie niestandardowa kategoria. Wybierz inną nazwę.</string>
+    <string name="settings_font_size_label">Rozmiar czcionki</string>
+    <string name="category_add_error_reserved_private">\"Prywatne\" jest zarezerwowane dla prywatnej przestrzeni. Wybierz inną nazwę.</string>
+    <string name="settings_drawer_search_auto_launch">Uruchamiaj aplikacje automatycznie</string>
+    <string name="category_add_error_blank">Wpisz nazwę kategorii. Puste nazwy nie są zapisywane.</string>
 </resources>

@@ -4,7 +4,7 @@
     <string name="drawer_filter_private">Privat</string>
     <string name="drawer_filter_work">Arbejde</string>
     <string name="drawer_filter_uncategorized">Uden kategori</string>
-    <string name="drawer_menu_launcher_settings">Startskærms indstillinger</string>
+    <string name="drawer_menu_launcher_settings">Tilpas startskærm</string>
     <string name="drawer_private_space_lock">Lås Privatrum</string>
     <string name="drawer_private_space_unlock">Oplås Privatrum</string>
     <string name="drawer_section_personal">Personlig</string>
@@ -28,8 +28,8 @@
     <string name="cd_drag_to_reorder">Træk for at ændre rækkefølgen</string>
     <string name="cd_change_icon">Skift ikon</string>
     <string name="cd_shortcut_icon">Genvejsikon</string>
-    <string name="cd_edit_home_screen">Tilpas startskærm</string>
-    <string name="cd_settings">Indstillinger</string>
+    <string name="cd_edit_home_screen">Tilpas Apps</string>
+    <string name="cd_settings">Tilpas startskærm</string>
     <string name="cd_menu">Menu</string>
     <string name="cd_open_link">Åbn link</string>
     <string name="cd_unhide_app">Vis app igen</string>
@@ -74,13 +74,13 @@
     <string name="home_alignment_left">Venstre</string>
     <string name="home_alignment_center">Centreret</string>
     <string name="home_alignment_right">Højre</string>
-    <string name="edit_home_title">Tilpas startskærm</string>
+    <string name="edit_home_title">Tilpas apps</string>
     <string name="edit_shortcuts_title">Tilpas genveje</string>
     <string name="edit_shortcuts_section_selected">Valgte genveje</string>
     <string name="edit_shortcuts_section_all_actions">Alle app handlinger</string>
     <string name="edit_home_section_on_home">Startskærms apps</string>
     <string name="edit_shortcuts_choose_icon">Vælg ikon</string>
-    <string name="settings_title">Indstillinger</string>
+    <string name="settings_title">Tilpas startskærm</string>
     <string name="settings_section_appearance">Udseende</string>
     <string name="settings_show_status_bar">Vis statuslinjen</string>
     <string name="settings_allow_landscape_rotation">Tillad landskab</string>
@@ -109,9 +109,9 @@
     <string name="settings_return_home_after_long_lock_subtitle">Efter oplåsning: Vis startskærmen, hvis enheden har været låst i længere tid</string>
     <string name="settings_long_lock_duration">Varighed for Langtidslås</string>
     <string name="settings_long_lock_duration_subtitle">Hvor længe enheden skal forblive låst, før Fokus vender tilbage til startskærmen ved oplåsning.</string>
-    <string name="accessibility_lock_service_description">Understøtter valgfrit dobbelttryk for at låse på Fokus-startskærmen og at vende tilbage til denne launcher efter lang tids lås, når du slår det til i appen. Læser ikke skærmindhold fra andre apps eller indsamler deres data.</string>
+    <string name="accessibility_lock_service_description">Bruges kun til skærmlås (dobbelt-tryk) og til at vende tilbage til denne launcher efter låsning i langtid. Læser ikke skærmindhold eller indsamler data fra andre apps.</string>
     <string name="double_tap_lock_failed">Kunne ikke låse enheden</string>
-    <string name="settings_edit_home_screen">Tilpas startskærm</string>
+    <string name="settings_edit_home_screen">Tilpas apps</string>
     <string name="settings_edit_shortcuts">Tilpas genveje</string>
     <string name="settings_weather_app">Vejrapp</string>
     <string name="settings_swipe_left">Stryg til venstre</string>
@@ -140,7 +140,7 @@
     <string name="toast_export_logs_failed">Kunne ikke færdiggøre logfil eksporten</string>
     <string name="settings_reset_all_data">Nulstil alle data</string>
     <string name="settings_reset_confirm_title">Vil du nulstille alle data?</string>
-    <string name="settings_reset_confirm_message">Dette vil slette favoritter, genveje, skjulte apps, omdøbte apps og alle andre indstillinger. Appen vender tilbage til sin oprindelige tilstand.</string>
+    <string name="settings_reset_confirm_message">Dette vil slette favoritter, genveje, skjulte apps, omdøbte apps og alle andre tilpasninger. Appen vender tilbage til sin oprindelige tilstand.</string>
     <string name="settings_app_picker_title">Vælg app</string>
     <string name="settings_font_label">Skrifttype</string>
     <plurals name="settings_shortcuts_configured">
@@ -180,7 +180,7 @@
     <string name="onboarding_swipe_not_set">Ikke indstillet</string>
     <string name="onboarding_tips_title">Gode råd</string>
     <string name="onboarding_tip_swipe">Stryg op for at åbne appskuffen</string>
-    <string name="onboarding_tip_longpress">Langt-tryk på startskærmen for at ændre eller åbne indstillinger</string>
+    <string name="onboarding_tip_longpress">Langt-tryk på startskærmen for at ændre eller åbne tilpasninger</string>
     <string name="onboarding_done">Færdig</string>
     <string name="onboarding_skip">Spring over</string>
     <string name="onboarding_next">Næste</string>
@@ -219,7 +219,7 @@
     <string name="icon_cat_other">Andre</string>
     <string name="icon_cat_search_results">Lignende ikoner</string>
     <string name="settings_dot_search_title">Dot søgning</string>
-    <string name="settings_dot_search_subtitle">Skriv `. termer` eller `.&lt;lille bogstav&gt; termer` i søgefeltet i appskuffen.</string>
+    <string name="settings_dot_search_subtitle">Skriv `. termer` eller `.&lt;lille bogstav&gt; termer` i søgefeltet i appskuffen</string>
     <string name="settings_dot_search_screen_title">Dot søgning i appskuffen</string>
     <string name="settings_dot_search_explanation">I appskuffen kan du skrive et punktum og et mellemrum efterfulgt af dine søgeord. Som genvej kan du bruge et punktum, ét lille bogstav, et mellemrum og derefter din søgning (f.eks. `.a kaffe`). App-listen inkluderer kun apps, der understøtter websøgning eller standard søgning i appens pakker. For andre sider eller apps skal du tilføje en HTTPS URL eller en deep link-skabelon og indsætte %1$s, hvor søgeteksten skal stå (f.eks. https://eksempel.dk/soeg?q=%1$s).</string>
     <string name="settings_dot_search_default_label">Standard søgemaskine</string>
@@ -241,4 +241,28 @@
     <string name="settings_dot_search_pick_default_app">Vælg app til `.søg`</string>
     <string name="settings_dot_search_pick_alias_app">Vælg en app til denne genvej</string>
     <string name="cd_remove_alias">Fjern genvej</string>
+    <string name="settings_nav_shortcuts">Genveje</string>
+    <string name="category_add_error_duplicate">Kategorien \'%1$s\' findes allerede. Ordet kan svare til en standardkategori på et andet sprog (f.eks Spil svare til Games).</string>
+    <string name="settings_nav_home_screen">Startskærm</string>
+    <string name="settings_home_date_format_weekday_month">Man DD, ÅÅÅÅ</string>
+    <string name="category_add_error_reserved_uncategorized">\'Uden kategori\' er reserveret som systemliste. Vælg et andet navn.</string>
+    <string name="settings_drawer_search_auto_launch_subtitle">Når der kun er en app der matcher dit søgeresultat, åbn den automatisk.</string>
+    <string name="category_add_error_reserved_work">\'Arbejde\' er reserveret som systemliste. Vælg et andet navn.</string>
+    <string name="settings_home_date_format_eu_slashes">DD/MM/ÅÅÅÅ</string>
+    <string name="accessibility_lock_service_label">Fokus enhedskontrol</string>
+    <string name="drawer_reorder">Ændre rækkefølge</string>
+    <string name="settings_home_date_format">Datoformat</string>
+    <string name="shortcut_open_dialer">Åbn telefon</string>
+    <string name="shortcut_target_phone">Telefonopkald (systemstandard)</string>
+    <string name="settings_home_date_format_us_slashes">MM/DD/ÅÅÅÅ</string>
+    <string name="category_add_error_reserved_all_apps">Kategorinavnet \'Alle apps\' er reserveret. Vælg et andet navn.</string>
+    <string name="settings_home_date_format_eu_dots">DD.MM.ÅÅÅÅ</string>
+    <string name="settings_drawer_app_sort_custom">Brugerdefineret</string>
+    <string name="settings_home_date_format_system">Automatisk (lokaltformat)</string>
+    <string name="category_add_error_blank">Skriv et navn til kategorien. Tomt felt gemmes ikke.</string>
+    <string name="settings_font_size_label">Skriftstørrelse</string>
+    <string name="drawer_reorder_done">Færdig</string>
+    <string name="category_add_error_reserved_private">\'Privat\' er reserveret som systemliste. Vælg et andet navn.</string>
+    <string name="settings_home_date_format_month_long">Måned DD, ÅÅÅÅ</string>
+    <string name="settings_drawer_search_auto_launch">Auto åbn apps</string>
 </resources>
