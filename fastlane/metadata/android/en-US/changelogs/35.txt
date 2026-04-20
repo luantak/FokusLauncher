@@ -1,0 +1,5 @@
+Remember the last known location for home weather.
+Fix dot-search dialog dismiss and closing pickers.
+
+New translations: Basque, Finnish, Portuguese (Brazil), and Spanish. Updates to several other locales.
+Thanks to to everyone who contributed translations.
