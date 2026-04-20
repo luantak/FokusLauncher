@@ -65,6 +65,11 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
          */
         private const val RIGHT_SIDE_SHORTCUTS_EMPTY_MARKER = "__empty__"
         private val PREFERRED_WEATHER_APP_KEY = stringPreferencesKey("preferred_weather_app")
+        /**
+         * Last coordinates used for the home weather widget when [android.location.LocationManager]
+         * has no current fix (e.g. GPS off). Format: `"latitude,longitude"` (decimal degrees).
+         */
+        private val LAST_WEATHER_LOCATION_KEY = stringPreferencesKey("last_weather_location")
         private val PREFERRED_CLOCK_APP_KEY = stringPreferencesKey("preferred_clock_app")
         private val PREFERRED_CALENDAR_APP_KEY = stringPreferencesKey("preferred_calendar_app")
         private val SHOW_STATUS_BAR_KEY = booleanPreferencesKey("show_status_bar")
@@ -263,6 +268,25 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
     val preferredWeatherAppFlow: Flow<String> = prefFlow(PREFERRED_WEATHER_APP_KEY, "")
     suspend fun setPreferredWeatherApp(packageName: String) =
             setPref(PREFERRED_WEATHER_APP_KEY, packageName)
+
+    suspend fun getLastKnownWeatherLocation(): Pair<Double, Double>? {
+        val raw =
+                context.fokusLauncherPreferencesDataStore.data
+                        .first()[LAST_WEATHER_LOCATION_KEY]
+                        ?: return null
+        val parts = raw.split(',')
+        if (parts.size != 2) return null
+        val lat = parts[0].toDoubleOrNull() ?: return null
+        val lon = parts[1].toDoubleOrNull() ?: return null
+        if (lat !in -90.0..90.0 || lon !in -180.0..180.0) return null
+        return lat to lon
+    }
+
+    suspend fun setLastKnownWeatherLocation(latitude: Double, longitude: Double) {
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            prefs[LAST_WEATHER_LOCATION_KEY] = "$latitude,$longitude"
+        }
+    }
 
     // --- Clock / calendar tap overrides (home widgets) ---
 

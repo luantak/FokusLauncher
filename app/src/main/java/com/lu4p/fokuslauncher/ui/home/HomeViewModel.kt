@@ -918,21 +918,32 @@ class HomeViewModel @Inject constructor(
             }
             val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
             @Suppress("MissingPermission")
-            val location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
-                ?: locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-                ?: locationManager.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER)
-            val updated = HomeWeatherUiState(
-                weather =
-                    location?.let {
-                        weatherRepository.getWeather(
-                            it.latitude,
-                            it.longitude,
-                            useFahrenheit = useFahrenheit
-                        )
-                    },
-                weatherUseFahrenheit = useFahrenheit,
-                showWeatherWidget = true
-            )
+            val liveLocation =
+                    locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+                            ?: locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+                            ?: locationManager.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER)
+            if (liveLocation != null) {
+                preferencesManager.setLastKnownWeatherLocation(
+                        liveLocation.latitude,
+                        liveLocation.longitude,
+                )
+            }
+            val coords =
+                    liveLocation?.let { it.latitude to it.longitude }
+                            ?: preferencesManager.getLastKnownWeatherLocation()
+            val updated =
+                    HomeWeatherUiState(
+                            weather =
+                                    coords?.let { (lat, lon) ->
+                                        weatherRepository.getWeather(
+                                                lat,
+                                                lon,
+                                                useFahrenheit = useFahrenheit
+                                        )
+                                    },
+                            weatherUseFahrenheit = useFahrenheit,
+                            showWeatherWidget = true
+                    )
             applyWeatherUiState(updated)
         } catch (_: Exception) { }
     }
