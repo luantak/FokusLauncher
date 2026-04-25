@@ -782,7 +782,6 @@ fun AppDrawerContent(
     val listState = rememberLazyListState()
     val latestCategories = rememberUpdatedState(uiState.categories)
     val latestSelectedCategory = rememberUpdatedState(uiState.selectedCategory)
-    val latestOnCategorySelected = rememberUpdatedState(onCategorySelected)
     var showSearch by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.selectedCategory) { listState.scrollToItem(0) }
@@ -801,6 +800,12 @@ fun AppDrawerContent(
         focusManager.clearFocus(force = true)
         onClose()
     }
+    val selectCategoryWithFocusReset: (String) -> Unit = { category ->
+        keyboardController?.hide()
+        focusManager.clearFocus(force = true)
+        onCategorySelected(category)
+    }
+    val latestOnCategorySelected = rememberUpdatedState(selectCategoryWithFocusReset)
 
     val searchFilterBlank =
             remember(uiState.searchQuery) {
@@ -962,7 +967,7 @@ fun AppDrawerContent(
                         DrawerCategorySidebar(
                                 categories = uiState.categories,
                                 selectedCategory = uiState.selectedCategory,
-                                onCategorySelected = onCategorySelected,
+                                onCategorySelected = selectCategoryWithFocusReset,
                                 onCategoryLongPress = onCategoryLongPress,
                                 sidebarOnLeft = !drawerCategorySidebarOnRight,
                                 categoryIconOverrides = categoryDrawerIconOverrides,
@@ -1057,7 +1062,7 @@ fun AppDrawerContent(
                         CategoryChips(
                                 categories = uiState.categories,
                                 selectedCategory = uiState.selectedCategory,
-                                onCategorySelected = onCategorySelected,
+                                onCategorySelected = selectCategoryWithFocusReset,
                                 onCategoryLongPress = onCategoryLongPress,
                                 modifier =
                                         Modifier.padding(top = DRAWER_CATEGORY_CHIPS_TOP_OFFSET)
