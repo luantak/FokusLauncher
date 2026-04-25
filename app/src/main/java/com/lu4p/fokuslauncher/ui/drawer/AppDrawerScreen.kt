@@ -168,6 +168,7 @@ private fun appOrderKey(apps: List<AppInfo>): String =
 private const val DRAWER_CATEGORY_SWIPE_THRESHOLD_PX = 120f
 private val DRAWER_MIN_TOP_PADDING = 48.dp
 private val DRAWER_TOP_INSET_BUFFER = 16.dp
+private val DRAWER_CATEGORY_CHIPS_TOP_OFFSET = 12.dp
 
 private val ReservedDrawerActionCategories =
         setOf(
@@ -1058,7 +1059,9 @@ fun AppDrawerContent(
                                 selectedCategory = uiState.selectedCategory,
                                 onCategorySelected = onCategorySelected,
                                 onCategoryLongPress = onCategoryLongPress,
-                                modifier = Modifier.testTag("category_chips")
+                                modifier =
+                                        Modifier.padding(top = DRAWER_CATEGORY_CHIPS_TOP_OFFSET)
+                                                .testTag("category_chips")
                         )
                     }
                     drawerAppList()
