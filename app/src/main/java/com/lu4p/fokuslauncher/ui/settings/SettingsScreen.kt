@@ -97,6 +97,7 @@ import com.lu4p.fokuslauncher.ui.drawer.GroupedAppPickerDialog
 import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
 import com.lu4p.fokuslauncher.data.model.HomeDateFormatStyle
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
+import com.lu4p.fokuslauncher.data.model.TemperatureUnit
 import com.lu4p.fokuslauncher.data.model.LauncherVisualStyle
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.utils.LockScreenHelper
@@ -791,6 +792,13 @@ fun HomeWidgetsSettingsScreen(
                         onStyleSelected = viewModel::setHomeDateFormatStyle,
                 )
             }
+            item {
+                TemperatureUnitDropdown(
+                        currentUnit = uiState.temperatureUnit,
+                        enabled = uiState.showHomeWeather,
+                        onUnitSelected = viewModel::setTemperatureUnit,
+                )
+            }
             items(
                     listOf(
                             Triple(R.string.settings_show_home_weather, uiState.showHomeWeather, viewModel::setShowHomeWeather),
@@ -1025,6 +1033,38 @@ private fun HomeDateFormatDropdown(
                 )
             },
             onItemSelected = onStyleSelected,
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TemperatureUnitDropdown(
+        currentUnit: TemperatureUnit,
+        enabled: Boolean,
+        onUnitSelected: (TemperatureUnit) -> Unit
+) {
+    val options = remember { TemperatureUnit.entries }
+    var expanded by remember { mutableStateOf(false) }
+    val onExpandedChange =
+            rememberBooleanChangeWithSystemSound { newExpanded ->
+                if (enabled) expanded = newExpanded
+            }
+    SettingsDropdown(
+            title = stringResource(R.string.settings_temperature_unit),
+            options = options,
+            expanded = expanded,
+            onExpandedChange = onExpandedChange,
+            selectedDisplayText = stringResource(currentUnit.labelRes),
+            fieldEnabled = enabled,
+            menuExpanded = expanded && enabled,
+            itemContent = { unit ->
+                Text(
+                        text = stringResource(unit.labelRes),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onBackground,
+                )
+            },
+            onItemSelected = onUnitSelected,
     )
 }
 

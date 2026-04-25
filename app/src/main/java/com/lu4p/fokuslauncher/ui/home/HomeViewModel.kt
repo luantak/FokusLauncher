@@ -43,6 +43,7 @@ import com.lu4p.fokuslauncher.ui.util.formatShortcutTargetDisplay
 import com.lu4p.fokuslauncher.ui.util.stateEagerlyIn
 import com.lu4p.fokuslauncher.ui.util.stateWhileSubscribedIn
 import com.lu4p.fokuslauncher.data.util.TemperatureUnitHelper
+import com.lu4p.fokuslauncher.data.model.TemperatureUnit
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -111,6 +112,8 @@ class HomeViewModel @Inject constructor(
     val clockUiState: StateFlow<HomeClockUiState> = _clockUiState.asStateFlow()
 
     private val _homeDateFormatStyle = MutableStateFlow(HomeDateFormatStyle.SYSTEM_DEFAULT)
+
+    private val _temperatureUnit = MutableStateFlow(TemperatureUnit.SYSTEM_DEFAULT)
 
     private val _weatherUiState = MutableStateFlow(HomeWeatherUiState())
     val weatherUiState: StateFlow<HomeWeatherUiState> = _weatherUiState.asStateFlow()
@@ -239,6 +242,7 @@ class HomeViewModel @Inject constructor(
         observeLauncherFontScale()
         observePhotoWallpaper()
         observeHomeDateFormatStyle()
+        observeTemperatureUnit()
         observeHomeWidgetItemPreferences()
         observeWeatherRefreshTriggers()
         observeDoubleTapEmptyLock()
@@ -684,6 +688,12 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    private fun observeTemperatureUnit() {
+        observeFlow(preferencesManager.temperatureUnitFlow) { unit ->
+            _temperatureUnit.value = unit
+        }
+    }
+
     private fun observeHomeWidgetItemPreferences() {
         observeFlow(preferencesManager.homeWidgetVisibilityFlow) { v ->
             _uiState.value =
@@ -908,12 +918,12 @@ class HomeViewModel @Inject constructor(
                 applyWeatherUiState(hiddenWeatherState())
                 return
             }
-            val useFahrenheit = TemperatureUnitHelper.useFahrenheit(context)
+            val useFahrenheit = TemperatureUnitHelper.useFahrenheit(context, _temperatureUnit.value)
             val hasCoarsePermission = ContextCompat.checkSelfPermission(
                 context, Manifest.permission.ACCESS_COARSE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
             if (!hasCoarsePermission) {
-                applyWeatherUiState(hiddenWeatherState(useFahrenheit))
+                applyWeatherUiState(hiddenWeatherState())
                 return
             }
             val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
@@ -948,12 +958,10 @@ class HomeViewModel @Inject constructor(
         } catch (_: Exception) { }
     }
 
-    private fun hiddenWeatherState(
-        useFahrenheit: Boolean = TemperatureUnitHelper.useFahrenheit(context)
-    ): HomeWeatherUiState =
+    private fun hiddenWeatherState(): HomeWeatherUiState =
         HomeWeatherUiState(
             weather = null,
-            weatherUseFahrenheit = useFahrenheit,
+            weatherUseFahrenheit = TemperatureUnitHelper.useFahrenheit(context, _temperatureUnit.value),
             showWeatherWidget = false
         )
 

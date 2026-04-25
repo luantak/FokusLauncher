@@ -17,6 +17,7 @@ import com.lu4p.fokuslauncher.data.model.LauncherFontScale
 import com.lu4p.fokuslauncher.data.model.SystemCategoryKeys
 import com.lu4p.fokuslauncher.data.model.HomeDateFormatStyle
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
+import com.lu4p.fokuslauncher.data.model.TemperatureUnit
 import com.lu4p.fokuslauncher.data.model.LauncherAppearance
 import com.lu4p.fokuslauncher.data.model.LauncherVisualStyle
 import com.lu4p.fokuslauncher.data.model.DotSearchTargetPreference
@@ -76,6 +77,7 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         private val SHOW_HOME_CLOCK_KEY = booleanPreferencesKey("show_home_clock")
         private val SHOW_HOME_DATE_KEY = booleanPreferencesKey("show_home_date")
         private val HOME_DATE_FORMAT_STYLE_KEY = stringPreferencesKey("home_date_format_style")
+        private val TEMPERATURE_UNIT_KEY = stringPreferencesKey("temperature_unit")
         private val SHOW_HOME_WEATHER_KEY = booleanPreferencesKey("show_home_weather")
         private val SHOW_HOME_BATTERY_KEY = booleanPreferencesKey("show_home_battery")
         /** Vertical category sidebar in the drawer instead of chips + search bar. */
@@ -316,6 +318,18 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
 
     suspend fun setHomeDateFormatStyle(style: HomeDateFormatStyle) =
             setPref(HOME_DATE_FORMAT_STYLE_KEY, style.name)
+
+    val temperatureUnitFlow: Flow<TemperatureUnit> =
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
+                TemperatureUnit.fromString(prefs[TEMPERATURE_UNIT_KEY])
+            }
+
+    suspend fun setTemperatureUnit(unit: TemperatureUnit) {
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            if (unit == TemperatureUnit.SYSTEM_DEFAULT) prefs.remove(TEMPERATURE_UNIT_KEY)
+            else prefs[TEMPERATURE_UNIT_KEY] = unit.name
+        }
+    }
 
     val showHomeWeatherFlow: Flow<Boolean> = prefFlow(SHOW_HOME_WEATHER_KEY, true)
     suspend fun setShowHomeWeather(show: Boolean) = setPref(SHOW_HOME_WEATHER_KEY, show)
