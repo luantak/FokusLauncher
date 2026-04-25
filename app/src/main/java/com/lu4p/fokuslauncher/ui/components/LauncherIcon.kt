@@ -45,6 +45,7 @@ fun LauncherIcon(
         tint: Color? = null,
         iconSize: Dp = 24.dp,
         suppressGlow: Boolean = false,
+        outlined: Boolean = false,
 ) {
     LauncherIcon(
             painter = rememberVectorPainter(imageVector),
@@ -53,6 +54,7 @@ fun LauncherIcon(
             tint = tint,
             iconSize = iconSize,
             suppressGlow = suppressGlow,
+            outlined = outlined,
     )
 }
 
@@ -64,6 +66,7 @@ fun LauncherIcon(
         tint: Color? = null,
         iconSize: Dp = 24.dp,
         suppressGlow: Boolean = false,
+        outlined: Boolean = false,
 ) {
     val glowSpec = LocalLauncherIconGlow.current
     val glow = if (suppressGlow) LauncherIconGlowSpec.None else glowSpec
@@ -83,7 +86,7 @@ fun LauncherIcon(
                 glow.haloColor
             }
     val scaledSize = iconSize.launcherIconDp()
-    if (!glow.enabled) {
+    if (!glow.enabled && !outlined) {
         Icon(
                 painter = painter,
                 contentDescription = contentDescription,
@@ -99,7 +102,21 @@ fun LauncherIcon(
     val blurRadiusPx = with(density) { (10f * fontBoost).dp.toPx() }
 
     Box(modifier = modifier.size(scaledSize), contentAlignment = Alignment.Center) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        if (outlined) {
+            Icon(
+                    painter = painter,
+                    contentDescription = null,
+                    modifier =
+                            Modifier.fillMaxSize()
+                                    .graphicsLayer {
+                                        clip = false
+                                        scaleX = 1.055f
+                                        scaleY = 1.055f
+                                    }
+                                    .clearAndSetSemantics {},
+                    tint = Color.Black.copy(alpha = 0.64f),
+            )
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             Icon(
                     painter = painter,
                     contentDescription = null,

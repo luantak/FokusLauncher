@@ -69,6 +69,7 @@ data class AppDrawerUiState(
         val drawerCategorySidebarOnRight: Boolean = true,
         /** Normalized category key → MinimalIcons name for the vertical rail and chip affordances. */
         val categoryDrawerIconOverrides: Map<String, String> = emptyMap(),
+        val usesPhotoWallpaper: Boolean = false,
         val drawerAppSortMode: DrawerAppSortMode = DrawerAppSortMode.ALPHABETICAL,
         /**
          * When true with [drawerAppSortMode] CUSTOM and sidebar layout, the list shows drag handles and
@@ -261,10 +262,19 @@ constructor(
         observeDrawerCategoryRailAndIcons()
         observeDrawerSortOpenCountsAndCustomOrder()
         observeDrawerDotSearchPreferences()
+        observeLauncherAppearance()
         observeDrawerSearchAutoLaunch()
         refreshPrivateSpaceState()
         observePrivateSpaceChanges()
         scheduleDrawerCachePrewarm()
+    }
+
+    private fun observeLauncherAppearance() {
+        viewModelScope.launch {
+            preferencesManager.launcherAppearanceFlow.collect { appearance ->
+                _uiState.update { it.copy(usesPhotoWallpaper = appearance.usesPhotoWallpaper) }
+            }
+        }
     }
 
     private fun observeDrawerDotSearchPreferences() {

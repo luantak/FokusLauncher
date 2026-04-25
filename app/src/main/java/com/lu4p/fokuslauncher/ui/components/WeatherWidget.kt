@@ -29,6 +29,7 @@ fun WeatherWidget(
     modifier: Modifier = Modifier,
     useFahrenheit: Boolean = false,
     prominent: Boolean = false,
+    outlined: Boolean = false,
     onClick: () -> Unit = {}
 ) {
     val suffix = if (useFahrenheit) "\u00B0F" else "\u00B0C"
@@ -51,14 +52,25 @@ fun WeatherWidget(
                 contentDescription = null,
                 iconSize = iconSize,
                 tint = textColor,
+                outlined = outlined,
         )
         Spacer(modifier = Modifier.width(if (prominent) 8.dp else 4.dp))
-        Text(
-            text = temperatureText,
-            style = tempStyle,
-            color = textColor,
-            maxLines = 1,
-            overflow = TextOverflow.Clip,
-        )
+        if (outlined) {
+            OutlinedText(
+                    text = temperatureText,
+                    style = tempStyle,
+                    color = textColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Clip,
+            )
+        } else {
+            Text(
+                text = temperatureText,
+                style = tempStyle,
+                color = textColor,
+                maxLines = 1,
+                overflow = TextOverflow.Clip,
+            )
+        }
     }
 }

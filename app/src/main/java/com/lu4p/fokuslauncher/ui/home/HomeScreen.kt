@@ -37,7 +37,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -64,6 +63,7 @@ import com.lu4p.fokuslauncher.ui.components.FokusBottomSheet
 import com.lu4p.fokuslauncher.ui.components.FokusOutlinedButton
 import com.lu4p.fokuslauncher.ui.components.LauncherIcon
 import com.lu4p.fokuslauncher.ui.components.MinimalIcons
+import com.lu4p.fokuslauncher.ui.components.OutlinedText
 import com.lu4p.fokuslauncher.ui.components.SheetActionRow
 import com.lu4p.fokuslauncher.ui.components.WeatherWidget
 import com.lu4p.fokuslauncher.ui.theme.LocalLauncherFontScale
@@ -72,13 +72,6 @@ import com.lu4p.fokuslauncher.ui.util.clickableNoRippleWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.combinedClickableWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.LocalSystemClickSound
 import com.lu4p.fokuslauncher.utils.LockScreenHelper
-
-/** Full-screen gradient scrim so clock and labels stay readable on wallpapers. */
-private const val HOME_WALLPAPER_SCRIM_TOP_ALPHA_SOLID = 0.17f
-private const val HOME_WALLPAPER_SCRIM_BOTTOM_ALPHA_SOLID = 0.45f
-/** Heavier scrim when the home background is an image (vs near-black). */
-private const val HOME_WALLPAPER_SCRIM_TOP_ALPHA_PHOTO = 0.28f
-private const val HOME_WALLPAPER_SCRIM_BOTTOM_ALPHA_PHOTO = 0.59f
 
 @Composable
 fun HomeScreen(
@@ -214,12 +207,6 @@ fun HomeScreenContent(
 ) {
     val play = LocalSystemClickSound.current
     val noIndication = remember { MutableInteractionSource() }
-    val scrimTopAlpha =
-            if (uiState.usesPhotoWallpaper) HOME_WALLPAPER_SCRIM_TOP_ALPHA_PHOTO
-            else HOME_WALLPAPER_SCRIM_TOP_ALPHA_SOLID
-    val scrimBottomAlpha =
-            if (uiState.usesPhotoWallpaper) HOME_WALLPAPER_SCRIM_BOTTOM_ALPHA_PHOTO
-            else HOME_WALLPAPER_SCRIM_BOTTOM_ALPHA_SOLID
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -232,19 +219,6 @@ fun HomeScreenContent(
             )
             .testTag("home_screen")
     ) {
-        Box(
-                Modifier.fillMaxSize()
-                        .background(
-                                Brush.verticalGradient(
-                                        colors =
-                                                listOf(
-                                                        Color.Black.copy(alpha = scrimTopAlpha),
-                                                        Color.Black.copy(alpha = scrimBottomAlpha),
-                                                ),
-                                ),
-                        ),
-        )
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -260,7 +234,8 @@ fun HomeScreenContent(
                 weatherUiState = weatherUiState,
                 onClockClick = onClockClick,
                 onDateClick = onDateClick,
-                onWeatherClick = onWeatherClick
+                onWeatherClick = onWeatherClick,
+                outlined = uiState.usesPhotoWallpaper,
             )
 
             // Push favorites to the bottom; optional double-tap to lock on this empty band
@@ -291,6 +266,7 @@ fun HomeScreenContent(
                 installedApps = installedApps,
                 rightSideShortcuts = rightSideShortcuts,
                 launcherFontScale = uiState.launcherFontScale,
+                outlined = uiState.usesPhotoWallpaper,
                 onLabelClick = onLabelClick,
                 onLabelLongPress = onLabelLongPress,
                 onIconClick = onIconClick
@@ -318,6 +294,7 @@ private fun HomeClockWeatherHeader(
         showWeather: Boolean,
         onClockClick: () -> Unit,
         onWeatherClick: () -> Unit,
+        outlined: Boolean,
 ) {
     val density = LocalDensity.current
     val clockStyle = MaterialTheme.typography.displayLarge
@@ -342,6 +319,7 @@ private fun HomeClockWeatherHeader(
                     weather = weatherUiState.weather,
                     useFahrenheit = weatherUiState.weatherUseFahrenheit,
                     prominent = false,
+                    outlined = outlined,
                     onClick = onWeatherClick,
                     modifier =
                             Modifier.align(Alignment.TopEnd)
@@ -351,6 +329,7 @@ private fun HomeClockWeatherHeader(
         ClockWidget(
                 time = clockUiState.currentTime,
                 is24HourFormat = clockUiState.is24HourFormat,
+                outlined = outlined,
                 onClick = onClockClick,
                 modifier = Modifier.align(Alignment.TopStart).testTag("clock_widget"),
         )
@@ -365,6 +344,7 @@ private fun HomeWidgetsSection(
     onClockClick: () -> Unit,
     onDateClick: () -> Unit,
     onWeatherClick: () -> Unit,
+    outlined: Boolean,
 ) {
     val showClock = uiState.showHomeClock
     val showWeather = uiState.showHomeWeather && weatherUiState.showWeatherWidget
@@ -378,6 +358,7 @@ private fun HomeWidgetsSection(
                     showWeather = showWeather,
                     onClockClick = onClockClick,
                     onWeatherClick = onWeatherClick,
+                    outlined = outlined,
             )
         }
         showWeather -> {
@@ -390,6 +371,7 @@ private fun HomeWidgetsSection(
                         weather = weatherUiState.weather,
                         useFahrenheit = weatherUiState.weatherUseFahrenheit,
                         prominent = false,
+                        outlined = outlined,
                         onClick = onWeatherClick,
                 )
             }
@@ -402,6 +384,7 @@ private fun HomeWidgetsSection(
                 batteryPercent = clockUiState.batteryPercent,
                 showDate = uiState.showHomeDate,
                 showBattery = uiState.showHomeBattery,
+                outlined = outlined,
                 onDateClick = onDateClick,
                 modifier = Modifier.fillMaxWidth().testTag("date_battery_row"),
         )
@@ -416,6 +399,7 @@ private fun FavoritesList(
     onLabelClick: (FavoriteApp) -> Unit,
     onLabelLongPress: (FavoriteApp) -> Unit,
     modifier: Modifier = Modifier,
+    outlined: Boolean = false,
 ) {
     Column(
         modifier = modifier,
@@ -429,6 +413,7 @@ private fun FavoritesList(
                 onClick = { onLabelClick(fav) },
                 onLongPress = { onLabelLongPress(fav) },
                 horizontalAlignment = horizontalAlignment,
+                outlined = outlined,
             )
         }
     }
@@ -441,6 +426,7 @@ private fun ShortcutIconsColumn(
     iconSize: Dp,
     verticalSpacing: Dp,
     modifier: Modifier = Modifier,
+    outlined: Boolean = false,
 ) {
     Column(
         modifier = modifier.wrapContentHeight(align = Alignment.Bottom),
@@ -451,6 +437,7 @@ private fun ShortcutIconsColumn(
                 shortcuts = shortcuts,
                 onIconClick = onIconClick,
                 iconSize = iconSize,
+                outlined = outlined,
         )
     }
 }
@@ -462,6 +449,7 @@ private fun HomeFavoritesSection(
     installedApps: List<AppInfo>,
     rightSideShortcuts: List<HomeShortcut>,
     launcherFontScale: Float,
+    outlined: Boolean,
     onLabelClick: (FavoriteApp) -> Unit,
     onLabelLongPress: (FavoriteApp) -> Unit,
     onIconClick: (HomeShortcut) -> Unit,
@@ -489,6 +477,7 @@ private fun HomeFavoritesSection(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     onLabelClick = onLabelClick,
                     onLabelLongPress = onLabelLongPress,
+                    outlined = outlined,
                 )
                 if (rightSideShortcuts.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(shortcutRowTopSpacer))
@@ -500,6 +489,7 @@ private fun HomeFavoritesSection(
                                 shortcuts = rightSideShortcuts,
                                 onIconClick = onIconClick,
                                 iconSize = shortcutIconSize,
+                                outlined = outlined,
                         )
                     }
                 }
@@ -521,6 +511,7 @@ private fun HomeFavoritesSection(
                             onLabelClick = onLabelClick,
                             onLabelLongPress = onLabelLongPress,
                             modifier = Modifier.weight(1f),
+                            outlined = outlined,
                     )
                 }
                 val icons: @Composable () -> Unit = {
@@ -529,6 +520,7 @@ private fun HomeFavoritesSection(
                             onIconClick = onIconClick,
                             iconSize = shortcutIconSize,
                             verticalSpacing = shortcutIconSpacingV,
+                            outlined = outlined,
                     )
                 }
                 if (homeAlignment == HomeAlignment.LEFT) {
@@ -550,6 +542,7 @@ private fun RightShortcutIcons(
     shortcuts: List<HomeShortcut>,
     onIconClick: (HomeShortcut) -> Unit,
     iconSize: Dp,
+    outlined: Boolean = false,
 ) {
     shortcuts.reversed().forEachIndexed { index, shortcut ->
         LauncherIcon(
@@ -557,6 +550,7 @@ private fun RightShortcutIcons(
                 contentDescription = stringResource(R.string.cd_shortcut_icon),
                 tint = MaterialTheme.colorScheme.onBackground,
                 iconSize = iconSize,
+                outlined = outlined,
                 modifier =
                         Modifier.clickableNoRippleWithSystemSound { onIconClick(shortcut) }
                                 .testTag("right_shortcut_icon_$index"),
@@ -597,6 +591,7 @@ private fun FavoriteAppItem(
         onClick: () -> Unit,
         onLongPress: () -> Unit,
         horizontalAlignment: Alignment.Horizontal,
+        outlined: Boolean,
 ) {
     val context = LocalContext.current
     val badge =
@@ -619,18 +614,36 @@ private fun FavoriteAppItem(
                             )
                             .testTag("favorite_${fav.label}"),
     ) {
-        Text(
-                text = fav.label,
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-        )
-        if (badge != null) {
-            Text(
-                    text = badge,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp),
+        if (outlined) {
+            OutlinedText(
+                    text = fav.label,
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
             )
+        } else {
+            Text(
+                    text = fav.label,
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+            )
+        }
+        if (badge != null) {
+            if (outlined) {
+                OutlinedText(
+                        text = badge,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp),
+                        outlineWidth = 1.5f,
+                )
+            } else {
+                Text(
+                        text = badge,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp),
+                )
+            }
         }
     }
 }
@@ -668,4 +681,3 @@ private fun HomeScreenLongPressSheet(
             )
     }
 }
-

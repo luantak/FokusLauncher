@@ -1064,6 +1064,7 @@ fun AppDrawerContent(
                                 selectedCategory = uiState.selectedCategory,
                                 onCategorySelected = selectCategoryWithFocusReset,
                                 onCategoryLongPress = onCategoryLongPress,
+                                translucent = uiState.usesPhotoWallpaper,
                                 modifier =
                                         Modifier.padding(top = DRAWER_CATEGORY_CHIPS_TOP_OFFSET)
                                                 .testTag("category_chips")
