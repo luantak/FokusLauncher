@@ -317,4 +317,19 @@
     <string name="settings_visual_style_subtitle">Neonowe czy klasyczne kolory tekstu i ikon</string>
     <string name="edit_home_section_all_apps" translatable="false">\@string/drawer_filter_all_apps</string>
     <string name="app_name" translatable="false">Fokus Launcher</string>
+    <string name="widget_page_shortcut_label">Strona widżetów</string>
+    <string name="widget_page">Strona widżetów</string>
+    <string name="add_widget">Dodaj widżet</string>
+    <string name="manage_widgets">Zarządzaj widżetami</string>
+    <string name="remove_widget">Usuń widżet</string>
+    <string name="resize_widget">Zmień rozmiar widżetu</string>
+    <string name="widget_bind_failed">Nie udało się dodać widżetu</string>
+    <string name="widget_configure_failed">Konfiguracja widżetów anulowana</string>
+    <string name="widget_picker_title">Dodaj widżet</string>
+    <string name="widget_initial_height">%1$ddp</string>
+    <string name="settings_temperature_unit">Jednostka temperatury</string>
+    <string name="settings_temperature_unit_system">Automatyczna (domyślna regionu)</string>
+    <string name="settings_temperature_unit_celsius">Celsjusz (°C)</string>
+    <string name="settings_temperature_unit_fahrenheit">Fahrenheit (°F)</string>
+    <string name="no_widgets">Brak widżetów</string>
 </resources>
