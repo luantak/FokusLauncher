@@ -232,4 +232,6 @@
     <string name="settings_weblate_subtitle">Übersetzungen auf Weblate beitragen</string>
     <string name="settings_matrix_title">Am Chat teilnehmen</string>
     <string name="settings_matrix_subtitle">Hilfe erhalten und Feedback geben</string>
+    <string name="edit_home_section_all_apps" translatable="false">\@string/drawer_filter_all_apps</string>
+    <string name="app_name" translatable="false">Fokus Launcher</string>
 </resources>

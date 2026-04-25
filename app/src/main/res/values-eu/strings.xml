@@ -270,4 +270,24 @@
     <string name="shortcut_target_not_set">Ez dago</string>
     <string name="cd_settings">Ezarpenak</string>
     <string name="drawer_section_personal">Pertsonala</string>
+    <string name="accessibility_prominent_disclosure_checkbox">Aurrekoa irakurri dut eta ados nago.</string>
+    <string name="accessibility_prominent_disclosure_title">Irisgarritasun zerbitzua</string>
+    <string name="visual_style_classic">Klasikoa</string>
+    <string name="settings_visual_style_label">Kolorea</string>
+    <string name="visual_style_neon_lime">Terminaleko berdea</string>
+    <string name="visual_style_emerald">Esmeralda</string>
+    <string name="visual_style_sage">Salbia</string>
+    <string name="settings_glow_label">Distira</string>
+    <string name="visual_style_lavender">Izpiliku</string>
+    <string name="visual_style_neon_magenta">Bioleta kosmikoa</string>
+    <string name="settings_look_locked_image_wallpaper">Ez dago eskuragarri horma-paper batekin. Jarri atzeko kolore beltza, koloreak eta distira erabiltzeko.</string>
+    <string name="visual_style_neon_pink">Arrosa beroa</string>
+    <string name="visual_style_neon_amber">Korala</string>
+    <string name="accessibility_prominent_disclosure_body">Fokusek Erabilerraztasun Zerbitzua soilik erabiltzen du ukitu bikoitzarekin ixteko aukera eta itxiera luze baten ondoren hasierako pantailara itzultzeko (hori piztuz gero). Ez ditu beste aplikazio batzuen pantailak irakurtzen. Prozesatzea zure gailuan geratzen da; ez dugu saltzen, igotzen, ezta iragarkietarako edo analitiketarako erabiltzen ere. Android konfigurazioan zerbitzua gaitu edo desaktibatu.</string>
+    <string name="accessibility_prominent_disclosure_continue">Jarraitu</string>
+    <string name="accessibility_prominent_disclosure_not_now">Orain ez</string>
+    <string name="visual_style_rose">Arrosa</string>
+    <string name="visual_style_sky">Zerua</string>
+    <string name="settings_glow_subtitle">Testu eta ikonoen gaineko halo leuna.</string>
+    <string name="settings_visual_style_subtitle">Neona edo kolore klasikoa testu eta ikonoentzako</string>
 </resources>

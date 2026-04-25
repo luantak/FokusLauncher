@@ -295,4 +295,26 @@
     <string name="category_add_error_reserved_private">\"Prywatne\" jest zarezerwowane dla prywatnej przestrzeni. Wybierz inną nazwę.</string>
     <string name="settings_drawer_search_auto_launch">Uruchamiaj aplikacje automatycznie</string>
     <string name="category_add_error_blank">Wpisz nazwę kategorii. Puste nazwy nie są zapisywane.</string>
+    <string name="accessibility_prominent_disclosure_checkbox">Przeczytałem/am powyższe i zgadzam się.</string>
+    <string name="accessibility_prominent_disclosure_title">Usługa ułatwień dostępu</string>
+    <string name="visual_style_classic">Klasyczny</string>
+    <string name="settings_visual_style_label">Styl koloru</string>
+    <string name="visual_style_neon_lime">Zieleń Terminala</string>
+    <string name="visual_style_emerald">Szmaragd</string>
+    <string name="visual_style_sage">Szałwiowy</string>
+    <string name="settings_glow_label">Podświetlenie</string>
+    <string name="visual_style_lavender">Lawendowy</string>
+    <string name="visual_style_neon_magenta">Kosmiczny Fiolet</string>
+    <string name="settings_look_locked_image_wallpaper">Nie dostępne z tapetą z obrazem. Ustaw czarne tło poniżej aby używać kolorów i podświetlenia.</string>
+    <string name="visual_style_neon_pink">Gorący Róż</string>
+    <string name="visual_style_neon_amber">Koral</string>
+    <string name="accessibility_prominent_disclosure_body">Fokus używa usługi Ułatwień dostępu tylko do opcjonalnych opcji blokowania ekranu po podwójnym stuknięciu i powrotu do ekranu głównego po długim zablomowaniu (jeżeli są włączone). Nie odczytuje ekranów innych aplikacji. Przetwarzanie pozostaje na twoim urządzeniu; nie sprzedajemy go, wysyłamy go, ani nie używamy go do reklam lub analityki. Możesz włączyć lub wyłączyć usługę w ustawieniach Androida.</string>
+    <string name="accessibility_prominent_disclosure_continue">Kontynuuj</string>
+    <string name="accessibility_prominent_disclosure_not_now">Nie teraz</string>
+    <string name="visual_style_rose">Róża</string>
+    <string name="visual_style_sky">Niebo</string>
+    <string name="settings_glow_subtitle">Lekka poświata na tekście i ikonach</string>
+    <string name="settings_visual_style_subtitle">Neonowe czy klasyczne kolory tekstu i ikon</string>
+    <string name="edit_home_section_all_apps" translatable="false">\@string/drawer_filter_all_apps</string>
+    <string name="app_name" translatable="false">Fokus Launcher</string>
 </resources>
