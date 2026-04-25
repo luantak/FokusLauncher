@@ -108,6 +108,7 @@ fun ClockWidget(
         time: String,
         is24HourFormat: Boolean = true,
         modifier: Modifier = Modifier,
+        outlined: Boolean = false,
         onClick: () -> Unit = {}
 ) {
     val clockStyle = MaterialTheme.typography.displayLarge.copy(fontWeight = FontWeight.SemiBold)
@@ -119,15 +120,21 @@ fun ClockWidget(
     val clickModifier = modifier.clickableNoRippleWithSystemSound(onClick = onClick)
 
     if (split == null) {
-        Text(
-                text = time,
-                style = clockStyle,
-                color = color,
-                modifier =
-                        clickModifier.semantics {
-                            contentDescription = time.replace("\n", " ").trim()
-                        }
-        )
+        val textModifier =
+                clickModifier.semantics {
+                    contentDescription = time.replace("\n", " ").trim()
+                }
+        if (outlined) {
+            OutlinedText(
+                    text = time,
+                    style = clockStyle,
+                    color = color,
+                    modifier = textModifier,
+                    outlineWidth = 3f,
+            )
+        } else {
+            Text(text = time, style = clockStyle, color = color, modifier = textModifier)
+        }
     } else {
         val (main, period) = split
         val periodStyle =
@@ -144,20 +151,36 @@ fun ClockWidget(
                             contentDescription = "$main $period".trim()
                         }
         ) {
-            Text(
-                    text = main,
-                    style = clockStyle,
-                    color = color,
-                    maxLines = 1,
-            )
+            if (outlined) {
+                OutlinedText(
+                        text = main,
+                        style = clockStyle,
+                        color = color,
+                        maxLines = 1,
+                        outlineWidth = 3f,
+                )
+            } else {
+                Text(text = main, style = clockStyle, color = color, maxLines = 1)
+            }
             Spacer(Modifier.width(8.dp))
-            Text(
-                    text = period,
-                    style = periodStyle,
-                    color = color,
-                    maxLines = 1,
-                    modifier = Modifier.padding(bottom = 4.dp),
-            )
+            if (outlined) {
+                OutlinedText(
+                        text = period,
+                        style = periodStyle,
+                        color = color,
+                        maxLines = 1,
+                        modifier = Modifier.padding(bottom = 4.dp),
+                        outlineWidth = 1.5f,
+                )
+            } else {
+                Text(
+                        text = period,
+                        style = periodStyle,
+                        color = color,
+                        maxLines = 1,
+                        modifier = Modifier.padding(bottom = 4.dp),
+                )
+            }
         }
     }
 }

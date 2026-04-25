@@ -23,6 +23,7 @@ fun DateBatteryRow(
     modifier: Modifier = Modifier,
     showDate: Boolean = true,
     showBattery: Boolean = true,
+    outlined: Boolean = false,
     onDateClick: () -> Unit = {}
 ) {
     if (!showDate && !showBattery) return
@@ -30,18 +31,31 @@ fun DateBatteryRow(
     val color = MaterialTheme.colorScheme.onBackground
     Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier) {
         if (showDate) {
-            Text(
-                text = date,
-                style = style,
-                color = color,
-                modifier = Modifier.clickableNoRippleWithSystemSound(onClick = onDateClick)
-            )
+            if (outlined) {
+                OutlinedText(
+                        text = date,
+                        style = style,
+                        color = color,
+                        modifier = Modifier.clickableNoRippleWithSystemSound(onClick = onDateClick),
+                )
+            } else {
+                Text(
+                    text = date,
+                    style = style,
+                    color = color,
+                    modifier = Modifier.clickableNoRippleWithSystemSound(onClick = onDateClick)
+                )
+            }
         }
         if (showDate && showBattery) {
             Spacer(modifier = Modifier.width(8.dp))
         }
         if (showBattery) {
-            Text(text = "$batteryPercent%", style = style, color = color)
+            if (outlined) {
+                OutlinedText(text = "$batteryPercent%", style = style, color = color)
+            } else {
+                Text(text = "$batteryPercent%", style = style, color = color)
+            }
         }
     }
 }

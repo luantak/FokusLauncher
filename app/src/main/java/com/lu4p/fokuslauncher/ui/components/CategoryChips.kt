@@ -29,6 +29,7 @@ fun CategoryChips(
         selectedCategory: String,
         onCategorySelected: (String) -> Unit,
         modifier: Modifier = Modifier,
+        translucent: Boolean = false,
         onCategoryLongPress: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -61,6 +62,14 @@ fun CategoryChips(
                                 detectTapGestures(onLongPress = { onCategoryLongPress(category) })
                             }
             ) {
+                val unselectedContainerColor =
+                        MaterialTheme.colorScheme.surfaceVariant.copy(
+                                alpha = if (translucent) 0.62f else 1f
+                        )
+                val selectedContainerColor =
+                        MaterialTheme.colorScheme.primary.copy(
+                                alpha = if (translucent) 0.78f else 1f
+                        )
                 FilterChip(
                         selected = isSelected,
                         onClick =
@@ -78,10 +87,8 @@ fun CategoryChips(
                         shape = RoundedCornerShape(20.dp),
                         colors =
                                 FilterChipDefaults.filterChipColors(
-                                        containerColor =
-                                                MaterialTheme.colorScheme.surfaceVariant,
-                                        selectedContainerColor =
-                                                MaterialTheme.colorScheme.primary,
+                                        containerColor = unselectedContainerColor,
+                                        selectedContainerColor = selectedContainerColor,
                                         labelColor = MaterialTheme.colorScheme.onSurface,
                                         selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
                                         iconColor = MaterialTheme.colorScheme.onSurface,
