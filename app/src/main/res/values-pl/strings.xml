@@ -317,4 +317,19 @@
     <string name="settings_visual_style_subtitle">Neonowe czy klasyczne kolory tekstu i ikon</string>
     <string name="edit_home_section_all_apps" translatable="false">\@string/drawer_filter_all_apps</string>
     <string name="app_name" translatable="false">Fokus Launcher</string>
+    <string name="widget_bind_failed"></string>
+    <string name="widget_picker_title"></string>
+    <string name="manage_widgets"></string>
+    <string name="add_widget"></string>
+    <string name="widget_initial_height"></string>
+    <string name="settings_temperature_unit_fahrenheit"></string>
+    <string name="settings_temperature_unit_celsius"></string>
+    <string name="widget_configure_failed"></string>
+    <string name="widget_page"></string>
+    <string name="remove_widget"></string>
+    <string name="settings_temperature_unit"></string>
+    <string name="no_widgets"></string>
+    <string name="settings_temperature_unit_system"></string>
+    <string name="widget_page_shortcut_label"></string>
+    <string name="resize_widget"></string>
 </resources>
