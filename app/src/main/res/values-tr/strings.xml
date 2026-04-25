@@ -14,7 +14,7 @@
     <string name="search">Ara</string>
     <string name="search_apps">Uygulamaları ara</string>
     <string name="search_apps_and_actions">Uygulamaları ve işlemleri ara</string>
-    <string name="action_back">Geri</string>
+    <string name="action_back">Yaygın işlemler</string>
     <string name="action_done">Bitti</string>
     <string name="action_cancel">İptal</string>
     <string name="action_save">Kaydet</string>
@@ -196,4 +196,6 @@
     <string name="settings_drawer_category_rail_side_subtitle">Varsayılan olarak, kenar çubuğu sağda yer alır. Çekmecedeki bir kategoriye uzun süre basılı tutarak simgesini değiştirebilirsiniz.</string>
     <string name="settings_drawer_rail_position_left">Sol</string>
     <string name="settings_drawer_rail_position_right">Sağ</string>
+    <string name="edit_home_section_all_apps" translatable="false">\@string/drawer_filter_all_apps</string>
+    <string name="app_name" translatable="false">Fokus Launcher</string>
 </resources>
