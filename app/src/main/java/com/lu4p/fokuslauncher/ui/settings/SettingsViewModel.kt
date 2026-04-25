@@ -13,6 +13,7 @@ import com.lu4p.fokuslauncher.data.model.AppShortcutAction
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.model.HomeDateFormatStyle
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
+import com.lu4p.fokuslauncher.data.model.TemperatureUnit
 import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import com.lu4p.fokuslauncher.data.model.appMetadataKey
 import com.lu4p.fokuslauncher.data.model.appProfileKey
@@ -73,6 +74,7 @@ data class SettingsUiState(
         val showHomeWeather: Boolean = true,
         val showHomeBattery: Boolean = true,
         val homeDateFormatStyle: HomeDateFormatStyle = HomeDateFormatStyle.SYSTEM_DEFAULT,
+        val temperatureUnit: TemperatureUnit = TemperatureUnit.SYSTEM_DEFAULT,
         /** Vertical category sidebar in the app drawer. */
         val drawerSidebarCategories: Boolean = false,
         /** Launch the app when search narrows to a single match (drawer search). */
@@ -195,20 +197,20 @@ constructor(
             val homeWidgetItemsFlow =
                     combine(
                             preferencesManager.homeWidgetVisibilityFlow,
-                            combine(
-                                    preferencesManager.preferredClockAppFlow,
-                                    preferencesManager.preferredCalendarAppFlow,
-                                    preferencesManager.homeDateFormatStyleFlow,
-                            ) { clk, cal, fmt -> Triple(clk, cal, fmt) },
-                    ) { vis, p ->
+                            preferencesManager.preferredClockAppFlow,
+                            preferencesManager.preferredCalendarAppFlow,
+                            preferencesManager.homeDateFormatStyleFlow,
+                            preferencesManager.temperatureUnitFlow,
+                    ) { vis, clk, cal, fmt, tempUnit ->
                         HomeWidgetItemSettings(
                                 showClock = vis.showClock,
                                 showDate = vis.showDate,
                                 showWeather = vis.showWeather,
                                 showBattery = vis.showBattery,
-                                preferredClockAppPackage = p.first,
-                                preferredCalendarAppPackage = p.second,
-                                homeDateFormatStyle = p.third,
+                                preferredClockAppPackage = clk,
+                                preferredCalendarAppPackage = cal,
+                                homeDateFormatStyle = fmt,
+                                temperatureUnit = tempUnit,
                         )
                     }
             val drawerPrefsFlow =
@@ -360,6 +362,7 @@ constructor(
                         showHomeWeather = homeWidgetItems.showWeather,
                         showHomeBattery = homeWidgetItems.showBattery,
                         homeDateFormatStyle = homeWidgetItems.homeDateFormatStyle,
+                        temperatureUnit = homeWidgetItems.temperatureUnit,
                         drawerSidebarCategories = drawer.drawerSidebarCategories,
                         drawerSearchAutoLaunch = drawer.drawerSearchAutoLaunch,
                         drawerCategorySidebarOnLeft = lockRail.drawerCategorySidebarOnLeft,
@@ -391,7 +394,8 @@ constructor(
             val showBattery: Boolean,
             val preferredClockAppPackage: String,
             val preferredCalendarAppPackage: String,
-            val homeDateFormatStyle: HomeDateFormatStyle
+            val homeDateFormatStyle: HomeDateFormatStyle,
+            val temperatureUnit: TemperatureUnit
     )
 
     private data class FavoritesBase(
@@ -640,6 +644,9 @@ constructor(
 
     fun setHomeDateFormatStyle(style: HomeDateFormatStyle) =
             launchPreferences { setHomeDateFormatStyle(style) }
+
+    fun setTemperatureUnit(unit: TemperatureUnit) =
+            launchPreferences { setTemperatureUnit(unit) }
 
     fun setDrawerSidebarCategories(enabled: Boolean) {
         viewModelScope.launch {

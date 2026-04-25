@@ -6,22 +6,22 @@ import android.content.res.Resources
 import android.os.Build
 import androidx.core.text.util.LocalePreferences
 import androidx.core.text.util.LocalePreferences.TemperatureUnit
+import com.lu4p.fokuslauncher.data.model.TemperatureUnit as AppTemperatureUnit
 import java.util.Locale
 
-/**
- * Weather uses the user's regional temperature choice (Settings → Regional preferences), not only
- * what a plain language/region pair would imply.
- *
- * Per-app language can replace [Locale.getDefault] with a locale that **drops** the `mu` Unicode
- * extension Android uses for explicit Celsius/Fahrenheit. We read `mu` from the format default when
- * present, then from [LocaleManager.getSystemLocales] (ignores app overrides), then from
- * [Resources.getSystem], and only then fall back to resolved defaults for a system anchor locale.
- */
 object TemperatureUnitHelper {
 
     private const val UNICODE_TEMPERATURE_UNIT = "mu"
 
-    fun useFahrenheit(context: Context): Boolean {
+    fun useFahrenheit(context: Context, override: AppTemperatureUnit = AppTemperatureUnit.SYSTEM_DEFAULT): Boolean {
+        return when (override) {
+            AppTemperatureUnit.FAHRENHEIT -> true
+            AppTemperatureUnit.CELSIUS -> false
+            AppTemperatureUnit.SYSTEM_DEFAULT -> useFahrenheitFromSystem(context)
+        }
+    }
+
+    private fun useFahrenheitFromSystem(context: Context): Boolean {
         explicitTemperatureUnicode(context)?.let { mu ->
             return mu.startsWith(TemperatureUnit.FAHRENHEIT)
         }
