@@ -267,42 +267,4 @@
     <string name="settings_drawer_search_auto_launch">Auto åbn apps</string>
     <string name="edit_home_section_all_apps" translatable="false">\@string/skuffe_filter_alle_apps</string>
     <string name="app_name" translatable="false">Fokus Startskærm</string>
-    <string name="accessibility_prominent_disclosure_checkbox"></string>
-    <string name="settings_font_size_subtitle"></string>
-    <string name="widget_bind_failed"></string>
-    <string name="accessibility_prominent_disclosure_title"></string>
-    <string name="visual_style_classic"></string>
-    <string name="widget_picker_title"></string>
-    <string name="manage_widgets"></string>
-    <string name="settings_visual_style_label"></string>
-    <string name="visual_style_neon_lime"></string>
-    <string name="visual_style_emerald"></string>
-    <string name="add_widget"></string>
-    <plurals name="settings_home_screen_apps_count">
-    </plurals>
-    <string name="widget_initial_height"></string>
-    <string name="settings_temperature_unit_fahrenheit"></string>
-    <string name="visual_style_sage"></string>
-    <string name="settings_glow_label"></string>
-    <string name="visual_style_lavender"></string>
-    <string name="visual_style_neon_magenta"></string>
-    <string name="settings_temperature_unit_celsius"></string>
-    <string name="settings_look_locked_image_wallpaper"></string>
-    <string name="widget_configure_failed"></string>
-    <string name="visual_style_neon_pink"></string>
-    <string name="visual_style_neon_amber"></string>
-    <string name="widget_page"></string>
-    <string name="remove_widget"></string>
-    <string name="accessibility_prominent_disclosure_body"></string>
-    <string name="settings_temperature_unit"></string>
-    <string name="accessibility_prominent_disclosure_continue"></string>
-    <string name="no_widgets"></string>
-    <string name="accessibility_prominent_disclosure_not_now"></string>
-    <string name="settings_temperature_unit_system"></string>
-    <string name="widget_page_shortcut_label"></string>
-    <string name="visual_style_rose"></string>
-    <string name="visual_style_sky"></string>
-    <string name="settings_glow_subtitle"></string>
-    <string name="resize_widget"></string>
-    <string name="settings_visual_style_subtitle"></string>
 </resources>
