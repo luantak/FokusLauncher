@@ -1,0 +1,8 @@
+Widget page: swipe to a dedicated screen for your widgets.
+Home weather: choose temperature units in-app.
+Home clock: the time is shown without a separate AM/PM suffix.
+Text is made more readable by adding a slight outline instead of a full page wallpaper tint.
+App drawer: the keyboard is dismissed when you change category; the category chip row sits lower.
+
+New language: Romanian, updates to other translations.
+Thanks to everyone who contributed translations.
