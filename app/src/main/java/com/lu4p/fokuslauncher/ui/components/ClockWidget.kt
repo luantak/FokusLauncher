@@ -89,6 +89,16 @@ internal fun resolveClockMainAndPeriod(
     return extractTrailingAmPmLatin(collapsed)
 }
 
+/** System-style time string with Latin AM/PM removed; 24h strings unchanged. */
+internal fun clockDisplayTimeWithoutDayPeriod(
+        formattedTime: String,
+        is24HourFormat: Boolean,
+): String {
+    if (is24HourFormat) return formattedTime
+    return resolveClockMainAndPeriod(formattedTime, is24HourFormat = false)?.first
+            ?: formattedTime
+}
+
 /**
  * Large clock display showing the current time using the system time format (12h with AM/PM or 24h).
  * Clicking opens the clock / alarm app.

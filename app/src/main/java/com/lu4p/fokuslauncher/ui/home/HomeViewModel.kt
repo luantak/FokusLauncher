@@ -39,6 +39,7 @@ import com.lu4p.fokuslauncher.utils.registerBroadcastReceiverNotExported
 import com.lu4p.fokuslauncher.utils.registerStickyBroadcastReceiverNotExported
 import com.lu4p.fokuslauncher.utils.isDefaultHomeApp
 import com.lu4p.fokuslauncher.utils.openDefaultLauncherSettings
+import com.lu4p.fokuslauncher.ui.components.clockDisplayTimeWithoutDayPeriod
 import com.lu4p.fokuslauncher.ui.util.formatShortcutTargetDisplay
 import com.lu4p.fokuslauncher.ui.util.stateEagerlyIn
 import com.lu4p.fokuslauncher.ui.util.stateWhileSubscribedIn
@@ -86,7 +87,7 @@ data class HomeClockUiState(
     val currentTime: String = "",
     val currentDate: String = "",
     val batteryPercent: Int = 0,
-    /** When false, the home clock may render AM/PM smaller than the time (12h formats). */
+    /** Mirrors [DateFormat.is24HourFormat] for the home clock layout and semantics. */
     val is24HourFormat: Boolean = true,
 )
 
@@ -579,7 +580,11 @@ class HomeViewModel @Inject constructor(
                 val current = _clockUiState.value
                 val updated =
                     current.copy(
-                        currentTime = timeFormat.format(now),
+                        currentTime =
+                                clockDisplayTimeWithoutDayPeriod(
+                                        timeFormat.format(now),
+                                        is24Hour,
+                                ),
                         currentDate =
                                 formatHomeDate(now, locale, _homeDateFormatStyle.value),
                         is24HourFormat = is24Hour,

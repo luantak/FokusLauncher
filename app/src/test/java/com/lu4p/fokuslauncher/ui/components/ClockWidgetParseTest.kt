@@ -39,4 +39,24 @@ class ClockWidgetParseTest {
                 resolveClockMainAndPeriod("3:58\u202fPM", is24HourFormat = false),
         )
     }
+
+    @Test
+    fun display_without_period_24h_unchanged() {
+        assertEquals(
+                "15:58",
+                clockDisplayTimeWithoutDayPeriod("15:58", is24HourFormat = true),
+        )
+    }
+
+    @Test
+    fun display_without_period_strips_latin_suffix() {
+        assertEquals(
+                "3:58",
+                clockDisplayTimeWithoutDayPeriod("3:58 PM", is24HourFormat = false),
+        )
+        assertEquals(
+                "3:58",
+                clockDisplayTimeWithoutDayPeriod("3:58\nPM", is24HourFormat = false),
+        )
+    }
 }
