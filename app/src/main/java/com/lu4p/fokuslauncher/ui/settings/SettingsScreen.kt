@@ -734,7 +734,8 @@ private fun SettingsScreenDialogs(
                             onShortcutTargetSelected(target, action)
                             onDismissPicker()
                         },
-                        onDismiss = onDismissPicker
+                        onDismiss = onDismissPicker,
+                        includeWidgetPageTarget = true,
                 )
             }
             else -> onDismissPicker()

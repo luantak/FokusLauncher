@@ -446,7 +446,9 @@ constructor(
                 }
                 return startDotSearchActivity(launchContext, intent)
             }
-            is ShortcutTarget.LauncherShortcut, is ShortcutTarget.PhoneDial -> return false
+            is ShortcutTarget.LauncherShortcut,
+            is ShortcutTarget.PhoneDial,
+            is ShortcutTarget.WidgetPage -> return false
         }
     }
 
@@ -470,7 +472,9 @@ constructor(
                 when (target) {
                     is ShortcutTarget.App -> target.packageName
                     is ShortcutTarget.LauncherShortcut -> target.packageName
-                    is ShortcutTarget.DeepLink, is ShortcutTarget.PhoneDial -> null
+                    is ShortcutTarget.DeepLink,
+                    is ShortcutTarget.PhoneDial,
+                    is ShortcutTarget.WidgetPage -> null
                     null -> null
                 } ?: return Process.myUserHandle()
         val app =

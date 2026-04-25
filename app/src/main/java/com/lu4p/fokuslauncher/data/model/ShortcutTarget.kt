@@ -10,6 +10,7 @@ import java.util.Base64
  * - Deep link / intent URI: "intent:<intentUri>"
  * - Launcher shortcut action: "launcher:<base64(packageName)>:<base64(shortcutId)>"
  * - Default phone/dialer: "internal:phone" ([PhoneDial] — uses [android.content.Intent.ACTION_DIAL])
+ * - Launcher widget page: "internal:widget_page" ([WidgetPage])
  *
  * Legacy values without a prefix are treated as app package names.
  */
@@ -21,12 +22,16 @@ sealed interface ShortcutTarget {
     /** Opens the default dialer via [android.content.Intent.ACTION_DIAL] (no fixed package). */
     data object PhoneDial : ShortcutTarget
 
+    /** Opens Fokus' in-launcher Android widget page. */
+    data object WidgetPage : ShortcutTarget
+
     companion object {
         private const val APP_PREFIX = "app:"
         private const val INTENT_PREFIX = "intent:"
         private const val LAUNCHER_PREFIX = "launcher:"
         private const val INTERNAL_PREFIX = "internal:"
         private const val PHONE_INTERNAL_KEY = "phone"
+        private const val WIDGET_PAGE_INTERNAL_KEY = "widget_page"
 
         /**
          * [FavoriteApp.packageName] for the built-in Health / phone row — not an installed package.
@@ -40,6 +45,7 @@ sealed interface ShortcutTarget {
                 raw.startsWith(INTERNAL_PREFIX) ->
                         when (raw.removePrefix(INTERNAL_PREFIX).trim()) {
                             PHONE_INTERNAL_KEY -> PhoneDial
+                            WIDGET_PAGE_INTERNAL_KEY -> WidgetPage
                             else -> null
                         }
                 raw.startsWith(APP_PREFIX) -> {
@@ -70,6 +76,7 @@ sealed interface ShortcutTarget {
             is LauncherShortcut ->
                 LAUNCHER_PREFIX + encodePart(target.packageName) + ":" + encodePart(target.shortcutId)
             is PhoneDial -> INTERNAL_PREFIX + PHONE_INTERNAL_KEY
+            is WidgetPage -> INTERNAL_PREFIX + WIDGET_PAGE_INTERNAL_KEY
         }
 
         private fun encodePart(value: String): String =

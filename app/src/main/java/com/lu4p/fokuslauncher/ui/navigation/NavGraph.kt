@@ -76,6 +76,7 @@ import com.lu4p.fokuslauncher.ui.settings.HomeWidgetsSettingsScreen
 import com.lu4p.fokuslauncher.ui.settings.SettingsScreen
 import com.lu4p.fokuslauncher.ui.settings.SettingsViewModel
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
+import com.lu4p.fokuslauncher.ui.widgets.WidgetPageScreen
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -100,6 +101,8 @@ private const val SWIPE_LAUNCH_HOLD_MS = 40L
 private const val HORIZONTAL_MAX_SLIDE_RATIO = 0.6f
 private const val HORIZONTAL_TRIGGER_RATIO = 0.6f
 private const val HORIZONTAL_DRAG_GAIN = 1.8f
+
+private enum class SwipeSide { LEFT, RIGHT }
 
 private fun snapBackAnimationSpec() = spring<Float>(
     dampingRatio = Spring.DampingRatioNoBouncy,
@@ -143,6 +146,7 @@ fun FokusNavGraph(
 
     val navController = rememberNavController()
     var showDrawer by remember { mutableStateOf(false) }
+    var widgetPageSide by remember { mutableStateOf<SwipeSide?>(null) }
     val horizontalSwipeActive = remember { mutableStateOf(false) }
 
     val componentActivity = LocalActivity.current as ComponentActivity
@@ -152,13 +156,14 @@ fun FokusNavGraph(
     LaunchedEffect(launcherHomeCoordinator, navController) {
         launcherHomeCoordinator.goHomeRequests.collect {
             showDrawer = false
+            widgetPageSide = null
             navController.popBackStack(Routes.HOME, inclusive = false)
         }
     }
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val isHome = navBackStackEntry?.destination?.route == Routes.HOME
-    val shouldBlurAndDim = showDrawer || !isHome || horizontalSwipeActive.value
+    val shouldBlurAndDim = showDrawer || widgetPageSide != null || !isHome || horizontalSwipeActive.value
     // Never apply Android window-level blur/dim while on Home.
     val shouldApplyWindowEffects = shouldBlurAndDim && !isHome
 
@@ -254,13 +259,16 @@ fun FokusNavGraph(
                         .fillMaxSize()
                 ) {
                     val density = LocalDensity.current
+                    val pageWidthPx = with(density) { maxWidth.toPx() }
                     val maxSlidePx = with(density) { (maxWidth * HORIZONTAL_MAX_SLIDE_RATIO).toPx() }
                     val triggerPx = with(density) { (maxWidth * HORIZONTAL_TRIGGER_RATIO).toPx() }
                     var horizontalOffsetPx by remember { mutableFloatStateOf(0f) }
+                    var widgetDragSide by remember { mutableStateOf<SwipeSide?>(null) }
                     val coroutineScope = rememberCoroutineScope()
                     val snapBackSpec = snapBackAnimationSpec()
                     var launchTriggered by remember { mutableStateOf(false) }
-                    val isHorizontalGestureActive = abs(horizontalOffsetPx) > 0.5f || launchTriggered
+                    val isHorizontalGestureActive =
+                        abs(horizontalOffsetPx) > 0.5f || launchTriggered || widgetPageSide != null
 
                     LaunchedEffect(isHorizontalGestureActive) {
                         horizontalSwipeActive.value = isHorizontalGestureActive
@@ -273,6 +281,8 @@ fun FokusNavGraph(
                     OnResumeEffect(lifecycleOwner, coroutineScope) {
                         snapBackJob?.cancel()
                         horizontalOffsetPx = 0f
+                        widgetPageSide = null
+                        widgetDragSide = null
                         launchTriggered = false
                     }
 
@@ -297,7 +307,7 @@ fun FokusNavGraph(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .pointerInput(Unit) {
+                            .pointerInput(widgetPageSide, widgetDragSide) {
                                 var verticalDragOffset = 0f
                                 var drawerTriggered = false
                                 detectVerticalDragGestures(
@@ -306,6 +316,9 @@ fun FokusNavGraph(
                                         drawerTriggered = false
                                     },
                                     onVerticalDrag = { change, dragAmount ->
+                                        if (widgetPageSide != null || widgetDragSide != null) {
+                                            return@detectVerticalDragGestures
+                                        }
                                         change.consume()
                                         verticalDragOffset += dragAmount
                                         if (!drawerTriggered && verticalDragOffset < -SWIPE_THRESHOLD) {
@@ -331,31 +344,60 @@ fun FokusNavGraph(
                             }
                             .then(
                                         if (swipeLeftTarget != null || swipeRightTarget != null) {
-                                            val minSlidePx = if (swipeLeftTarget != null) -maxSlidePx else 0f
-                                            val maxSlidePxVal = if (swipeRightTarget != null) maxSlidePx else 0f
+                                            val minSlidePx =
+                                                if (swipeLeftTarget != null) {
+                                                    if (swipeLeftTarget is ShortcutTarget.WidgetPage) -pageWidthPx
+                                                    else -maxSlidePx
+                                                } else 0f
+                                            val maxSlidePxVal =
+                                                if (swipeRightTarget != null) {
+                                                    if (swipeRightTarget is ShortcutTarget.WidgetPage) pageWidthPx
+                                                    else maxSlidePx
+                                                } else 0f
                                             Modifier.pointerInput(
                                                 swipeLeftTarget,
                                                 swipeRightTarget,
+                                                pageWidthPx,
                                                 maxSlidePx,
                                                 triggerPx,
                                                 minSlidePx,
                                                 maxSlidePxVal
                                             ) {
-                                                val snapHorizontalHome: () -> Unit = {
+                                                val settleHorizontalDrag: () -> Unit = {
                                                     if (!launchTriggered) {
                                                         coroutineScope.launch {
-                                                            Animatable(horizontalOffsetPx).animateTo(
-                                                                    targetValue = 0f,
-                                                                    animationSpec = snapBackSpec
-                                                            ) {
-                                                                horizontalOffsetPx = value
+                                                            val side = widgetDragSide
+                                                            if (side != null && abs(horizontalOffsetPx) >= triggerPx) {
+                                                                val targetValue =
+                                                                    if (side == SwipeSide.RIGHT) pageWidthPx
+                                                                    else -pageWidthPx
+                                                                Animatable(horizontalOffsetPx).animateTo(
+                                                                        targetValue = targetValue,
+                                                                        animationSpec = snapBackSpec
+                                                                ) {
+                                                                    horizontalOffsetPx = value
+                                                                }
+                                                                widgetPageSide = side
+                                                            } else {
+                                                                Animatable(horizontalOffsetPx).animateTo(
+                                                                        targetValue = 0f,
+                                                                        animationSpec = snapBackSpec
+                                                                ) {
+                                                                    horizontalOffsetPx = value
+                                                                }
                                                             }
+                                                            widgetDragSide = null
                                                         }
                                                     }
                                                 }
                                                 detectHorizontalDragGestures(
-                                                    onDragStart = { launchTriggered = false },
+                                                    onDragStart = {
+                                                        if (widgetPageSide != null) return@detectHorizontalDragGestures
+                                                        launchTriggered = false
+                                                        widgetDragSide = null
+                                                    },
                                                     onHorizontalDrag = { change, dragAmount ->
+                                                        if (widgetPageSide != null) return@detectHorizontalDragGestures
                                                         if (launchTriggered) return@detectHorizontalDragGestures
                                                         if (horizontalOffsetPx == 0f) {
                                                             if (dragAmount > 0 && swipeRightTarget == null) return@detectHorizontalDragGestures
@@ -365,8 +407,12 @@ fun FokusNavGraph(
                                                         horizontalOffsetPx =
                                                             (horizontalOffsetPx + (dragAmount * HORIZONTAL_DRAG_GAIN))
                                                                 .coerceIn(minSlidePx, maxSlidePxVal)
-                                                        if (abs(horizontalOffsetPx) >= triggerPx) {
-                                                            val target = if (horizontalOffsetPx > 0f) swipeRightTarget else swipeLeftTarget
+                                                        val target = if (horizontalOffsetPx > 0f) swipeRightTarget else swipeLeftTarget
+                                                        if (target is ShortcutTarget.WidgetPage) {
+                                                            widgetDragSide =
+                                                                if (horizontalOffsetPx > 0f) SwipeSide.RIGHT
+                                                                else SwipeSide.LEFT
+                                                        } else if (abs(horizontalOffsetPx) >= triggerPx) {
                                                             if (target != null) {
                                                                 launchTriggered = true
                                                                 horizontalOffsetPx =
@@ -375,14 +421,98 @@ fun FokusNavGraph(
                                                             }
                                                         }
                                                     },
-                                                    onDragEnd = snapHorizontalHome,
-                                                    onDragCancel = snapHorizontalHome
+                                                    onDragEnd = settleHorizontalDrag,
+                                                    onDragCancel = settleHorizontalDrag
                                                 )
                                             }
                                         } else Modifier
                                     )
                             
                     ) {
+                        if (widgetDragSide != null || widgetPageSide != null) {
+                            val side = widgetPageSide ?: widgetDragSide
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .graphicsLayer {
+                                        translationX =
+                                            when (side) {
+                                                SwipeSide.RIGHT -> horizontalOffsetPx - pageWidthPx
+                                                SwipeSide.LEFT -> horizontalOffsetPx + pageWidthPx
+                                                null -> pageWidthPx
+                                            }
+                                    }
+                            ) {
+                                WidgetPageScreen(
+                                    onClose = {
+                                        coroutineScope.launch {
+                                            Animatable(horizontalOffsetPx).animateTo(
+                                                targetValue = 0f,
+                                                animationSpec = snapBackSpec
+                                            ) {
+                                                horizontalOffsetPx = value
+                                            }
+                                            widgetPageSide = null
+                                            widgetDragSide = null
+                                        }
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .pointerInput(widgetPageSide) {
+                                            fun settleWidgetPageClose() {
+                                                val currentSide = widgetPageSide ?: return
+                                                val halfway =
+                                                    if (currentSide == SwipeSide.RIGHT) {
+                                                        pageWidthPx * 0.55f
+                                                    } else {
+                                                        -pageWidthPx * 0.55f
+                                                    }
+                                                val shouldClose =
+                                                    if (currentSide == SwipeSide.RIGHT) {
+                                                        horizontalOffsetPx < halfway
+                                                    } else {
+                                                        horizontalOffsetPx > halfway
+                                                    }
+                                                coroutineScope.launch {
+                                                    val targetValue =
+                                                        when {
+                                                            shouldClose -> 0f
+                                                            currentSide == SwipeSide.RIGHT -> pageWidthPx
+                                                            else -> -pageWidthPx
+                                                        }
+                                                    Animatable(horizontalOffsetPx).animateTo(
+                                                        targetValue = targetValue,
+                                                        animationSpec = snapBackSpec
+                                                    ) {
+                                                        horizontalOffsetPx = value
+                                                    }
+                                                    if (shouldClose) {
+                                                        widgetPageSide = null
+                                                        widgetDragSide = null
+                                                    }
+                                                }
+                                            }
+                                            detectHorizontalDragGestures(
+                                                onDragStart = { },
+                                                onHorizontalDrag = { change, dragAmount ->
+                                                    val currentSide = widgetPageSide
+                                                        ?: return@detectHorizontalDragGestures
+                                                    val closes =
+                                                        (currentSide == SwipeSide.RIGHT && dragAmount < 0f) ||
+                                                                (currentSide == SwipeSide.LEFT && dragAmount > 0f)
+                                                    if (!closes) return@detectHorizontalDragGestures
+                                                    change.consume()
+                                                    horizontalOffsetPx =
+                                                        (horizontalOffsetPx + dragAmount)
+                                                            .coerceIn(-pageWidthPx, pageWidthPx)
+                                                },
+                                                onDragEnd = { settleWidgetPageClose() },
+                                                onDragCancel = { settleWidgetPageClose() },
+                                            )
+                                        }
+                                )
+                            }
+                        }
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
@@ -407,7 +537,7 @@ fun FokusNavGraph(
                         }
                     }
                 }
-                
+
                 // ── App Drawer overlay ─────────────────────────────────────
                 // Full-screen scrim must not use the drawer's slide-in: Home is hidden immediately
                 // (alpha 0) while the overlay used to start fully below the screen, which briefly
@@ -604,6 +734,7 @@ private fun Activity.launchWithBottomReveal(target: ShortcutTarget) {
         is ShortcutTarget.PhoneDial ->
             Intent(Intent.ACTION_DIAL, "tel:".toUri()).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
         is ShortcutTarget.LauncherShortcut -> null
+        is ShortcutTarget.WidgetPage -> null
     } ?: return
 
     val root = window.decorView

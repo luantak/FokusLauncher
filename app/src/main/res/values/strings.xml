@@ -57,6 +57,7 @@
     <string name="shortcut_generic_label">Shortcut</string>
     <!-- Right-shortcut target: ACTION_DIAL / system default, not a specific installed "Phone" app -->
     <string name="shortcut_target_phone">Phone (default dialer)</string>
+    <string name="widget_page_shortcut_label">Widget page</string>
     <string name="toast_weather_app_launch_failed">Selected weather app could not be launched</string>
 
     <!-- App & category sheets -->
@@ -99,6 +100,18 @@
     <!-- Home screen -->
     <string name="home_set_default_launcher">Set as default launcher</string>
     <string name="home_weather_app_picker_title">Select weather app</string>
+
+    <!-- Android widget page -->
+    <string name="widget_page">Widget page</string>
+    <string name="add_widget">Add widget</string>
+    <string name="manage_widgets">Manage widgets</string>
+    <string name="remove_widget">Remove widget</string>
+    <string name="resize_widget">Resize widget</string>
+    <string name="no_widgets">No widgets</string>
+    <string name="widget_bind_failed">Could not add widget</string>
+    <string name="widget_configure_failed">Widget setup was canceled</string>
+    <string name="widget_picker_title">Add widget</string>
+    <string name="widget_initial_height">%1$ddp</string>
 
     <!-- Home alignment -->
     <string name="home_alignment_title">Home screen alignment</string>
