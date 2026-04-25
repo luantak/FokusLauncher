@@ -38,6 +38,7 @@ fun ShortcutActionPickerDialog(
         onSelect: (AppShortcutAction) -> Unit,
         onDismiss: () -> Unit,
         containerColor: Color = MaterialTheme.colorScheme.surfaceVariant,
+        includeWidgetPageTarget: Boolean = false,
 ) {
     SearchablePickerDialog(
             title = title,
@@ -67,6 +68,33 @@ fun ShortcutActionPickerDialog(
                 modifier =
                         Modifier.fillMaxWidth().heightIn(min = 200.dp, max = 420.dp)
         ) {
+            if (includeWidgetPageTarget) {
+                item(key = "shortcut_action_widget_page") {
+                    Text(
+                            text = stringResource(R.string.widget_page_shortcut_label),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            modifier =
+                                    Modifier.fillMaxWidth()
+                                            .clickableWithSystemSound {
+                                                onSelect(
+                                                        AppShortcutAction(
+                                                                appLabel =
+                                                                        context.getString(
+                                                                                R.string.app_name
+                                                                        ),
+                                                                actionLabel =
+                                                                        context.getString(
+                                                                                R.string.widget_page_shortcut_label
+                                                                        ),
+                                                                target = ShortcutTarget.WidgetPage,
+                                                        )
+                                                )
+                                            }
+                                            .padding(vertical = 10.dp, horizontal = 8.dp),
+                    )
+                }
+            }
             profileGroupedShortcutItems(
                     sections = sections,
                     keyPrefix = "shortcut_action_pick",

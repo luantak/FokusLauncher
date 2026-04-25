@@ -23,6 +23,7 @@ private fun appShortcutGroupKey(action: AppShortcutAction): String =
             is ShortcutTarget.LauncherShortcut -> "pkg:${t.packageName}"
             is ShortcutTarget.DeepLink -> "intent:${t.intentUri}"
             is ShortcutTarget.PhoneDial -> "internal:phone"
+            is ShortcutTarget.WidgetPage -> "internal:widget_page"
         }
 
 /** Package name shown when two apps share the same display label (e.g. two "Phone" apps). */
@@ -31,7 +32,8 @@ private fun shortcutActionPackageForHeadlineDisambiguation(action: AppShortcutAc
             is ShortcutTarget.App -> t.packageName
             is ShortcutTarget.LauncherShortcut -> t.packageName
             is ShortcutTarget.DeepLink,
-            is ShortcutTarget.PhoneDial -> null
+            is ShortcutTarget.PhoneDial,
+            is ShortcutTarget.WidgetPage -> null
         }
 
 /**

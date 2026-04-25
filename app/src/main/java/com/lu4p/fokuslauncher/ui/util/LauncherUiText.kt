@@ -44,6 +44,7 @@ fun formatShortcutTargetDisplay(
             uri.ifEmpty { context.getString(R.string.shortcut_target_deep_link) }
         }
         is ShortcutTarget.PhoneDial -> context.getString(R.string.shortcut_target_phone)
+        is ShortcutTarget.WidgetPage -> context.getString(R.string.widget_page_shortcut_label)
         is ShortcutTarget.LauncherShortcut -> {
             val appName =
                     allApps.find {

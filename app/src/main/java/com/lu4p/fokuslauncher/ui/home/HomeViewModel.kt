@@ -781,6 +781,7 @@ class HomeViewModel @Inject constructor(
     private fun launchShortcutTarget(target: ShortcutTarget, profileKey: String) {
         when (target) {
             is ShortcutTarget.PhoneDial -> launchDefaultDialer()
+            is ShortcutTarget.WidgetPage -> Unit
             is ShortcutTarget.DeepLink -> launchDeepLink(target.intentUri)
             is ShortcutTarget.LauncherShortcut -> {
                 val user = resolveUserHandleForShortcut(profileKey, target.packageName)

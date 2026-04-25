@@ -534,7 +534,8 @@ private fun SwipeShortcutsStep(
                 showAppPickerFor.value = null
             },
             onDismiss = { showAppPickerFor.value = null },
-            containerColor = Color.Black
+            containerColor = Color.Black,
+            includeWidgetPageTarget = true,
         )
     }
 }

@@ -58,4 +58,16 @@ class ShortcutTargetTest {
         assertEquals("internal:phone", ShortcutTarget.encode(dial))
         assertEquals(dial, ShortcutTarget.decode("internal:phone"))
     }
+
+    @Test
+    fun `encode and decode widget page internal token`() {
+        val target = ShortcutTarget.WidgetPage
+        assertEquals("internal:widget_page", ShortcutTarget.encode(target))
+        assertEquals(target, ShortcutTarget.decode("internal:widget_page"))
+    }
+
+    @Test
+    fun `decode unknown internal token returns null`() {
+        assertNull(ShortcutTarget.decode("internal:unknown"))
+    }
 }

@@ -16,12 +16,15 @@ import com.lu4p.fokuslauncher.data.model.LauncherFontPreferences
 import com.lu4p.fokuslauncher.data.model.LauncherFontScale
 import com.lu4p.fokuslauncher.data.model.SystemCategoryKeys
 import com.lu4p.fokuslauncher.data.model.HomeDateFormatStyle
+import com.lu4p.fokuslauncher.data.model.HostedWidget
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.TemperatureUnit
 import com.lu4p.fokuslauncher.data.model.LauncherAppearance
 import com.lu4p.fokuslauncher.data.model.LauncherVisualStyle
 import com.lu4p.fokuslauncher.data.model.DotSearchTargetPreference
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
+import com.lu4p.fokuslauncher.data.model.parseHostedWidgets
+import com.lu4p.fokuslauncher.data.model.serializeHostedWidgets
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.utils.WallpaperHelper
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -59,6 +62,7 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         private val SWIPE_LEFT_KEY = stringPreferencesKey("swipe_left_app")
         private val SWIPE_RIGHT_KEY = stringPreferencesKey("swipe_right_app")
         private val RIGHT_SIDE_SHORTCUTS_KEY = stringPreferencesKey("right_side_shortcuts")
+        private val HOSTED_WIDGETS_KEY = stringPreferencesKey("hosted_widgets")
         /**
          * Stored when the user has zero right-side shortcuts. Non-empty so the preference key stays
          * written: some DataStore backends omit empty strings, which made [RIGHT_SIDE_SHORTCUTS_KEY]
@@ -242,6 +246,21 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
     suspend fun setRightSideShortcuts(shortcuts: List<HomeShortcut>) {
         context.fokusLauncherPreferencesDataStore.edit { prefs ->
             prefs[RIGHT_SIDE_SHORTCUTS_KEY] = serializeRightSideShortcuts(shortcuts)
+        }
+    }
+
+    // --- Android widget page ---
+
+    val hostedWidgetsFlow: Flow<List<HostedWidget>> =
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
+                parseHostedWidgets(prefs[HOSTED_WIDGETS_KEY] ?: "")
+            }
+
+    suspend fun setHostedWidgets(widgets: List<HostedWidget>, allowEmpty: Boolean = false) {
+        if (widgets.isEmpty() && !allowEmpty) return
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            if (widgets.isEmpty()) prefs.remove(HOSTED_WIDGETS_KEY)
+            else prefs[HOSTED_WIDGETS_KEY] = serializeHostedWidgets(widgets)
         }
     }
 
