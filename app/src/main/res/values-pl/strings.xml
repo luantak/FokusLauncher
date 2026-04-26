@@ -143,7 +143,7 @@
     <string name="settings_return_home_after_long_lock_subtitle">Po odblokowaniu pokaż launcher, jeśli urządzenie było zablokowane wystarczająco długo</string>
     <string name="settings_long_lock_duration">Czas długiej blokady</string>
     <string name="settings_long_lock_duration_subtitle">Jak długo urządzenie musi pozostać zablokowane, zanim Fokus po odblokowaniu wróci do ekranu głównego.</string>
-    <string name="accessibility_lock_service_description">Opcjonalna funkcja do włączenia w ustawieniach ułatwienia dostępu. Używane tylko do blokowania ekranu (podwójne stuknięcie) i powrotu do tego launchera po dłuższym zablokowaniu, jeżeli ta funkcja jest włączona. Nie odczytuje zawartości ekranu ani nie zbiera danych z innych aplikacji.</string>
+    <string name="accessibility_lock_service_description">Obsługuje opcjonalną funkcję zablokowania przez podwójne stuknięcie na ekranie głównym Fokus oraz powracania do tego launchera po dłuższym zablokowaniu, jeżeli ta funkcja jest włączona w aplikacji. Nie odczytuje zawartości ekranu z innych aplikacji ani nie zbiera z nich danych.</string>
     <string name="double_tap_lock_failed">Nie udało się zablokować urządzenia</string>
     <string name="settings_edit_home_screen">Edytuj ekran główny</string>
     <string name="settings_edit_shortcuts">Edytuj skróty</string>
