@@ -25,10 +25,13 @@ import com.lu4p.fokuslauncher.data.model.appMetadataKey
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.data.repository.RemovedApp
 import com.lu4p.fokuslauncher.data.repository.WeatherRepository
+import com.lu4p.fokuslauncher.utils.LockScreenHelper
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkObject
+import io.mockk.unmockkObject
 import io.mockk.verify
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -654,5 +657,20 @@ class HomeViewModelTest {
         viewModel.launchShortcut(HomeShortcut(target = ShortcutTarget.App("com.lu4p.music")))
 
         verify { appRepository.launchApp("com.lu4p.music") }
+    }
+
+    @Test
+    fun `onDoubleTapEmptyLock calls lockScreenIfPossible when enabled`() {
+        mockkObject(LockScreenHelper)
+        every { LockScreenHelper.isLockAccessibilityServiceEnabled(any()) } returns true
+        every { LockScreenHelper.lockScreenIfPossible() } returns true
+        every { preferencesManager.doubleTapEmptyLockFlow } returns flowOf(true)
+
+        val viewModel = createViewModel()
+        viewModel.onDoubleTapEmptyLock()
+        testDispatcher.scheduler.runCurrent()
+
+        verify { LockScreenHelper.lockScreenIfPossible() }
+        unmockkObject(LockScreenHelper)
     }
 }
