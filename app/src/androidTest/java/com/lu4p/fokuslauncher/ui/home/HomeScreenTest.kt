@@ -5,13 +5,16 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.doubleClick
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.WeatherData
 import com.lu4p.fokuslauncher.ui.theme.FokusLauncherTheme
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -310,5 +313,81 @@ class HomeScreenTest {
                         .boundsInRoot.bottom
 
         assertTrue(bottomShortcut >= bottomFavorite - 1f)
+    }
+
+    @Test
+    fun homeScreen_doubleTapToLock_triggersCallback() {
+        var doubleTapTriggered = false
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                HomeScreenContent(
+                        uiState = HomeUiState(doubleTapEmptyLockEnabled = true),
+                        clockUiState = clock(),
+                        weatherUiState = weatherOff,
+                        favorites = testFavorites,
+                        rightSideShortcuts = testRightSideShortcuts,
+                        onLabelClick = {},
+                        onLabelLongPress = {},
+                        onIconClick = {},
+                        onDoubleTapEmptyLock = { doubleTapTriggered = true }
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("home_screen").performTouchInput {
+            doubleClick()
+        }
+        assertTrue(doubleTapTriggered)
+    }
+
+    @Test
+    fun homeScreen_doubleTapToLockDisabled_doesNotTriggerCallback() {
+        var doubleTapTriggered = false
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                HomeScreenContent(
+                        uiState = HomeUiState(doubleTapEmptyLockEnabled = false),
+                        clockUiState = clock(),
+                        weatherUiState = weatherOff,
+                        favorites = testFavorites,
+                        rightSideShortcuts = testRightSideShortcuts,
+                        onLabelClick = {},
+                        onLabelLongPress = {},
+                        onIconClick = {},
+                        onDoubleTapEmptyLock = { doubleTapTriggered = true }
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("home_screen").performTouchInput {
+            doubleClick()
+        }
+        assertFalse(doubleTapTriggered)
+    }
+
+    @Test
+    fun homeScreen_doubleTapOnFavorite_doesNotTriggerLock() {
+        var doubleTapTriggered = false
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                HomeScreenContent(
+                        uiState = HomeUiState(doubleTapEmptyLockEnabled = true),
+                        clockUiState = clock(),
+                        weatherUiState = weatherOff,
+                        favorites = testFavorites,
+                        rightSideShortcuts = testRightSideShortcuts,
+                        onLabelClick = {},
+                        onLabelLongPress = {},
+                        onIconClick = {},
+                        onDoubleTapEmptyLock = { doubleTapTriggered = true }
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Music").performTouchInput {
+            doubleClick()
+        }
+
+        assertFalse("Double tap should not be triggered on favorite", doubleTapTriggered)
     }
 }
