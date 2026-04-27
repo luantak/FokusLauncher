@@ -215,7 +215,13 @@ fun HomeScreenContent(
                 indication = null,
                 interactionSource = noIndication,
                 onClick = { },
-                onLongClick = onHomeScreenLongPress
+                onLongClick = onHomeScreenLongPress,
+                onDoubleClick = if (doubleTapEmptyLockEnabled) {
+                    {
+                        play()
+                        onDoubleTapEmptyLock()
+                    }
+                } else null
             )
             .testTag("home_screen")
     ) {
@@ -238,27 +244,7 @@ fun HomeScreenContent(
                 outlined = uiState.usesPhotoWallpaper,
             )
 
-            // Push favorites to the bottom; optional double-tap to lock on this empty band
-            if (doubleTapEmptyLockEnabled) {
-                val emptyTapSource = remember { MutableInteractionSource() }
-                Box(
-                        modifier =
-                                Modifier.weight(1f)
-                                        .fillMaxWidth()
-                                        .combinedClickable(
-                                                indication = null,
-                                                interactionSource = emptyTapSource,
-                                                onClick = {},
-                                                onLongClick = onHomeScreenLongPress,
-                                                onDoubleClick = {
-                                                    play()
-                                                    onDoubleTapEmptyLock()
-                                                },
-                                        )
-                )
-            } else {
-                Spacer(modifier = Modifier.weight(1f))
-            }
+            Spacer(modifier = Modifier.weight(1f))
 
             HomeFavoritesSection(
                 homeAlignment = uiState.homeAlignment,
