@@ -18,7 +18,22 @@ object SystemCategoryKeys {
     const val MEDIA = "Media"
 
     private val supportedLocaleTags =
-            listOf("en", "de", "pl", "ru", "zh-CN", "tr", "da", "es", "eu", "fi", "pt-BR")
+            listOf(
+                    "da",
+                    "de",
+                    "en",
+                    "es",
+                    "eu",
+                    "fi",
+                    "in",
+                    "pl",
+                    "pt-BR",
+                    "ro",
+                    "ru",
+                    "tr",
+                    "uk",
+                    "zh-CN",
+            )
 
     private data class CategoryDef(
         val key: String,
