@@ -974,6 +974,13 @@ constructor(
         }
     }
 
+    fun setAppCategory(app: AppInfo, category: String) {
+        viewModelScope.launch {
+            appRepository.setAppCategory(app.packageName, appProfileKey(app.userHandle), category)
+            dismissActionSheet()
+        }
+    }
+
     // --- Overflow menu ---
 
     fun toggleMenu() {

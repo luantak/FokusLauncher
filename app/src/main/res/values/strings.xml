@@ -64,6 +64,7 @@
     <string name="app_name_placeholder">App name</string>
     <string name="action_add_to_home">Add to home screen</string>
     <string name="action_remove_from_home">Remove from home screen</string>
+    <string name="action_set_category">Set category</string>
     <string name="action_app_info">App info</string>
     <string name="action_hide">Hide</string>
     <string name="action_uninstall">Uninstall</string>
