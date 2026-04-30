@@ -310,6 +310,4 @@
     <string name="settings_weblate_subtitle">Contribua com traduções no Weblate</string>
     <string name="settings_matrix_title">Participe da discussão</string>
     <string name="settings_matrix_subtitle">Obtenha ajuda e compartilhe feedback</string>
-    <string name="edit_home_section_all_apps" translatable="false"></string>
-    <string name="app_name" translatable="false"></string>
 </resources>
