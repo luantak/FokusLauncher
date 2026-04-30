@@ -10,10 +10,10 @@
     <string name="drawer_private_space_unlock">Abrir el Espacio Privado</string>
     <string name="category_add_error_reserved_uncategorized">\"Sin categoría\" es la lista por defecto para las aplicaciones sin categoría. Elige otro nombre.</string>
     <string name="category_action_rename">Renombrar</string>
-    <string name="category_add_error_reserved_work">\"Trabajo\" está reservado para las aplicaciones del perfil de trabajo. Elige un nombre diferente.</string>
+    <string name="category_add_error_reserved_work">\"Trabajo\" está reservado para las aplicaciones del perfil de trabajo. Elije un nombre diferente.</string>
     <string name="drawer_section_work_profile">Perfil de trabajo</string>
     <string name="inferred_category_productivity">Productividad</string>
-    <string name="drawer_section_clone_profile">Aplicaciones paralelas</string>
+    <string name="drawer_section_clone_profile">Aplicaciones pararlelas</string>
     <string name="action_change">Cambiar</string>
     <string name="inferred_category_media">Multimedia</string>
     <string name="drawer_reorder">Reordenar</string>
@@ -30,7 +30,7 @@
     <string name="shortcut_open_dialer">Abrir marcador</string>
     <string name="inferred_category_games">Juegos</string>
     <string name="cd_remove_rename">Deshacer el cambio de nombre</string>
-    <string name="category_edit_apps">Editar aplicaciones</string>
+    <string name="category_edit_apps">Editar aplicacciones</string>
     <string name="drawer_section_other_profile">Otro perfil</string>
     <string name="shortcut_generic_label">Acceso directo</string>
     <string name="drawer_filter_all_apps">Todas las aplicaciones</string>
@@ -40,7 +40,7 @@
     <string name="drawer_filter_private">Privado</string>
     <string name="drawer_section_profile_numbered">Perfil %1$d</string>
     <string name="action_hide">Ocultar</string>
-    <string name="action_uninstall">Desinstalar</string>
+    <string name="action_uninstall">Desisnstalar</string>
     <string name="search_apps_and_actions">Buscar aplicaciones y acciones</string>
     <string name="shortcut_target_phone">Teléfono (por defecto)</string>
     <string name="drawer_menu_launcher_settings">Configuración del lanzador</string>
@@ -60,7 +60,7 @@
     <string name="toast_weather_app_launch_failed">La aplicación del clima seleccionada no se puede abrir</string>
     <string name="category_add_error_blank">Introduce el nombre de la categoría. Los nombres vacíos no se guardan.</string>
     <string name="shortcut_target_deep_link">Enlace profundo</string>
-    <string name="home_weather_app_picker_title">Elige la aplicación para el clima</string>
+    <string name="home_weather_app_picker_title">Elije la aplicación para el clima</string>
     <string name="search">Buscar</string>
     <string name="home_alignment_title">Alineación de la pantalla de inicio</string>
     <string name="drawer_reorder_done">Hecho</string>
