@@ -16,7 +16,9 @@ data class AppInfo(
     /** Non-null for apps in a secondary Android user (work, clone, …); used with [LauncherApps]. */
     val userHandle: UserHandle? = null,
     /** Non-null when [userHandle] is set; the activity to start in that profile. */
-    val componentName: ComponentName? = null
+    val componentName: ComponentName? = null,
+    /** Non-null for pinned launcher shortcuts, including browser-created PWA shortcuts. */
+    val launcherShortcutId: String? = null
 ) {
     val normalizedLabel: String by lazy(LazyThreadSafetyMode.NONE) { label.normalizedForSearch() }
 }
@@ -27,6 +29,7 @@ data class AppInfo(
  */
 fun appListStableKey(app: AppInfo): String {
     val base = drawerOpenCountKey(app.packageName, app.userHandle)
+    app.launcherShortcutId?.let { return "$base#shortcut:$it" }
     val cn = app.componentName ?: return base
     return "$base#${cn.flattenToString()}"
 }

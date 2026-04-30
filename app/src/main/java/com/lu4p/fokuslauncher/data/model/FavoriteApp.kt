@@ -31,3 +31,15 @@ data class FavoriteApp(
     val resolvedIconPackage: String
         get() = (resolvedIconTarget as? ShortcutTarget.App)?.packageName ?: packageName
 }
+
+fun favoriteAppStableKey(favorite: FavoriteApp): String {
+    val base = drawerOpenCountKey(favorite.packageName, favorite.profileKey)
+    val target = favorite.resolvedIconTarget
+    return if (target is ShortcutTarget.LauncherShortcut &&
+                    target.packageName == favorite.packageName
+    ) {
+        "$base#shortcut:${target.shortcutId}"
+    } else {
+        base
+    }
+}
