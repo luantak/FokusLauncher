@@ -1,8 +1,10 @@
 package com.lu4p.fokuslauncher.ui.components
 
 import com.lu4p.fokuslauncher.ui.util.clickableNoRippleWithSystemSound
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -31,26 +33,37 @@ fun DateBatteryRow(
     val color = MaterialTheme.colorScheme.onBackground
     Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier) {
         if (showDate) {
-            if (outlined) {
-                OutlinedText(
-                        text = date,
-                        style = style,
-                        color = color,
-                        modifier = Modifier.clickableNoRippleWithSystemSound(onClick = onDateClick),
-                )
-            } else {
-                Text(
-                    text = date,
-                    style = style,
-                    color = color,
-                    modifier = Modifier.clickableNoRippleWithSystemSound(onClick = onDateClick)
-                )
+            Box(
+                    contentAlignment = Alignment.TopStart,
+                    modifier =
+                            Modifier.heightIn(min = 56.dp)
+                                    .clickableNoRippleWithSystemSound(onClick = onDateClick),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (outlined) {
+                        OutlinedText(
+                                text = date,
+                                style = style,
+                                color = color,
+                        )
+                    } else {
+                        Text(
+                                text = date,
+                                style = style,
+                                color = color,
+                        )
+                    }
+                    if (showBattery) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        if (outlined) {
+                            OutlinedText(text = "$batteryPercent%", style = style, color = color)
+                        } else {
+                            Text(text = "$batteryPercent%", style = style, color = color)
+                        }
+                    }
+                }
             }
-        }
-        if (showDate && showBattery) {
-            Spacer(modifier = Modifier.width(8.dp))
-        }
-        if (showBattery) {
+        } else if (showBattery) {
             if (outlined) {
                 OutlinedText(text = "$batteryPercent%", style = style, color = color)
             } else {

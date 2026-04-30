@@ -385,7 +385,10 @@ private fun HomeWidgetsSection(
                 showBattery = uiState.showHomeBattery,
                 outlined = outlined,
                 onDateClick = onDateClick,
-                modifier = Modifier.fillMaxWidth().testTag("date_battery_row"),
+                modifier =
+                        Modifier.fillMaxWidth()
+                                .padding(top = if (showClock) 8.dp else 0.dp)
+                                .testTag("date_battery_row"),
         )
     }
 }
