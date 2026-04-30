@@ -205,7 +205,7 @@
     <string name="shortcut_target_phone">Telefon (varsayılan arayıcı)</string>
     <string name="widget_page_shortcut_label">Widget sayfası</string>
     <string name="category_add_error_blank">Bir kategori ismi girin. Boş isimler kaydedilmez.</string>
-    <string name="category_add_error_reserved_all_apps">\"Tüm uygulamalar\" yerleşik bir çekmece filtresidir; özel bir kategori değildir. Farklı bir ad seçin.</string>
+    <string name="category_add_error_reserved_all_apps">\"Tüm Uygulamalar\"</string>
     <string name="accessibility_prominent_disclosure_checkbox"></string>
     <string name="settings_nav_shortcuts"></string>
     <string name="settings_font_size_subtitle"></string>
