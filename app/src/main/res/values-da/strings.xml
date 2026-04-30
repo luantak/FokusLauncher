@@ -265,6 +265,6 @@
     <string name="category_add_error_reserved_private">\'Privat\' er reserveret som systemliste. Vælg et andet navn.</string>
     <string name="settings_home_date_format_month_long">Måned DD, ÅÅÅÅ</string>
     <string name="settings_drawer_search_auto_launch">Auto åbn apps</string>
-    <string name="edit_home_section_all_apps" translatable="false">\@string/drawer_filter_all_apps</string>
+    <string name="edit_home_section_all_apps" translatable="false">\@string/skuffe_filter_alle_apps</string>
     <string name="app_name" translatable="false">Fokus Startskærm</string>
 </resources>
