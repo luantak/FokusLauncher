@@ -1078,7 +1078,22 @@ private fun AppLanguageDropdown(
     val systemDefaultLabel = stringResource(R.string.settings_language_system_default)
     val supportedLocaleTags =
             remember {
-                listOf("en", "de", "pl", "ru", "zh-CN", "tr", "da", "es", "eu", "fi", "pt-BR")
+                listOf(
+                        "da",
+                        "de",
+                        "en",
+                        "es",
+                        "eu",
+                        "fi",
+                        "in",
+                        "pl",
+                        "pt-BR",
+                        "ro",
+                        "ru",
+                        "tr",
+                        "uk",
+                        "zh-CN",
+                )
             }
     val options =
             remember(systemDefaultLabel) {
