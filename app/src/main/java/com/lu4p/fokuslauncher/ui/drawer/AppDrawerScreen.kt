@@ -718,12 +718,14 @@ fun AppDrawerScreen(
     uiState.selectedApp?.let { app ->
         AppActionSheet(
                 app = app,
+                categories = uiState.categories,
                 onDismiss = viewModel::dismissActionSheet,
                 onAddToHome = {
                     viewModel.addToHomeScreen(it)
                     closeAndReset()
                 },
                 onRename = { newName -> viewModel.renameApp(app, newName) },
+                onSetCategory = { category -> viewModel.setAppCategory(app, category) },
                 onHide = { viewModel.hideApp(it) },
                 isOnHomeScreen =
                         appListStableKey(app) in uiState.favoriteAppKeys

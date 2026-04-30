@@ -89,6 +89,7 @@ fun HomeScreen(
     val favorites by viewModel.favorites.collectAsStateWithLifecycle()
     val rightSideShortcuts by viewModel.rightSideShortcuts.collectAsStateWithLifecycle()
     val allInstalledApps by viewModel.allInstalledApps.collectAsStateWithLifecycle()
+    val categoryOptions by viewModel.categoryOptions.collectAsStateWithLifecycle()
     val showWeatherAppPicker by viewModel.showWeatherAppPicker.collectAsStateWithLifecycle()
     val appMenuTarget by viewModel.appMenuTarget.collectAsStateWithLifecycle()
     val showHomeScreenMenu by viewModel.showHomeScreenMenu.collectAsStateWithLifecycle()
@@ -141,10 +142,21 @@ fun HomeScreen(
 
     // App menu bottom sheet (opened directly on long-press)
     appMenuTarget?.let { fav ->
+        val currentCategory =
+                allInstalledApps
+                        .firstOrNull {
+                            it.packageName == fav.packageName &&
+                                    appProfileKey(it.userHandle) == fav.profileKey
+                        }
+                        ?.category
+                        .orEmpty()
         HomeAppMenuSheet(
             fav = fav,
+            currentCategory = currentCategory,
+            categoryOptions = categoryOptions,
             onDismiss = { viewModel.dismissAppMenu() },
             onRename = { newName -> viewModel.renameApp(fav, newName) },
+            onSetCategory = { category -> viewModel.setFavoriteCategory(fav, category) },
             onRemoveFromHome = { viewModel.removeFavorite(fav) },
             onEditHomeScreen = {
                 viewModel.dismissAppMenu()
