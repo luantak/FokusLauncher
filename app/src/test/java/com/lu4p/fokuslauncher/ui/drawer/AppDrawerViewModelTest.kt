@@ -112,6 +112,7 @@ class AppDrawerViewModelTest {
         every { appRepository.getAllAppCategories() } returns categoriesFlow
         every { appRepository.getAllCategoryDefinitions() } returns categoryDefinitionsFlow
         every { appRepository.launchApp(any()) } returns true
+        every { appRepository.launchLauncherShortcut(any(), any(), any()) } returns true
         every { preferencesManager.favoritesFlow } returns favoritesFlow
         every { preferencesManager.drawerAppSortModeFlow } returns drawerAppSortModeFlow
         every { preferencesManager.drawerAppOpenCountsFlow } returns drawerAppOpenCountsFlow
@@ -124,6 +125,10 @@ class AppDrawerViewModelTest {
         coEvery { preferencesManager.setDrawerCustomAppOrder(any()) } coAnswers {
             @Suppress("UNCHECKED_CAST")
             drawerCustomAppOrderFlow.value = invocation.args[0] as Map<String, List<String>>
+        }
+        coEvery { preferencesManager.setFavorites(any()) } coAnswers {
+            @Suppress("UNCHECKED_CAST")
+            favoritesFlow.value = invocation.args[0] as List<FavoriteApp>
         }
         every { preferencesManager.drawerDotSearchDefaultFlow } returns drawerDotSearchDefaultFlow
         every { preferencesManager.drawerDotSearchAliasesFlow } returns drawerDotSearchAliasesFlow
@@ -354,6 +359,40 @@ class AppDrawerViewModelTest {
         viewModel.launchTarget(LaunchTarget.MainApp("com.lu4p.maps"))
 
         verify { appRepository.launchApp("com.lu4p.maps") }
+    }
+
+    @Test
+    fun `launchTarget launcher shortcut delegates to repository`() {
+        viewModel.launchTarget(LaunchTarget.LauncherShortcut("org.mozilla.firefox", "pwa-twitter"))
+
+        verify {
+            appRepository.launchLauncherShortcut(
+                    "org.mozilla.firefox",
+                    "pwa-twitter",
+                    null,
+            )
+        }
+    }
+
+    @Test
+    fun `addToHomeScreen preserves launcher shortcut target for PWA rows`() {
+        val app =
+                AppInfo(
+                        packageName = "org.mozilla.firefox",
+                        label = "Twitter",
+                        icon = null,
+                        launcherShortcutId = "pwa-twitter",
+                )
+
+        viewModel.addToHomeScreen(app)
+
+        val favorite = favoritesFlow.value.single()
+        assertEquals("Twitter", favorite.label)
+        assertEquals("org.mozilla.firefox", favorite.packageName)
+        assertEquals(
+                ShortcutTarget.LauncherShortcut("org.mozilla.firefox", "pwa-twitter"),
+                favorite.resolvedIconTarget,
+        )
     }
 
     @Test

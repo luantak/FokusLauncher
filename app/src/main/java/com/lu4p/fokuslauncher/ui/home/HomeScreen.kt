@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.width
@@ -88,6 +89,7 @@ fun HomeScreen(
     val favorites by viewModel.favorites.collectAsStateWithLifecycle()
     val rightSideShortcuts by viewModel.rightSideShortcuts.collectAsStateWithLifecycle()
     val allInstalledApps by viewModel.allInstalledApps.collectAsStateWithLifecycle()
+    val categoryOptions by viewModel.categoryOptions.collectAsStateWithLifecycle()
     val showWeatherAppPicker by viewModel.showWeatherAppPicker.collectAsStateWithLifecycle()
     val appMenuTarget by viewModel.appMenuTarget.collectAsStateWithLifecycle()
     val showHomeScreenMenu by viewModel.showHomeScreenMenu.collectAsStateWithLifecycle()
@@ -140,10 +142,21 @@ fun HomeScreen(
 
     // App menu bottom sheet (opened directly on long-press)
     appMenuTarget?.let { fav ->
+        val currentCategory =
+                allInstalledApps
+                        .firstOrNull {
+                            it.packageName == fav.packageName &&
+                                    appProfileKey(it.userHandle) == fav.profileKey
+                        }
+                        ?.category
+                        .orEmpty()
         HomeAppMenuSheet(
             fav = fav,
+            currentCategory = currentCategory,
+            categoryOptions = categoryOptions,
             onDismiss = { viewModel.dismissAppMenu() },
             onRename = { newName -> viewModel.renameApp(fav, newName) },
+            onSetCategory = { category -> viewModel.setFavoriteCategory(fav, category) },
             onRemoveFromHome = { viewModel.removeFavorite(fav) },
             onEditHomeScreen = {
                 viewModel.dismissAppMenu()
@@ -410,6 +423,8 @@ private fun ShortcutIconsColumn(
     shortcuts: List<HomeShortcut>,
     onIconClick: (HomeShortcut) -> Unit,
     iconSize: Dp,
+    touchTargetSize: Dp,
+    iconAlignment: Alignment,
     verticalSpacing: Dp,
     modifier: Modifier = Modifier,
     outlined: Boolean = false,
@@ -423,6 +438,8 @@ private fun ShortcutIconsColumn(
                 shortcuts = shortcuts,
                 onIconClick = onIconClick,
                 iconSize = iconSize,
+                touchTargetSize = touchTargetSize,
+                iconAlignment = iconAlignment,
                 outlined = outlined,
         )
     }
@@ -444,8 +461,8 @@ private fun HomeFavoritesSection(
             launcherFontScale.coerceIn(LauncherFontScale.MIN, LauncherFontScale.MAX)
     // Base dp only: [LauncherIcon] applies [launcherIconDp] so shortcut size tracks font scale once.
     val shortcutIconSize = 24.dp
-    val shortcutIconSpacingH = (24f * sc).dp
-    val shortcutIconSpacingV = (20f * sc).dp
+    val shortcutTouchTargetSize = (48f * sc).dp
+    val shortcutIconSpacing = (8f * sc).dp
     val shortcutGutter = (24f * sc).dp
     val shortcutRowTopSpacer = (20f * sc).dp
 
@@ -468,13 +485,15 @@ private fun HomeFavoritesSection(
                 if (rightSideShortcuts.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(shortcutRowTopSpacer))
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(shortcutIconSpacingH),
+                        horizontalArrangement = Arrangement.spacedBy(shortcutIconSpacing),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         RightShortcutIcons(
                                 shortcuts = rightSideShortcuts,
                                 onIconClick = onIconClick,
                                 iconSize = shortcutIconSize,
+                                touchTargetSize = shortcutTouchTargetSize,
+                                iconAlignment = Alignment.Center,
                                 outlined = outlined,
                         )
                     }
@@ -501,11 +520,19 @@ private fun HomeFavoritesSection(
                     )
                 }
                 val icons: @Composable () -> Unit = {
+                    val iconAlignment =
+                            if (homeAlignment == HomeAlignment.LEFT) {
+                                Alignment.CenterEnd
+                            } else {
+                                Alignment.CenterStart
+                            }
                     ShortcutIconsColumn(
                             shortcuts = rightSideShortcuts,
                             onIconClick = onIconClick,
                             iconSize = shortcutIconSize,
-                            verticalSpacing = shortcutIconSpacingV,
+                            touchTargetSize = shortcutTouchTargetSize,
+                            iconAlignment = iconAlignment,
+                            verticalSpacing = shortcutIconSpacing,
                             outlined = outlined,
                     )
                 }
@@ -528,19 +555,26 @@ private fun RightShortcutIcons(
     shortcuts: List<HomeShortcut>,
     onIconClick: (HomeShortcut) -> Unit,
     iconSize: Dp,
+    touchTargetSize: Dp,
+    iconAlignment: Alignment,
     outlined: Boolean = false,
 ) {
     shortcuts.reversed().forEachIndexed { index, shortcut ->
-        LauncherIcon(
-                imageVector = MinimalIcons.iconFor(shortcut.iconName),
-                contentDescription = stringResource(R.string.cd_shortcut_icon),
-                tint = MaterialTheme.colorScheme.onBackground,
-                iconSize = iconSize,
-                outlined = outlined,
+        Box(
                 modifier =
-                        Modifier.clickableNoRippleWithSystemSound { onIconClick(shortcut) }
+                        Modifier.size(touchTargetSize)
+                                .clickableNoRippleWithSystemSound { onIconClick(shortcut) }
                                 .testTag("right_shortcut_icon_$index"),
-        )
+                contentAlignment = iconAlignment,
+        ) {
+            LauncherIcon(
+                    imageVector = MinimalIcons.iconFor(shortcut.iconName),
+                    contentDescription = stringResource(R.string.cd_shortcut_icon),
+                    tint = MaterialTheme.colorScheme.onBackground,
+                    iconSize = iconSize,
+                    outlined = outlined,
+            )
+        }
     }
 }
 

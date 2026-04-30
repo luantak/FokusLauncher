@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.LauncherApps
 import android.content.pm.PackageManager
+import android.content.pm.ShortcutInfo
 import android.os.Process
 import android.os.UserHandle
 import android.os.UserManager
@@ -68,6 +69,7 @@ class AppRepositoryTest {
         every { context.getSystemService(Context.USER_SERVICE) } returns userManager
         every { userManager.userProfiles } returns listOf(myUser)
         every { launcherApps.getActivityList(null, myUser) } returns emptyList()
+        every { launcherApps.getShortcuts(any(), any()) } returns emptyList()
 
         every { context.getString(R.string.inferred_category_utilities) } returns "Utilities"
         every { context.getString(R.string.inferred_category_games) } returns "Games"
@@ -357,6 +359,35 @@ class AppRepositoryTest {
         assertEquals("Chrome", result.single().label)
     }
 
+    @Test
+    fun `getInstalledApps includes pinned launcher shortcuts as PWA entries`() {
+        every {
+            launcherApps.getActivityList(null, myUser)
+        } returns listOf(createMockLauncherActivity("org.mozilla.firefox", "Firefox"))
+        every { launcherApps.getShortcuts(any(), myUser) } returns
+                listOf(createMockShortcut("pwa-twitter", "Twitter"))
+
+        val result = repository.getInstalledApps()
+
+        assertEquals(2, result.size)
+        val shortcut = result.single { it.launcherShortcutId == "pwa-twitter" }
+        assertEquals("org.mozilla.firefox", shortcut.packageName)
+        assertEquals("Twitter", shortcut.label)
+    }
+
+    @Test
+    fun `getInstalledApps ignores disabled pinned launcher shortcuts`() {
+        every {
+            launcherApps.getActivityList(null, myUser)
+        } returns listOf(createMockLauncherActivity("org.mozilla.firefox", "Firefox"))
+        every { launcherApps.getShortcuts(any(), myUser) } returns
+                listOf(createMockShortcut("pwa-twitter", "Twitter", enabled = false))
+
+        val result = repository.getInstalledApps()
+
+        assertTrue(result.none { it.launcherShortcutId == "pwa-twitter" })
+    }
+
     // --- Hidden Apps Tests ---
 
     @Test
@@ -603,6 +634,19 @@ class AppRepositoryTest {
                     }
             nonLocalizedLabel = label
         }
+    }
+
+    private fun createMockShortcut(
+            id: String,
+            label: String,
+            enabled: Boolean = true
+    ): ShortcutInfo {
+        val shortcut = mockk<ShortcutInfo>(relaxed = true)
+        every { shortcut.id } returns id
+        every { shortcut.shortLabel } returns label
+        every { shortcut.longLabel } returns null
+        every { shortcut.isEnabled } returns enabled
+        return shortcut
     }
 
     @Test
