@@ -290,4 +290,20 @@
     <string name="visual_style_sky">Zerua</string>
     <string name="settings_glow_subtitle">Testu eta ikonoen gaineko halo leuna.</string>
     <string name="settings_visual_style_subtitle">Neona edo kolore klasikoa testu eta ikonoentzako</string>
+    <string name="widget_page_shortcut_label">Trepeten orria</string>
+    <string name="action_set_category">Kategoria ezarri</string>
+    <string name="widget_page">Trepeten orria</string>
+    <string name="add_widget">Gehitu trepeta</string>
+    <string name="manage_widgets">Trepetak kudeatu</string>
+    <string name="remove_widget">Trepeta kendu</string>
+    <string name="resize_widget">Trepetaren tamaina aldatu</string>
+    <string name="no_widgets">Trepetarik ez</string>
+    <string name="widget_bind_failed">Ezin dut trepeta gehitu</string>
+    <string name="widget_configure_failed">Trepetaren prestaketa bertan behera geratu da</string>
+    <string name="widget_picker_title">Trepeta gehitu</string>
+    <string name="widget_initial_height">%1$ddp</string>
+    <string name="settings_temperature_unit">Tenperaturaren unitatea</string>
+    <string name="settings_temperature_unit_system">Automatikoa (lokala)</string>
+    <string name="settings_temperature_unit_celsius">Celsius (°C)</string>
+    <string name="settings_temperature_unit_fahrenheit">Fahrenheit (°F)</string>
 </resources>
