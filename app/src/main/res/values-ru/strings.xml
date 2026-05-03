@@ -138,7 +138,7 @@
     <string name="settings_return_home_after_long_lock_subtitle">При разблокировке после долгой блокировки показать рабочий стол</string>
     <string name="settings_drawer_app_sort_most_opened">Часто используемые</string>
     <string name="drawer_filter_private">Только приватные</string>
-    <string name="drawer_menu_launcher_settings">Настройки лончера</string>
+    <string name="drawer_menu_launcher_settings">Настройки лаунчера</string>
     <string name="settings_return_home_after_long_lock">Возврат на рабочий стол после долгой блокировки</string>
     <string name="settings_show_status_bar">Показать панель статуса</string>
     <string name="category_add_error_reserved_all_apps">\"Все приложения\" — встроенное имя фильтра. Выберите другое имя.</string>
@@ -147,7 +147,7 @@
     <string name="settings_drawer_app_sort_custom">Ручная</string>
     <string name="settings_home_date_format_system">Автоматически</string>
     <string name="settings_drawer_sidebar_categories">Использовать боковую панель категорий</string>
-    <string name="home_set_default_launcher">Установить как лончер по умолчанию</string>
+    <string name="home_set_default_launcher">Установить как лаунчер по умолчанию</string>
     <string name="edit_shortcuts_section_selected">Выбранные ярлыки</string>
     <string name="settings_long_lock_duration_subtitle">Как долго устройство должно быть заблокировано для возвращения на рабочий стол.</string>
     <string name="inferred_category_utilities">Утилиты</string>
@@ -166,4 +166,33 @@
     <string name="drawer_private_space_lock">Блокировка приватного расположения</string>
     <string name="icon_cat_privacy">Приватность</string>
     <string name="settings_long_lock_duration">Продолжительность долгой блокировки</string>
+    <string name="widget_page_shortcut_label">Страницы виджета</string>
+    <plurals name="category_app_count">
+        <item quantity="one">приложение</item>
+        <item quantity="few">приложений</item>
+        <item quantity="many">приложений</item>
+        <item quantity="other">приложений</item>
+    </plurals>
+    <string name="add_widget">Добавить виджет</string>
+    <string name="manage_widgets">Управлять виджетами</string>
+    <string name="remove_widget">Убрать виджет</string>
+    <string name="resize_widget">Изменить размер виджета</string>
+    <string name="no_widgets">Нет виджетов</string>
+    <string name="widget_bind_failed">Невозможно добавить виджет</string>
+    <string name="widget_configure_failed">Установка виджета была отменена</string>
+    <string name="widget_picker_title">Добавить виджет</string>
+    <string name="widget_initial_height">плотность пикселей: %1$d</string>
+    <string name="settings_temperature_unit">Измерение температуры</string>
+    <string name="settings_temperature_unit_system">Автоматическая (локаль)</string>
+    <string name="settings_temperature_unit_celsius">Градусы цельсия (°C)</string>
+    <string name="settings_temperature_unit_fahrenheit">Градус Фаренгейта (°F)</string>
+    <string name="accessibility_lock_service_description">Поддерживает необязательный крепление двойного нажатия на домашнем экране Fokus и возвращает к нему после долгой блокировки когда вы включаете это в приложении. Не читает контент с экрана других приложений и не собирает их данные.</string>
+    <string name="accessibility_prominent_disclosure_checkbox">Я прочитал вышеуказанное и согласен с ним.</string>
+    <string name="accessibility_prominent_disclosure_continue">Продолжить</string>
+    <string name="accessibility_prominent_disclosure_not_now">Не сейчас</string>
+    <string name="settings_drawer_category_rail_side_subtitle">По умолчанию, боковая панель находится справа. Зажмите по категории в панели для изменения его иконки.</string>
+    <string name="settings_dot_search_title">Точечный поиск</string>
+    <string name="settings_dot_search_subtitle">Введите `.условия` или `&lt;слово в нижнем регистре&gt; условия` в строке поиска меню приложений</string>
+    <string name="settings_dot_search_screen_title">точечный поиск меню приложений</string>
+    <string name="settings_dot_search_default_label">Стандартное приложение поиска</string>
 </resources>
