@@ -8,7 +8,7 @@
     <string name="onboarding_swipe_change">Aldatu</string>
     <string name="category_action_remove">Kategoria ezabatu</string>
     <string name="icon_cat_home">Etxea</string>
-    <string name="settings_accessibility_permission_disabled">Kolpe-bikoitzak ixteko eta itxiera luzearen ondoren etxera itzultzeko behar da</string>
+    <string name="settings_accessibility_permission_disabled">Kolpe-bikoitzak ixteko eta blokeo luzearen ondoren etxera itzultzeko behar da</string>
     <string name="settings_dot_search_url_template_for_alias">URL .%1$srentzako …</string>
     <string name="settings_dot_search_no_web_search_apps">Ez dago aplikazio instalaturik web edo aplikazioan bilaketa-asmoa paketerako duenik.</string>
     <string name="toast_export_logs_failed">Ezin da prestatu esportatzeko txostena</string>
@@ -40,7 +40,7 @@
     <string name="settings_widget_clock_app">Erloju-aplikazioa</string>
     <string name="edit_shortcuts_choose_icon">Ikonoa aukeratu</string>
     <string name="settings_section_appearance">Itxura</string>
-    <string name="accessibility_lock_service_description">Androiden irisgarritasun-konfigurazioan pizten duzun aukerako ezaugarria. Pantaila blokeatzeko bakarrik erabiltzen zen (kolpe bokoitza) eta itxiera luzeen ondoren abiarazle honetara itzultzeko, pizten baduzu. Ez du pantailako edukirik irakurtzen eta ez du beste aplikazio batzuetako daturik jasotzen.</string>
+    <string name="accessibility_lock_service_description">Androiden irisgarritasun-konfigurazioan pizten duzun aukerako ezaugarria. Pantaila blokeatzeko bakarrik erabiltzen zen (kolpe bokoitza) eta blokeo luzeen ondoren abiarazle honetara itzultzeko, pizten baduzu. Ez du pantailako edukirik irakurtzen eta ez du beste aplikazio batzuetako daturik jasotzen.</string>
     <string name="settings_swipe_left">Ezkerrera irristatu</string>
     <string name="settings_language_system_default">Sistemaren lehenetsia</string>
     <string name="settings_font_label">Letra tipoa</string>
@@ -81,7 +81,7 @@
     <string name="cd_edit_home_screen">Hasierako pantaila editatu</string>
     <string name="onboarding_location_skip">Saltatu</string>
     <string name="settings_drawer_app_sort_alphabetical">A–Z</string>
-    <string name="settings_double_tap_to_lock_subtitle">Itxi gailua, hasierako pantailan espazio hutsa bi aldiz kolpatuz</string>
+    <string name="settings_double_tap_to_lock_subtitle">Blokeatu gailua, hasierako pantailan espazio hutsa bi aldiz kolpatuz</string>
     <string name="onboarding_tips_title">Aholku azkarrak</string>
     <string name="settings_export_logs_share_subject">Fokus Launcher diagnostiko txostena</string>
     <string name="settings_dot_search_alias_taken">Karakterea erabilia da.</string>
@@ -111,7 +111,7 @@
     <string name="shortcut_generic_label">Lasterbidea</string>
     <string name="icon_cat_social">Soziala</string>
     <string name="settings_swipe_right">Eskuinera irristatu</string>
-    <string name="settings_home_widgets_subtitle">Aukeratu zein widgeta erakutsi eta zein aplikazio ireki kolpatzen dituzunean</string>
+    <string name="settings_home_widgets_subtitle">Aukeratu zein trepeta erakutsi eta zein aplikazio ireki kolpatzen dituzunean</string>
     <string name="drawer_filter_all_apps">Aplikazio guztiak</string>
     <string name="onboarding_set_default_button">Lehenetsi</string>
     <string name="settings_edit_home_screen">Hasiera pantaila editatu</string>
@@ -120,7 +120,7 @@
     <string name="settings_drawer_category_rail_side_subtitle">Lehenetsiz, albo-barra eskuinean dago. Sakatu kategoria bat tiraderan ikonoa aldatzeko.</string>
     <string name="onboarding_customize_subtitle">Aukeratu zure hasierako pantailan agertzen diren aplikazioak</string>
     <string name="onboarding_background_title">Atzeko planoa aukeratu</string>
-    <string name="settings_double_tap_to_lock">Kolpe-bikoitza ixteko</string>
+    <string name="settings_double_tap_to_lock">Kolpe-bikoitza blokeatzeko</string>
     <string name="settings_dot_search_pick_alias_app">Aukeratu aplikazioa lasterbide honetarako</string>
     <string name="drawer_filter_work">Lana</string>
     <string name="settings_reset_all_data">Berrasieratu datu guztiak</string>
@@ -131,7 +131,7 @@
     <string name="icon_picker_current_icon">Oraingo ikonoa</string>
     <string name="icon_cat_audio_video">Audio eta bideoa</string>
     <string name="onboarding_swipe_subtitle">Ezkerrera edo eskuinera irristatu hasierako pantailan zure aplikazio gogokoenak abiarazteko</string>
-    <string name="settings_return_home_after_long_lock_subtitle">Desblokeatu ondoren, erakutsi abiarazlea aparatua nahikoa itxita egon ondoren</string>
+    <string name="settings_return_home_after_long_lock_subtitle">Desblokeatu ondoren, erakutsi abiarazlea aparatua nahikoa blokeatuta egon ondoren</string>
     <string name="onboarding_get_started">Hasi</string>
     <string name="onboarding_background_subtitle">Atzealde beltz batek OLED pantailetan bateria gordetzen laguntzen dizu</string>
     <string name="settings_drawer_app_sort_most_opened">Gehien irekiak</string>
@@ -155,7 +155,7 @@
     <string name="search_icons">Ikonoa bilatu</string>
     <string name="settings_dot_search_aliases_section">Letren lasterbideak</string>
     <string name="icon_cat_transit">Garraioa</string>
-    <string name="settings_return_home_after_long_lock">Hasierara itzuli itxiera luzearen ondoren</string>
+    <string name="settings_return_home_after_long_lock">Hasierara itzuli blokeo luzearen ondoren</string>
     <string name="category_apps_screen_section_in_category">Kategoriako aplikazioak</string>
     <string name="action_back">Atzera</string>
     <string name="settings_show_status_bar">Erakutsi egoera barra</string>
@@ -184,7 +184,7 @@
     <string name="action_app_info">Aplikazioaren informazioa</string>
     <string name="settings_dot_search_title">Puntuekin bilatu</string>
     <string name="edit_shortcuts_section_selected">Aukeratutako lasterbideak</string>
-    <string name="settings_long_lock_duration_subtitle">Gailuak zenbat denbora egon behar du itxita desblokeatzean Fokus zure hasierako pantailara itzuli baino lehen.</string>
+    <string name="settings_long_lock_duration_subtitle">Gailuak zenbat denbora egon behar du blokeatuta desblokeatzean Fokus zure hasierako pantailara itzuli baino lehen.</string>
     <string name="inferred_category_utilities">Tresnak</string>
     <string name="settings_section_home_screen">Hasierako pantaila</string>
     <string name="settings_weather_location_enable_button">Aktibatu</string>
@@ -225,7 +225,7 @@
     <string name="icon_cat_actions">Ekintzak</string>
     <string name="settings_set_background_image">Ezarri atzeko irudia</string>
     <string name="edit_shortcuts_section_all_actions">Aplikazio guztien ekintzak</string>
-    <string name="settings_home_widgets">Konfiguratu widgetak</string>
+    <string name="settings_home_widgets">Trepetak konfiguratu</string>
     <string name="search_apps">Bilatu aplikazioak</string>
     <string name="settings_dot_search_add_shortcut_app">Aplikazioa (bilaketa-asmoa)</string>
     <string name="inferred_category_social">Soziala</string>
@@ -248,7 +248,7 @@
     <string name="settings_set_black_wallpaper">Ezarri atzeko kolore beltza</string>
     <string name="category_name_label">Kategoriaren izena</string>
     <string name="icon_cat_search_results">Ikonoak bilatzen</string>
-    <string name="double_tap_lock_failed">Ezin da gailua itxi</string>
+    <string name="double_tap_lock_failed">Ezin da gailua blokeatu</string>
     <string name="settings_drawer_search_auto_launch">Automatikoki abiarazi aplikazioak</string>
     <string name="action_cancel">Deuseztatu</string>
     <string name="onboarding_set_default_subtitle">Fokus jarri abiarazle lehenetsi gisa etxera itzultzen zaren bakoitzean erabiltzeko</string>
@@ -266,7 +266,7 @@
     <string name="settings_dot_search_url_template_dialog_title">Bilatu URL txantiloi</string>
     <string name="action_add">Gehitu</string>
     <string name="settings_accessibility">Gailuen kontrola</string>
-    <string name="settings_long_lock_duration">Itxiera luzearen iraupena</string>
+    <string name="settings_long_lock_duration">Blokeo luzearen iraupena</string>
     <string name="shortcut_target_not_set">Ez dago</string>
     <string name="cd_settings">Ezarpenak</string>
     <string name="drawer_section_personal">Pertsonala</string>
@@ -283,7 +283,7 @@
     <string name="settings_look_locked_image_wallpaper">Ez dago eskuragarri horma-paper batekin. Jarri atzeko kolore beltza, koloreak eta distira erabiltzeko.</string>
     <string name="visual_style_neon_pink">Arrosa beroa</string>
     <string name="visual_style_neon_amber">Korala</string>
-    <string name="accessibility_prominent_disclosure_body">Fokusek Erabilerraztasun Zerbitzua soilik erabiltzen du ukitu bikoitzarekin ixteko aukera eta itxiera luze baten ondoren hasierako pantailara itzultzeko (hori piztuz gero). Ez ditu beste aplikazio batzuen pantailak irakurtzen. Prozesatzea zure gailuan geratzen da; ez dugu saltzen, igotzen, ezta iragarkietarako edo analitiketarako erabiltzen ere. Android konfigurazioan zerbitzua gaitu edo desaktibatu.</string>
+    <string name="accessibility_prominent_disclosure_body">Fokusek Erabilerraztasun Zerbitzua soilik erabiltzen du ukitu bikoitzarekin blokeatzeko aukera eta blokeo luze baten ondoren hasierako pantailara itzultzeko (hori piztuz gero). Ez ditu beste aplikazio batzuen pantailak irakurtzen. Prozesatzea zure gailuan geratzen da; ez dugu saltzen, igotzen, ezta iragarkietarako edo analitiketarako erabiltzen ere. Android konfigurazioan zerbitzua gaitu edo desaktibatu.</string>
     <string name="accessibility_prominent_disclosure_continue">Jarraitu</string>
     <string name="accessibility_prominent_disclosure_not_now">Orain ez</string>
     <string name="visual_style_rose">Arrosa</string>
