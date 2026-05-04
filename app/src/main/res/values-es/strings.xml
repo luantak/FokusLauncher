@@ -184,4 +184,23 @@
     <string name="settings_section_app_drawer">Cajón de apliaciones</string>
     <string name="settings_drawer_sidebar_categories">Usar una barra lateral de categorías</string>
     <string name="settings_drawer_sidebar_categories_subtitle">Reemplaza la barra de búsqueda con una barra lateral vertical de categorías.</string>
+    <string name="settings_drawer_search_auto_launch">Lanzar aplicaciones automáticamente</string>
+    <string name="settings_drawer_search_auto_launch_subtitle">Cuando solo una aplicación coincide con la búsqueda, se lanza automáticamente.</string>
+    <string name="settings_drawer_category_rail_side">Posición de la barra lateral de categorías</string>
+    <string name="settings_drawer_category_rail_side_subtitle">Por defecto la barra lateral está a la derecha. Haz un toque largo en una categoría del cajón de aplicaciones para cambiar su icono.</string>
+    <string name="settings_drawer_rail_position_left">Izquierda</string>
+    <string name="settings_drawer_rail_position_right">Derecha</string>
+    <string name="settings_drawer_app_sort">Orden de las aplicaciones</string>
+    <string name="settings_drawer_app_sort_subtitle">Las más usadas cuenta las lanzadas desde el cajón de este lanzador. Si no hay registro, el orden sigue siendo alfabético.</string>
+    <string name="settings_drawer_app_sort_alphabetical">A-Z</string>
+    <string name="settings_drawer_app_sort_most_opened">Más usadas</string>
+    <string name="settings_drawer_app_sort_custom">Personalizado</string>
+    <string name="settings_dot_search_title">Buscar con punto</string>
+    <string name="settings_dot_search_subtitle">Escribe `. términos` o `.&lt;letra minúscula&gt; términos` en la barra de búsqueda</string>
+    <string name="settings_dot_search_screen_title">Búsqueda con punto en el cajón de aplicaciones</string>
+    <string name="settings_dot_search_explanation">En el cajón de aplicaciones, escribe un punto y un espacio, luego tus palabras de búsqueda. Para un atajo, usa un punto, una letra minúscula, un espacio y luego tu búsqueda (por ejemplo, \'.a coffee\'). La lista de aplicaciones solo incluye aplicaciones que exponen la búsqueda web o la búsqueda estándar dentro de la app para su paquete. Para otros sitios o aplicaciones, añade una URL HTTPS o una plantilla de enlace profundo y pon %1$s donde pertenece el texto de búsqueda (por ejemplo, https://example.com/search?q= %1$s).</string>
+    <string name="settings_dot_search_default_label">Aplicación de búsqueda por defecto</string>
+    <string name="settings_dot_search_url_template">Plantilla URL</string>
+    <string name="settings_dot_search_url_template_dialog_title">Plantilla de búsqueda URL</string>
+    <string name="settings_dot_search_url_template_help">Puedes usar un enlace de búsqueda HTTPS o un enlace profundo de aplicación (por ejemplo, intent://). Escribe %1$ donde deben ir las palabras de búsqueda—el lanzador las reemplaza por lo que escribes después de `. search` o `.x search`. Ejemplo: https://example.com/search?q= %1$s</string>
 </resources>
