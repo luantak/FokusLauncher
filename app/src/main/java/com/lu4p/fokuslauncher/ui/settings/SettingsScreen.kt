@@ -542,6 +542,14 @@ private fun SettingsScreenContent(
         }
         item {
             SettingsToggleRow(
+                    label = stringResource(R.string.settings_drawer_scroll_to_top_auto_keyboard),
+                    subtitle = stringResource(R.string.settings_drawer_scroll_to_top_auto_keyboard_subtitle),
+                    checked = uiState.drawerScrollToTopAutoKeyboard,
+                    onCheckedChange = viewModel::setDrawerScrollToTopAutoKeyboard
+            )
+        }
+        item {
+            SettingsToggleRow(
                     label = stringResource(R.string.settings_drawer_sidebar_categories),
                     subtitle = stringResource(R.string.settings_drawer_sidebar_categories_subtitle),
                     checked = uiState.drawerSidebarCategories,
