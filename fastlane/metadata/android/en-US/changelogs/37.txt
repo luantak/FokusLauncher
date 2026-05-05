@@ -1,0 +1,7 @@
+Progressive Web Apps (PWAs) installed on your device can appear in the app list like other apps.
+Long-press an app to choose or change its category.
+Shortcuts on the home screen have a bit more breathing room.
+Double-tap to lock works reliably when you tap any empty space on the home screen.
+The home date is easier to tap.
+New languages: Indonesian and Ukrainian; updates to Polish, Portuguese (Brazil), and Turkish.
+Thanks to everyone who contributed translations.

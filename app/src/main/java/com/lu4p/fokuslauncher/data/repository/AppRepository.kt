@@ -11,6 +11,7 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.LauncherApps
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
+import android.content.pm.ShortcutInfo
 import android.os.Build
 import android.os.Bundle
 import android.os.Process
@@ -295,7 +296,14 @@ constructor(
                     "${it.packageName}|${it.componentName?.flattenToString()}"
                 }
 
-        return (primary + secondary).sortedBy { it.label.lowercase() }
+        val pinnedShortcuts =
+                loadPinnedLauncherShortcutApps(
+                        launcherApps = launcherApps,
+                        users = userManager.userProfiles.filterNot(privateSpaceManager::isPrivateSpaceProfile),
+                        knownApps = primary + secondary,
+                )
+
+        return (primary + secondary + pinnedShortcuts).sortedBy { it.label.lowercase() }
     }
 
     private data class RawLauncherEntry(
@@ -307,6 +315,64 @@ constructor(
             val category: String,
             val componentName: ComponentName
     )
+
+    private fun loadPinnedLauncherShortcutApps(
+            launcherApps: LauncherApps,
+            users: List<UserHandle>,
+            knownApps: List<AppInfo>,
+    ): List<AppInfo> {
+        if (knownApps.isEmpty()) return emptyList()
+        val myUser = Process.myUserHandle()
+        val appsByProfile =
+                knownApps.groupBy { appProfileKey(it.userHandle) }
+        return users.flatMap { user ->
+            val profileKey = if (user == myUser) "0" else appProfileKey(user)
+            val appsForUser = appsByProfile[profileKey].orEmpty()
+            appsForUser.flatMap { ownerApp ->
+                loadPinnedShortcutsForPackage(launcherApps, ownerApp.packageName, user).mapNotNull {
+                    shortcut ->
+                    val id = shortcut.id.takeIf { it.isNotBlank() } ?: return@mapNotNull null
+                    val label =
+                            shortcut.shortLabel?.toString()?.trim().takeUnless { it.isNullOrEmpty() }
+                                    ?: shortcut.longLabel?.toString()?.trim().takeUnless {
+                                        it.isNullOrEmpty()
+                                    }
+                                    ?: return@mapNotNull null
+                    AppInfo(
+                            packageName = ownerApp.packageName,
+                            label = label,
+                            icon =
+                                    try {
+                                        launcherApps.getShortcutIconDrawable(shortcut, 0)
+                                    } catch (_: Exception) {
+                                        ownerApp.icon
+                                    },
+                            category = ownerApp.category,
+                            userHandle = ownerApp.userHandle,
+                            componentName = ownerApp.componentName,
+                            launcherShortcutId = id,
+                    )
+                }
+            }
+        }.distinctBy { app ->
+            "${appProfileKey(app.userHandle)}|${app.packageName}|${app.launcherShortcutId}"
+        }
+    }
+
+    private fun loadPinnedShortcutsForPackage(
+            launcherApps: LauncherApps,
+            packageName: String,
+            user: UserHandle,
+    ): List<ShortcutInfo> =
+            try {
+                val query =
+                        LauncherApps.ShortcutQuery()
+                                .setPackage(packageName)
+                                .setQueryFlags(LauncherApps.ShortcutQuery.FLAG_MATCH_PINNED)
+                launcherApps.getShortcuts(query, user).orEmpty().filter { it.isEnabled }
+            } catch (_: Exception) {
+                emptyList()
+            }
 
     /** Fallback when [LauncherApps] / [UserManager] are unavailable (e.g. partial test doubles). */
     private fun loadInstalledAppsLegacyQuery(): List<AppInfo> {

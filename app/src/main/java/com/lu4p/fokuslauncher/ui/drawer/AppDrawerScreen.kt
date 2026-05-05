@@ -85,7 +85,6 @@ import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
 import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
-import com.lu4p.fokuslauncher.data.model.appMetadataKey
 import com.lu4p.fokuslauncher.data.model.appListStableKey
 import com.lu4p.fokuslauncher.utils.DotSearchSyntax
 import com.lu4p.fokuslauncher.ui.components.CategoryChips
@@ -719,15 +718,17 @@ fun AppDrawerScreen(
     uiState.selectedApp?.let { app ->
         AppActionSheet(
                 app = app,
+                categories = uiState.categories,
                 onDismiss = viewModel::dismissActionSheet,
                 onAddToHome = {
                     viewModel.addToHomeScreen(it)
                     closeAndReset()
                 },
                 onRename = { newName -> viewModel.renameApp(app, newName) },
+                onSetCategory = { category -> viewModel.setAppCategory(app, category) },
                 onHide = { viewModel.hideApp(it) },
                 isOnHomeScreen =
-                        appMetadataKey(app.packageName, app.userHandle) in uiState.favoriteAppKeys
+                        appListStableKey(app) in uiState.favoriteAppKeys
         )
     }
 

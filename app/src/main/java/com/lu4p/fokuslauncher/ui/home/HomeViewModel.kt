@@ -29,6 +29,7 @@ import com.lu4p.fokuslauncher.data.model.HomeDateFormatStyle
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.LauncherFontScale
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
+import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.model.WeatherData
 import com.lu4p.fokuslauncher.R
@@ -164,6 +165,9 @@ class HomeViewModel @Inject constructor(
     private val _requestLockAccessibilitySettings = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val requestLockAccessibilitySettings = _requestLockAccessibilitySettings.asSharedFlow()
 
+    private val _categoryOptions = MutableStateFlow<List<String>>(emptyList())
+    val categoryOptions: StateFlow<List<String>> = _categoryOptions.asStateFlow()
+
     // ── Edit screen state ───────────────────────────────────────────
 
     private val _allInstalledApps = MutableStateFlow<List<AppInfo>>(emptyList())
@@ -252,6 +256,7 @@ class HomeViewModel @Inject constructor(
         observeRenames()
         observeInstalledApps()
         observeRemovedPackages()
+        observeCategoryOptions()
     }
 
     override fun onCleared() {
@@ -535,6 +540,18 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    fun setFavoriteCategory(favorite: FavoriteApp, category: String) {
+        if (favorite.isPhoneFavoriteSentinel()) {
+            dismissAppMenu()
+            return
+        }
+        viewModelScope.launch {
+            appRepository.setAppCategory(favorite.packageName, favorite.profileKey, category)
+            refreshInstalledApps(forceReload = false)
+            dismissAppMenu()
+        }
+    }
+
     fun hideApp(favorite: FavoriteApp) {
         if (endAppMenuIfPhoneFavoriteSentinel(favorite)) return
         viewModelScope.launch {
@@ -725,6 +742,24 @@ class HomeViewModel @Inject constructor(
 
     private fun observeDoubleTapEmptyLock() {
         observeFlow(preferencesManager.doubleTapEmptyLockFlow, ::recomputeDoubleTapEmptyLockUi)
+    }
+
+    private fun observeCategoryOptions() {
+        observeFlow(
+                combine(
+                        _allInstalledApps,
+                        appRepository.getAllCategoryDefinitions(),
+                ) { apps, definitions ->
+                    val defined = definitions.map { it.name.trim() }.filter { it.isNotBlank() }
+                    val dynamic = apps.map { it.category.trim() }.filter { it.isNotBlank() }
+                    (defined + dynamic)
+                            .distinctBy { it.lowercase() }
+                            .filterNot(::isHomeCategoryPickerReserved)
+                            .sortedWith(String.CASE_INSENSITIVE_ORDER)
+                }
+        ) { categories ->
+            _categoryOptions.value = categories
+        }
     }
 
     fun refreshDoubleTapLockEffective() {
@@ -1069,6 +1104,12 @@ class HomeViewModel @Inject constructor(
 
     private fun FavoriteApp.isPhoneFavoriteSentinel(): Boolean =
             packageName == ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE
+
+    private fun isHomeCategoryPickerReserved(category: String): Boolean =
+            category.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true) ||
+                    category.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true) ||
+                    category.equals(ReservedCategoryNames.WORK, ignoreCase = true) ||
+                    category.equals(ReservedCategoryNames.UNCATEGORIZED, ignoreCase = true)
 
     private companion object {
         private val shortcutActionIconKeywordHints =

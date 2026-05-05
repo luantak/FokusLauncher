@@ -11,9 +11,12 @@ import com.lu4p.fokuslauncher.data.model.DotSearchTargetPreference
 import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
 import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
+import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.model.appMetadataKey
 import com.lu4p.fokuslauncher.data.model.appProfileKey
+import com.lu4p.fokuslauncher.data.model.appListStableKey
 import com.lu4p.fokuslauncher.data.model.drawerOpenCountKey
+import com.lu4p.fokuslauncher.data.model.favoriteAppStableKey
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.ui.components.MinimalIcons
 import com.lu4p.fokuslauncher.utils.DotSearchParsed
@@ -84,6 +87,11 @@ sealed interface DrawerEvent {
 
 sealed interface LaunchTarget {
     data class MainApp(val packageName: String) : LaunchTarget
+    data class LauncherShortcut(
+            val packageName: String,
+            val shortcutId: String,
+            val userHandle: UserHandle? = null,
+    ) : LaunchTarget
     data class PrivateApp(
             val packageName: String,
             val componentName: ComponentName,
@@ -92,6 +100,13 @@ sealed interface LaunchTarget {
 }
 
 fun launchTargetFromAppInfo(app: AppInfo): LaunchTarget {
+    app.launcherShortcutId?.let { shortcutId ->
+        return LaunchTarget.LauncherShortcut(
+                packageName = app.packageName,
+                shortcutId = shortcutId,
+                userHandle = app.userHandle,
+        )
+    }
     val uh = app.userHandle
     val cn = app.componentName
     return if (uh != null && cn != null) {
@@ -362,7 +377,7 @@ constructor(
                 _uiState.update { state ->
                     state.copy(
                         favoriteAppKeys =
-                            favorites.map { appMetadataKey(it.packageName, it.profileKey) }.toSet()
+                            favorites.map { favoriteAppStableKey(it) }.toSet()
                     )
                 }
             }
@@ -817,6 +832,12 @@ constructor(
         val ok =
                 when (target) {
                     is LaunchTarget.MainApp -> appRepository.launchApp(target.packageName)
+                    is LaunchTarget.LauncherShortcut ->
+                            appRepository.launchLauncherShortcut(
+                                    packageName = target.packageName,
+                                    shortcutId = target.shortcutId,
+                                    userHandle = target.userHandle,
+                            )
                     is LaunchTarget.PrivateApp ->
                             privateSpaceManager.launchApp(target.componentName, target.userHandle)
                 }
@@ -825,6 +846,11 @@ constructor(
                 when (target) {
                     is LaunchTarget.MainApp ->
                             preferencesManager.recordDrawerAppOpen(target.packageName, null)
+                    is LaunchTarget.LauncherShortcut ->
+                            preferencesManager.recordDrawerAppOpen(
+                                    target.packageName,
+                                    target.userHandle,
+                            )
                     is LaunchTarget.PrivateApp ->
                             preferencesManager.recordDrawerAppOpen(
                                     target.packageName,
@@ -912,16 +938,28 @@ constructor(
         viewModelScope.launch {
             if (app.userHandle != null) return@launch
             val current = preferencesManager.favoritesFlow.first().toMutableList()
-            if (current.any { appMetadataKey(it.packageName, it.profileKey) == appMetadataKey(app.packageName, app.userHandle) }) {
+            if (current.any { favoriteAppStableKey(it) == appListStableKey(app) }) {
                 return@launch
             }
+            val target =
+                    app.launcherShortcutId?.let {
+                        ShortcutTarget.LauncherShortcut(
+                                packageName = app.packageName,
+                                shortcutId = it,
+                        )
+                    }
             current.add(
                     0,
                     FavoriteApp(
                             label = app.label,
                             packageName = app.packageName,
                             iconName = "circle",
-                            iconPackage = app.packageName,
+                            iconPackage =
+                                    if (target == null) {
+                                        app.packageName
+                                    } else {
+                                        ShortcutTarget.encode(target)
+                                    },
                             profileKey = appProfileKey(app.userHandle)
                     )
             )
@@ -933,6 +971,13 @@ constructor(
         viewModelScope.launch {
             appRepository.renameApp(app.packageName, appProfileKey(app.userHandle), newName)
             // The Flow observer in observeHiddenAndRenamed will rebuild the list
+        }
+    }
+
+    fun setAppCategory(app: AppInfo, category: String) {
+        viewModelScope.launch {
+            appRepository.setAppCategory(app.packageName, appProfileKey(app.userHandle), category)
+            dismissActionSheet()
         }
     }
 
@@ -1321,6 +1366,13 @@ constructor(
     ): List<LaunchTarget> {
         val privateTargets =
                 privateApps.mapNotNull { app ->
+                    app.launcherShortcutId?.let { shortcutId ->
+                        return@mapNotNull LaunchTarget.LauncherShortcut(
+                                packageName = app.packageName,
+                                shortcutId = shortcutId,
+                                userHandle = app.userHandle,
+                        )
+                    }
                     val componentName = app.componentName ?: return@mapNotNull null
                     val userHandle = app.userHandle ?: return@mapNotNull null
                     LaunchTarget.PrivateApp(

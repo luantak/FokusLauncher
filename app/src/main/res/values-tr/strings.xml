@@ -198,4 +198,12 @@
     <string name="settings_drawer_rail_position_right">Sağ</string>
     <string name="edit_home_section_all_apps" translatable="false">\@string/drawer_filter_all_apps</string>
     <string name="app_name" translatable="false">Fokus Launcher</string>
+    <string name="drawer_reorder">Sırala</string>
+    <string name="drawer_reorder_done">Bitti</string>
+    <string name="cd_open_subpage">Başka bir ekran açar</string>
+    <string name="shortcut_open_dialer">Arayıcıyı aç</string>
+    <string name="shortcut_target_phone">Telefon (varsayılan arayıcı)</string>
+    <string name="widget_page_shortcut_label">Widget sayfası</string>
+    <string name="category_add_error_blank">Bir kategori ismi girin. Boş isimler kaydedilmez.</string>
+    <string name="category_add_error_reserved_all_apps">\"Tüm uygulamalar\" yerleşik bir çekmece filtresidir; özel bir kategori değildir. Farklı bir ad seçin.</string>
 </resources>
