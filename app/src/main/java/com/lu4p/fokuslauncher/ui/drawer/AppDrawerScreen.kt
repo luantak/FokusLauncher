@@ -49,6 +49,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -57,6 +58,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
@@ -827,35 +829,37 @@ fun AppDrawerContent(
 
     BackHandler { closeWithFocusReset() }
 
-    LaunchedEffect(useSidebarCategoryDrawer, showSearch) {
-        val wantKeyboard =
-                if (useSidebarCategoryDrawer) showSearch else true
-        if (!wantKeyboard) return@LaunchedEffect
-        focusRequester.requestFocus()
-        keyboardController?.show()
+    val isAtTop by remember(listState) {
+        derivedStateOf { listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0 }
     }
+    var hasScrolledDown by remember { mutableStateOf(false) }
 
-    LaunchedEffect(listState, keyboardController, focusManager) {
-        var prevIndex = listState.firstVisibleItemIndex
-        var prevOffset = listState.firstVisibleItemScrollOffset
-        snapshotFlow {
-            Triple(
-                    listState.isScrollInProgress,
-                    listState.firstVisibleItemIndex,
-                    listState.firstVisibleItemScrollOffset
-            )
-        }.collect { (scrolling, index, offset) ->
-            if (scrolling) {
-                val scrolledDown =
-                        index > prevIndex ||
-                                (index == prevIndex && offset > prevOffset)
-                if (scrolledDown) {
-                    keyboardController?.hide()
-                    focusManager.clearFocus(force = true)
-                }
+    // Unified Search/Keyboard management: Handles entry, scroll-to-top, and pull-to-open
+    LaunchedEffect(isAtTop, showSearch, useSidebarCategoryDrawer, uiState.drawerScrollToTopAutoKeyboard) {
+        // Trigger keyboard if:
+        // 1. Initial entry or setting is on, AND we are at the top
+        // 2. Search is explicitly toggled on in sidebar mode
+        val topAutoLaunch = isAtTop && (!hasScrolledDown || uiState.drawerScrollToTopAutoKeyboard)
+        
+        if (topAutoLaunch) {
+            if (useSidebarCategoryDrawer && !showSearch) {
+                showSearch = true
+            } else {
+                delay(100)
+                focusRequester.requestFocus()
+                keyboardController?.show()
             }
-            prevIndex = index
-            prevOffset = offset
+        } else if (useSidebarCategoryDrawer && showSearch) {
+            // Focus if search was explicitly toggled
+            delay(100)
+            focusRequester.requestFocus()
+            keyboardController?.show()
+        } else if (!isAtTop) {
+            // Track that we've left the top once
+            hasScrolledDown = true
+            keyboardController?.hide()
+            focusManager.clearFocus(force = true)
+            if (useSidebarCategoryDrawer) showSearch = false
         }
     }
 
@@ -864,6 +868,15 @@ fun AppDrawerContent(
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
                 if (source == NestedScrollSource.UserInput && available.y > 0 && !listState.canScrollBackward) {
+                    // Immediate response for pull-down gesture at the boundary
+                    if (uiState.drawerScrollToTopAutoKeyboard) {
+                        // The LaunchedEffect(isAtTop) handles the actual focus/keyboard 
+                        // but if we are already atTop, it won't re-trigger.
+                        // So we force a request here if already at top and pulling.
+                        if (useSidebarCategoryDrawer && !showSearch) showSearch = true
+                        focusRequester.requestFocus()
+                        keyboardController?.show()
+                    }
                     overscrollY += available.y
                     if (overscrollY > 300f) {
                         overscrollY = 0f

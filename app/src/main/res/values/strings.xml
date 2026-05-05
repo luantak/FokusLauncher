@@ -349,4 +349,8 @@
     <string name="settings_weblate_subtitle">Contribute translations on Weblate</string>
     <string name="settings_matrix_title">Join the discussion</string>
     <string name="settings_matrix_subtitle">Get help and share feedback</string>
+
+    <!-- Settings - App drawer -->
+    <string name="settings_drawer_scroll_to_top_auto_keyboard">Keyboard on scroll to top</string>
+    <string name="settings_drawer_scroll_to_top_auto_keyboard_subtitle">Automatically open keyboard and search when scrolling to the top of the app list</string>
 </resources>
