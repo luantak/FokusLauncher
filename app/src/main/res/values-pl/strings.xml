@@ -10,7 +10,7 @@
     <string name="drawer_private_space_unlock">Odblokuj prywatną przestrzeń</string>
     <!-- App drawer: one section per Android user profile -->
     <string name="drawer_section_personal">Osobiste</string>
-    <string name="drawer_section_work_profile">Służbowe</string>
+    <string name="drawer_section_work_profile">Profil służbowy</string>
     <string name="drawer_section_profile_numbered">Profil %1$d</string>
     <string name="drawer_section_other_profile">Inny profil</string>
     <string name="drawer_section_clone_profile">Sklonowane aplikacje</string>
@@ -332,4 +332,5 @@
     <string name="settings_temperature_unit_celsius">Celsjusz (°C)</string>
     <string name="settings_temperature_unit_fahrenheit">Fahrenheit (°F)</string>
     <string name="no_widgets">Brak widżetów</string>
+    <string name="action_set_category">Ustaw kategorię</string>
 </resources>
