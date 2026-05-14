@@ -263,6 +263,13 @@ constructor(
     private val optimisticallyRemovedKeys = mutableSetOf<String>()
 
     /**
+     * After [togglePrivateSpace] requests a lock, [PrivateSpaceManager.isPrivateSpaceUnlocked] can
+     * still read true briefly; treat the drawer as locked until the system reports quiet mode
+     * (cleared in [refreshPrivateSpaceState]).
+     */
+    private var privateSpaceLockPending: Boolean = false
+
+    /**
      * [rebuildVisibleApps] is triggered from several collectors at once (init, Room metadata,
      * package-cache invalidation). Without serialization, a slow load that briefly gets an empty
      * [LauncherApps] result can finish after a successful rebuild and wipe the drawer until
@@ -338,6 +345,48 @@ constructor(
         return if (DotSearchSyntax.isPossibleDotSearchPrefix(trimmed)) "" else trimmed.trim()
     }
 
+    /**
+     * Private Space unlock for drawer categories and app rows. When the feature is supported, read
+     * the live system state so list rebuilds (metadata, install cache, …) cannot leave the
+     * reserved [ReservedCategoryNames.PRIVATE] chip out of sync after a missed broadcast refresh
+     * (issue #114).
+     */
+    private fun privateSpaceUnlockedForDrawer(stateSnapshot: AppDrawerUiState): Boolean {
+        if (privateSpaceLockPending) return false
+        if (!privateSpaceManager.isSupported) return stateSnapshot.isPrivateSpaceUnlocked
+        return privateSpaceManager.isPrivateSpaceUnlocked()
+    }
+
+    /**
+     * Resolves Private Space apps from [PrivateSpaceManager] whenever the profile is supported and
+     * unlocked; otherwise keeps the snapshot list (tests / unsupported devices). Applies the same
+     * metadata overlays and optimistic-removal filtering as the main drawer list.
+     */
+    private suspend fun resolvedPrivateSpaceAppsForDrawer(
+            metadata: DrawerMetadataSnapshot,
+            removedSnapshot: Set<String>,
+            stateSnapshot: AppDrawerUiState,
+    ): List<AppInfo> {
+        if (!privateSpaceUnlockedForDrawer(stateSnapshot)) return emptyList()
+        val raw =
+                if (!privateSpaceManager.isSupported) {
+                    stateSnapshot.privateSpaceApps
+                } else {
+                    privateSpaceManager.getPrivateSpaceApps()
+                }
+        val filtered =
+                applyMetadataOverlays(
+                                apps = raw,
+                                hiddenSet = metadata.hiddenSet,
+                                renameMap = metadata.renameMap,
+                                categoryMap = metadata.categoryMap,
+                        )
+                        .filterNot { app ->
+                            drawerOpenCountKey(app.packageName, app.userHandle) in removedSnapshot
+                        }
+        return sortPrivateSpaceAppsCachedSuspend(filtered)
+    }
+
     private suspend fun persistCategoriesFilterAndBuild(
             visible: List<AppInfo>,
             privateApps: List<AppInfo>,
@@ -349,8 +398,7 @@ constructor(
                 deriveCategories(
                         apps = visible,
                         definedCategories = definedCategories,
-                        includePrivate =
-                                stateSnapshot.isPrivateSpaceUnlocked && privateApps.isNotEmpty(),
+                        includePrivate = privateSpaceUnlockedForDrawer(stateSnapshot),
                         includeWork = visible.any { isDrawerWorkProfileApp(context, it) },
                         includeAllAppsSection = !useSidebarCategoryDrawer,
                 )
@@ -407,10 +455,21 @@ constructor(
                     }
                 }
                 val state = _uiState.value
+                val removedSnapshot =
+                        synchronized(optimisticallyRemovedKeys) { optimisticallyRemovedKeys.toSet() }
+                val metadata =
+                        DrawerMetadataSnapshot(
+                                latestHiddenSet,
+                                latestRenameMap,
+                                latestCategoryMap,
+                                latestDefinedCategories,
+                        )
+                val privateApps =
+                        resolvedPrivateSpaceAppsForDrawer(metadata, removedSnapshot, state)
                 val (categories, selectedCategory, filteredContent) =
                         persistCategoriesFilterAndBuild(
                                 visible = state.allApps,
-                                privateApps = state.privateSpaceApps,
+                                privateApps = privateApps,
                                 stateSnapshot = state,
                                 definedCategories = latestDefinedCategories,
                                 useSidebarCategoryDrawer = sidebarEnabled,
@@ -420,6 +479,8 @@ constructor(
                             useSidebarCategoryDrawer = sidebarEnabled,
                             selectedCategory = selectedCategory,
                             categories = categories,
+                            isPrivateSpaceUnlocked = privateSpaceUnlockedForDrawer(state),
+                            privateSpaceApps = privateApps,
                             drawerReorderSessionActive =
                                     if (!sidebarEnabled) false else state.drawerReorderSessionActive
                     )
@@ -457,12 +518,23 @@ constructor(
                         latestOpenCounts = counts
                         latestCustomOrderByProfile = customOrder
                         val state = _uiState.value
-                        val reorderedPrivate =
-                                if (state.privateSpaceApps.isEmpty()) {
-                                    state.privateSpaceApps
-                                } else {
-                                    sortPrivateSpaceAppsCachedSuspend(state.privateSpaceApps)
+                        val removedSnapshot =
+                                synchronized(optimisticallyRemovedKeys) {
+                                    optimisticallyRemovedKeys.toSet()
                                 }
+                        val metadata =
+                                DrawerMetadataSnapshot(
+                                        latestHiddenSet,
+                                        latestRenameMap,
+                                        latestCategoryMap,
+                                        latestDefinedCategories,
+                                )
+                        val reorderedPrivate =
+                                resolvedPrivateSpaceAppsForDrawer(
+                                        metadata,
+                                        removedSnapshot,
+                                        state,
+                                )
                         maybePersistMergedCustomOrder(
                                 allApps = state.allApps,
                                 privateApps = reorderedPrivate,
@@ -478,6 +550,7 @@ constructor(
                         _uiState.update { state ->
                             state.withFilteredContent(filteredContent).copy(
                                     privateSpaceApps = reorderedPrivate,
+                                    isPrivateSpaceUnlocked = privateSpaceUnlockedForDrawer(state),
                                     drawerAppSortMode = mode,
                                     drawerReorderSessionActive =
                                             if (mode != DrawerAppSortMode.CUSTOM) {
@@ -593,15 +666,7 @@ constructor(
 
             val stateSnapshot = _uiState.value
             val privateAppsFiltered =
-                    applyMetadataOverlays(
-                                    apps = stateSnapshot.privateSpaceApps,
-                                    hiddenSet = metadata.hiddenSet,
-                                    renameMap = metadata.renameMap,
-                                    categoryMap = metadata.categoryMap,
-                            )
-                            .filterNot { app ->
-                                drawerOpenCountKey(app.packageName, app.userHandle) in removedSnapshot
-                            }
+                    resolvedPrivateSpaceAppsForDrawer(metadata, removedSnapshot, stateSnapshot)
             val (categories, selectedCategory, filteredContent) =
                     persistCategoriesFilterAndBuild(
                             visible = visible,
@@ -616,6 +681,7 @@ constructor(
                         privateSpaceApps = privateAppsFiltered,
                         selectedCategory = selectedCategory,
                         categories = categories,
+                        isPrivateSpaceUnlocked = privateSpaceUnlockedForDrawer(stateSnapshot),
                 )
             }
             scheduleDrawerCachePrewarm()
@@ -628,14 +694,21 @@ constructor(
                 optimisticallyRemovedKeys.add(drawerOpenCountKey(packageName, profileKey))
             }
             val stateSnapshot = _uiState.value
+            val removedSnapshot =
+                    synchronized(optimisticallyRemovedKeys) { optimisticallyRemovedKeys.toSet() }
+            val metadata =
+                    DrawerMetadataSnapshot(
+                            latestHiddenSet,
+                            latestRenameMap,
+                            latestCategoryMap,
+                            latestDefinedCategories,
+                    )
             val visible =
                     stateSnapshot.allApps.filterNot {
                         it.packageName == packageName && appProfileKey(it.userHandle) == profileKey
                     }
             val privateApps =
-                    stateSnapshot.privateSpaceApps.filterNot {
-                        it.packageName == packageName && appProfileKey(it.userHandle) == profileKey
-                    }
+                    resolvedPrivateSpaceAppsForDrawer(metadata, removedSnapshot, stateSnapshot)
             val (categories, selectedCategory, filteredContent) =
                     persistCategoriesFilterAndBuild(
                             visible = visible,
@@ -650,6 +723,7 @@ constructor(
                         privateSpaceApps = privateApps,
                         selectedCategory = selectedCategory,
                         categories = categories,
+                        isPrivateSpaceUnlocked = privateSpaceUnlockedForDrawer(stateSnapshot),
                         selectedApp =
                                 state.selectedApp?.takeUnless {
                                     it.packageName == packageName &&
@@ -1051,6 +1125,9 @@ constructor(
         viewModelScope.launch {
             val supported = privateSpaceManager.isSupported
             val unlocked = privateSpaceManager.isPrivateSpaceUnlocked()
+            if (!unlocked) {
+                privateSpaceLockPending = false
+            }
             val apps =
                     if (unlocked) {
                         sortPrivateSpaceAppsCachedSuspend(
@@ -1090,6 +1167,7 @@ constructor(
 
     fun togglePrivateSpace() {
         if (_uiState.value.isPrivateSpaceUnlocked) {
+            privateSpaceLockPending = true
             privateSpaceManager.lock()
             _uiState.update {
                 it.copy(
@@ -1099,6 +1177,7 @@ constructor(
                 )
             }
         } else {
+            privateSpaceLockPending = false
             privateSpaceManager.requestUnlock()
             // After the system auth prompt completes, caller should call refreshPrivateSpaceState()
         }
@@ -1270,6 +1349,18 @@ constructor(
         return built
     }
 
+    /**
+     * Within search hits, normalized label prefix matches rank before substring-only hits; each tier
+     * keeps alphabetical order (alphabeticalAppComparatorForProfiles). GitHub issue #107.
+     */
+    private fun sortDrawerSearchMatches(apps: List<AppInfo>, normalizedQuery: String): List<AppInfo> {
+        if (apps.size <= 1) return apps
+        return apps.sortedWith(
+                compareBy<AppInfo> { !it.normalizedLabel.startsWith(normalizedQuery) }
+                        .then(alphabeticalAppComparatorForProfiles)
+        )
+    }
+
     private fun filterProfileSections(
             sections: List<DrawerProfileSectionUi>,
             query: String,
@@ -1287,7 +1378,11 @@ constructor(
         return sections.map { section ->
             var apps = section.apps
             if (query.isNotBlank()) {
-                apps = apps.filter { it.normalizedLabel.contains(normalizedQuery) }
+                apps =
+                        sortDrawerSearchMatches(
+                                apps.filter { it.normalizedLabel.contains(normalizedQuery) },
+                                normalizedQuery,
+                        )
             }
             if (category.isNotBlank() && !category.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true)) {
                 apps =
@@ -1318,7 +1413,10 @@ constructor(
             privateApps
         } else {
             val normalizedQuery = query.normalizedForSearch()
-            privateApps.filter { it.normalizedLabel.contains(normalizedQuery) }
+            sortDrawerSearchMatches(
+                    privateApps.filter { it.normalizedLabel.contains(normalizedQuery) },
+                    normalizedQuery,
+            )
         }
     }
 

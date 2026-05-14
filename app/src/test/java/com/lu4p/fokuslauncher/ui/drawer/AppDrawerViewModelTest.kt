@@ -196,6 +196,30 @@ class AppDrawerViewModelTest {
     }
 
     @Test
+    fun `search orders prefix matches before substring matches alphabetically within each tier`() {
+        installedApps =
+                listOf(
+                        AppInfo("com.amazon", "Amazon", null),
+                        AppInfo("com.imagetools", "Image Toolbox", null),
+                        AppInfo("com.mail", "Mail", null),
+                        AppInfo("com.maps", "Maps", null),
+                )
+        installedAppsVersion.value += 1L
+        awaitState("custom apps for ranking test") { it.allApps.size == 4 }
+
+        viewModel.onSearchQueryChanged("ma")
+
+        awaitState("search filtering") {
+            flatFiltered(it).joinToString { a -> a.label } ==
+                    "Mail, Maps, Amazon, Image Toolbox"
+        }
+        assertEquals(
+                listOf("Mail", "Maps", "Amazon", "Image Toolbox"),
+                flatFiltered(viewModel.uiState.value).map { it.label },
+        )
+    }
+
+    @Test
     fun `search matches labels ignoring accents`() {
         viewModel.onSearchQueryChanged("cam")
 
@@ -744,6 +768,59 @@ class AppDrawerViewModelTest {
 
         val state = viewModel.uiState.value
         assertTrue(state.isPrivateSpaceSupported)
+        assertTrue(state.isPrivateSpaceUnlocked)
+        assertEquals(1, state.privateSpaceApps.size)
+    }
+
+    @Test
+    fun `refreshPrivateSpaceState keeps private category when unlocked app query is empty`() {
+        every { privateSpaceManager.isSupported } returns true
+        every { privateSpaceManager.isPrivateSpaceUnlocked() } returns true
+        every { privateSpaceManager.getPrivateSpaceApps() } returns emptyList()
+
+        viewModel.refreshPrivateSpaceState()
+
+        val state = viewModel.uiState.value
+        assertTrue(state.isPrivateSpaceUnlocked)
+        assertTrue(state.categories.contains(ReservedCategoryNames.PRIVATE))
+    }
+
+    /**
+     * Regression for issue #114: list rebuilds must not omit the Private category when the system
+     * profile is unlocked but [AppDrawerUiState.isPrivateSpaceUnlocked] was never refreshed (e.g.
+     * missed broadcast).
+     */
+    @Test
+    fun `rebuild restores private category when unlock flag stale but manager reports unlocked`() {
+        every { privateSpaceManager.isSupported } returns true
+        every { privateSpaceManager.isPrivateSpaceUnlocked() } returns false
+        every { privateSpaceManager.getPrivateSpaceApps() } returns emptyList()
+        viewModel.refreshPrivateSpaceState()
+        awaitState("private space refresh locked") { !it.isPrivateSpaceUnlocked }
+
+        every { privateSpaceManager.isPrivateSpaceUnlocked() } returns true
+        val privateUser = mockk<UserHandle>()
+        every { privateUser.hashCode() } returns 88
+        every { privateSpaceManager.getPrivateSpaceApps() } returns
+                listOf(
+                        AppInfo(
+                                "com.private.x",
+                                "Priv",
+                                null,
+                                userHandle = privateUser,
+                                componentName = ComponentName("com.private.x", "Main"),
+                        )
+                )
+
+        assertFalse(viewModel.uiState.value.isPrivateSpaceUnlocked)
+
+        viewModel.refresh()
+        awaitState("private category after install rebuild") {
+            it.categories.contains(ReservedCategoryNames.PRIVATE) && it.isPrivateSpaceUnlocked
+        }
+
+        val state = viewModel.uiState.value
+        assertTrue(state.categories.contains(ReservedCategoryNames.PRIVATE))
         assertTrue(state.isPrivateSpaceUnlocked)
         assertEquals(1, state.privateSpaceApps.size)
     }
