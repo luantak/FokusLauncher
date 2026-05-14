@@ -18,6 +18,7 @@ import android.os.Process
 import android.os.UserHandle
 import android.os.UserManager
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.database.dao.AppDao
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryDefinitionEntity
@@ -29,6 +30,7 @@ import com.lu4p.fokuslauncher.data.model.reservedCategoryAddFailure
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import com.lu4p.fokuslauncher.data.model.AppShortcutAction
+import com.lu4p.fokuslauncher.data.model.DotSearchTargetMode
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.model.appMetadataKey
 import com.lu4p.fokuslauncher.data.model.appProfileKey
@@ -466,6 +468,7 @@ constructor(
             profileKey: String,
             target: ShortcutTarget?,
             query: String,
+            mode: DotSearchTargetMode = DotSearchTargetMode.SEARCH,
     ): Boolean {
         val launchContext = dotSearchLaunchContext(profileKey, target)
         val flags = Intent.FLAG_ACTIVITY_NEW_TASK
@@ -480,6 +483,9 @@ constructor(
             }
             is ShortcutTarget.App -> {
                 val pkg = target.packageName
+                if (query.isBlank() && mode == DotSearchTargetMode.SHORTCUT) {
+                    return launchDotShortcutTarget(profileKey, target)
+                }
                 val webSearch =
                         Intent(Intent.ACTION_WEB_SEARCH).apply {
                             setPackage(pkg)
@@ -497,6 +503,12 @@ constructor(
                 return startDotSearchActivity(launchContext, inAppSearch)
             }
             is ShortcutTarget.DeepLink -> {
+                if (query.isBlank() &&
+                                mode == DotSearchTargetMode.SHORTCUT &&
+                                !intentUriContainsQueryPlaceholder(target.intentUri)
+                ) {
+                    return launchDotShortcutTarget(profileKey, target)
+                }
                 val expanded = expandDotSearchDeepLink(target.intentUri, query)
                 val intent =
                         try {
@@ -513,10 +525,56 @@ constructor(
                 return startDotSearchActivity(launchContext, intent)
             }
             is ShortcutTarget.LauncherShortcut,
-            is ShortcutTarget.PhoneDial,
+            is ShortcutTarget.PhoneDial ->
+                    return query.isBlank() &&
+                            mode == DotSearchTargetMode.SHORTCUT &&
+                            launchDotShortcutTarget(profileKey, target)
             is ShortcutTarget.WidgetPage -> return false
         }
     }
+
+    private fun launchDotShortcutTarget(profileKey: String, target: ShortcutTarget): Boolean =
+            when (target) {
+                is ShortcutTarget.App -> {
+                    val app =
+                            getInstalledApps().firstOrNull {
+                                it.packageName == target.packageName &&
+                                        appProfileKey(it.userHandle) == profileKey
+                            }
+                    val componentName = app?.componentName
+                    val userHandle = app?.userHandle
+                    if (componentName != null && userHandle != null) {
+                        launchMainActivity(componentName, userHandle)
+                    } else {
+                        launchApp(target.packageName)
+                    }
+                }
+                is ShortcutTarget.DeepLink -> {
+                    val intent =
+                            try {
+                                Intent.parseUri(target.intentUri, Intent.URI_INTENT_SCHEME)
+                            } catch (_: Exception) {
+                                Intent(Intent.ACTION_VIEW, target.intentUri.toUri())
+                            }.apply {
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                    startDotSearchActivity(dotSearchLaunchContext(profileKey, target), intent)
+                }
+                is ShortcutTarget.LauncherShortcut ->
+                        launchLauncherShortcut(
+                                target.packageName,
+                                target.shortcutId,
+                                resolveDotSearchUserHandle(profileKey, target),
+                        )
+                is ShortcutTarget.PhoneDial -> {
+                    val intent =
+                            Intent(Intent.ACTION_DIAL, "tel:".toUri()).apply {
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                    startDotSearchActivity(dotSearchLaunchContext(profileKey, target), intent)
+                }
+                is ShortcutTarget.WidgetPage -> false
+            }
 
     private fun intentUriContainsQueryPlaceholder(uri: String): Boolean =
             uri.contains("%q") || uri.contains("%s") || uri.contains("{query}")

@@ -21,6 +21,7 @@ import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.TemperatureUnit
 import com.lu4p.fokuslauncher.data.model.LauncherAppearance
 import com.lu4p.fokuslauncher.data.model.LauncherVisualStyle
+import com.lu4p.fokuslauncher.data.model.DotSearchTargetMode
 import com.lu4p.fokuslauncher.data.model.DotSearchTargetPreference
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.parseHostedWidgets
@@ -814,15 +815,23 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
             val targetRaw = o.optString("target", "")
             val target =
                     if (targetRaw.isBlank()) null else ShortcutTarget.decode(targetRaw) ?: return null
-            DotSearchTargetPreference(profileKey = profileKey, target = target)
+            DotSearchTargetPreference(
+                    profileKey = profileKey,
+                    target = target,
+                    mode = parseDotSearchTargetMode(o.optString("mode", ""))
+            )
         }.getOrNull()
     }
 
     private fun serializeDrawerDotSearchTarget(config: DotSearchTargetPreference): String {
-        if (config.target == null && config.profileKey == "0") return ""
+        if (config.target == null &&
+                        config.profileKey == "0" &&
+                        config.mode == DotSearchTargetMode.SEARCH
+        ) return ""
         val o = JSONObject()
         o.put("profileKey", config.profileKey.ifBlank { "0" })
         o.put("target", if (config.target == null) "" else ShortcutTarget.encode(config.target))
+        o.put("mode", config.mode.name.lowercase())
         return o.toString()
     }
 
@@ -841,7 +850,14 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
                     val profileKey = inner.optString("profileKey", "0").ifBlank { "0" }
                     val targetRaw = inner.optString("target", "")
                     val target = ShortcutTarget.decode(targetRaw) ?: continue
-                    put(keyChar, DotSearchTargetPreference(profileKey, target))
+                    put(
+                            keyChar,
+                            DotSearchTargetPreference(
+                                    profileKey,
+                                    target,
+                                    parseDotSearchTargetMode(inner.optString("mode", ""))
+                            )
+                    )
                 }
             }
         }.getOrDefault(emptyMap())
@@ -854,10 +870,17 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
             val inner = JSONObject()
             inner.put("profileKey", pref.profileKey.ifBlank { "0" })
             inner.put("target", ShortcutTarget.encode(pref.target))
+            inner.put("mode", pref.mode.name.lowercase())
             o.put(ch.lowercaseChar().toString(), inner)
         }
         return o.toString()
     }
+
+    private fun parseDotSearchTargetMode(raw: String): DotSearchTargetMode =
+            when (raw.trim().uppercase()) {
+                DotSearchTargetMode.SHORTCUT.name -> DotSearchTargetMode.SHORTCUT
+                else -> DotSearchTargetMode.SEARCH
+            }
 
     private fun parseDrawerCustomAppOrderJson(raw: String): Map<String, List<String>> {
         if (raw.isBlank()) return emptyMap()

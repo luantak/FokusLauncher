@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.DotSearchTargetPreference
+import com.lu4p.fokuslauncher.data.model.DotSearchTargetMode
 import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
 import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
@@ -677,6 +678,7 @@ constructor(
                             if (exitReorder) false else state.drawerReorderSessionActive
             )
         }
+        if (tryLaunchImmediateDotShortcut(query)) return
         searchQueryApplyJob =
                 viewModelScope.launch {
                     val snapshot = _uiState.value
@@ -722,6 +724,20 @@ constructor(
                         }
                     }
                 }
+    }
+
+    private fun tryLaunchImmediateDotShortcut(query: String): Boolean {
+        val trimmed = query.trimStart()
+        if (trimmed.length != 2) return false
+        val parsed = DotSearchSyntax.parse(trimmed) as? DotSearchParsed.Alias ?: return false
+        val pref = drawerDotSearchAliases[parsed.aliasChar] ?: return false
+        if (pref.mode != DotSearchTargetMode.SHORTCUT) return false
+        return if (launchDotSearchWithPreference(pref, parsed.searchText)) {
+            resetSearchState()
+            true
+        } else {
+            false
+        }
     }
 
     /**
@@ -772,7 +788,7 @@ constructor(
     private fun launchDotSearchWithPreference(
             pref: DotSearchTargetPreference,
             searchText: String,
-    ): Boolean = appRepository.launchDotSearch(pref.profileKey, pref.target, searchText)
+    ): Boolean = appRepository.launchDotSearch(pref.profileKey, pref.target, searchText, pref.mode)
 
     fun onCategorySelected(category: String) {
         viewModelScope.launch {

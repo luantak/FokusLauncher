@@ -32,6 +32,13 @@ class DotSearchSyntaxTest {
     }
 
     @Test
+    fun `alias accepts empty body`() {
+        assertEquals(DotSearchParsed.Alias('a', ""), DotSearchSyntax.parse(".a"))
+        assertEquals(DotSearchParsed.Alias('a', ""), DotSearchSyntax.parse(".a "))
+        assertEquals(DotSearchParsed.Alias('a', ""), DotSearchSyntax.parse(".a  "))
+    }
+
+    @Test
     fun `alias rejects digit`() {
         assertNull(DotSearchSyntax.parse(".1 two"))
     }
@@ -55,8 +62,6 @@ class DotSearchSyntaxTest {
     fun `empty body no match`() {
         assertNull(DotSearchSyntax.parse(". "))
         assertNull(DotSearchSyntax.parse(".   "))
-        assertNull(DotSearchSyntax.parse(".a "))
-        assertNull(DotSearchSyntax.parse(".a  "))
     }
 
     @Test

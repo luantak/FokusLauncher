@@ -3,6 +3,7 @@ package com.lu4p.fokuslauncher.ui.settings
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -35,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -43,11 +45,14 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.model.AppInfo
+import com.lu4p.fokuslauncher.data.model.AppShortcutAction
+import com.lu4p.fokuslauncher.data.model.DotSearchTargetMode
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.ui.drawer.GroupedAppPickerDialog
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
 import com.lu4p.fokuslauncher.ui.theme.withLauncherTextGlowRecolored
 import com.lu4p.fokuslauncher.ui.util.formatShortcutTargetDisplay
+import com.lu4p.fokuslauncher.ui.util.clickableWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.rememberClickWithSystemSound
 
 /** Token stored in URL templates; validated by [DrawerDotSearchSettingsViewModel.isValidDotSearchUrlTemplate]. */
@@ -68,9 +73,11 @@ fun DrawerDotSearchSettingsScreen(
     var showAddShortcutChoice by remember { mutableStateOf(false) }
     var showDefaultPicker by remember { mutableStateOf(false) }
     var showDefaultUrlTemplate by remember { mutableStateOf(false) }
-    var showAliasAppPicker by remember { mutableStateOf(false) }
+    var showAliasShortcutPicker by remember { mutableStateOf(false) }
+    var showAliasSearchAppPicker by remember { mutableStateOf(false) }
     var showAliasCharForUrlTemplate by remember { mutableStateOf(false) }
-    var pendingAliasApp by remember { mutableStateOf<AppInfo?>(null) }
+    var pendingAliasAction by remember { mutableStateOf<AppShortcutAction?>(null) }
+    var pendingAliasSearchApp by remember { mutableStateOf<AppInfo?>(null) }
     var pendingUrlAliasChar by remember { mutableStateOf<Char?>(null) }
 
     val defaultSummary =
@@ -130,7 +137,8 @@ fun DrawerDotSearchSettingsScreen(
                         Modifier.fillMaxSize()
                                 .padding(padding)
                                 .navigationBarsPadding()
-                                .padding(horizontal = 8.dp)
+                                .padding(horizontal = 8.dp),
+                contentPadding = PaddingValues(bottom = 96.dp)
         ) {
             item {
                 Text(
@@ -174,6 +182,12 @@ fun DrawerDotSearchSettingsScreen(
                                 notSetLabel = "",
                                 profileKey = entry.value.profileKey
                         )
+                val modeLabel =
+                        if (entry.value.mode == DotSearchTargetMode.SHORTCUT) {
+                            stringResource(R.string.settings_dot_search_shortcut_mode_label)
+                        } else {
+                            stringResource(R.string.settings_dot_search_search_mode_label)
+                        }
                 Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier =
@@ -182,12 +196,13 @@ fun DrawerDotSearchSettingsScreen(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                                ".${entry.key} …",
+                                if (entry.value.mode == DotSearchTargetMode.SHORTCUT) ".${entry.key}"
+                                else ".${entry.key} …",
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onBackground
                         )
                         Text(
-                                label,
+                                "$modeLabel: $label",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.secondary
                         )
@@ -216,22 +231,42 @@ fun DrawerDotSearchSettingsScreen(
                 },
                 text = {
                     Column {
-                        FokusTextButton(
+                        DotSearchAddChoice(
+                                label = stringResource(R.string.settings_dot_search_add_shortcut_app),
+                                description =
+                                        stringResource(
+                                                R.string.settings_dot_search_add_shortcut_help
+                                        ),
                                 onClick = {
                                     showAddShortcutChoice = false
-                                    showAliasAppPicker = true
+                                    showAliasShortcutPicker = true
                                 }
-                        ) {
-                            Text(stringResource(R.string.settings_dot_search_add_shortcut_app))
-                        }
-                        FokusTextButton(
+                        )
+                        DotSearchAddChoice(
+                                label =
+                                        stringResource(
+                                                R.string.settings_dot_search_add_search_target_app
+                                        ),
+                                description =
+                                        stringResource(
+                                                R.string.settings_dot_search_add_search_target_help
+                                        ),
+                                onClick = {
+                                    showAddShortcutChoice = false
+                                    showAliasSearchAppPicker = true
+                                }
+                        )
+                        DotSearchAddChoice(
+                                label = stringResource(R.string.settings_dot_search_add_shortcut_url),
+                                description =
+                                        stringResource(
+                                                R.string.settings_dot_search_add_url_template_help
+                                        ),
                                 onClick = {
                                     showAddShortcutChoice = false
                                     showAliasCharForUrlTemplate = true
                                 }
-                        ) {
-                            Text(stringResource(R.string.settings_dot_search_add_shortcut_url))
-                        }
+                        )
                     }
                 },
                 confirmButton = {},
@@ -271,23 +306,37 @@ fun DrawerDotSearchSettingsScreen(
         )
     }
 
-    if (showAliasAppPicker) {
+    if (showAliasShortcutPicker) {
+        ShortcutActionPickerDialog(
+                allActions = uiState.allShortcutActions,
+                allApps = uiState.allApps,
+                title = stringResource(R.string.settings_dot_search_pick_alias_app),
+                onSelect = { action ->
+                    pendingAliasAction = action
+                    showAliasShortcutPicker = false
+                },
+                onDismiss = { showAliasShortcutPicker = false },
+                includeWidgetPageTarget = false,
+        )
+    }
+
+    if (showAliasSearchAppPicker) {
         GroupedAppPickerDialog(
                 apps = uiState.webSearchCapableApps,
-                title = stringResource(R.string.settings_dot_search_pick_alias_app),
-                keyPrefix = "dot_search_pick_alias",
+                title = stringResource(R.string.settings_dot_search_pick_alias_search_app),
+                keyPrefix = "dot_search_pick_alias_search",
                 onSelect = { app ->
-                    pendingAliasApp = app
-                    showAliasAppPicker = false
+                    pendingAliasSearchApp = app
+                    showAliasSearchAppPicker = false
                 },
-                onDismiss = { showAliasAppPicker = false },
+                onDismiss = { showAliasSearchAppPicker = false },
                 searchLabel = null,
                 emptyStateText = stringResource(R.string.settings_dot_search_no_web_search_apps),
                 useSystemSoundOnItemClick = false,
         )
     }
 
-    pendingAliasApp?.let { app ->
+    pendingAliasAction?.let { action ->
         AliasCharDialog(
                 onConfirm = { raw ->
                     parseDotSearchAliasCharOrToast(
@@ -298,11 +347,30 @@ fun DrawerDotSearchSettingsScreen(
                                     viewModel,
                             )
                             ?.let { c ->
-                                viewModel.setAlias(c, app)
-                                pendingAliasApp = null
+                                viewModel.setAlias(c, action)
+                                pendingAliasAction = null
                             }
                 },
-                onDismiss = { pendingAliasApp = null }
+                onDismiss = { pendingAliasAction = null }
+        )
+    }
+
+    pendingAliasSearchApp?.let { app ->
+        AliasCharDialog(
+                onConfirm = { raw ->
+                    parseDotSearchAliasCharOrToast(
+                                    context,
+                                    raw,
+                                    toastInvalidAlias,
+                                    toastAliasTaken,
+                                    viewModel,
+                            )
+                            ?.let { c ->
+                                viewModel.setAliasFromSearchApp(c, app)
+                                pendingAliasSearchApp = null
+                            }
+                },
+                onDismiss = { pendingAliasSearchApp = null }
         )
     }
 
@@ -334,6 +402,32 @@ fun DrawerDotSearchSettingsScreen(
                     viewModel.setAliasFromUrlTemplate(ch, url)
                 },
                 onDismiss = { pendingUrlAliasChar = null }
+        )
+    }
+}
+
+@Composable
+private fun DotSearchAddChoice(
+        label: String,
+        description: String,
+        onClick: () -> Unit,
+) {
+    Column(
+            modifier =
+                    Modifier.fillMaxWidth()
+                            .clickableWithSystemSound(role = Role.Button, onClick = onClick)
+                            .padding(horizontal = 12.dp, vertical = 10.dp)
+    ) {
+        Text(
+                label,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.primary,
+        )
+        Spacer(Modifier.height(2.dp))
+        Text(
+                description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.secondary,
         )
     }
 }

@@ -1,7 +1,7 @@
 package com.lu4p.fokuslauncher.utils
 
 /**
- * Drawer "dot search" syntax: `. <query>` for default web search, `.<c> <query>` for a
+ * Drawer "dot search" syntax: `. <query>` for default web search, `.<c>` or `.<c> <query>` for a
  * single-character alias.
  */
 sealed interface DotSearchParsed {
@@ -11,7 +11,7 @@ sealed interface DotSearchParsed {
 }
 
 object DotSearchSyntax {
-    private val aliasPattern = Regex("^\\.([a-z])\\s+(.+)$")
+    private val aliasPattern = Regex("^\\.([a-z])(?:\\s+(.*))?$")
     private val defaultPattern = Regex("^\\.\\s+(.+)$")
 
     /**
@@ -23,7 +23,7 @@ object DotSearchSyntax {
         aliasPattern.matchEntire(trimmedQuery)?.let { match ->
             val char = match.groupValues[1].single()
             val text = match.groupValues[2].trim()
-            if (text.isNotEmpty()) return DotSearchParsed.Alias(char, text)
+            return DotSearchParsed.Alias(char, text)
         }
         defaultPattern.matchEntire(trimmedQuery)?.let { match ->
             val text = match.groupValues[1].trim()

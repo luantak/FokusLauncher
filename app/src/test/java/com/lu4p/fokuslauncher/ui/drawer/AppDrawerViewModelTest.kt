@@ -11,6 +11,7 @@ import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.DotSearchTargetPreference
+import com.lu4p.fokuslauncher.data.model.DotSearchTargetMode
 import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
@@ -132,7 +133,7 @@ class AppDrawerViewModelTest {
         }
         every { preferencesManager.drawerDotSearchDefaultFlow } returns drawerDotSearchDefaultFlow
         every { preferencesManager.drawerDotSearchAliasesFlow } returns drawerDotSearchAliasesFlow
-        every { appRepository.launchDotSearch(any(), any(), any()) } returns true
+        every { appRepository.launchDotSearch(any(), any(), any(), any()) } returns true
         every { privateSpaceManager.isSupported } returns false
         every { privateSpaceManager.isPrivateSpaceUnlocked() } returns false
         every { privateSpaceManager.launchApp(any(), any()) } returns true
@@ -535,7 +536,7 @@ class AppDrawerViewModelTest {
     fun `tryLaunchFirstSearchResult runs default dot search`() {
         viewModel.onSearchQueryChanged(".  cats  ")
         assertTrue(viewModel.tryLaunchFirstSearchResult())
-        verify { appRepository.launchDotSearch("0", null, "cats") }
+        verify { appRepository.launchDotSearch("0", null, "cats", DotSearchTargetMode.SEARCH) }
         assertEquals("", viewModel.uiState.value.searchQuery)
     }
 
@@ -545,7 +546,67 @@ class AppDrawerViewModelTest {
                 mapOf('a' to DotSearchTargetPreference(target = ShortcutTarget.App("com.lu4p.maps")))
         viewModel.onSearchQueryChanged(".a somewhere")
         assertTrue(viewModel.tryLaunchFirstSearchResult())
-        verify { appRepository.launchDotSearch("0", ShortcutTarget.App("com.lu4p.maps"), "somewhere") }
+        verify {
+            appRepository.launchDotSearch(
+                    "0",
+                    ShortcutTarget.App("com.lu4p.maps"),
+                    "somewhere",
+                    DotSearchTargetMode.SEARCH,
+            )
+        }
+    }
+
+    @Test
+    fun `typing configured dot shortcut launches immediately`() {
+        drawerDotSearchAliasesFlow.value =
+                mapOf(
+                        'b' to
+                                DotSearchTargetPreference(
+                                        target = ShortcutTarget.App("com.lu4p.bank"),
+                                        mode = DotSearchTargetMode.SHORTCUT
+                                )
+                )
+
+        viewModel.onSearchQueryChanged(".b")
+
+        verify {
+            appRepository.launchDotSearch(
+                    "0",
+                    ShortcutTarget.App("com.lu4p.bank"),
+                    "",
+                    DotSearchTargetMode.SHORTCUT,
+            )
+        }
+        assertEquals("", viewModel.uiState.value.searchQuery)
+    }
+
+    @Test
+    fun `typing configured search target does not launch immediately`() {
+        drawerDotSearchAliasesFlow.value =
+                mapOf('b' to DotSearchTargetPreference(target = ShortcutTarget.App("com.lu4p.bank")))
+
+        viewModel.onSearchQueryChanged(".b")
+
+        verify(exactly = 0) { appRepository.launchDotSearch(any(), any(), any(), any()) }
+        assertEquals(".b", viewModel.uiState.value.searchQuery)
+    }
+
+    @Test
+    fun `tryLaunchFirstSearchResult runs configured alias dot search with empty query`() {
+        drawerDotSearchAliasesFlow.value =
+                mapOf('a' to DotSearchTargetPreference(target = ShortcutTarget.App("com.lu4p.maps")))
+        viewModel.onSearchQueryChanged(".a ")
+
+        assertTrue(viewModel.tryLaunchFirstSearchResult())
+
+        verify {
+            appRepository.launchDotSearch(
+                    "0",
+                    ShortcutTarget.App("com.lu4p.maps"),
+                    "",
+                    DotSearchTargetMode.SEARCH,
+            )
+        }
     }
 
     @Test

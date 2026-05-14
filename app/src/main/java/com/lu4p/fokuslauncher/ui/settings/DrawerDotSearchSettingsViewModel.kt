@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.AppInfo
+import com.lu4p.fokuslauncher.data.model.AppShortcutAction
+import com.lu4p.fokuslauncher.data.model.DotSearchTargetMode
 import com.lu4p.fokuslauncher.data.model.DotSearchTargetPreference
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.model.appProfileKey
@@ -20,6 +22,7 @@ data class DrawerDotSearchSettingsUiState(
         val defaultTarget: DotSearchTargetPreference = DotSearchTargetPreference(),
         val aliases: Map<Char, DotSearchTargetPreference> = emptyMap(),
         val allApps: List<AppInfo> = emptyList(),
+        val allShortcutActions: List<AppShortcutAction> = emptyList(),
         /** Apps that resolve [android.content.Intent.ACTION_WEB_SEARCH] or [android.content.Intent.ACTION_SEARCH] for their package. */
         val webSearchCapableApps: List<AppInfo> = emptyList()
 )
@@ -50,6 +53,8 @@ constructor(
                                         defaultTarget = defaultTarget,
                                         aliases = aliases,
                                         allApps = apps,
+                                        allShortcutActions =
+                                                appRepository.getAllShortcutActionsOnBackground(),
                                         webSearchCapableApps =
                                                 appRepository.filterAppsForDotSearchAppPicker(apps)
                                 )
@@ -85,7 +90,22 @@ constructor(
         viewModelScope.launch { preferencesManager.clearDrawerDotSearchDefault() }
     }
 
-    fun setAlias(alias: Char, app: AppInfo) {
+    fun setAlias(alias: Char, action: AppShortcutAction) {
+        val key = alias.lowercaseChar()
+        require(isValidAliasChar(key)) { "invalid alias" }
+        viewModelScope.launch {
+            preferencesManager.setDrawerDotSearchAlias(
+                    key,
+                    DotSearchTargetPreference(
+                            profileKey = action.profileKey,
+                            target = action.target,
+                            mode = DotSearchTargetMode.SHORTCUT,
+                    )
+            )
+        }
+    }
+
+    fun setAliasFromSearchApp(alias: Char, app: AppInfo) {
         val key = alias.lowercaseChar()
         require(isValidAliasChar(key)) { "invalid alias" }
         viewModelScope.launch {
@@ -93,7 +113,8 @@ constructor(
                     key,
                     DotSearchTargetPreference(
                             profileKey = appProfileKey(app.userHandle),
-                            target = ShortcutTarget.App(app.packageName)
+                            target = ShortcutTarget.App(app.packageName),
+                            mode = DotSearchTargetMode.SEARCH,
                     )
             )
         }
@@ -109,7 +130,8 @@ constructor(
                     key,
                     DotSearchTargetPreference(
                             profileKey = "0",
-                            target = ShortcutTarget.DeepLink(t)
+                            target = ShortcutTarget.DeepLink(t),
+                            mode = DotSearchTargetMode.SEARCH,
                     )
             )
         }
