@@ -109,6 +109,8 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
          */
         private val DRAWER_SEARCH_AUTO_LAUNCH_KEY =
                 booleanPreferencesKey("drawer_search_auto_launch")
+        private val DRAWER_SCROLL_TO_TOP_AUTO_KEYBOARD_KEY =
+                booleanPreferencesKey("drawer_scroll_to_top_auto_keyboard")
         private val HAS_COMPLETED_ONBOARDING_KEY = booleanPreferencesKey("has_completed_onboarding")
         private val ONBOARDING_REACHED_SET_DEFAULT_KEY = booleanPreferencesKey("onboarding_reached_set_default")
         /**
@@ -501,6 +503,11 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
             prefFlow(DRAWER_SEARCH_AUTO_LAUNCH_KEY, true)
     suspend fun setDrawerSearchAutoLaunch(enabled: Boolean) =
             setPref(DRAWER_SEARCH_AUTO_LAUNCH_KEY, enabled)
+
+    val drawerScrollToTopAutoKeyboardFlow: Flow<Boolean> =
+            prefFlow(DRAWER_SCROLL_TO_TOP_AUTO_KEYBOARD_KEY, false)
+    suspend fun setDrawerScrollToTopAutoKeyboard(enabled: Boolean) =
+            setPref(DRAWER_SCROLL_TO_TOP_AUTO_KEYBOARD_KEY, enabled)
 
     val drawerAppOpenCountsFlow: Flow<Map<String, Int>> =
             context.fokusLauncherPreferencesDataStore.data.map { prefs ->

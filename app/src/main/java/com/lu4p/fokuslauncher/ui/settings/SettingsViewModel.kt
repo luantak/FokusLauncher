@@ -79,6 +79,8 @@ data class SettingsUiState(
         val drawerSidebarCategories: Boolean = false,
         /** Launch the app when search narrows to a single match (drawer search). */
         val drawerSearchAutoLaunch: Boolean = true,
+        /** Auto-launch keyboard when scrolling to the top of the app drawer. */
+        val drawerScrollToTopAutoKeyboard: Boolean = false,
         /** When true, category rail is on the left; default false places it on the right. */
         val drawerCategorySidebarOnLeft: Boolean = false,
         /** Normalized category key → [MinimalIcons] name for the drawer sidebar rail. */
@@ -226,17 +228,23 @@ constructor(
                                     preferencesManager.drawerSidebarCategoriesFlow,
                                     preferencesManager.drawerAppSortModeFlow,
                                     preferencesManager.drawerSearchAutoLaunchFlow,
-                            ) { sidebarCategories, sortMode, searchAutoLaunch ->
-                                Triple(sidebarCategories, sortMode, searchAutoLaunch)
+                                    preferencesManager.drawerScrollToTopAutoKeyboardFlow,
+                            ) { sidebarCategories, sortMode, searchAutoLaunch, scrollToTopAutoKeyboard ->
+                                DrawerPrefs(
+                                        swipeRightTarget = null, // placeholder
+                                        preferredWeatherAppPackage = "", // placeholder
+                                        showStatusBar = false, // placeholder
+                                        drawerSidebarCategories = sidebarCategories,
+                                        drawerAppSortMode = sortMode,
+                                        drawerSearchAutoLaunch = searchAutoLaunch,
+                                        drawerScrollToTopAutoKeyboard = scrollToTopAutoKeyboard,
+                                )
                             },
                     ) { swipeAndWeather, drawerLayout ->
-                        DrawerPrefs(
+                        drawerLayout.copy(
                                 swipeRightTarget = swipeAndWeather.first,
                                 preferredWeatherAppPackage = swipeAndWeather.second,
                                 showStatusBar = swipeAndWeather.third,
-                                drawerSidebarCategories = drawerLayout.first,
-                                drawerAppSortMode = drawerLayout.second,
-                                drawerSearchAutoLaunch = drawerLayout.third,
                         )
                     }
             val fontVisualFlow =
@@ -365,6 +373,7 @@ constructor(
                         temperatureUnit = homeWidgetItems.temperatureUnit,
                         drawerSidebarCategories = drawer.drawerSidebarCategories,
                         drawerSearchAutoLaunch = drawer.drawerSearchAutoLaunch,
+                        drawerScrollToTopAutoKeyboard = drawer.drawerScrollToTopAutoKeyboard,
                         drawerCategorySidebarOnLeft = lockRail.drawerCategorySidebarOnLeft,
                         categoryDrawerIconOverrides = lockRail.categoryDrawerIconOverrides,
                         drawerAppSortMode = drawer.drawerAppSortMode,
@@ -423,6 +432,7 @@ constructor(
             val drawerSidebarCategories: Boolean,
             val drawerAppSortMode: DrawerAppSortMode,
             val drawerSearchAutoLaunch: Boolean,
+            val drawerScrollToTopAutoKeyboard: Boolean,
     )
 
     private data class FontVisualPrefs(
@@ -661,6 +671,9 @@ constructor(
 
     fun setDrawerSearchAutoLaunch(enabled: Boolean) =
             launchPreferences { setDrawerSearchAutoLaunch(enabled) }
+
+    fun setDrawerScrollToTopAutoKeyboard(enabled: Boolean) =
+            launchPreferences { setDrawerScrollToTopAutoKeyboard(enabled) }
 
     fun setDrawerCategorySidebarOnLeft(onLeft: Boolean) =
             launchPreferences { setDrawerCategorySidebarOnLeft(onLeft) }
