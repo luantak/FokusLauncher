@@ -1034,6 +1034,7 @@ fun AppDrawerContent(
                                                 KeyboardOptions(imeAction = ImeAction.Search),
                                         keyboardActions =
                                                 KeyboardActions(onSearch = { onSearchImeAction() }),
+                                        textStyle = MaterialTheme.typography.bodyLarge,
                                         modifier =
                                                 Modifier.fillMaxWidth()
                                                         .padding(horizontal = 16.dp)

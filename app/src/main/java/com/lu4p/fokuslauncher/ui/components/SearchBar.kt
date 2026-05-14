@@ -31,7 +31,7 @@ fun SearchBar(
     BasicTextField(
         value = query,
         onValueChange = onQueryChange,
-        textStyle = MaterialTheme.typography.bodyMedium.copy(
+        textStyle = MaterialTheme.typography.bodyLarge.copy(
             color = MaterialTheme.colorScheme.onBackground
         ),
         cursorBrush = SolidColor(MaterialTheme.colorScheme.onBackground),
@@ -50,7 +50,7 @@ fun SearchBar(
             if (query.isEmpty() && placeholder.isNotEmpty()) {
                 androidx.compose.material3.Text(
                     text = placeholder,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f)
                 )
             }
