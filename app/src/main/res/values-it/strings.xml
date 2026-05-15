@@ -126,7 +126,7 @@
     <string name="icon_cat_search_results">Icone corrispondenti</string>
     <string name="settings_title">Impostazioni</string>
     <string name="settings_section_appearance">Aspetto</string>
-    <string name="settings_show_status_bar">Mostra barra di stato</string>
+    <string name="settings_show_status_bar">Mostra la barra di stato</string>
     <string name="settings_allow_landscape_rotation">Consenti modalità orizzontale</string>
     <string name="settings_language_label">Lingua</string>
     <string name="settings_language_system_default">Predefinita di sistema</string>
@@ -138,7 +138,7 @@
     <string name="settings_accessibility_page_title">Controllo del dispositivo</string>
     <string name="settings_accessibility_permission">Autorizzazione di accessibilità</string>
     <string name="settings_accessibility_permission_enabled">Concessa per Fokus Launcher</string>
-    <string name="settings_accessibility_permission_disabled">Necessaria per il doppio tocco per bloccare e tornare alla home dopo un lungo blocco</string>
+    <string name="settings_accessibility_permission_disabled">Necessaria per il doppio tocco per bloccare e tornare alla home dopo un blocco prolungato</string>
     <string name="settings_home_widgets">Configura widget</string>
     <string name="inferred_category_utilities">Strumenti</string>
     <string name="settings_home_widgets_subtitle">Scegli quali widget mostrare e quali app aprire quando li tocchi</string>
@@ -151,7 +151,7 @@
     <string name="settings_home_date_format_eu_dots">GG.MM.AAAA</string>
     <string name="settings_home_date_format_weekday_month">Mes GG, AAAA</string>
     <string name="settings_home_date_format_month_long">Mese GG, AAAA</string>
-    <string name="settings_return_home_after_long_lock_subtitle">Al momento dello sblocco, mostra il launcher se il dispositivo è rimasto bloccato abbastanza a lungo</string>
+    <string name="settings_return_home_after_long_lock_subtitle">Dopo lo sblocco, mostra il launcher se il dispositivo è rimasto bloccato abbastanza a lungo</string>
     <string name="settings_long_lock_duration">Durata del blocco prolungato</string>
     <string name="settings_long_lock_duration_subtitle">Quanto tempo il dispositivo deve rimanere bloccato prima che Fokus torni alla schermata home allo sblocco.</string>
     <string name="accessibility_lock_service_label">Controllo del dispositivo di Fokus</string>
@@ -194,21 +194,21 @@
     <string name="settings_drawer_rail_position_left">Sinistra</string>
     <string name="settings_drawer_rail_position_right">Destra</string>
     <string name="settings_drawer_app_sort">Ordine delle app</string>
-    <string name="settings_drawer_app_sort_subtitle">\"Più utikizzate\" conta gli avvii dal drawer di questo launcher. Senza avvii registrati, l\'elenco rimane in ordine alfabetico.</string>
+    <string name="settings_drawer_app_sort_subtitle">\"Più utilizzate\" conta gli avvii dal drawer di questo launcher. Senza avvii registrati, l\'elenco rimane in ordine alfabetico.</string>
     <string name="settings_drawer_app_sort_alphabetical">A–Z</string>
     <string name="settings_drawer_app_sort_most_opened">Più utilizzate</string>
     <string name="settings_drawer_app_sort_custom">Personalizzato</string>
-    <string name="settings_dot_search_subtitle">Digita `. termini` o `.&lt;lettera minuscola&gt; termini` nella barra di ricerca del drawer</string>
-    <string name="settings_dot_search_title">Ricerca con punto</string>
-    <string name="settings_dot_search_screen_title">Ricerca con punto nel drawer</string>
+    <string name="settings_dot_search_subtitle">Scrivi `. query` per effettuare una ricerca, `.x query` per una ricerca mirata, o `.x` per una scorciatoia rapida</string>
+    <string name="settings_dot_search_title">Ricerca con punto e scorciatoie</string>
+    <string name="settings_dot_search_screen_title">Ricerca con punto e scorciatoie</string>
     <string name="settings_dot_search_explanation">Nel drawer, digita un punto e uno spazio, poi le parole da cercare. Per una scorciatoia, usa un punto, una lettera minuscola, uno spazio e poi la ricerca (ad esempio `.a caffè`). L\'elenco app include solo le app che espongono la ricerca web o la ricerca standard in-app per il loro pacchetto. Per altri siti o app, aggiungi un URL HTTPS o un modello di deep link e inserisci %1$s dove deve comparire il testo da cercare (ad esempio https://example.com/search?q=%1$s).</string>
     <string name="settings_dot_search_default_label">App di ricerca predefinita</string>
     <string name="settings_dot_search_url_template">Modello URL</string>
     <string name="settings_dot_search_url_template_dialog_title">Modello URL di ricerca</string>
-    <string name="settings_dot_search_url_template_help">Puoi usare un link di ricerca HTTPS o un deep link dell\'app (ad esempio intent://). Inserisci %1$s dove devono comparire le parole cercate, il launcher le sostituirà con ciò che digiti dopo `. ricerca` o `.x ricerca`. Esempio: https://example.com/search?q=%1$s</string>
-    <string name="settings_dot_search_url_template_error">Inserisci %1$s dove deve comparire il testo cercato (esempio: https://example.com/search?q=%1$s).</string>
+    <string name="settings_dot_search_url_template_help">Puoi usare un link di ricerca HTTPS o un deep link dell\'app (ad esempio intent://). Inserisci %1$s dove deve andare la query: il launcher le sostituirà con ciò che digiti dopo `. query` o `.x query`. Esempio: https://example.com/search?q=%1$s</string>
+    <string name="settings_dot_search_url_template_error">Inserisci %1$s dove deve comparire la query (esempio: https://example.com/search?q=%1$s).</string>
     <string name="settings_dot_search_add_shortcut_title">Aggiungi scorciatoia</string>
-    <string name="settings_dot_search_add_shortcut_app">App (intento di ricerca)</string>
+    <string name="settings_dot_search_add_shortcut_app">Apri destinazione della scorciatoia</string>
     <string name="settings_dot_search_add_shortcut_url">Modello URL</string>
     <string name="settings_dot_search_url_template_for_alias">URL per .%1$s …</string>
     <string name="settings_dot_search_no_web_search_apps">Nessuna app installata espone intenti di ricerca web o in-app per il proprio pacchetto.</string>
@@ -216,7 +216,7 @@
     <string name="settings_dot_search_add_alias">Aggiungi scorciatoia</string>
     <string name="settings_dot_search_invalid_alias">Inserisci una lettera minuscola (a-z).</string>
     <string name="settings_dot_search_alias_taken">Questo carattere è già utilizzato.</string>
-    <string name="settings_dot_search_pick_default_app">Scegli l\'app per `. ricerca`</string>
+    <string name="settings_dot_search_pick_default_app">Scegli l\'app per `. query`</string>
     <string name="settings_dot_search_pick_alias_app">Scegli l\'app per questa scorciatoia</string>
     <string name="cd_remove_alias">Rimuovi scorciatoia</string>
     <string name="settings_section_hidden_apps">App nascoste</string>
@@ -311,4 +311,27 @@
     <string name="onboarding_swipe_right">Scorrimento a destra</string>
     <string name="settings_dot_search_alias_dialog_title">Lettera di scorciatoia</string>
     <string name="settings_dot_search_aliases_section">Scorciatoie con lettere</string>
+    <string name="settings_profile_names_title">Nomi dei profili</string>
+    <string name="settings_profile_names_subtitle">Rinomina le sezioni dei profili personale, di lavoro e altri nel drawer e nella schermata home</string>
+    <string name="settings_profile_names_help">Lascia il campo vuoto e tocca Salva per ripristinare il nome predefinito. I nomi si applicano alle intestazioni del drawer, ai selettori raggruppati e ai badge del profilo accanto ai preferiti.</string>
+    <string name="settings_profile_names_default_label">Predefinito: %1$s</string>
+    <string name="settings_profile_names_field_label">Nome visualizzato</string>
+    <string name="settings_profile_names_save">Salva</string>
+    <string name="settings_profile_names_reset">Reimposta</string>
+    <string name="settings_section_image_wallpaper_accessibility">Immagine di sfondo — leggibilità</string>
+    <string name="settings_photo_outline_strength_subtitle">Sfondi semitrasparenti a forma di pillola dietro a orologio, preferiti, widget della home e icone delle scorciatoie su un\'immagine di sfondo.</string>
+    <string name="settings_photo_outline_strength_label">Sfondo per testi e icone</string>
+    <string name="settings_photo_outline_width_dp_default">Predefinito</string>
+    <string name="settings_photo_outline_width_dp_value">Livello %1$d</string>
+    <string name="settings_photo_drawer_overlay_label">Intensità oscuramento del drawer</string>
+    <string name="settings_photo_drawer_overlay_subtitle">Aumenta l\'oscuramento dietro al drawer delle app.</string>
+    <string name="settings_dot_search_add_shortcut_help">Digita `.x` per aprire immediatamente un\'app, un\'azione del telefono o una scorciatoia del launcher.</string>
+    <string name="settings_dot_search_add_search_target_app">Destinazione della ricerca</string>
+    <string name="settings_dot_search_add_search_target_help">Digita `.x query` per inviare una query a un\'app che supporta la ricerca.</string>
+    <string name="settings_dot_search_add_url_template_help">Digita `.x query` per aprire un URL o un deep link con la query inserita.</string>
+    <string name="settings_dot_search_pick_alias_search_app">Scegli l\'app di ricerca per questa scorciatoia</string>
+    <string name="settings_dot_search_shortcut_mode_label">Apre immediatamente</string>
+    <string name="settings_dot_search_search_mode_label">Deostinazione della ricerca</string>
+    <string name="settings_drawer_scroll_to_top_auto_keyboard_subtitle">Apri automaticamente tastiera e ricerca quando scorri fino in cima alla lista delle app</string>
+    <string name="settings_drawer_scroll_to_top_auto_keyboard">Tastiera scorrendo in cima</string>
 </resources>
