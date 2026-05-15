@@ -13,6 +13,8 @@ import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.model.drawerOpenCountKey
 import com.lu4p.fokuslauncher.data.model.LauncherFontPreferences
+import com.lu4p.fokuslauncher.data.model.PhotoWallpaperDrawerOverlayIntensity
+import com.lu4p.fokuslauncher.data.model.PhotoWallpaperOutlineWidthDp
 import com.lu4p.fokuslauncher.data.model.LauncherFontScale
 import com.lu4p.fokuslauncher.data.model.SystemCategoryKeys
 import com.lu4p.fokuslauncher.data.model.HomeDateFormatStyle
@@ -104,6 +106,8 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         private val DRAWER_DOT_SEARCH_DEFAULT_KEY = stringPreferencesKey("drawer_dot_search_default")
         /** JSON object: single-character key → {"profileKey":"0","target":"app:…"}. */
         private val DRAWER_DOT_SEARCH_ALIASES_KEY = stringPreferencesKey("drawer_dot_search_aliases")
+        /** JSON object: [appProfileKey] string → user-visible profile section name override. */
+        private val PROFILE_DISPLAY_NAMES_KEY = stringPreferencesKey("profile_display_names")
         /**
          * When true (default), typing until only one app matches launches it automatically.
          * When false, single-match search only filters the list; user taps or confirms to launch.
@@ -130,6 +134,12 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
          */
         private val HOME_USES_PHOTO_WALLPAPER_KEY =
                 booleanPreferencesKey("home_uses_photo_wallpaper")
+        /** Uniform stroke width in dp for home outlined text when a background image is used; 0 = defaults. */
+        private val PHOTO_WALLPAPER_OUTLINE_WIDTH_DP_KEY =
+                floatPreferencesKey("photo_wallpaper_outline_width_dp")
+        /** Multiplier for app-drawer scrim alpha over a busy / image wallpaper. */
+        private val PHOTO_WALLPAPER_DRAWER_OVERLAY_INTENSITY_KEY =
+                floatPreferencesKey("photo_wallpaper_drawer_overlay_intensity")
         private val LAUNCHER_FONT_FAMILY_KEY = stringPreferencesKey("launcher_font_family")
         private val LAUNCHER_FONT_SCALE_KEY = floatPreferencesKey("launcher_font_scale")
         private val ALLOW_LANDSCAPE_ROTATION_KEY =
@@ -144,6 +154,9 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
                 longPreferencesKey("long_lock_last_screen_off_at_ms")
 
         const val DEFAULT_LONG_LOCK_RETURN_HOME_THRESHOLD_MINUTES = 15
+
+        /** Max length for custom profile display names (drawer sections, badges). */
+        const val MAX_PROFILE_DISPLAY_NAME_LENGTH = 40
 
         /**
          * Format: "label;packageName;iconName" entries separated by "|" Falls back to legacy
@@ -373,6 +386,27 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
             prefFlow(DRAWER_SIDEBAR_CATEGORIES_KEY, false)
     suspend fun setDrawerSidebarCategories(enabled: Boolean) =
             setPref(DRAWER_SIDEBAR_CATEGORIES_KEY, enabled)
+
+    /** Per-[com.lu4p.fokuslauncher.data.model.appProfileKey] display title for drawer sections and badges. */
+    val profileDisplayNameOverridesFlow: Flow<Map<String, String>> =
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
+                parseProfileDisplayNames(prefs[PROFILE_DISPLAY_NAMES_KEY] ?: "")
+            }
+
+    suspend fun setProfileDisplayName(profileKey: String, displayName: String) {
+        val key = profileKey.trim().ifBlank { return }
+        val trimmed = displayName.trim()
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            val current = parseProfileDisplayNames(prefs[PROFILE_DISPLAY_NAMES_KEY] ?: "").toMutableMap()
+            if (trimmed.isEmpty()) {
+                current.remove(key)
+            } else {
+                current[key] = trimmed.take(MAX_PROFILE_DISPLAY_NAME_LENGTH)
+            }
+            if (current.isEmpty()) prefs.remove(PROFILE_DISPLAY_NAMES_KEY)
+            else prefs[PROFILE_DISPLAY_NAMES_KEY] = serializeProfileDisplayNames(current)
+        }
+    }
 
     val drawerCategorySidebarOnLeftFlow: Flow<Boolean> =
             prefFlow(DRAWER_CATEGORY_SIDEBAR_ON_LEFT_KEY, false)
@@ -616,6 +650,42 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         }
     }
 
+    val photoWallpaperOutlineWidthDpFlow: Flow<Float> =
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
+                PhotoWallpaperOutlineWidthDp.fromStorage(
+                        prefs[PHOTO_WALLPAPER_OUTLINE_WIDTH_DP_KEY]
+                )
+            }
+
+    suspend fun setPhotoWallpaperOutlineWidthDp(widthDp: Float) {
+        val normalized = PhotoWallpaperOutlineWidthDp.snapToStep(widthDp)
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            if (normalized == PhotoWallpaperOutlineWidthDp.DEFAULT) {
+                prefs.remove(PHOTO_WALLPAPER_OUTLINE_WIDTH_DP_KEY)
+            } else {
+                prefs[PHOTO_WALLPAPER_OUTLINE_WIDTH_DP_KEY] = normalized
+            }
+        }
+    }
+
+    val photoWallpaperDrawerOverlayIntensityFlow: Flow<Float> =
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
+                PhotoWallpaperDrawerOverlayIntensity.fromStorage(
+                        prefs[PHOTO_WALLPAPER_DRAWER_OVERLAY_INTENSITY_KEY]
+                )
+            }
+
+    suspend fun setPhotoWallpaperDrawerOverlayIntensity(value: Float) {
+        val normalized = PhotoWallpaperDrawerOverlayIntensity.snapToStep(value)
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            if (normalized == PhotoWallpaperDrawerOverlayIntensity.DEFAULT) {
+                prefs.remove(PHOTO_WALLPAPER_DRAWER_OVERLAY_INTENSITY_KEY)
+            } else {
+                prefs[PHOTO_WALLPAPER_DRAWER_OVERLAY_INTENSITY_KEY] = normalized
+            }
+        }
+    }
+
     /**
      * Updates [HOME_USES_PHOTO_WALLPAPER_KEY] from the live system wallpaper so existing image
      * wallpapers are detected without going through Fokus picker/onboarding.
@@ -804,6 +874,31 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         if (map.isEmpty()) return ""
         val o = JSONObject()
         map.entries.sortedBy { it.key }.forEach { (k, v) -> o.put(k, v) }
+        return o.toString()
+    }
+
+    private fun parseProfileDisplayNames(raw: String): Map<String, String> {
+        if (raw.isBlank()) return emptyMap()
+        return runCatching {
+            val o = JSONObject(raw)
+            buildMap {
+                val it = o.keys()
+                while (it.hasNext()) {
+                    val k = it.next()
+                    val v = o.optString(k, "")
+                    if (k.isNotBlank() && v.isNotBlank()) put(k, v.take(MAX_PROFILE_DISPLAY_NAME_LENGTH))
+                }
+            }
+        }.getOrDefault(emptyMap())
+    }
+
+    private fun serializeProfileDisplayNames(map: Map<String, String>): String {
+        if (map.isEmpty()) return ""
+        val o = JSONObject()
+        map.entries.sortedBy { it.key }.forEach { (k, v) ->
+            val trimmed = v.trim().take(MAX_PROFILE_DISPLAY_NAME_LENGTH)
+            if (k.isNotBlank() && trimmed.isNotEmpty()) o.put(k, trimmed)
+        }
         return o.toString()
     }
 

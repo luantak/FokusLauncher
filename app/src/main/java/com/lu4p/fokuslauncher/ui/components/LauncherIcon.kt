@@ -8,8 +8,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.BlurEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TileMode
@@ -22,6 +24,8 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.lu4p.fokuslauncher.data.model.LauncherFontScale
+import com.lu4p.fokuslauncher.data.model.PhotoWallpaperOutlineWidthDp
+import com.lu4p.fokuslauncher.ui.theme.LocalPhotoWallpaperOutlineWidthDp
 import com.lu4p.fokuslauncher.ui.theme.LauncherIconGlowSpec
 import com.lu4p.fokuslauncher.ui.theme.LocalLauncherFontScale
 import com.lu4p.fokuslauncher.ui.theme.LocalLauncherIconGlow
@@ -100,23 +104,30 @@ fun LauncherIcon(
             LocalLauncherFontScale.current.coerceIn(LauncherFontScale.MIN, LauncherFontScale.MAX)
     // Stronger than earlier subtle bloom so icons visually match the bold text shadow.
     val blurRadiusPx = with(density) { (10f * fontBoost).dp.toPx() }
+    val outlineWidthDpSetting = LocalPhotoWallpaperOutlineWidthDp.current
+    val photoPillStrength =
+            (outlineWidthDpSetting / PhotoWallpaperOutlineWidthDp.MAX).coerceIn(0f, 1f)
+    val photoPillAlpha = 0.14f + 0.68f * photoPillStrength
+    val photoPillPaddingPx =
+            remember(outlineWidthDpSetting, density) {
+                with(density) { (3f + 10f * photoPillStrength).dp.toPx() }
+            }
 
-    Box(modifier = modifier.size(scaledSize), contentAlignment = Alignment.Center) {
-        if (outlined) {
-            Icon(
-                    painter = painter,
-                    contentDescription = null,
-                    modifier =
-                            Modifier.fillMaxSize()
-                                    .graphicsLayer {
-                                        clip = false
-                                        scaleX = 1.055f
-                                        scaleY = 1.055f
-                                    }
-                                    .clearAndSetSemantics {},
-                    tint = Color.Black.copy(alpha = 0.64f),
-            )
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+    Box(
+            modifier =
+                    modifier.size(scaledSize)
+                            .graphicsLayer { clip = false }
+                            .drawBehind {
+                                if (outlined && outlineWidthDpSetting > 0f) {
+                                    drawCircle(
+                                            color = Color.Black.copy(alpha = photoPillAlpha),
+                                            radius = size.minDimension / 2f + photoPillPaddingPx,
+                                    )
+                                }
+                            },
+            contentAlignment = Alignment.Center
+    ) {
+        if (!outlined && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             Icon(
                     painter = painter,
                     contentDescription = null,
@@ -190,7 +201,14 @@ fun LauncherIcon(
         Icon(
                 painter = painter,
                 contentDescription = contentDescription,
-                modifier = Modifier.fillMaxSize(),
+                modifier =
+                        Modifier.fillMaxSize()
+                                .graphicsLayer {
+                                    if (outlined && outlineWidthDpSetting > 0f) {
+                                        scaleX = 1.12f
+                                        scaleY = 1.12f
+                                    }
+                                },
                 tint = resolvedTint,
         )
     }

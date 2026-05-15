@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.lu4p.fokuslauncher.ui.theme.LocalPhotoWallpaperOutlineWidthDp
 
 /**
  * Row displaying the current date and battery percentage.
@@ -31,6 +32,8 @@ fun DateBatteryRow(
     if (!showDate && !showBattery) return
     val style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
     val color = MaterialTheme.colorScheme.onBackground
+    val backdropStrength = LocalPhotoWallpaperOutlineWidthDp.current
+    val useSharedBackdrop = outlined && backdropStrength > 0f
     Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier) {
         if (showDate) {
             Box(
@@ -39,8 +42,16 @@ fun DateBatteryRow(
                             Modifier.heightIn(min = 56.dp)
                                     .clickableNoRippleWithSystemSound(onClick = onDateClick),
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (outlined) {
+                Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier =
+                                if (useSharedBackdrop) {
+                                    Modifier.photoBackdropPill(backdropStrength)
+                                } else {
+                                    Modifier
+                                },
+                ) {
+                    if (outlined && !useSharedBackdrop) {
                         OutlinedText(
                                 text = date,
                                 style = style,
@@ -55,7 +66,7 @@ fun DateBatteryRow(
                     }
                     if (showBattery) {
                         Spacer(modifier = Modifier.width(8.dp))
-                        if (outlined) {
+                        if (outlined && !useSharedBackdrop) {
                             OutlinedText(text = "$batteryPercent%", style = style, color = color)
                         } else {
                             Text(text = "$batteryPercent%", style = style, color = color)
@@ -64,7 +75,14 @@ fun DateBatteryRow(
                 }
             }
         } else if (showBattery) {
-            if (outlined) {
+            if (useSharedBackdrop) {
+                Text(
+                        text = "$batteryPercent%",
+                        style = style,
+                        color = color,
+                        modifier = Modifier.photoBackdropPill(backdropStrength)
+                )
+            } else if (outlined) {
                 OutlinedText(text = "$batteryPercent%", style = style, color = color)
             } else {
                 Text(text = "$batteryPercent%", style = style, color = color)

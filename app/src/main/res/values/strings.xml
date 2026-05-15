@@ -161,6 +161,13 @@
     <string name="settings_language_system_default">System default</string>
     <string name="settings_set_background_image">Set background image</string>
     <string name="settings_set_black_wallpaper">Set black wallpaper</string>
+    <string name="settings_section_image_wallpaper_accessibility">Image wallpaper — readability</string>
+    <string name="settings_photo_outline_strength_label">Text and icon backdrop</string>
+    <string name="settings_photo_outline_strength_subtitle">Semi-transparent black pills behind the clock, favorites, home widgets, and shortcut icons on a background image.</string>
+    <string name="settings_photo_outline_width_dp_default">Default</string>
+    <string name="settings_photo_outline_width_dp_value">Level %1$d</string>
+    <string name="settings_photo_drawer_overlay_label">App drawer dim strength</string>
+    <string name="settings_photo_drawer_overlay_subtitle">Increases how dark the full-screen dim is behind the app drawer.</string>
     <string name="settings_section_home_screen">Home screen</string>
     <string name="settings_accessibility">Device Control</string>
     <string name="settings_accessibility_subtitle">Manage features that need accessibility access</string>
@@ -227,6 +234,13 @@
     <string name="settings_drawer_app_sort_custom">Custom</string>
     <string name="settings_dot_search_title">Dot search &amp; shortcuts</string>
     <string name="settings_dot_search_subtitle">Type `. query` for search, `.x query` for a search target, or `.x` for an immediate shortcut</string>
+    <string name="settings_profile_names_title">Profile names</string>
+    <string name="settings_profile_names_subtitle">Rename personal, work, and other profile sections in the drawer and on the home screen</string>
+    <string name="settings_profile_names_help">Leave the field blank and tap Save to restore the default name. Names apply to drawer headers, grouped pickers, and profile badges next to favorites.</string>
+    <string name="settings_profile_names_default_label">Default: %1$s</string>
+    <string name="settings_profile_names_field_label">Display name</string>
+    <string name="settings_profile_names_save">Save</string>
+    <string name="settings_profile_names_reset">Reset</string>
     <string name="settings_dot_search_screen_title">Dot search &amp; shortcuts</string>
     <string name="settings_dot_search_explanation">Use dot search for queries and dot shortcuts for immediate actions. Type `. query` for the default search target. Add a Search target or URL template for `.x query`, or add an Open shortcut target for `.x`. URL templates use %1$s where the query belongs (for example https://example.com/search?q=%1$s).</string>
     <string name="settings_dot_search_default_label">Default search app</string>

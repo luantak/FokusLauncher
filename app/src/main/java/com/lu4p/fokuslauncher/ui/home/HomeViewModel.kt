@@ -27,6 +27,7 @@ import com.lu4p.fokuslauncher.data.model.appMetadataKey
 import com.lu4p.fokuslauncher.data.model.appProfileKey
 import com.lu4p.fokuslauncher.data.model.HomeDateFormatStyle
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
+import com.lu4p.fokuslauncher.data.model.PhotoWallpaperOutlineWidthDp
 import com.lu4p.fokuslauncher.data.model.LauncherFontScale
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
@@ -82,6 +83,8 @@ data class HomeUiState(
     val launcherFontScale: Float = LauncherFontScale.DEFAULT,
     /** Image / non-black wallpaper — stronger home scrim for readability. */
     val usesPhotoWallpaper: Boolean = false,
+    /** Uniform outline stroke in dp when [usesPhotoWallpaper]; 0 = per-widget defaults. */
+    val photoWallpaperOutlineWidthDp: Float = PhotoWallpaperOutlineWidthDp.DEFAULT,
 )
 
 data class HomeClockUiState(
@@ -196,6 +199,12 @@ class HomeViewModel @Inject constructor(
                     emptyList(),
             )
 
+    val profileDisplayNameOverrides: StateFlow<Map<String, String>> =
+            preferencesManager.profileDisplayNameOverridesFlow.stateWhileSubscribedIn(
+                    viewModelScope,
+                    emptyMap(),
+            )
+
     private val preferredWeatherAppPackage: StateFlow<String> =
             preferencesManager.preferredWeatherAppFlow.stateEagerlyIn(viewModelScope, "")
 
@@ -245,7 +254,7 @@ class HomeViewModel @Inject constructor(
         updateBattery()
         observeHomeAlignment()
         observeLauncherFontScale()
-        observePhotoWallpaper()
+        observePhotoWallpaperAppearance()
         observeHomeDateFormatStyle()
         observeTemperatureUnit()
         observeHomeWidgetItemPreferences()
@@ -690,13 +699,20 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private fun observePhotoWallpaper() {
+    private fun observePhotoWallpaperAppearance() {
         observeFlow(
-                preferencesManager.launcherAppearanceFlow
-                        .map { it.usesPhotoWallpaper }
-                        .distinctUntilChanged()
-        ) { usesPhoto ->
-            _uiState.value = _uiState.value.copy(usesPhotoWallpaper = usesPhoto)
+                combine(
+                        preferencesManager.launcherAppearanceFlow,
+                        preferencesManager.photoWallpaperOutlineWidthDpFlow,
+                ) { appearance, outlineWidthDp ->
+                    appearance.usesPhotoWallpaper to outlineWidthDp
+                }
+        ) { (usesPhoto, outlineWidthDp) ->
+            _uiState.value =
+                    _uiState.value.copy(
+                            usesPhotoWallpaper = usesPhoto,
+                            photoWallpaperOutlineWidthDp = outlineWidthDp,
+                    )
         }
     }
 

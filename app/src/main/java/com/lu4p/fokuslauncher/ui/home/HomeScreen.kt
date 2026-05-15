@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
@@ -33,6 +34,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -68,6 +70,7 @@ import com.lu4p.fokuslauncher.ui.components.OutlinedText
 import com.lu4p.fokuslauncher.ui.components.SheetActionRow
 import com.lu4p.fokuslauncher.ui.components.WeatherWidget
 import com.lu4p.fokuslauncher.ui.theme.LocalLauncherFontScale
+import com.lu4p.fokuslauncher.ui.theme.LocalPhotoWallpaperOutlineWidthDp
 import com.lu4p.fokuslauncher.ui.util.OnResumeEffect
 import com.lu4p.fokuslauncher.ui.util.clickableNoRippleWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.combinedClickableWithSystemSound
@@ -89,6 +92,7 @@ fun HomeScreen(
     val favorites by viewModel.favorites.collectAsStateWithLifecycle()
     val rightSideShortcuts by viewModel.rightSideShortcuts.collectAsStateWithLifecycle()
     val allInstalledApps by viewModel.allInstalledApps.collectAsStateWithLifecycle()
+    val profileDisplayNameOverrides by viewModel.profileDisplayNameOverrides.collectAsStateWithLifecycle()
     val categoryOptions by viewModel.categoryOptions.collectAsStateWithLifecycle()
     val showWeatherAppPicker by viewModel.showWeatherAppPicker.collectAsStateWithLifecycle()
     val appMenuTarget by viewModel.appMenuTarget.collectAsStateWithLifecycle()
@@ -125,6 +129,7 @@ fun HomeScreen(
             favorites = favorites,
             installedApps = allInstalledApps,
             rightSideShortcuts = rightSideShortcuts,
+            profileDisplayNameOverrides = profileDisplayNameOverrides,
             onLabelClick = onFavoriteClick,
             onLabelLongPress = onFavoriteLongPress,
             onHomeScreenLongPress = onHomeLongPress,
@@ -193,6 +198,7 @@ fun HomeScreen(
             keyPrefix = "weather_app_pick",
             onSelect = { app -> viewModel.setPreferredWeatherApp(app.packageName) },
             onDismiss = { viewModel.closeWeatherAppPicker() },
+            profileDisplayNameOverrides = profileDisplayNameOverrides,
         )
     }
 }
@@ -205,6 +211,7 @@ fun HomeScreenContent(
     weatherUiState: HomeWeatherUiState,
     favorites: List<FavoriteApp>,
     rightSideShortcuts: List<HomeShortcut>,
+    profileDisplayNameOverrides: Map<String, String> = emptyMap(),
     onLabelClick: (FavoriteApp) -> Unit,
     onIconClick: (HomeShortcut) -> Unit,
     modifier: Modifier = Modifier,
@@ -220,11 +227,13 @@ fun HomeScreenContent(
 ) {
     val play = LocalSystemClickSound.current
     val noIndication = remember { MutableInteractionSource() }
+    val outlineWidthDp =
+            if (uiState.usesPhotoWallpaper) uiState.photoWallpaperOutlineWidthDp else 0f
     Box(
         modifier = modifier
-            .fillMaxSize()
-            .background(Color.Transparent)
-            .combinedClickable(
+                .fillMaxSize()
+                .background(Color.Transparent)
+                .combinedClickable(
                 indication = null,
                 interactionSource = noIndication,
                 onClick = { },
@@ -238,6 +247,7 @@ fun HomeScreenContent(
             )
             .testTag("home_screen")
     ) {
+        CompositionLocalProvider(LocalPhotoWallpaperOutlineWidthDp provides outlineWidthDp) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -264,6 +274,7 @@ fun HomeScreenContent(
                 favorites = favorites,
                 installedApps = installedApps,
                 rightSideShortcuts = rightSideShortcuts,
+                profileDisplayNameOverrides = profileDisplayNameOverrides,
                 launcherFontScale = uiState.launcherFontScale,
                 outlined = uiState.usesPhotoWallpaper,
                 onLabelClick = onLabelClick,
@@ -278,6 +289,7 @@ fun HomeScreenContent(
             isDefaultLauncher = uiState.isDefaultLauncher,
             onSetDefaultLauncher = onSetDefaultLauncher
         )
+        }
     }
 }
 
@@ -397,6 +409,7 @@ private fun HomeWidgetsSection(
 private fun FavoritesList(
     favorites: List<FavoriteApp>,
     installedApps: List<AppInfo>,
+    profileDisplayNameOverrides: Map<String, String>,
     horizontalAlignment: Alignment.Horizontal,
     onLabelClick: (FavoriteApp) -> Unit,
     onLabelLongPress: (FavoriteApp) -> Unit,
@@ -412,6 +425,7 @@ private fun FavoritesList(
             FavoriteAppItem(
                 fav = fav,
                 installedApps = installedApps,
+                profileDisplayNameOverrides = profileDisplayNameOverrides,
                 onClick = { onLabelClick(fav) },
                 onLongPress = { onLabelLongPress(fav) },
                 horizontalAlignment = horizontalAlignment,
@@ -454,6 +468,7 @@ private fun HomeFavoritesSection(
     favorites: List<FavoriteApp>,
     installedApps: List<AppInfo>,
     rightSideShortcuts: List<HomeShortcut>,
+    profileDisplayNameOverrides: Map<String, String>,
     launcherFontScale: Float,
     outlined: Boolean,
     onLabelClick: (FavoriteApp) -> Unit,
@@ -465,7 +480,13 @@ private fun HomeFavoritesSection(
     // Base dp only: [LauncherIcon] applies [launcherIconDp] so shortcut size tracks font scale once.
     val shortcutIconSize = 24.dp
     val shortcutTouchTargetSize = (48f * sc).dp
-    val shortcutIconSpacing = (8f * sc).dp
+    val backdropStrength =
+            if (outlined) {
+                (LocalPhotoWallpaperOutlineWidthDp.current / 100f).coerceIn(0f, 1f)
+            } else {
+                0f
+            }
+    val shortcutIconSpacing = ((8f + 16f * backdropStrength) * sc).dp
     val shortcutGutter = (24f * sc).dp
     val shortcutRowTopSpacer = (20f * sc).dp
 
@@ -480,6 +501,7 @@ private fun HomeFavoritesSection(
                 FavoritesList(
                     favorites = favorites,
                     installedApps = installedApps,
+                    profileDisplayNameOverrides = profileDisplayNameOverrides,
                     horizontalAlignment = Alignment.CenterHorizontally,
                     onLabelClick = onLabelClick,
                     onLabelLongPress = onLabelLongPress,
@@ -515,6 +537,7 @@ private fun HomeFavoritesSection(
                     FavoritesList(
                             favorites = favorites,
                             installedApps = installedApps,
+                            profileDisplayNameOverrides = profileDisplayNameOverrides,
                             horizontalAlignment = favAlign,
                             onLabelClick = onLabelClick,
                             onLabelLongPress = onLabelLongPress,
@@ -536,6 +559,7 @@ private fun HomeFavoritesSection(
                             touchTargetSize = shortcutTouchTargetSize,
                             iconAlignment = iconAlignment,
                             verticalSpacing = shortcutIconSpacing,
+                            modifier = Modifier.offset(y = (-8).dp),
                             outlined = outlined,
                     )
                 }
@@ -611,6 +635,7 @@ private fun BoxScope.HomeDefaultLauncherBanner(
 private fun FavoriteAppItem(
         fav: FavoriteApp,
         installedApps: List<AppInfo>,
+        profileDisplayNameOverrides: Map<String, String>,
         onClick: () -> Unit,
         onLongPress: () -> Unit,
         horizontalAlignment: Alignment.Horizontal,
@@ -618,13 +643,13 @@ private fun FavoriteAppItem(
 ) {
     val context = LocalContext.current
     val badge =
-            remember(fav, installedApps, context) {
+            remember(fav, installedApps, profileDisplayNameOverrides, context) {
                 val match =
                         installedApps.find {
                             it.packageName == fav.packageName &&
                                     appProfileKey(it.userHandle) == fav.profileKey
                         }
-                profileOriginLabelForFavorite(context, fav, match)
+                profileOriginLabelForFavorite(context, fav, match, profileDisplayNameOverrides)
             }
     Column(
             horizontalAlignment = horizontalAlignment,

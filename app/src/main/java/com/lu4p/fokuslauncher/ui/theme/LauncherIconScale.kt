@@ -13,6 +13,13 @@ import com.lu4p.fokuslauncher.data.model.LauncherFontScale
  */
 val LocalLauncherFontScale = compositionLocalOf { LauncherFontScale.DEFAULT }
 
+/**
+ * Uniform black shadow strength for home text and icons on busy backgrounds. **0** = use each call
+ * site's built-in contrast treatment; home sets this from preferences when an image wallpaper is
+ * active.
+ */
+val LocalPhotoWallpaperOutlineWidthDp = compositionLocalOf { 0f }
+
 @Composable
 @ReadOnlyComposable
 fun Dp.launcherIconDp(): Dp {

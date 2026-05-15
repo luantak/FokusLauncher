@@ -20,6 +20,8 @@ import com.lu4p.fokuslauncher.data.model.appProfileKey
 import com.lu4p.fokuslauncher.data.font.SystemFontFamiliesProvider
 import com.lu4p.fokuslauncher.data.model.LauncherFontScale
 import com.lu4p.fokuslauncher.data.model.LauncherVisualStyle
+import com.lu4p.fokuslauncher.data.model.PhotoWallpaperDrawerOverlayIntensity
+import com.lu4p.fokuslauncher.data.model.PhotoWallpaperOutlineWidthDp
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.repository.AppRepository
@@ -94,6 +96,10 @@ data class SettingsUiState(
         val launcherGlowEnabled: Boolean = false,
         /** True when the home wallpaper is not solid black (image or busy wallpaper). */
         val homeUsesPhotoWallpaper: Boolean = false,
+        /** Uniform outline stroke in dp on image wallpaper; 0 = launcher defaults per widget. */
+        val photoWallpaperOutlineWidthDp: Float = PhotoWallpaperOutlineWidthDp.DEFAULT,
+        /** Drawer scrim alpha multiplier; only applied when [homeUsesPhotoWallpaper]. */
+        val photoWallpaperDrawerOverlayIntensity: Float = PhotoWallpaperDrawerOverlayIntensity.DEFAULT,
         /** BCP-47 tag; empty = system default. */
         val appLocaleTag: String = "",
         val allowLandscapeRotation: Boolean = false,
@@ -103,6 +109,8 @@ data class SettingsUiState(
                 PreferencesManager.DEFAULT_LONG_LOCK_RETURN_HOME_THRESHOLD_MINUTES,
         val allApps: List<AppInfo> = emptyList(),
         val allShortcutActions: List<AppShortcutAction> = emptyList(),
+        /** [appProfileKey] → user-defined profile section title (drawer, badges, settings). */
+        val profileDisplayNameOverrides: Map<String, String> = emptyMap(),
 )
 
 data class HiddenAppInfo(
@@ -263,17 +271,26 @@ constructor(
                     }
             val lookPrefsFlow =
                     combine(
-                            fontVisualFlow,
+                            combine(
+                                    fontVisualFlow,
+                                    preferencesManager.photoWallpaperOutlineWidthDpFlow,
+                                    preferencesManager.photoWallpaperDrawerOverlayIntensityFlow,
+                            ) { fontVisual, outlineWidthDp, drawerOverlayIntensity ->
+                                Triple(fontVisual, outlineWidthDp, drawerOverlayIntensity)
+                            },
                             preferencesManager.appLocaleTagFlow,
                             preferencesManager.homeAlignmentFlow,
                             preferencesManager.allowLandscapeRotationFlow,
-                    ) { fontVisual, localeTag, homeAlignment, allowLandscape ->
+                    ) { fontOutlineDrawer, localeTag, homeAlignment, allowLandscape ->
+                        val (fontVisual, outlineWidthDp, drawerOverlayIntensity) = fontOutlineDrawer
                         LookPrefs(
                                 launcherFontFamilyName = fontVisual.family,
                                 launcherFontScale = fontVisual.scale,
                                 launcherVisualStyle = fontVisual.visualStyle,
                                 launcherGlowEnabled = fontVisual.glowEnabled,
                                 homeUsesPhotoWallpaper = fontVisual.usesPhotoWallpaper,
+                                photoWallpaperOutlineWidthDp = outlineWidthDp,
+                                photoWallpaperDrawerOverlayIntensity = drawerOverlayIntensity,
                                 appLocaleTag = localeTag,
                                 homeAlignment = homeAlignment,
                                 allowLandscapeRotation = allowLandscape,
@@ -302,10 +319,12 @@ constructor(
                             lockRail ->
                         Triple(drawer, look, lockRail)
                     }
-            combine(categoryStateFlow, homeWidgetItemsFlow, drawerLookLockFlow) {
+            combine(categoryStateFlow, homeWidgetItemsFlow, drawerLookLockFlow, preferencesManager.profileDisplayNameOverridesFlow) {
                     left,
                     homeWidgetItems,
-                    drawerLookLock ->
+                    drawerLookLock,
+                    profileDisplayNameOverrides,
+                    ->
                 val (drawer, look, lockRail) = drawerLookLock
                 val privateSpaceUnlocked = privateSpaceManager.isPrivateSpaceUnlocked()
                 val privateProfileKey =
@@ -346,6 +365,7 @@ constructor(
                                         hiddenLabels,
                                         privateSpaceUnlocked,
                                         privateProfileKey,
+                                        profileDisplayNameOverrides,
                                 ),
                         renamedApps =
                                 renamedInfosForSettings(
@@ -353,6 +373,7 @@ constructor(
                                         hiddenLabels,
                                         privateSpaceUnlocked,
                                         privateProfileKey,
+                                        profileDisplayNameOverrides,
                                 ),
                         appCategories = left.appCategories,
                         categoryDefinitions = left.categoryDefinitions,
@@ -383,6 +404,9 @@ constructor(
                         launcherVisualStyle = look.launcherVisualStyle,
                         launcherGlowEnabled = look.launcherGlowEnabled,
                         homeUsesPhotoWallpaper = look.homeUsesPhotoWallpaper,
+                        photoWallpaperOutlineWidthDp = look.photoWallpaperOutlineWidthDp,
+                        photoWallpaperDrawerOverlayIntensity =
+                                look.photoWallpaperDrawerOverlayIntensity,
                         appLocaleTag = look.appLocaleTag,
                         allowLandscapeRotation = look.allowLandscapeRotation,
                         doubleTapEmptyLock = lockRail.doubleTapEmptyLock,
@@ -391,6 +415,7 @@ constructor(
                                 lockRail.longLockReturnHomeThresholdMinutes,
                         allApps = installedApps,
                         allShortcutActions = allShortcutActions,
+                        profileDisplayNameOverrides = profileDisplayNameOverrides,
                 )
             }.collectLatest { _uiState.value = it }
         }
@@ -449,6 +474,8 @@ constructor(
             val launcherVisualStyle: LauncherVisualStyle,
             val launcherGlowEnabled: Boolean,
             val homeUsesPhotoWallpaper: Boolean,
+            val photoWallpaperOutlineWidthDp: Float,
+            val photoWallpaperDrawerOverlayIntensity: Float,
             val appLocaleTag: String,
             val homeAlignment: HomeAlignment,
             val allowLandscapeRotation: Boolean,
@@ -467,6 +494,7 @@ constructor(
             hiddenLabels: Map<String, AppInfo>,
             privateSpaceUnlocked: Boolean,
             privateProfileKey: String?,
+            profileDisplayNameOverrides: Map<String, String>,
             packageName: (T) -> String,
             profileKey: (T) -> String,
             transform: (T, AppInfo?, String?) -> R,
@@ -481,7 +509,12 @@ constructor(
                         transform(
                                 entity,
                                 matchingApp,
-                                profileLabelForSettings(prof, matchingApp, privateProfileKey),
+                                profileLabelForSettings(
+                                        prof,
+                                        matchingApp,
+                                        privateProfileKey,
+                                        profileDisplayNameOverrides,
+                                ),
                         )
             }
 
@@ -490,12 +523,14 @@ constructor(
             hiddenLabels: Map<String, AppInfo>,
             privateSpaceUnlocked: Boolean,
             privateProfileKey: String?,
+            profileDisplayNameOverrides: Map<String, String>,
     ): List<HiddenAppInfo> =
             mapEntitiesForSettings(
                     hiddenApps,
                     hiddenLabels,
                     privateSpaceUnlocked,
                     privateProfileKey,
+                    profileDisplayNameOverrides,
                     packageName = { it.packageName },
                     profileKey = { it.profileKey },
             ) { hiddenApp, matchingApp, profileLabel ->
@@ -519,12 +554,14 @@ constructor(
             hiddenLabels: Map<String, AppInfo>,
             privateSpaceUnlocked: Boolean,
             privateProfileKey: String?,
+            profileDisplayNameOverrides: Map<String, String>,
     ): List<RenamedAppInfo> =
             mapEntitiesForSettings(
                     renamedApps,
                     hiddenLabels,
                     privateSpaceUnlocked,
                     privateProfileKey,
+                    profileDisplayNameOverrides,
                     packageName = { it.packageName },
                     profileKey = { it.profileKey },
             ) { renamedApp, matchingApp, profileLabel ->
@@ -546,8 +583,11 @@ constructor(
     private fun profileLabelForSettings(
             profileKey: String,
             matchingApp: AppInfo?,
-            privateProfileKey: String?
+            privateProfileKey: String?,
+            profileDisplayNameOverrides: Map<String, String>,
     ): String? {
+        val custom = profileDisplayNameOverrides[profileKey]?.trim()
+        if (!custom.isNullOrEmpty()) return custom
         matchingApp?.let { app ->
             val userHandle = app.userHandle
             if (userHandle != null && privateSpaceManager.isPrivateSpaceProfile(userHandle)) {
@@ -556,7 +596,7 @@ constructor(
             if (isDrawerWorkProfileApp(context, app)) {
                 return categoryChipDisplayLabel(context, ReservedCategoryNames.WORK)
             }
-            return profileOriginLabelForApp(context, app)
+            return profileOriginLabelForApp(context, app, profileDisplayNameOverrides)
         }
         if (profileKey == privateProfileKey) {
             return categoryChipDisplayLabel(context, ReservedCategoryNames.PRIVATE)
@@ -592,6 +632,10 @@ constructor(
             preferencesManager.clearDrawerCategoryIcon(name)
             appRepository.deleteCategory(name)
         }
+    }
+
+    fun setProfileDisplayName(profileKey: String, displayName: String) {
+        viewModelScope.launch { preferencesManager.setProfileDisplayName(profileKey, displayName) }
     }
 
     fun setAppCategory(packageName: String, profileKey: String, category: String) {
@@ -721,6 +765,12 @@ constructor(
             preferencesManager.setLauncherGlowEnabled(enabled)
         }
     }
+
+    fun setPhotoWallpaperOutlineWidthDp(widthDp: Float) =
+            launchPreferences { setPhotoWallpaperOutlineWidthDp(widthDp) }
+
+    fun setPhotoWallpaperDrawerOverlayIntensity(intensity: Float) =
+            launchPreferences { setPhotoWallpaperDrawerOverlayIntensity(intensity) }
 
     fun setAppLocaleTag(tag: String) {
         viewModelScope.launch {

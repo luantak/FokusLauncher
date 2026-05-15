@@ -17,6 +17,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.model.WeatherData
+import com.lu4p.fokuslauncher.ui.theme.LocalPhotoWallpaperOutlineWidthDp
 
 /**
  * Compact weather widget showing temperature and a Material Symbols weather glyph.
@@ -38,6 +39,8 @@ fun WeatherWidget(
             (if (prominent) MaterialTheme.typography.bodyLarge else MaterialTheme.typography.titleMedium)
                     .copy(fontWeight = FontWeight.SemiBold)
     val textColor = MaterialTheme.colorScheme.onBackground
+    val backdropStrength = LocalPhotoWallpaperOutlineWidthDp.current
+    val useSharedBackdrop = outlined && backdropStrength > 0f
     // Slightly larger than the temperature text so the symbol reads clearly at a glance.
     val iconSize = with(LocalDensity.current) { (tempStyle.fontSize * 1.22f).toDp() }
     val iconCode = weather?.iconCode.orEmpty()
@@ -45,6 +48,19 @@ fun WeatherWidget(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .clickableNoRippleWithSystemSound(onClick = onClick)
+            .then(
+                    if (useSharedBackdrop) {
+                        Modifier.photoBackdropPill(
+                                strength = backdropStrength,
+                                horizontalPaddingMin = 5.dp,
+                                horizontalPaddingMax = 18.dp,
+                                verticalPaddingMin = 2.dp,
+                                verticalPaddingMax = 8.dp,
+                        )
+                    } else {
+                        Modifier
+                    }
+            )
             .testTag("weather_widget")
     ) {
         LauncherIcon(
@@ -52,10 +68,10 @@ fun WeatherWidget(
                 contentDescription = null,
                 iconSize = iconSize,
                 tint = textColor,
-                outlined = outlined,
+                outlined = outlined && !useSharedBackdrop,
         )
         Spacer(modifier = Modifier.width(if (prominent) 8.dp else 4.dp))
-        if (outlined) {
+        if (outlined && !useSharedBackdrop) {
             OutlinedText(
                     text = temperatureText,
                     style = tempStyle,

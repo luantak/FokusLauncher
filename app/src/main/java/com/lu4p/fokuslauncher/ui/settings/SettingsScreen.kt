@@ -83,6 +83,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.background
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.model.LauncherFontScale
+import com.lu4p.fokuslauncher.data.model.PhotoWallpaperDrawerOverlayIntensity
+import com.lu4p.fokuslauncher.data.model.PhotoWallpaperOutlineWidthDp
 import java.text.Collator
 import java.util.Locale
 import androidx.core.app.ActivityCompat
@@ -244,6 +246,7 @@ fun SettingsScreen(
         onOpenDeviceControlSettings: () -> Unit = {},
         onEditCategories: () -> Unit = {},
         onDrawerDotSearchSettings: () -> Unit = {},
+        onOpenProfileNamesSettings: () -> Unit = {},
         onOpenHomeWidgetsSettings: () -> Unit = {},
         backgroundScrim: Color = FokusBackdrop.ScrimColorWithoutBlur
 ) {
@@ -294,6 +297,7 @@ fun SettingsScreen(
                 onEditRightShortcuts = onEditRightShortcuts,
                 onEditCategories = onEditCategories,
                 onDrawerDotSearchSettings = onDrawerDotSearchSettings,
+                onOpenProfileNamesSettings = onOpenProfileNamesSettings,
                 onShowAppPicker = { showAppPickerFor.value = it },
                 onShowResetConfirm = { showResetConfirm.value = true },
         )
@@ -333,6 +337,7 @@ private fun SettingsScreenContent(
         onEditRightShortcuts: () -> Unit,
         onEditCategories: () -> Unit,
         onDrawerDotSearchSettings: () -> Unit,
+        onOpenProfileNamesSettings: () -> Unit,
         onShowAppPicker: (String) -> Unit,
         onShowResetConfirm: () -> Unit,
 ) {
@@ -386,6 +391,11 @@ private fun SettingsScreenContent(
                             R.string.settings_dot_search_title,
                             stringResource(R.string.settings_dot_search_subtitle),
                             onDrawerDotSearchSettings,
+                    ),
+                    SubpageNavRow(
+                            R.string.settings_profile_names_title,
+                            stringResource(R.string.settings_profile_names_subtitle),
+                            onOpenProfileNamesSettings,
                     ),
             )
     LazyColumn(modifier = Modifier.fillMaxSize()) {
@@ -467,6 +477,25 @@ private fun SettingsScreenContent(
                     verticalPadding = 14.dp,
                     onClick = onSetBlackWallpaper,
             )
+        }
+        if (uiState.homeUsesPhotoWallpaper) {
+            item {
+                SectionHeader(
+                        stringResource(R.string.settings_section_image_wallpaper_accessibility)
+                )
+            }
+            item {
+                PhotoWallpaperOutlineWidthSlider(
+                        currentWidthDp = uiState.photoWallpaperOutlineWidthDp,
+                        onWidthDpChange = viewModel::setPhotoWallpaperOutlineWidthDp,
+                )
+            }
+            item {
+                PhotoWallpaperDrawerOverlaySlider(
+                        currentIntensity = uiState.photoWallpaperDrawerOverlayIntensity,
+                        onIntensityChange = viewModel::setPhotoWallpaperDrawerOverlayIntensity,
+                )
+            }
         }
         item { SettingsDivider() }
 
@@ -744,6 +773,7 @@ private fun SettingsScreenDialogs(
                         },
                         onDismiss = onDismissPicker,
                         includeWidgetPageTarget = true,
+                        profileDisplayNameOverrides = uiState.profileDisplayNameOverrides,
                 )
             }
             else -> onDismissPicker()
@@ -880,6 +910,7 @@ fun HomeWidgetsSettingsScreen(
                     showAppPickerFor.value = null
                 },
                 onDismiss = { showAppPickerFor.value = null },
+                profileDisplayNameOverrides = uiState.profileDisplayNameOverrides,
         )
     }
 }
@@ -1233,6 +1264,100 @@ private fun LauncherFontSizeSlider(
                 },
                 valueRange = LauncherFontScale.MIN..LauncherFontScale.MAX,
                 steps = LauncherFontScale.SLIDER_STEPS,
+                modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PhotoWallpaperOutlineWidthSlider(
+        currentWidthDp: Float,
+        onWidthDpChange: (Float) -> Unit,
+) {
+    val synced = PhotoWallpaperOutlineWidthDp.snapToStep(currentWidthDp)
+    var pending by remember { mutableFloatStateOf(synced) }
+    LaunchedEffect(synced) { pending = synced }
+
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp)) {
+        Text(
+                text = stringResource(R.string.settings_photo_outline_strength_label),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onBackground,
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+                text = stringResource(R.string.settings_photo_outline_strength_subtitle),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.secondary,
+        )
+        Spacer(Modifier.height(12.dp))
+        Slider(
+                value = pending,
+                onValueChange = { raw ->
+                    pending = raw.coerceIn(PhotoWallpaperOutlineWidthDp.MIN, PhotoWallpaperOutlineWidthDp.MAX)
+                },
+                onValueChangeFinished = {
+                    val v = PhotoWallpaperOutlineWidthDp.snapToStep(pending)
+                    if (v != synced) {
+                        onWidthDpChange(v)
+                    }
+                },
+                valueRange = PhotoWallpaperOutlineWidthDp.MIN..PhotoWallpaperOutlineWidthDp.MAX,
+                steps = PhotoWallpaperOutlineWidthDp.SLIDER_STEPS,
+                modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PhotoWallpaperDrawerOverlaySlider(
+        currentIntensity: Float,
+        onIntensityChange: (Float) -> Unit,
+) {
+    val synced = PhotoWallpaperDrawerOverlayIntensity.snapToStep(currentIntensity)
+    var pending by remember { mutableFloatStateOf(synced) }
+    LaunchedEffect(synced) { pending = synced }
+
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp)) {
+        Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(
+                    text = stringResource(R.string.settings_photo_drawer_overlay_label),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.weight(1f),
+            )
+            Text(
+                    text = String.format(Locale.US, "%.1fx", pending),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.primary,
+            )
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(
+                text = stringResource(R.string.settings_photo_drawer_overlay_subtitle),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.secondary,
+        )
+        Spacer(Modifier.height(12.dp))
+        Slider(
+                value = pending,
+                onValueChange = { raw ->
+                    pending = PhotoWallpaperDrawerOverlayIntensity.snapToStep(raw)
+                },
+                onValueChangeFinished = {
+                    val v = PhotoWallpaperDrawerOverlayIntensity.snapToStep(pending)
+                    if (v != synced) {
+                        onIntensityChange(v)
+                    }
+                },
+                valueRange =
+                        PhotoWallpaperDrawerOverlayIntensity.MIN..PhotoWallpaperDrawerOverlayIntensity.MAX,
+                steps = PhotoWallpaperDrawerOverlayIntensity.SLIDER_STEPS,
                 modifier = Modifier.fillMaxWidth(),
         )
     }
