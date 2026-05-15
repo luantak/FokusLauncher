@@ -65,6 +65,16 @@
         </provider>
 
         <activity
+            android:name=".ConfirmPinShortcutActivity"
+            android:exported="true"
+            android:theme="@style/Theme.FokusLauncher">
+            <intent-filter>
+                <action android:name="android.content.pm.action.CONFIRM_PIN_SHORTCUT" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <activity
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
