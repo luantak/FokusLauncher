@@ -119,6 +119,7 @@
     <string name="home_alignment_subtitle">Position of app labels and shortcut icons</string>
     <string name="home_alignment_left">Left</string>
     <string name="home_alignment_center">Center</string>
+    <string name="home_alignment_middle">Middle</string>
     <string name="home_alignment_right">Right</string>
 
     <!-- Edit home / shortcuts screens -->
