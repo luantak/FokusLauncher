@@ -334,4 +334,6 @@
     <string name="settings_dot_search_search_mode_label">Deostinazione della ricerca</string>
     <string name="settings_drawer_scroll_to_top_auto_keyboard_subtitle">Apri automaticamente tastiera e ricerca quando scorri fino in cima alla lista delle app</string>
     <string name="settings_drawer_scroll_to_top_auto_keyboard">Tastiera scorrendo in cima</string>
+    <string name="edit_home_section_all_apps" translatable="false"></string>
+    <string name="app_name" translatable="false"></string>
 </resources>
