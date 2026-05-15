@@ -245,7 +245,7 @@
     <string name="settings_dot_search_default_label">Domyślna aplikacja wyszukiwania</string>
     <string name="settings_dot_search_default_system">Domyślna systemu (przeglądarka)</string>
     <string name="settings_dot_search_add_shortcut_url">Szablon URL</string>
-    <string name="settings_dot_search_url_template_help">Możesz użyć linku HTTPS wyszukiwania lub precyzyjnego linku aplikacji (na przykład intent://). Wstaw %1$s gdzie powinny być wyszukiwanie słowa — launcher zamieni to na to co wpisałeś po `. wyszukanie` lub `.x wyszukanie`. Przykład: https://example.com/search?q=%1$s</string>
+    <string name="settings_dot_search_url_template_help">Możesz użyć linku HTTPS wyszukiwania lub precyzyjnego linku aplikacji (na przykład intent://). Wstaw %1$s gdzie powinno być zapytanie — launcher zamieni to na to co wpisałeś po `. zapytanie` lub `.x zapytanie`. Przykład: https://example.com/search?q=%1$s</string>
     <string name="settings_dot_search_alias_taken">Ten znak jest już w użyciu.</string>
     <string name="settings_dot_search_pick_alias_app">Wybierz aplikację dla tego skrótu</string>
     <string name="settings_dot_search_add_shortcut_title">Dodaj skrót</string>
@@ -253,16 +253,16 @@
     <string name="settings_dot_search_aliases_section">Skróty literowe</string>
     <string name="settings_dot_search_invalid_alias">Wpisz jedną małą literę (a–z).</string>
     <string name="cd_open_subpage">Otwiera inny ekran</string>
-    <string name="settings_dot_search_title">Szukanie kropką</string>
-    <string name="settings_dot_search_url_template_error">Dodaj %1$s tam gdzie powinien być wyszukiwany tekst (przykład: https://example.com/search?q=%1$s).</string>
+    <string name="settings_dot_search_title">Szukanie kropką &amp; skróty</string>
+    <string name="settings_dot_search_url_template_error">Dodaj %1$s tam gdzie powinno być zapytanie (przykład: https://example.com/search?q=%1$s).</string>
     <string name="settings_dot_search_alias_dialog_title">Litera skrótu</string>
     <string name="cd_remove_alias">Usuń skrót</string>
     <string name="settings_dot_search_url_template">Szablon URL</string>
-    <string name="settings_dot_search_explanation">W szufladzie aplikacji wpisz kropkę i spację, a następnie wpisz wyszukiwane słowa. Dla skrótu użyj kropki, jednej małej litery, spacji i wtedy wyszukaj (na przykład `.a kawa`). Lista aplikacji zawiera tylko aplikacje które udostępniają wyszukiwanie w internecie lub standardową funkcję wyszukiwania w aplikacji dla ich pakietu. Dla innych stron lub aplikacji dodaj link HTTPS lub szablon precyzyjnego linku i wstaw %1$s gdzie powinien być wyszukiwany tekst (na przykład https://example.com/search?q=%1$s).</string>
-    <string name="settings_dot_search_subtitle">Wpisz `. terminy` lub`.&lt;mała litera&gt; terminy` w wyszukiwarce szuflady</string>
-    <string name="settings_dot_search_add_shortcut_app">Aplikacja (intencja wyszukiwania)</string>
-    <string name="settings_dot_search_screen_title">Wyszukiwanie kropką w szufladzie</string>
-    <string name="settings_dot_search_pick_default_app">Wybierz aplikację dla `. wyszukanie`</string>
+    <string name="settings_dot_search_explanation">Używaj wyszukiwania kropką dla zapytań i skrótów do natychmiastowych akcji. Wpisz `. zapytanie` dla domyślnego celu wyszukiwania. Dodaj cel wyszukiwania lub szablon URL dla `.x zapytanie`lub dodaj cel otwarcia skrótu dla `.x`. Szablony URL używają %1$s w miejscu dla zapytania (np. https://example.com/search?q=%1$s).</string>
+    <string name="settings_dot_search_subtitle">Wpisz `. zapytanie ` aby wyszukiwać, `.x zapytanie` dla celu wyszukiwania, lub `.x` dla natychmiastowego skrótu</string>
+    <string name="settings_dot_search_add_shortcut_app">Otwórz cel skrótu</string>
+    <string name="settings_dot_search_screen_title">Wyszukiwanie kropką w szufladzie &amp; skróty</string>
+    <string name="settings_dot_search_pick_default_app">Wybierz aplikację dla `. zapytanie`</string>
     <string name="settings_dot_search_url_template_dialog_title">Szablon URL wyszukiwania</string>
     <string name="drawer_reorder">Zmień kolejność</string>
     <string name="drawer_reorder_done">Gotowe</string>
@@ -333,4 +333,27 @@
     <string name="settings_temperature_unit_fahrenheit">Fahrenheit (°F)</string>
     <string name="no_widgets">Brak widżetów</string>
     <string name="action_set_category">Ustaw kategorię</string>
+    <string name="settings_section_image_wallpaper_accessibility">Tapeta z obrazem — czytelność</string>
+    <string name="settings_photo_outline_strength_label">Tło tekstu i ikon</string>
+    <string name="settings_photo_outline_strength_subtitle">Półprzezroczyste czarne kształty tabletki za zegarem, ulubionymi, widżetami na głównym ekranie i ikonami skrótów na obrazie tła.</string>
+    <string name="settings_photo_outline_width_dp_default">Domyślna</string>
+    <string name="settings_photo_outline_width_dp_value">Poziom %1$d</string>
+    <string name="settings_photo_drawer_overlay_label">Poziom przyciemnienia szuflady aplikacji</string>
+    <string name="settings_photo_drawer_overlay_subtitle">Zwiększa jak bardzo przyciemniany jest ekran za szufladą aplikacji.</string>
+    <string name="settings_profile_names_title">Nazwy profili</string>
+    <string name="settings_profile_names_subtitle">Zmień nazwy osobistych, służbowych i innych sekcji profili w szufladzie i na ekranie głównym</string>
+    <string name="settings_profile_names_help">Pozostaw pole puste i kliknij Zapisz aby przywrócić domyślną nazwę. Nazwy mają zastosowanie do nagłówków w szufladzie, wybranych grup oraz oznaczeń obok ulubionych.</string>
+    <string name="settings_profile_names_default_label">Domyślna: %1$s</string>
+    <string name="settings_profile_names_field_label">Wyświetlana nazwa</string>
+    <string name="settings_profile_names_save">Zapisz</string>
+    <string name="settings_profile_names_reset">Reset</string>
+    <string name="settings_dot_search_add_shortcut_help">Wpisz `.x`aby otworzyć aplikację, akcję telefonu lub skrót launchera od razu.</string>
+    <string name="settings_dot_search_add_search_target_app">Cel wyszukiwania</string>
+    <string name="settings_dot_search_add_search_target_help">Wpisz `.x zapytanie` aby wysłać zapytanie do aplikacji która udostępnia wyszukiwanie.</string>
+    <string name="settings_dot_search_add_url_template_help">Wpisz `.x zapytanie` aby otworzyć adres URL lub link precyzyjny z wstawionym zapytaniem.</string>
+    <string name="settings_dot_search_pick_alias_search_app">Wybierz aplikację wyszukiwania dla tego skrótu</string>
+    <string name="settings_dot_search_shortcut_mode_label">Otwiera się od razu</string>
+    <string name="settings_dot_search_search_mode_label">Cel wyszukiwania</string>
+    <string name="settings_drawer_scroll_to_top_auto_keyboard">Otwarcie klawiatury po dojechaniu do góry</string>
+    <string name="settings_drawer_scroll_to_top_auto_keyboard_subtitle">Automatycznie otwórz klawiaturę i wyszukiwarkę po dojechaniu na górę listy aplikacji</string>
 </resources>
