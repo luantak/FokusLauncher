@@ -1,0 +1,3 @@
+Pin Progressive Web Apps to your home screen with full launcher support.
+
+Updated Catalan, French, Italian, and Polish via Weblate. Fixed Indonesian. Thanks to everyone who contributed.
