@@ -220,17 +220,17 @@
     <string name="settings_drawer_app_sort_alphabetical"></string>
     <string name="settings_drawer_app_sort_most_opened"></string>
     <string name="settings_drawer_app_sort_custom"></string>
-    <string name="settings_dot_search_title">Pencarian titik</string>
-    <string name="settings_dot_search_subtitle">Ketik `. kata kunci` atau `.&lt;huruf kecil&gt; kata kunci` di bilah pencarian laci</string>
-    <string name="settings_dot_search_screen_title">Pencarian titik laci</string>
-    <string name="settings_dot_search_explanation">Di laci aplikasi, ketik titik dan spasi, lalu kata pencarian Anda. Untuk pintasan, gunakan titik, satu huruf kecil, spasi, lalu pencarian Anda (misalnya `.a kopi`). Daftar aplikasi hanya mencakup aplikasi yang menyediakan pencarian web atau pencarian dalam aplikasi standar untuk paketnya. Untuk situs atau aplikasi lain, tambahkan URL HTTPS atau templat deep link dan letakkan %1$s di tempat teks pencarian berada (misalnya https://contoh.com/cari?q=%1$s).</string>
+    <string name="settings_dot_search_title"></string>
+    <string name="settings_dot_search_subtitle"></string>
+    <string name="settings_dot_search_screen_title"></string>
+    <string name="settings_dot_search_explanation"></string>
     <string name="settings_dot_search_default_label"></string>
     <string name="settings_dot_search_url_template"></string>
     <string name="settings_dot_search_url_template_dialog_title"></string>
-    <string name="settings_dot_search_url_template_help">Anda dapat menggunakan tautan pencarian HTTPS atau deep link aplikasi (misalnya intent://). Letakkan %1$s di tempat kata pencarian harus berada—peluncur akan menggantinya dengan apa yang Anda ketik setelah `. cari` atau `.x cari`. Contoh: https://contoh.com/cari?q=%1$s</string>
-    <string name="settings_dot_search_url_template_error">Sertakan %1$s di tempat teks pencarian berada (contoh: https://contoh.com/cari?q=%1$s).</string>
+    <string name="settings_dot_search_url_template_help"></string>
+    <string name="settings_dot_search_url_template_error"></string>
     <string name="settings_dot_search_add_shortcut_title"></string>
-    <string name="settings_dot_search_add_shortcut_app">Aplikasi (intent pencarian)</string>
+    <string name="settings_dot_search_add_shortcut_app"></string>
     <string name="settings_dot_search_add_shortcut_url"></string>
     <string name="settings_dot_search_url_template_for_alias"></string>
     <string name="settings_dot_search_no_web_search_apps"></string>
@@ -240,7 +240,7 @@
     <string name="settings_dot_search_alias_dialog_title"></string>
     <string name="settings_dot_search_invalid_alias"></string>
     <string name="settings_dot_search_alias_taken"></string>
-    <string name="settings_dot_search_pick_default_app">Pilih aplikasi untuk `. cari`</string>
+    <string name="settings_dot_search_pick_default_app"></string>
     <string name="settings_dot_search_pick_alias_app"></string>
     <string name="cd_remove_alias"></string>
     <string name="settings_section_hidden_apps"></string>
@@ -296,4 +296,29 @@
     <string name="onboarding_swipe_not_set"></string>
     <string name="onboarding_tips_title"></string>
     <string name="onboarding_tip_swipe"></string>
+    <string name="settings_profile_names_subtitle"></string>
+    <string name="settings_section_image_wallpaper_accessibility"></string>
+    <string name="settings_profile_names_title"></string>
+    <string name="settings_photo_drawer_overlay_label"></string>
+    <string name="edit_home_section_all_apps" translatable="false"></string>
+    <string name="settings_profile_names_default_label"></string>
+    <string name="settings_drawer_scroll_to_top_auto_keyboard"></string>
+    <string name="settings_profile_names_help"></string>
+    <string name="settings_profile_names_field_label"></string>
+    <string name="settings_drawer_scroll_to_top_auto_keyboard_subtitle"></string>
+    <string name="settings_photo_outline_strength_subtitle"></string>
+    <string name="settings_dot_search_add_search_target_help"></string>
+    <string name="settings_photo_outline_width_dp_default"></string>
+    <string name="settings_dot_search_add_search_target_app"></string>
+    <string name="settings_dot_search_search_mode_label"></string>
+    <string name="settings_profile_names_reset"></string>
+    <string name="settings_dot_search_shortcut_mode_label"></string>
+    <string name="settings_photo_outline_width_dp_value"></string>
+    <string name="settings_photo_outline_strength_label"></string>
+    <string name="settings_dot_search_pick_alias_search_app"></string>
+    <string name="settings_profile_names_save"></string>
+    <string name="settings_dot_search_add_url_template_help"></string>
+    <string name="settings_dot_search_add_shortcut_help"></string>
+    <string name="app_name" translatable="false"></string>
+    <string name="settings_photo_drawer_overlay_subtitle"></string>
 </resources>
