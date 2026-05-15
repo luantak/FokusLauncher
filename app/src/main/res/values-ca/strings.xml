@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="drawer_filter_all_apps">Categories especials del menú: les claus en anglès es troben a ReservedCategoryNames.kt; tradueix aquestes per a la interfície d\'usuari.</string>
+    <!-- Categories especials del menú: les claus en anglès es troben a ReservedCategoryNames.kt; tradueix aquestes per a la interfície d'usuari. -->
+    <string name="drawer_filter_all_apps">Totes</string>
     <string name="drawer_filter_private">Privat</string>
     <string name="drawer_filter_work">Feina</string>
     <string name="drawer_filter_uncategorized">Sense categoria</string>
@@ -17,7 +18,7 @@
     <string name="drawer_section_private_space">Espai Privat</string>
     <string name="search">Cerca</string>
     <string name="search_apps">Cerca aplicacions</string>
-    <string name="search_apps_and_actions">Carca aplicacions i accions</string>
+    <string name="search_apps_and_actions">Cerca aplicacions i accions</string>
     <string name="action_back">Torna</string>
     <string name="action_done">Fet</string>
     <string name="action_cancel">Cancel·la</string>
@@ -29,7 +30,7 @@
     <string name="action_reset">Restableix</string>
     <string name="cd_drag_to_reorder">Arrossega per reordenar</string>
     <string name="cd_change_icon">Canvia la icona</string>
-    <string name="cd_shortcut_icon">Icona de dreçera</string>
+    <string name="cd_shortcut_icon">Icona de drecera</string>
     <string name="cd_edit_home_screen">Edita la pantalla d\'inici</string>
     <string name="cd_settings">Configuració</string>
     <string name="cd_menu">Menú</string>

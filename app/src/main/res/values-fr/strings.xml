@@ -86,7 +86,7 @@
     <string name="add_widget">Ajouter un widget</string>
     <string name="manage_widgets">Gérer les widgets</string>
     <string name="remove_widget">Retirer un widget</string>
-    <string name="resize_widget">Redimensionner un widger</string>
+    <string name="resize_widget">Redimensionner un widget</string>
     <string name="no_widgets">Aucun widget</string>
     <string name="widget_bind_failed">Impossible d\'ajouter un widget</string>
     <string name="widget_configure_failed">Le paramétrage du widget est annulé</string>
@@ -114,7 +114,7 @@
     <string name="icon_cat_maps">Cartes</string>
     <string name="icon_cat_travel">Voyage</string>
     <string name="icon_cat_transit">Déplacement</string>
-    <string name="icon_cat_activities">Activitées</string>
+    <string name="icon_cat_activities">Activités</string>
     <string name="icon_cat_business">Business</string>
     <string name="icon_cat_hardware">Hardware</string>
     <string name="icon_cat_android">Android</string>
