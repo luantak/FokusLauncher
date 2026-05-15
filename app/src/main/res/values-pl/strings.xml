@@ -332,4 +332,5 @@
     <string name="settings_temperature_unit_celsius">Celsjusz (°C)</string>
     <string name="settings_temperature_unit_fahrenheit">Fahrenheit (°F)</string>
     <string name="no_widgets">Brak widżetów</string>
+    <string name="action_set_category">Ustaw kategorię</string>
 </resources>
