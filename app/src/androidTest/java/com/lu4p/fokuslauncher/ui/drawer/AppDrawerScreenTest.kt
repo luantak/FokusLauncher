@@ -139,6 +139,28 @@ class AppDrawerScreenTest {
         composeTestRule.onNodeWithContentDescription("All apps").assertIsDisplayed()
         composeTestRule.onNodeWithContentDescription("Productivity").assertIsDisplayed()
         composeTestRule.onNodeWithTag("drawer_search_icon").assertIsDisplayed()
+        composeTestRule.onAllNodesWithTag("search_bar").fetchSemanticsNodes().also {
+            assertEquals(0, it.size)
+        }
+    }
+
+    @Test
+    fun appDrawer_sidebarSearch_showsSearchBarAfterIconTap() {
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                AppDrawerContent(
+                    uiState = singleProfileState(testApps),
+                    onSearchQueryChanged = {},
+                    onCategorySelected = {},
+                    onAppClick = {},
+                    onSettingsClick = {},
+                    useSidebarCategoryDrawer = true
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("drawer_search_icon").performClick()
+        composeTestRule.onNodeWithTag("search_bar").assertIsDisplayed()
     }
 
     @Test

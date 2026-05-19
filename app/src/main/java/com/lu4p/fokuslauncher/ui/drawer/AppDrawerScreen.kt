@@ -844,35 +844,35 @@ fun AppDrawerContent(
     }
     var hasScrolledDown by remember { mutableStateOf(false) }
 
-    // Unified Search/Keyboard management: Handles entry, scroll-to-top, and pull-to-open
+    // Unified Search/Keyboard management: entry focus, scroll-to-top (chip layout only), pull-to-open.
     LaunchedEffect(isAtTop, showSearch, useSidebarCategoryDrawer, uiState.drawerScrollToTopAutoKeyboard) {
-        // Trigger keyboard if:
-        // 1. Initial entry or setting is on, AND we are at the top
-        // 2. Search is explicitly toggled on in sidebar mode
-        val topAutoLaunch = isAtTop && (!hasScrolledDown || uiState.drawerScrollToTopAutoKeyboard)
-        
-        if (topAutoLaunch) {
-            if (useSidebarCategoryDrawer && !showSearch) {
-                showSearch = true
-            } else {
+        if (useSidebarCategoryDrawer) {
+            // Scroll-to-top does not apply: search is icon-only; focus only when user opens search.
+            if (showSearch && isAtTop) {
                 delay(100)
                 focusRequester.requestFocus()
                 keyboardController?.show()
+            } else if (!isAtTop) {
+                hasScrolledDown = true
+                if (uiState.searchQuery.isBlank()) {
+                    keyboardController?.hide()
+                    focusManager.clearFocus(force = true)
+                    showSearch = false
+                }
             }
-        } else if (useSidebarCategoryDrawer && showSearch) {
-            // Focus if search was explicitly toggled
-            delay(100)
-            focusRequester.requestFocus()
-            keyboardController?.show()
-        } else if (!isAtTop) {
-            // Track that we've left the top once
-            hasScrolledDown = true
-            // Typing can briefly report !isAtTop (IME insets, list relayout when filtered content
-            // appears). Do not tear down search/IME while the user has an active query.
-            if (uiState.searchQuery.isBlank()) {
-                keyboardController?.hide()
-                focusManager.clearFocus(force = true)
-                if (useSidebarCategoryDrawer) showSearch = false
+        } else {
+            val topAutoLaunch =
+                    isAtTop && (!hasScrolledDown || uiState.drawerScrollToTopAutoKeyboard)
+            if (topAutoLaunch) {
+                delay(100)
+                focusRequester.requestFocus()
+                keyboardController?.show()
+            } else if (!isAtTop) {
+                hasScrolledDown = true
+                if (uiState.searchQuery.isBlank()) {
+                    keyboardController?.hide()
+                    focusManager.clearFocus(force = true)
+                }
             }
         }
     }
@@ -883,11 +883,9 @@ fun AppDrawerContent(
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
                 if (source == NestedScrollSource.UserInput && available.y > 0 && !listState.canScrollBackward) {
                     // Immediate response for pull-down gesture at the boundary
-                    if (uiState.drawerScrollToTopAutoKeyboard) {
-                        // The LaunchedEffect(isAtTop) handles the actual focus/keyboard 
-                        // but if we are already atTop, it won't re-trigger.
-                        // So we force a request here if already at top and pulling.
-                        if (useSidebarCategoryDrawer && !showSearch) showSearch = true
+                    if (uiState.drawerScrollToTopAutoKeyboard && !useSidebarCategoryDrawer) {
+                        // LaunchedEffect(isAtTop) handles focus when scrolling to top; re-request
+                        // if already at top and pulling down at the list boundary.
                         focusRequester.requestFocus()
                         keyboardController?.show()
                     }
