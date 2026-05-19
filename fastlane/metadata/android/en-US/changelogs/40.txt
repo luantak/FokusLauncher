@@ -1,0 +1,7 @@
+Fix PWA support.
+
+New middle align option for home screen.
+
+Fix sidebar app drawer mode, opening search.
+
+Updated Catalan, Danish, French, German, Italian, Polish, and more via Weblate. French and Italian are now fully translated. Thanks to everyone who contributed.
