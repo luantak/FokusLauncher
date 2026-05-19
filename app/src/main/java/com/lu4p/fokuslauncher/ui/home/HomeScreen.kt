@@ -282,7 +282,11 @@ fun HomeScreenContent(
                 onIconClick = onIconClick
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
+            if (uiState.homeAlignment == HomeAlignment.MIDDLE) {
+                Spacer(modifier = Modifier.weight(1f))
+            } else {
+                Spacer(modifier = Modifier.height(4.dp))
+            }
         }
 
         HomeDefaultLauncherBanner(
@@ -493,7 +497,7 @@ private fun HomeFavoritesSection(
     val listModifier =
         Modifier.fillMaxWidth().testTag("favorites_list")
     when (homeAlignment) {
-        HomeAlignment.CENTER ->
+        HomeAlignment.CENTER, HomeAlignment.MIDDLE ->
             Column(
                 modifier = listModifier,
                 horizontalAlignment = Alignment.CenterHorizontally,
