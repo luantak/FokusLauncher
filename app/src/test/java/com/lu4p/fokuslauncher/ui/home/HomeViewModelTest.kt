@@ -522,6 +522,16 @@ class HomeViewModelTest {
     }
 
     @Test
+    fun `init does not prune favorites when launcher query is empty`() {
+        every { appRepository.getInstalledApps() } returns emptyList()
+        createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+        coVerify(exactly = 0) {
+            preferencesManager.setFavorites(match { it.size < testFavorites.size })
+        }
+    }
+
+    @Test
     fun `refreshInstalledApps keeps favorites absent from partial snapshot when still launchable`() {
         every { appRepository.getInstalledApps() } returns listOf(
             AppInfo(packageName = "com.lu4p.music", label = "Music", icon = null)

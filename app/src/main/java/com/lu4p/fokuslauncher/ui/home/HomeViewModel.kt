@@ -353,9 +353,13 @@ class HomeViewModel @Inject constructor(
             appRepository.invalidateCache()
         }
         val apps = appRepository.getInstalledApps()
-        if (apps.isEmpty() &&
-                        (rawFavorites.value.isNotEmpty() || _allInstalledApps.value.isNotEmpty())
-        ) {
+        if (apps.isEmpty()) {
+            if (_allInstalledApps.value.isNotEmpty() ||
+                            rawFavorites.value.any { !it.isPhoneFavoriteSentinel() }
+            ) {
+                return false
+            }
+            applyInstalledAppsSnapshot(apps)
             return false
         }
         applyInstalledAppsSnapshot(apps)
