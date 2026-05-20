@@ -258,7 +258,7 @@
     <string name="settings_dot_search_alias_dialog_title">Litera skrótu</string>
     <string name="cd_remove_alias">Usuń skrót</string>
     <string name="settings_dot_search_url_template">Szablon URL</string>
-    <string name="settings_dot_search_explanation">Używaj wyszukiwania kropką dla zapytań i skrótów do natychmiastowych akcji. Wpisz `. zapytanie` dla domyślnego celu wyszukiwania. Dodaj cel wyszukiwania lub szablon URL dla `.x zapytanie` lub dodaj cel otwarcia skrótu dla `.x`. Szablony URL używają %1$s w miejscu dla zapytania (np. https://example.com/search?q=%1$s).</string>
+    <string name="settings_dot_search_explanation">Używaj wyszukiwania kropką dla zapytań i skrótów do natychmiastowych akcji. Wpisz `. zapytanie` dla domyślnego celu wyszukiwania. Dodaj cel wyszukiwania lub szablon URL dla `.x zapytanie`lub dodaj cel otwarcia skrótu dla `.x`. Szablony URL używają %1$s w miejscu dla zapytania (np. https://example.com/search?q=%1$s).</string>
     <string name="settings_dot_search_subtitle">Wpisz `. zapytanie ` aby wyszukiwać, `.x zapytanie` dla celu wyszukiwania, lub `.x` dla natychmiastowego skrótu</string>
     <string name="settings_dot_search_add_shortcut_app">Otwórz cel skrótu</string>
     <string name="settings_dot_search_screen_title">Wyszukiwanie kropką w szufladzie &amp; skróty</string>
