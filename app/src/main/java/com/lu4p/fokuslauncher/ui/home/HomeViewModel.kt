@@ -603,8 +603,16 @@ class HomeViewModel @Inject constructor(
         dismissAppMenu()
     }
 
-    fun openAppInfo(favorite: FavoriteApp) =
-            startPackageScopedIntent(favorite, Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+    fun openAppInfo(favorite: FavoriteApp) {
+        if (endAppMenuIfPhoneFavoriteSentinel(favorite)) return
+        val installed = installedAppFor(favorite.packageName, favorite.profileKey)
+        appRepository.openAppInfo(
+                favorite.packageName,
+                installed?.userHandle,
+                installed?.componentName,
+        )
+        dismissAppMenu()
+    }
 
     fun uninstallApp(favorite: FavoriteApp) =
             startPackageScopedIntent(favorite, Intent.ACTION_DELETE)
@@ -1129,14 +1137,13 @@ class HomeViewModel @Inject constructor(
 
     private fun startPackageScopedIntent(favorite: FavoriteApp, action: String) {
         if (endAppMenuIfPhoneFavoriteSentinel(favorite)) return
-        try {
-            context.startActivity(
-                    Intent(action).apply {
-                        data = "package:${favorite.packageName}".toUri()
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    }
-            )
-        } catch (_: Exception) { }
+        val userHandle =
+                installedAppFor(favorite.packageName, favorite.profileKey)?.userHandle
+        appRepository.startPackageManagementIntent(
+                favorite.packageName,
+                userHandle,
+                action,
+        )
         dismissAppMenu()
     }
 

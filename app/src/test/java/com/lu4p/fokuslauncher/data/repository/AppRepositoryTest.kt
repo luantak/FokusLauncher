@@ -3,6 +3,8 @@ package com.lu4p.fokuslauncher.data.repository
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
 import android.content.pm.ApplicationInfo
 import android.content.pm.LauncherApps
 import android.content.pm.PackageManager
@@ -27,6 +29,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
@@ -125,7 +128,25 @@ class AppRepositoryTest {
         repository.getInstalledApps()
         repository.getInstalledApps()
 
-        verify(exactly = 2) { launcherApps.getActivityList(null, myUser) }
+        verify(atLeast = 2) { launcherApps.getActivityList(null, myUser) }
+    }
+
+    @Test
+    fun `getInstalledApps retries empty LauncherApps snapshot before giving up`() {
+        var calls = 0
+        every { launcherApps.getActivityList(null, myUser) } answers {
+            calls++
+            if (calls < 2) {
+                emptyList()
+            } else {
+                listOf(createMockLauncherActivity("com.lu4p.app1", "App 1"))
+            }
+        }
+
+        val result = repository.getInstalledApps()
+
+        assertEquals(1, result.size)
+        assertTrue(calls >= 2)
     }
 
     @Test
@@ -718,6 +739,56 @@ class AppRepositoryTest {
             packageManager.queryIntentActivities(any(), PackageManager.MATCH_DEFAULT_ONLY)
         } returns emptyList()
         assertFalse(repository.appSupportsWebSearch(app))
+    }
+
+    @Test
+    fun `openAppInfo uses LauncherApps startAppDetailsActivity for secondary profile`() {
+        val secondaryUser = mockk<UserHandle>()
+        val component = ComponentName("com.private.app", "MainActivity")
+        every { secondaryUser == Process.myUserHandle() } returns false
+        every { launcherApps.getActivityList("com.private.app", secondaryUser) } returns emptyList()
+
+        assertTrue(repository.openAppInfo("com.private.app", secondaryUser, component))
+
+        verify {
+            launcherApps.startAppDetailsActivity(component, secondaryUser, null, null)
+        }
+        verify(exactly = 0) { context.startActivity(any()) }
+    }
+
+    @Test
+    fun `openAppInfo resolves component from activity list when missing`() {
+        val activity = createMockLauncherActivity("com.work.slack", "Slack")
+        every { launcherApps.getActivityList("com.work.slack", any()) } returns listOf(activity)
+
+        assertTrue(repository.openAppInfo("com.work.slack", null, null))
+
+        verify {
+            launcherApps.startAppDetailsActivity(
+                    ComponentName("com.work.slack", "com.work.slack.MainActivity"),
+                    any(),
+                    null,
+                    null,
+            )
+        }
+    }
+
+    @Test
+    fun `startPackageManagementIntent uses owner context without EXTRA_USER`() {
+        val intentSlot = slot<Intent>()
+        every { context.startActivity(capture(intentSlot)) } returns Unit
+
+        assertTrue(
+                repository.startPackageManagementIntent(
+                        "com.example",
+                        myUser,
+                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                )
+        )
+
+        verify { context.startActivity(any()) }
+        assertEquals(Uri.parse("package:com.example"), intentSlot.captured.data)
+        assertFalse(intentSlot.captured.hasExtra(Intent.EXTRA_USER))
     }
 
     @Test

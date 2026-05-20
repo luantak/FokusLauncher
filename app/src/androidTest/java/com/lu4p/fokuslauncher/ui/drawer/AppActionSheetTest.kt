@@ -35,6 +35,8 @@ class AppActionSheetTest {
                         onRename = {},
                         onSetCategory = {},
                         onHide = {},
+                        onAppInfo = {},
+                        onUninstall = {},
                         onRemoveShortcut = { removedShortcut = it },
                 )
             }
@@ -60,6 +62,8 @@ class AppActionSheetTest {
                         onRename = {},
                         onSetCategory = {},
                         onHide = {},
+                        onAppInfo = {},
+                        onUninstall = {},
                         onRemoveShortcut = {},
                 )
             }

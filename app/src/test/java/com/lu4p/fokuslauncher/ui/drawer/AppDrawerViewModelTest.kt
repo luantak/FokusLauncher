@@ -187,6 +187,32 @@ class AppDrawerViewModelTest {
     }
 
     @Test
+    fun `transient empty installed apps does not wipe drawer when reload stays empty`() {
+        val before = viewModel.uiState.value.allApps.size
+        assertTrue(before > 0)
+        installedApps = emptyList()
+        viewModel.refresh()
+        Thread.sleep(400)
+        assertEquals(before, viewModel.uiState.value.allApps.size)
+    }
+
+    @Test
+    fun `transient empty installed apps recovers drawer after retry`() {
+        var loadCount = 0
+        every { appRepository.getInstalledApps() } answers {
+            loadCount++
+            if (loadCount == 1) emptyList() else installedApps
+        }
+        val before = viewModel.uiState.value.allApps.size
+        assertTrue(before > 0)
+        installedApps = testApps
+        viewModel.refresh()
+        awaitState("drawer recovered after empty snapshot") {
+            viewModel.uiState.value.allApps.size == testApps.size
+        }
+    }
+
+    @Test
     fun `search query filters apps by label`() {
         viewModel.onSearchQueryChanged("cal")
 
@@ -334,6 +360,38 @@ class AppDrawerViewModelTest {
         val state = viewModel.uiState.value
         assertFalse(state.allApps.any { it.packageName == "com.lu4p.chrome" })
         assertFalse(flatFiltered(state).any { it.packageName == "com.lu4p.chrome" })
+    }
+
+    @Test
+    fun `removed private space package disappears from drawer immediately`() {
+        val privateUser = mockk<UserHandle>()
+        every { privateUser.hashCode() } returns 77
+        val privateApp =
+                AppInfo(
+                        "com.private.app",
+                        "Private App",
+                        null,
+                        userHandle = privateUser,
+                        componentName = ComponentName("com.private.app", "Main"),
+                )
+        every { privateSpaceManager.isSupported } returns true
+        every { privateSpaceManager.isPrivateSpaceUnlocked() } returns true
+        every { privateSpaceManager.getPrivateSpaceApps() } returns listOf(privateApp)
+
+        viewModel.refreshPrivateSpaceState()
+        awaitState("private app loads") { it.privateSpaceApps.size == 1 }
+
+        removedPackages.tryEmit(RemovedApp(packageName = "com.private.app", profileKey = "77"))
+        awaitState("private space package removal") {
+            it.privateSpaceApps.isEmpty() && it.filteredPrivateSpaceApps.isEmpty()
+        }
+
+        // Simulate stale LauncherApps still listing the app after cache rebuild.
+        every { privateSpaceManager.getPrivateSpaceApps() } returns listOf(privateApp)
+        installedAppsVersion.value += 1L
+        awaitState("private space removal survives cache rebuild") {
+            it.privateSpaceApps.isEmpty() && it.filteredPrivateSpaceApps.isEmpty()
+        }
     }
 
     @Test

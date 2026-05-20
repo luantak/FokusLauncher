@@ -729,6 +729,8 @@ fun AppDrawerScreen(
                 onRename = { newName -> viewModel.renameApp(app, newName) },
                 onSetCategory = { category -> viewModel.setAppCategory(app, category) },
                 onHide = { viewModel.hideApp(it) },
+                onAppInfo = viewModel::openAppInfo,
+                onUninstall = viewModel::uninstallApp,
                 onRemoveShortcut = { viewModel.removeLauncherShortcut(it) },
                 isOnHomeScreen =
                         appListStableKey(app) in uiState.favoriteAppKeys

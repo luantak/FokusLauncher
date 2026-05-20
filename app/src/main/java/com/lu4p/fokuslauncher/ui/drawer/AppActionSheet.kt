@@ -1,7 +1,5 @@
 package com.lu4p.fokuslauncher.ui.drawer
 
-import android.content.Intent
-import android.provider.Settings
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
@@ -22,7 +20,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toUri
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
@@ -44,6 +41,8 @@ fun AppActionSheet(
     onRename: (String) -> Unit,
     onSetCategory: (String) -> Unit,
     onHide: (AppInfo) -> Unit,
+    onAppInfo: (AppInfo) -> Unit,
+    onUninstall: (AppInfo) -> Unit,
     onRemoveShortcut: ((AppInfo) -> Unit)? = null,
     isOnHomeScreen: Boolean = false
 ) {
@@ -117,11 +116,7 @@ fun AppActionSheet(
         SheetActionRow(
                 label = stringResource(R.string.action_app_info),
                 onClick = {
-                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                        data = "package:${app.packageName}".toUri()
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    }
-                    context.startActivity(intent)
+                    onAppInfo(app)
                     onDismiss()
                 },
                 icon = Icons.Default.Info,
@@ -154,11 +149,7 @@ fun AppActionSheet(
             SheetActionRow(
                     label = stringResource(R.string.action_uninstall),
                     onClick = {
-                        val intent = Intent(Intent.ACTION_DELETE).apply {
-                            data = "package:${app.packageName}".toUri()
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        }
-                        context.startActivity(intent)
+                        onUninstall(app)
                         onDismiss()
                     },
                     icon = Icons.Default.Delete,

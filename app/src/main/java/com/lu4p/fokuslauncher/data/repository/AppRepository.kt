@@ -17,6 +17,8 @@ import android.os.Bundle
 import android.os.Process
 import android.os.UserHandle
 import android.os.UserManager
+import android.provider.Settings
+import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import com.lu4p.fokuslauncher.R
@@ -225,6 +227,24 @@ constructor(
             return loadInstalledAppsLegacyQuery()
         }
 
+        var result = mergeLauncherActivitiesAcrossProfiles(launcherApps, userManager)
+        if (result.isEmpty() && userManager.userProfiles.contains(Process.myUserHandle())) {
+            repeat(LOAD_EMPTY_RETRY_COUNT) {
+                Thread.sleep(LOAD_EMPTY_RETRY_DELAY_MS)
+                result = mergeLauncherActivitiesAcrossProfiles(launcherApps, userManager)
+                if (result.isNotEmpty()) return@repeat
+            }
+        }
+        if (result.isEmpty()) {
+            logEmptyLauncherAppsLoad(launcherApps, userManager)
+        }
+        return result
+    }
+
+    private fun mergeLauncherActivitiesAcrossProfiles(
+            launcherApps: LauncherApps,
+            userManager: UserManager,
+    ): List<AppInfo> {
         val myUser = Process.myUserHandle()
         val rawEntries = mutableListOf<RawLauncherEntry>()
 
@@ -309,6 +329,35 @@ constructor(
                 )
 
         return (primary + secondary + pinnedShortcuts).sortedBy { it.label.lowercase() }
+    }
+
+    private fun logEmptyLauncherAppsLoad(launcherApps: LauncherApps, userManager: UserManager) {
+        val myUser = Process.myUserHandle()
+        val profileSummary =
+                userManager.userProfiles.joinToString(separator = "; ") { user ->
+                    val activityCount =
+                            try {
+                                launcherApps.getActivityList(null, user).size
+                            } catch (_: Exception) {
+                                -1
+                            }
+                    val userType =
+                            if (Build.VERSION.SDK_INT >= 35) {
+                                try {
+                                    launcherApps.getLauncherUserInfo(user)?.userType
+                                } catch (_: Exception) {
+                                    null
+                                }
+                            } else {
+                                null
+                            }
+                    val privateSpace = privateSpaceManager.isPrivateSpaceProfile(user)
+                    "user=${user.hashCode()} primary=${user == myUser} private=$privateSpace activities=$activityCount userType=$userType"
+                }
+        Log.w(
+                TAG,
+                "LauncherApps returned no installable apps (sdk=${Build.VERSION.SDK_INT}); profiles: $profileSummary",
+        )
     }
 
     private data class RawLauncherEntry(
@@ -687,6 +736,69 @@ constructor(
     }
 
     /**
+     * Opens the system app-info screen for [packageName] in the given profile.
+     * Uses [LauncherApps.startAppDetailsActivity] so duplicate installs (personal + private)
+     * open the correct copy; falls back to a package intent for the owner profile only.
+     */
+    fun openAppInfo(
+            packageName: String,
+            userHandle: UserHandle?,
+            componentName: ComponentName? = null,
+    ): Boolean {
+        if (packageName.isBlank()) return false
+        val launcherApps = launcherAppsOrNull() ?: return false
+        val user = userHandle ?: Process.myUserHandle()
+        val component =
+                componentName
+                        ?: launcherApps.getActivityList(packageName, user)
+                                .firstOrNull()
+                                ?.componentName
+        if (component == null) {
+            return startPackageManagementIntent(
+                    packageName,
+                    userHandle,
+                    Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            )
+        }
+        return try {
+            launcherApps.startAppDetailsActivity(component, user, null, null)
+            true
+        } catch (_: Exception) {
+            startPackageManagementIntent(
+                    packageName,
+                    userHandle,
+                    Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            )
+        }
+    }
+
+    /**
+     * Opens system uninstall UI for [packageName] in the correct Android user.
+     * Work-profile and Private Space apps must not use the owner [Context] alone.
+     */
+    fun startPackageManagementIntent(
+            packageName: String,
+            userHandle: UserHandle?,
+            action: String,
+    ): Boolean {
+        if (packageName.isBlank()) return false
+        val profileUser = userHandle?.takeIf { it != Process.myUserHandle() }
+        val intent =
+                Intent(action).apply {
+                    data = Uri.parse("package:$packageName")
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    profileUser?.let { putExtra(Intent.EXTRA_USER, it) }
+                }
+        val launchContext = profileUser?.let { contextAsUser(it) } ?: context
+        return try {
+            launchContext.startActivity(intent)
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    /**
      * Returns all selectable actions for right-side shortcuts:
      * - One "Open app" action per app
      * - Launcher long-press actions published by each app (if available)
@@ -1058,14 +1170,27 @@ constructor(
 
     private fun extractRemovedApp(intent: Intent): RemovedApp? {
         val packageName = intent.data?.schemeSpecificPart?.takeIf { it.isNotBlank() } ?: return null
-        val removedUser = extractUserHandle(intent)
-        val profileKey =
-                if (removedUser == null || removedUser == Process.myUserHandle()) {
-                    "0"
-                } else {
-                    appProfileKey(removedUser)
-                }
+        val profileKey = resolveRemovedProfileKey(packageName, extractUserHandle(intent))
         return RemovedApp(packageName = packageName, profileKey = profileKey)
+    }
+
+    private fun resolveRemovedProfileKey(packageName: String, removedUser: UserHandle?): String {
+        if (removedUser != null && removedUser != Process.myUserHandle()) {
+            return appProfileKey(removedUser)
+        }
+        if (removedUser == Process.myUserHandle()) return "0"
+
+        val launcherApps = launcherAppsOrNull() ?: return "0"
+        val owner = Process.myUserHandle()
+        val inOwner = launcherApps.getActivityList(packageName, owner).isNotEmpty()
+        val privateProfile = privateSpaceManager.getPrivateSpaceProfile()
+        val inPrivate =
+                privateProfile != null &&
+                        launcherApps.getActivityList(packageName, privateProfile).isNotEmpty()
+        return when {
+            inPrivate && !inOwner && privateProfile != null -> appProfileKey(privateProfile)
+            else -> "0"
+        }
     }
 
     private fun extractUserHandle(intent: Intent): UserHandle? {
@@ -1106,6 +1231,12 @@ constructor(
 
     private fun normalizeCategory(category: String): String =
             SystemCategoryKeys.normalize(context, category)
+
+    private companion object {
+        private const val TAG = "FokusAppLoad"
+        private const val LOAD_EMPTY_RETRY_COUNT = 2
+        private const val LOAD_EMPTY_RETRY_DELAY_MS = 150L
+    }
 }
 
 data class RemovedApp(

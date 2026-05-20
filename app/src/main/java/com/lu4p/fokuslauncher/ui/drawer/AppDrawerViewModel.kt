@@ -2,6 +2,7 @@ package com.lu4p.fokuslauncher.ui.drawer
 
 import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import android.os.UserHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -34,6 +35,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Named
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -288,6 +290,9 @@ constructor(
      */
     private val drawerListRebuildMutex = Mutex()
 
+    private fun AppDrawerUiState.hasVisibleDrawerApps(): Boolean =
+            allApps.isNotEmpty() || filteredProfileSections.any { it.apps.isNotEmpty() }
+
     init {
         loadApps()
         observeHiddenAndRenamed()
@@ -408,17 +413,46 @@ constructor(
      * unlocked; otherwise keeps the snapshot list (tests / unsupported devices). Applies the same
      * metadata overlays and optimistic-removal filtering as the main drawer list.
      */
+    private fun rawPrivateSpaceAppsForRebuild(stateSnapshot: AppDrawerUiState): List<AppInfo> {
+        if (!privateSpaceUnlockedForDrawer(stateSnapshot)) return emptyList()
+        return if (!privateSpaceManager.isSupported) {
+            stateSnapshot.privateSpaceApps
+        } else {
+            privateSpaceManager.getPrivateSpaceApps()
+        }
+    }
+
+    /** Drops optimistic removal keys once LauncherApps no longer lists the package in that profile. */
+    private fun pruneOptimisticallyRemovedKeys(
+            installedApps: List<AppInfo>,
+            rawPrivateApps: List<AppInfo>,
+    ) {
+        synchronized(optimisticallyRemovedKeys) {
+            optimisticallyRemovedKeys.removeAll { key ->
+                val stillPresent =
+                        installedApps.any {
+                            drawerOpenCountKey(it.packageName, it.userHandle) == key
+                        } ||
+                                rawPrivateApps.any {
+                                    drawerOpenCountKey(it.packageName, it.userHandle) == key
+                                }
+                !stillPresent
+            }
+        }
+    }
+
     private suspend fun resolvedPrivateSpaceAppsForDrawer(
             metadata: DrawerMetadataSnapshot,
             removedSnapshot: Set<String>,
             stateSnapshot: AppDrawerUiState,
+            rawPrivateApps: List<AppInfo> = rawPrivateSpaceAppsForRebuild(stateSnapshot),
     ): List<AppInfo> {
         if (!privateSpaceUnlockedForDrawer(stateSnapshot)) return emptyList()
         val raw =
                 if (!privateSpaceManager.isSupported) {
                     stateSnapshot.privateSpaceApps
                 } else {
-                    privateSpaceManager.getPrivateSpaceApps()
+                    rawPrivateApps
                 }
         val filtered =
                 applyMetadataOverlays(
@@ -660,7 +694,6 @@ constructor(
     private fun observeInstalledApps() {
         viewModelScope.launch {
             appRepository.getInstalledAppsVersion().drop(1).collect {
-                synchronized(optimisticallyRemovedKeys) { optimisticallyRemovedKeys.clear() }
                 rebuildVisibleApps(
                         DrawerMetadataSnapshot(
                                 latestHiddenApps,
@@ -686,9 +719,28 @@ constructor(
      * PackageManager query off the main thread.
      */
 
+    private suspend fun loadInstalledAppsForDrawerRebuild(
+            hadVisibleApps: Boolean,
+    ): List<AppInfo> {
+        var base = withContext(drawerComputationDispatcher) { appRepository.getInstalledApps() }
+        if (base.isEmpty() && hadVisibleApps) {
+            delay(EMPTY_INSTALLED_APPS_RETRY_DELAY_MS)
+            appRepository.invalidateCache()
+            base = withContext(drawerComputationDispatcher) { appRepository.getInstalledApps() }
+        }
+        return base
+    }
+
     private suspend fun rebuildVisibleApps(metadata: DrawerMetadataSnapshot) {
         drawerListRebuildMutex.withLock {
-            val base = withContext(Dispatchers.IO) { appRepository.getInstalledApps() }
+            val stateSnapshot = _uiState.value
+            val hadVisibleApps = stateSnapshot.hasVisibleDrawerApps()
+            val base = loadInstalledAppsForDrawerRebuild(hadVisibleApps)
+            if (base.isEmpty() && hadVisibleApps) {
+                return
+            }
+            val rawPrivateApps = rawPrivateSpaceAppsForRebuild(stateSnapshot)
+            pruneOptimisticallyRemovedKeys(base, rawPrivateApps)
             val removedSnapshot =
                     synchronized(optimisticallyRemovedKeys) { optimisticallyRemovedKeys.toSet() }
             val visible =
@@ -703,9 +755,13 @@ constructor(
                                         removedSnapshot
                             }
 
-            val stateSnapshot = _uiState.value
             val privateAppsFiltered =
-                    resolvedPrivateSpaceAppsForDrawer(metadata, removedSnapshot, stateSnapshot)
+                    resolvedPrivateSpaceAppsForDrawer(
+                            metadata,
+                            removedSnapshot,
+                            stateSnapshot,
+                            rawPrivateApps,
+                    )
             val (categories, selectedCategory, filteredContent) =
                     persistCategoriesFilterAndBuild(
                             visible = visible,
@@ -747,7 +803,12 @@ constructor(
                         it.packageName == packageName && appProfileKey(it.userHandle) == profileKey
                     }
             val privateApps =
-                    resolvedPrivateSpaceAppsForDrawer(metadata, removedSnapshot, stateSnapshot)
+                    sortPrivateSpaceAppsCachedSuspend(
+                            stateSnapshot.privateSpaceApps.filterNot {
+                                it.packageName == packageName &&
+                                        appProfileKey(it.userHandle) == profileKey
+                            }
+                    )
             val (categories, selectedCategory, filteredContent) =
                     persistCategoriesFilterAndBuild(
                             visible = visible,
@@ -1071,6 +1132,18 @@ constructor(
         viewModelScope.launch {
             appRepository.hideApp(app)
         }
+    }
+
+    fun openAppInfo(app: AppInfo) {
+        appRepository.openAppInfo(app.packageName, app.userHandle, app.componentName)
+    }
+
+    fun uninstallApp(app: AppInfo) {
+        appRepository.startPackageManagementIntent(
+                app.packageName,
+                app.userHandle,
+                Intent.ACTION_DELETE,
+        )
     }
 
     fun removeLauncherShortcut(app: AppInfo) {
@@ -1662,4 +1735,7 @@ constructor(
         return fullOrder.map { key -> if (key in subsetSet) queue.removeFirst() else key }
     }
 
+    private companion object {
+        private const val EMPTY_INSTALLED_APPS_RETRY_DELAY_MS = 200L
+    }
 }
