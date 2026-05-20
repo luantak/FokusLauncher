@@ -335,6 +335,4 @@
     <string name="settings_accessibility">Control del dispositiu</string>
     <string name="settings_long_lock_duration">Durada del bloqueig llarg</string>
     <string name="settings_visual_style_subtitle">Colors de text i icones clàssics o neon</string>
-    <string name="edit_home_section_all_apps" translatable="false"></string>
-    <string name="app_name" translatable="false"></string>
 </resources>
