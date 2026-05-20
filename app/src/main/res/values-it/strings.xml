@@ -245,7 +245,7 @@
     <string name="onboarding_skip">Salta</string>
     <string name="onboarding_next">Avanti</string>
     <string name="settings_weather_location_disabled">Attiva la posizione per il meteo</string>
-    <string name="settings_weather_location_disabled_subtitle">Tocca per concedere l\'accesso alla posiziond</string>
+    <string name="settings_weather_location_disabled_subtitle">Tocca per concedere l\'accesso alla posizione</string>
     <string name="settings_weather_location_enable_button">Attiva</string>
     <string name="settings_weather_app_system_default">Predefinito di sistema</string>
     <string name="settings_weather_app_not_configured">Non configurato</string>
@@ -318,7 +318,7 @@
     <string name="settings_profile_names_field_label">Nome visualizzato</string>
     <string name="settings_profile_names_save">Salva</string>
     <string name="settings_profile_names_reset">Reimposta</string>
-    <string name="settings_section_image_wallpaper_accessibility">Immagine di sfondo — leggibilità</string>
+    <string name="settings_section_image_wallpaper_accessibility">Leggibilità immagine di sfondo</string>
     <string name="settings_photo_outline_strength_subtitle">Sfondi semitrasparenti a forma di pillola dietro a orologio, preferiti, widget della home e icone delle scorciatoie su un\'immagine di sfondo.</string>
     <string name="settings_photo_outline_strength_label">Sfondo per testi e icone</string>
     <string name="settings_photo_outline_width_dp_default">Predefinito</string>
