@@ -334,4 +334,6 @@
     <string name="settings_font_size_subtitle">Correspond à la taille de la police de caractère de votre périphérique</string>
     <string name="settings_visual_style_subtitle">Style classique ou néon pour le texte et les icônes</string>
     <string name="settings_look_locked_image_wallpaper">Non disponible avec une image de fond d\'écran. Paramétrez un fond d\'écran noir ci-dessous pour définir une couleur et utiliser la lueur.</string>
+    <string name="edit_home_section_all_apps" translatable="false"></string>
+    <string name="app_name" translatable="false"></string>
 </resources>
