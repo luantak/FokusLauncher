@@ -1,0 +1,7 @@
+Fix Private Space app info, uninstall, and drawer removal updates.
+
+Fix home favorites disappearing when apps reload.
+
+Fix keyboard sometimes not opening when opening the app drawer.
+
+Updated Italian, Turkish, and more via Weblate. Thanks to everyone who contributed.
