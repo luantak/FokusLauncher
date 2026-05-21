@@ -306,4 +306,31 @@
     <string name="settings_temperature_unit_system">Automatikoa (lokala)</string>
     <string name="settings_temperature_unit_celsius">Celsius (°C)</string>
     <string name="settings_temperature_unit_fahrenheit">Fahrenheit (°F)</string>
+    <string name="settings_profile_names_subtitle"></string>
+    <string name="settings_section_image_wallpaper_accessibility"></string>
+    <string name="settings_profile_names_title"></string>
+    <string name="settings_photo_drawer_overlay_label"></string>
+    <string name="edit_home_section_all_apps" translatable="false"></string>
+    <string name="settings_profile_names_default_label"></string>
+    <string name="settings_drawer_scroll_to_top_auto_keyboard"></string>
+    <string name="settings_profile_names_help"></string>
+    <string name="settings_profile_names_field_label"></string>
+    <string name="settings_drawer_scroll_to_top_auto_keyboard_subtitle"></string>
+    <string name="settings_photo_outline_strength_subtitle"></string>
+    <string name="settings_dot_search_add_search_target_help"></string>
+    <string name="settings_photo_outline_width_dp_default"></string>
+    <string name="settings_dot_search_add_search_target_app"></string>
+    <string name="settings_dot_search_search_mode_label"></string>
+    <string name="settings_profile_names_reset"></string>
+    <string name="settings_dot_search_shortcut_mode_label"></string>
+    <string name="settings_photo_outline_width_dp_value"></string>
+    <string name="settings_photo_outline_strength_label"></string>
+    <string name="home_alignment_middle"></string>
+    <string name="settings_dot_search_pick_alias_search_app"></string>
+    <string name="settings_profile_names_save"></string>
+    <string name="settings_dot_search_add_url_template_help"></string>
+    <string name="settings_dot_search_add_shortcut_help"></string>
+    <string name="app_name" translatable="false"></string>
+    <string name="action_remove_shortcut"></string>
+    <string name="settings_photo_drawer_overlay_subtitle"></string>
 </resources>
