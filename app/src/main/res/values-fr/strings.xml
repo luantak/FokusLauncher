@@ -93,9 +93,9 @@
     <string name="widget_picker_title">Ajouter un widget</string>
     <string name="widget_initial_height">%1$ddp</string>
     <string name="home_alignment_title">Alignement sur l\'écran d\'accueil</string>
-    <string name="home_alignment_subtitle">Position des étiquettes d\'applications et des icônes de raccourcis</string>
+    <string name="home_alignment_subtitle">Position des intitulés d\'applications et des icônes de raccourcis</string>
     <string name="home_alignment_left">Gauche</string>
-    <string name="home_alignment_center">Centre</string>
+    <string name="home_alignment_center">Centre bas</string>
     <string name="home_alignment_right">Droite</string>
     <string name="edit_home_title">Modifier l\'écran d\'accueil</string>
     <string name="edit_shortcuts_title">Modifier les raccourcis</string>
@@ -157,15 +157,15 @@
     <string name="settings_widget_clock_app">Application d\'horloge</string>
     <string name="settings_widget_calendar_app">Application de calendrier</string>
     <string name="settings_double_tap_to_lock">Double appui pour verrouiller</string>
-    <string name="settings_double_tap_to_lock_subtitle">Verrouille le téléphone en appuyant deux fois sur un espace vide de l\'écran d\'accueil</string>
+    <string name="settings_double_tap_to_lock_subtitle">Verrouiller le téléphone en appuyant deux fois sur un espace vide de l\'écran d\'accueil</string>
     <string name="settings_return_home_after_long_lock">Revenir à l\'écran d\'accueil après un long verrouillage</string>
     <string name="settings_return_home_after_long_lock_subtitle">Après le déverrouillage, afficher l\'écran d\'accueil si le périphérique est resté longtemps verrouillé</string>
     <string name="settings_long_lock_duration">Durée du verrouillage long</string>
     <string name="settings_long_lock_duration_subtitle">Durée durant laquelle le périphérique doit rester verrouillé, suite à laquelle Fokus revient à l\'écran d\'accueil après le déverrouillage.</string>
     <string name="settings_drawer_scroll_to_top_auto_keyboard_subtitle">Ouvrir automatiquement le clavier et la recherche lors d\'un scroll vers le haut de la liste des applications</string>
     <string name="settings_matrix_title">Rejoignez la discussion</string>
-    <string name="settings_weblate_subtitle">Contribuez à la traduction sur Weblate</string>
-    <string name="settings_github_title">Mettre une étoile sur GitHub</string>
+    <string name="settings_weblate_subtitle">Contribuer à la traduction sur Weblate</string>
+    <string name="settings_github_title">Mettre une étoile sur Github</string>
     <string name="settings_github_subtitle">Voir les sources et contribuer</string>
     <string name="onboarding_tips_title">Astuces rapides</string>
     <string name="onboarding_tip_swipe">Balayer vers le haut pour ouvrir le tiroir d\'applications</string>
@@ -184,7 +184,7 @@
     <string name="settings_drawer_rail_position_left">Gauche</string>
     <string name="settings_drawer_rail_position_right">Droite</string>
     <string name="accessibility_prominent_disclosure_title">Service d\'accessibilité</string>
-    <string name="accessibility_prominent_disclosure_body">Fokus utilise le service d\'accessibilité uniquement pour les fonctionnalités de verrouillage par double appui, et de retour à l\'écran d\'accueil après un verrouillage long (si vous les avez activées). L\'application ne lit pas les écrans des autres applications. Les données demeurent sur votre périphérique ; nous ne les vendons pas, ne les uploadons pas, ni ne les utilisons à des fins publicitaires ou d\'analyse. Vous pouvez activer ou désactiver le service dans les paramètres d\'Android.</string>
+    <string name="accessibility_prominent_disclosure_body">Fokus utilise le service d\'accessibilité uniquement pour les fonctionnalités de verrouillage par double appui, et de retour à l\'écran d\'accueil après un verrouillage long (si vous les avez activées). L\'application ne lit pas les écrans des autres applications. Les données demeurent sur votre périphérique ; nous ne les vendons pas, ne les uploadons pas, ni ne les utilisons à des fins publicitaires ou d\'analyse. Vous pouvez activer ou désactiver le service dans les paramètres d\'Android.</string>
     <string name="accessibility_prominent_disclosure_checkbox">J\'ai lu les conditions et les accepte.</string>
     <string name="accessibility_prominent_disclosure_continue">Poursuivre</string>
     <string name="accessibility_prominent_disclosure_not_now">Pas maintenant</string>
@@ -205,16 +205,16 @@
     <string name="settings_drawer_category_rail_side">Position de la barre verticale des catégories</string>
     <string name="settings_drawer_category_rail_side_subtitle">Par défaut, la barre verticale est à droite. Faites un appui long sur une catégorie dans le tiroir d\'applications pour modifier son icône.</string>
     <string name="settings_drawer_app_sort_most_opened">Les plus souvent lancées</string>
-    <string name="settings_drawer_app_sort_subtitle">« Les plus souvent lancées » compte le nombre de lancements depuis le tiroir d\'applications. Lorsque aucun lancement n\'est enregistré, le tri alphabétique s\'applique.</string>
+    <string name="settings_drawer_app_sort_subtitle">« Les plus souvent lancées » compte le nombre de lancements depuis le tiroir d\'applications. Lorsque aucun lancement n\'est enregistré, le tri alphabétique s\'applique.</string>
     <string name="settings_dot_search_title">Recherche avec le point &amp; raccourcis</string>
     <string name="settings_dot_search_subtitle">Saisir `. requête` pour effectuer une recherche, `.x requête` pour effectuer une recherche ciblée, ou `.x` pour lancer immédiatement un raccourci</string>
     <string name="settings_profile_names_title">Noms des profils</string>
     <string name="settings_profile_names_help">Laisser le champ vide et appuyer sur Enregistrer pour restaurer le nom par défaut. Les noms sont utilisés dans les entêtes du tiroir d\'applications, aux sélecteurs groupés et aux badges de profil à côté de vos favoris.</string>
-    <string name="settings_profile_names_default_label">Par défaut : %1$s</string>
+    <string name="settings_profile_names_default_label">Par défaut : %1$s</string>
     <string name="settings_profile_names_save">Enregistrer</string>
     <string name="settings_profile_names_reset">Réinitialiser</string>
     <string name="settings_dot_search_screen_title">Recherche par point &amp; raccourcis</string>
-    <string name="settings_dot_search_explanation">Utilisez la recherche par point pour lancer une requête et les raccourcis par point pour effectuer une action immédiate. Saisissez `. requête` pour utiliser la cible par défaut. Ajoutez une cible ou un modèle d\'URL avec la syntaxe `.x requête`, ou ajoutez une cible \"Ouvrir un raccourci\" avec la syntaxe `.x`. Les modèles d\'URL utilisent %1$s pour indiquer l\'emplacement de la chaîne à rechercher (par exemple https://example.com/search?q=%1$s).</string>
+    <string name="settings_dot_search_explanation">Utilisez la recherche par point pour lancer une requête et les raccourcis par point pour effectuer une action immédiate. Saisissez `. requête` pour utiliser la cible par défaut. Ajoutez une cible ou un modèle d\'URL avec la syntaxe `.x requête`, ou ajoutez une cible \"Ouvrir un raccourci` avec la syntaxe `.x`. Les modèles d\'URL utilisent %1$s pour indiquer l\'emplacement de la chaîne à rechercher (par exemple https://example.com/search?q=%1$s).</string>
     <string name="settings_dot_search_default_label">Application de recherche par défaut</string>
     <string name="settings_dot_search_url_template">Modèle d\'URL</string>
     <string name="icon_cat_household">Domicile</string>
@@ -257,7 +257,7 @@
     <string name="settings_weblate_title">Aider à traduire</string>
     <string name="settings_matrix_subtitle">Obtenir de l\'aide et partager son expérience</string>
     <string name="settings_drawer_scroll_to_top_auto_keyboard">Clavier lors du scroll vers le haut</string>
-    <string name="settings_dot_search_url_template_help">Vous pouvez utiliser un lien HTTPS, ou un lien interne à une application (par exemple intent://). Mettez %1$s où les termes de votre requête doivent être insérés — le lanceur effectuera le remplacement avec ce que vous saisirez avec `. requête` ou `.x requête`. Exemple : https://example.com/search?q=%1$s</string>
+    <string name="settings_dot_search_url_template_help">Vous pouvez utiliser un lien HTTPS, ou un lien interne à une application (par exemple intent://). Mettez %1$s où les termes de votre requête doivent être insérés — le lanceur effectuera le remplacement avec ce que vous saisirez avec `. requête` ou `.x requête`. Exemple : https://example.com/search?q=%1$s</string>
     <string name="settings_dot_search_add_shortcut_title">Ajouter un raccourci</string>
     <string name="settings_dot_search_add_shortcut_app">Raccourci à lancer</string>
     <string name="settings_dot_search_add_shortcut_help">Saisissez `.x` pour ouvrir immédiatement une app, exécuter une action ou un raccourci du lanceur.</string>
@@ -278,10 +278,10 @@
     <string name="settings_export_logs_title">Exporter les logs</string>
     <string name="settings_export_logs_subtitle">Partager un fichier de diagnostic pour signaler un bug</string>
     <string name="settings_export_logs_share_chooser">Partager les logs de diagnostic</string>
-    <string name="settings_export_logs_share_subject">Logs de diagnostic de Fokus Launcher</string>
+    <string name="settings_export_logs_share_subject">Loges de diagnotic de Fokus Launcher</string>
     <string name="toast_export_logs_failed">Impossible de générer les logs d\'export</string>
     <string name="settings_reset_all_data">Réinitialiser toutes les données</string>
-    <string name="settings_reset_confirm_title">Réinitialiser toutes les données ?</string>
+    <string name="settings_reset_confirm_title">Réinitialiser toutes les données ?</string>
     <string name="settings_reset_confirm_message">Cela effacera vos favoris, raccourcis, applications cachées, applications renommées, et tous les autres paramétrages. L\'application sera réinitialisée à son état d\'origine.</string>
     <string name="settings_app_picker_title">Sélectionner une app</string>
     <string name="settings_font_label">Police de caractères</string>
@@ -322,7 +322,7 @@
     <string name="settings_dot_search_no_web_search_apps">Aucune application installée ne permet de rechercher sur le web, ni ne permet d\'effectuer une recherche interne.</string>
     <string name="settings_profile_names_field_label">Nom à afficher</string>
     <string name="settings_dot_search_url_template_dialog_title">Modèle d\'URL pour la recherche</string>
-    <string name="settings_dot_search_url_template_error">Saisissez %1$s à l\'emplacement de la requête (exemple : https://example.com/search?q=%1$s).</string>
+    <string name="settings_dot_search_url_template_error">Saisissez %1$s à l\'emplacement de la requête (exemple : https://example.com/search?q=%1$s).</string>
     <string name="settings_dot_search_add_search_target_app">Destination de la recherche</string>
     <string name="settings_dot_search_add_search_target_help">Saisissez `.x requête` pour envoyer une requête à une application permettant d\'effectuer une recherche.</string>
     <string name="settings_dot_search_add_url_template_help">Saisissez `.x requête` pour ouvrir une URL ou un lien interne incluant votre requête.</string>
@@ -331,7 +331,9 @@
     <string name="settings_dot_search_alias_dialog_title">Lettre de raccourci</string>
     <string name="settings_dot_search_shortcut_mode_label">Ouvre immédiatement</string>
     <string name="settings_dot_search_search_mode_label">Cible de la recherche</string>
-    <string name="settings_font_size_subtitle">Correspond à la taille de la police de caractère de votre périphérique</string>
+    <string name="settings_font_size_subtitle">Par rapport à la taille définie dans votre système</string>
     <string name="settings_visual_style_subtitle">Style classique ou néon pour le texte et les icônes</string>
     <string name="settings_look_locked_image_wallpaper">Non disponible avec une image de fond d\'écran. Paramétrez un fond d\'écran noir ci-dessous pour définir une couleur et utiliser la lueur.</string>
+    <string name="home_alignment_middle">Milieu</string>
+    <string name="action_remove_shortcut">Supprimer le raccourci</string>
 </resources>
