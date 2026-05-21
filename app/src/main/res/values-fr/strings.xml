@@ -336,4 +336,6 @@
     <string name="settings_look_locked_image_wallpaper">Non disponible avec une image de fond d\'écran. Paramétrez un fond d\'écran noir ci-dessous pour définir une couleur et utiliser la lueur.</string>
     <string name="home_alignment_middle">Milieu</string>
     <string name="action_remove_shortcut">Supprimer le raccourci</string>
+    <string name="edit_home_section_all_apps" translatable="false"></string>
+    <string name="app_name" translatable="false"></string>
 </resources>
