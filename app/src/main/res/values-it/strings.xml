@@ -137,7 +137,7 @@
     <string name="settings_accessibility_subtitle">Gestisci le funzioni che richiedono accesso alle funzionalità di accessibilità</string>
     <string name="settings_accessibility_page_title">Controllo del dispositivo</string>
     <string name="settings_accessibility_permission">Autorizzazione di accessibilità</string>
-    <string name="settings_accessibility_permission_enabled">Concessa per Fokus Launcher</string>
+    <string name="settings_accessibility_permission_enabled">Consentita per Fokus Launcher</string>
     <string name="settings_accessibility_permission_disabled">Necessaria per il doppio tocco per bloccare e tornare alla home dopo un blocco prolungato</string>
     <string name="settings_home_widgets">Configura widget</string>
     <string name="inferred_category_utilities">Strumenti</string>
@@ -334,4 +334,6 @@
     <string name="settings_dot_search_search_mode_label">Deostinazione della ricerca</string>
     <string name="settings_drawer_scroll_to_top_auto_keyboard_subtitle">Apri automaticamente tastiera e ricerca quando scorri fino in cima alla lista delle app</string>
     <string name="settings_drawer_scroll_to_top_auto_keyboard">Tastiera scorrendo in cima</string>
+    <string name="home_alignment_middle">Al centro</string>
+    <string name="action_remove_shortcut">Rimuovi scorciatoia</string>
 </resources>
