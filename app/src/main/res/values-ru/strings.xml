@@ -44,7 +44,7 @@
     <string name="action_remove_from_home">Убрать с рабочего стола</string>
     <string name="action_app_info">О приложении</string>
     <string name="action_hide">Спрятать</string>
-    <string name="action_uninstall">Деинсталлировать</string>
+    <string name="action_uninstall">Удалить</string>
     <string name="category_name_label">Имя категории</string>
     <string name="category_action_rename">Переименовать</string>
     <string name="category_action_edit_apps">Редактировать приложения в категории</string>
