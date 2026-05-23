@@ -245,4 +245,20 @@
     <string name="icon_cat_privacy">Gizlilik</string>
     <string name="icon_cat_maps">Harita</string>
     <string name="resize_widget">Widgetı ölçekle</string>
+    <string name="action_set_category">Kategori belirle</string>
+    <string name="action_remove_shortcut">Kısayolu kaldır</string>
+    <string name="category_add_error_reserved_uncategorized">\"Kategorize edilmemiş\" kategorisi olmayan uygulamalar için uygulama-içi listedir. Lütfen başka bir isim belirleyin.</string>
+    <string name="category_add_error_reserved_private">\"Özel\" kelimesi Özel Alan için ayrılmıştır. Lütfen başka bir isim belirleyin.</string>
+    <string name="category_add_error_reserved_work">\"İş\" kelimesi iş profili için ayırılmıştır. Lütfen başka bir isim belirleyin.</string>
+    <string name="category_add_error_duplicate">\"%1$s\" adlı kategori zaten halihazırda var. Eğer çevrilmiş bir kelime yazdıysanız, bu isim Oyunlar veya Medya gibi varsayılan bir kategori ismi olabilir.</string>
+    <string name="widget_page">Widget sayfası</string>
+    <string name="widget_initial_height">%1$ddp</string>
+    <string name="home_alignment_middle">Orta</string>
+    <string name="icon_cat_home">Ana ekran</string>
+    <string name="icon_cat_communicate">İletişime geç</string>
+    <string name="icon_cat_ui_actions">UI aksiyonları</string>
+    <string name="icon_cat_household">Eve dair</string>
+    <string name="settings_section_image_wallpaper_accessibility">Görüntü duvarkağıdı — okunabilirlik</string>
+    <string name="settings_photo_outline_strength_subtitle">Saatin arkasında Yarı-geçirgen siyah haplar, favoriler, ana ekran widgetları, ve arkaplan görüntüsünde kısayol ikonları.</string>
+    <string name="settings_photo_drawer_overlay_label">Uygulama gözü karartma güçü</string>
 </resources>
