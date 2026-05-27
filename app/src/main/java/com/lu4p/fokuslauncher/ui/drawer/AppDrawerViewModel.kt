@@ -82,6 +82,8 @@ data class AppDrawerUiState(
         val categoryDrawerIconOverrides: Map<String, String> = emptyMap(),
         val usesPhotoWallpaper: Boolean = false,
         val drawerAppSortMode: DrawerAppSortMode = DrawerAppSortMode.ALPHABETICAL,
+        /** Automatically open keyboard when app drawer is opened. */
+        val drawerAutoOpenKeyboard: Boolean = true,
         /** Automatically open keyboard when scrolling to the top of the app drawer. */
         val drawerScrollToTopAutoKeyboard: Boolean = false,
         /**
@@ -303,6 +305,7 @@ constructor(
         observeDrawerCategoryRailAndIcons()
         observeDrawerSortOpenCountsAndCustomOrder()
         observeDrawerDotSearchPreferences()
+        observeDrawerAutoOpenKeyboard()
         observeDrawerScrollToTopAutoKeyboard()
         observeProfileDisplayNameOverrides()
         observeLauncherAppearance()
@@ -336,6 +339,14 @@ constructor(
         viewModelScope.launch {
             preferencesManager.drawerSearchAutoLaunchFlow.collect { enabled ->
                 drawerSearchAutoLaunchEnabled = enabled
+            }
+        }
+    }
+
+    private fun observeDrawerAutoOpenKeyboard() {
+        viewModelScope.launch {
+            preferencesManager.drawerAutoOpenKeyboardFlow.collect { enabled ->
+                _uiState.update { it.copy(drawerAutoOpenKeyboard = enabled) }
             }
         }
     }

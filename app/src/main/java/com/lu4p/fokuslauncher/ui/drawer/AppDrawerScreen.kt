@@ -811,7 +811,7 @@ fun AppDrawerContent(
     val listState = rememberLazyListState()
     val latestCategories = rememberUpdatedState(uiState.categories)
     val latestSelectedCategory = rememberUpdatedState(uiState.selectedCategory)
-    var showSearch by remember { mutableStateOf(false) }
+    var showSearch by remember { mutableStateOf(uiState.drawerAutoOpenKeyboard) }
 
     LaunchedEffect(uiState.selectedCategory) { listState.scrollToItem(0) }
 
@@ -881,14 +881,18 @@ fun AppDrawerContent(
             isAtTop,
             showSearch,
             useSidebarCategoryDrawer,
+            uiState.drawerAutoOpenKeyboard,
             uiState.drawerScrollToTopAutoKeyboard,
             drawerSettling,
     ) {
+        if (useSidebarCategoryDrawer && isAtTop && hasScrolledDown && uiState.drawerScrollToTopAutoKeyboard) {
+            showSearch = true
+        }
         val shouldFocusSearch =
                 if (useSidebarCategoryDrawer) {
                     showSearch && isAtTop
                 } else {
-                    isAtTop && (!hasScrolledDown || uiState.drawerScrollToTopAutoKeyboard)
+                    isAtTop && ((!hasScrolledDown && uiState.drawerAutoOpenKeyboard) || uiState.drawerScrollToTopAutoKeyboard)
                 }
         // Chip layout: wait for drawer settle so scrollToItem(0) does not block opening keyboard.
         val readyToFocus = shouldFocusSearch && (!drawerSettling || useSidebarCategoryDrawer)
@@ -910,7 +914,10 @@ fun AppDrawerContent(
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
                 if (source == NestedScrollSource.UserInput && available.y > 0 && !listState.canScrollBackward) {
                     // Immediate response for pull-down gesture at the boundary
-                    if (uiState.drawerScrollToTopAutoKeyboard && !useSidebarCategoryDrawer) {
+                    if (uiState.drawerScrollToTopAutoKeyboard) {
+                        if (useSidebarCategoryDrawer) {
+                            showSearch = true
+                        }
                         // LaunchedEffect(isAtTop) handles focus when scrolling to top; re-request
                         // if already at top and pulling down at the list boundary.
                         focusRequester.requestFocus()

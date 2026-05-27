@@ -561,15 +561,21 @@ private fun SettingsScreenContent(
                     onCheckedChange = viewModel::setDrawerSearchAutoLaunch
             )
         }
-        if (!uiState.drawerSidebarCategories) {
-            item {
-                SettingsToggleRow(
-                        label = stringResource(R.string.settings_drawer_scroll_to_top_auto_keyboard),
-                        subtitle = stringResource(R.string.settings_drawer_scroll_to_top_auto_keyboard_subtitle),
-                        checked = uiState.drawerScrollToTopAutoKeyboard,
-                        onCheckedChange = viewModel::setDrawerScrollToTopAutoKeyboard
-                )
-            }
+        item {
+            SettingsToggleRow(
+                    label = stringResource(R.string.settings_drawer_auto_open_keyboard),
+                    subtitle = stringResource(R.string.settings_drawer_auto_open_keyboard_subtitle),
+                    checked = uiState.drawerAutoOpenKeyboard,
+                    onCheckedChange = viewModel::setDrawerAutoOpenKeyboard
+            )
+        }
+        item {
+            SettingsToggleRow(
+                    label = stringResource(R.string.settings_drawer_scroll_to_top_auto_keyboard),
+                    subtitle = stringResource(R.string.settings_drawer_scroll_to_top_auto_keyboard_subtitle),
+                    checked = uiState.drawerScrollToTopAutoKeyboard,
+                    onCheckedChange = viewModel::setDrawerScrollToTopAutoKeyboard
+            )
         }
         item {
             SettingsToggleRow(
