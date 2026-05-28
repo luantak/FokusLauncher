@@ -165,7 +165,7 @@
     <string name="settings_drawer_scroll_to_top_auto_keyboard_subtitle">Ouvrir automatiquement le clavier et la recherche lors d\'un scroll vers le haut de la liste des applications</string>
     <string name="settings_matrix_title">Rejoindre la discussion</string>
     <string name="settings_weblate_subtitle">Contribuer à la traduction sur Weblate</string>
-    <string name="settings_github_title">Mettre une étoile sur Github</string>
+    <string name="settings_github_title">Mettre une étoile sur GitHub</string>
     <string name="settings_github_subtitle">Voir les sources et contribuer</string>
     <string name="onboarding_tips_title">Astuces rapides</string>
     <string name="onboarding_tip_swipe">Balayer vers le haut pour ouvrir le tiroir d\'applications</string>
@@ -214,7 +214,7 @@
     <string name="settings_profile_names_save">Enregistrer</string>
     <string name="settings_profile_names_reset">Réinitialiser</string>
     <string name="settings_dot_search_screen_title">Recherche par point &amp; raccourcis</string>
-    <string name="settings_dot_search_explanation">Utilisez la recherche par point pour lancer une requête et les raccourcis par point pour effectuer une action immédiate. Saisissez `. requête` pour utiliser la cible par défaut. Ajoutez une cible ou un modèle d\'URL avec la syntaxe `.x requête`, ou ajoutez une cible \"Ouvrir un raccourci` avec la syntaxe `.x`. Les modèles d\'URL utilisent %1$s pour indiquer l\'emplacement de la chaîne à rechercher (par exemple https://example.com/search?q=%1$s).</string>
+    <string name="settings_dot_search_explanation">Utilisez la recherche par point pour lancer une requête et les raccourcis par point pour effectuer une action immédiate. Saisissez `. requête` pour utiliser la cible par défaut. Ajoutez une cible ou un modèle d\'URL avec la syntaxe `.x requête`, ou ajoutez une cible \"Ouvrir un raccourci\" avec la syntaxe `.x`. Les modèles d\'URL utilisent %1$s pour indiquer l\'emplacement de la chaîne à rechercher (par exemple https://example.com/search?q=%1$s).</string>
     <string name="settings_dot_search_default_label">Application de recherche par défaut</string>
     <string name="settings_dot_search_url_template">Modèle d\'URL</string>
     <string name="icon_cat_household">Domicile</string>
@@ -278,7 +278,7 @@
     <string name="settings_export_logs_title">Exporter les logs</string>
     <string name="settings_export_logs_subtitle">Partager un fichier de diagnostic pour signaler un bug</string>
     <string name="settings_export_logs_share_chooser">Partager les logs de diagnostic</string>
-    <string name="settings_export_logs_share_subject">Loges de diagnotic de Fokus Launcher</string>
+    <string name="settings_export_logs_share_subject">Logs de diagnostic de Fokus Launcher</string>
     <string name="toast_export_logs_failed">Impossible de générer les logs d\'export</string>
     <string name="settings_reset_all_data">Réinitialiser toutes les données</string>
     <string name="settings_reset_confirm_title">Réinitialiser toutes les données ?</string>
