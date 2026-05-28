@@ -19,8 +19,9 @@ import com.lu4p.fokuslauncher.data.database.entity.AppCategoryEntity
 import com.lu4p.fokuslauncher.data.database.entity.HiddenAppEntity
 import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
 import com.lu4p.fokuslauncher.data.model.isAppHiddenByMetadata
-import com.lu4p.fokuslauncher.data.model.overlayCategory
 import com.lu4p.fokuslauncher.data.model.overlayCustomName
+import com.lu4p.fokuslauncher.data.model.resolveAppCategory
+import com.lu4p.fokuslauncher.data.model.dynamicCategoryExtras
 import com.lu4p.fokuslauncher.data.model.appProfileKey
 import com.lu4p.fokuslauncher.data.model.appListStableKey
 import com.lu4p.fokuslauncher.data.model.drawerOpenCountKey
@@ -230,6 +231,7 @@ private data class DrawerMetadataSnapshot(
         val renamedApps: List<RenamedAppEntity>,
         val categoryEntities: List<AppCategoryEntity>,
         val definedCategories: List<String>,
+        val suppressedCategories: List<String>,
 )
 
 @HiltViewModel
@@ -252,6 +254,7 @@ constructor(
     private var latestRenamedApps: List<RenamedAppEntity> = emptyList()
     private var latestCategoryEntities: List<AppCategoryEntity> = emptyList()
     private var latestDefinedCategories: List<String> = emptyList()
+    private var latestSuppressedCategories: List<String> = emptyList()
     private var latestDrawerSortMode: DrawerAppSortMode = DrawerAppSortMode.ALPHABETICAL
     private var latestOpenCounts: Map<String, Int> = emptyMap()
     /** Profile key → ordered drawer open-count keys ([drawerOpenCountKey]); used when sort is CUSTOM. */
@@ -362,6 +365,7 @@ constructor(
                                 latestRenamedApps,
                                 latestCategoryEntities,
                                 latestDefinedCategories,
+                                latestSuppressedCategories,
                         )
                 val reorderedPrivate =
                         resolvedPrivateSpaceAppsForDrawer(metadata, removedSnapshot, state)
@@ -461,6 +465,7 @@ constructor(
                                 hiddenApps = metadata.hiddenApps,
                                 renamedApps = metadata.renamedApps,
                                 categoryEntities = metadata.categoryEntities,
+                                suppressedCategories = metadata.suppressedCategories.toSet(),
                         )
                         .filterNot { app ->
                             drawerOpenCountKey(app.packageName, app.userHandle) in removedSnapshot
@@ -473,12 +478,14 @@ constructor(
             privateApps: List<AppInfo>,
             stateSnapshot: AppDrawerUiState,
             definedCategories: List<String>,
+            suppressedCategories: List<String>,
             useSidebarCategoryDrawer: Boolean,
     ): Triple<List<String>, String, FilteredDrawerContent> {
         val categories =
                 deriveCategories(
                         apps = visible,
                         definedCategories = definedCategories,
+                        suppressedCategories = suppressedCategories,
                         includePrivate = privateSpaceUnlockedForDrawer(stateSnapshot),
                         includeWork = visible.any { isDrawerWorkProfileApp(context, it) },
                         includeAllAppsSection = !useSidebarCategoryDrawer,
@@ -544,6 +551,7 @@ constructor(
                                 latestRenamedApps,
                                 latestCategoryEntities,
                                 latestDefinedCategories,
+                                latestSuppressedCategories,
                         )
                 val privateApps =
                         resolvedPrivateSpaceAppsForDrawer(metadata, removedSnapshot, state)
@@ -553,6 +561,7 @@ constructor(
                                 privateApps = privateApps,
                                 stateSnapshot = state,
                                 definedCategories = latestDefinedCategories,
+                                suppressedCategories = latestSuppressedCategories,
                                 useSidebarCategoryDrawer = sidebarEnabled,
                         )
                 _uiState.update { state ->
@@ -609,6 +618,7 @@ constructor(
                                         latestRenamedApps,
                                         latestCategoryEntities,
                                         latestDefinedCategories,
+                                        latestSuppressedCategories,
                                 )
                         val reorderedPrivate =
                                 resolvedPrivateSpaceAppsForDrawer(
@@ -658,6 +668,7 @@ constructor(
                             latestRenamedApps,
                             latestCategoryEntities,
                             latestDefinedCategories,
+                            latestSuppressedCategories,
                     )
             )
         }
@@ -673,13 +684,15 @@ constructor(
                             appRepository.getHiddenApps(),
                             appRepository.getAllRenamedApps(),
                             appRepository.getAllAppCategories(),
-                            appRepository.getAllCategoryDefinitions()
-                    ) { hiddenApps, renamedApps, categories, categoryDefinitions ->
+                            appRepository.getAllCategoryDefinitions(),
+                            appRepository.getSuppressedCategoryDefinitions(),
+                    ) { hiddenApps, renamedApps, categories, categoryDefinitions, suppressed ->
                 DrawerMetadataSnapshot(
                         hiddenApps = hiddenApps,
                         renamedApps = renamedApps,
                         categoryEntities = categories,
                         definedCategories = categoryDefinitions.map { it.name },
+                        suppressedCategories = suppressed,
                 )
             }
                     .collect { snapshot ->
@@ -687,6 +700,7 @@ constructor(
                         latestRenamedApps = snapshot.renamedApps
                         latestCategoryEntities = snapshot.categoryEntities
                         latestDefinedCategories = snapshot.definedCategories
+                        latestSuppressedCategories = snapshot.suppressedCategories
                         rebuildVisibleApps(snapshot)
                     }
         }
@@ -701,6 +715,7 @@ constructor(
                                 latestRenamedApps,
                                 latestCategoryEntities,
                                 latestDefinedCategories,
+                                latestSuppressedCategories,
                         )
                 )
             }
@@ -779,6 +794,7 @@ constructor(
                                     hiddenApps = metadata.hiddenApps,
                                     renamedApps = metadata.renamedApps,
                                     categoryEntities = metadata.categoryEntities,
+                                    suppressedCategories = metadata.suppressedCategories.toSet(),
                             )
                             .filterNot { app ->
                                 drawerOpenCountKey(app.packageName, app.userHandle) in
@@ -798,6 +814,7 @@ constructor(
                             privateApps = privateAppsFiltered,
                             stateSnapshot = stateSnapshot,
                             definedCategories = metadata.definedCategories,
+                            suppressedCategories = metadata.suppressedCategories,
                             useSidebarCategoryDrawer = stateSnapshot.useSidebarCategoryDrawer,
                     )
             _uiState.update { state ->
@@ -827,6 +844,7 @@ constructor(
                             latestRenamedApps,
                             latestCategoryEntities,
                             latestDefinedCategories,
+                            latestSuppressedCategories,
                     )
             val visible =
                     stateSnapshot.allApps.filterNot {
@@ -845,6 +863,7 @@ constructor(
                             privateApps = privateApps,
                             stateSnapshot = stateSnapshot,
                             definedCategories = latestDefinedCategories,
+                            suppressedCategories = latestSuppressedCategories,
                             useSidebarCategoryDrawer = stateSnapshot.useSidebarCategoryDrawer,
                     )
             _uiState.update { state ->
@@ -1287,6 +1306,7 @@ constructor(
                                         hiddenApps = latestHiddenApps,
                                         renamedApps = latestRenamedApps,
                                         categoryEntities = latestCategoryEntities,
+                                        suppressedCategories = latestSuppressedCategories.toSet(),
                                 )
                         )
                     } else {
@@ -1301,6 +1321,7 @@ constructor(
                             privateApps = apps,
                             stateSnapshot = tempState,
                             definedCategories = latestDefinedCategories,
+                            suppressedCategories = latestSuppressedCategories,
                             useSidebarCategoryDrawer = state.useSidebarCategoryDrawer,
                     )
             _uiState.update {
@@ -1445,13 +1466,19 @@ constructor(
             hiddenApps: List<HiddenAppEntity>,
             renamedApps: List<RenamedAppEntity>,
             categoryEntities: List<AppCategoryEntity>,
+            suppressedCategories: Set<String> = emptySet(),
     ): List<AppInfo> {
         return apps
                 .filterNot { app -> isAppHiddenByMetadata(app, hiddenApps) }
                 .map { app ->
                     app.copy(
                             label = overlayCustomName(app, renamedApps) ?: app.label,
-                            category = overlayCategory(app, categoryEntities) ?: app.category,
+                            category =
+                                    resolveAppCategory(
+                                            app,
+                                            categoryEntities,
+                                            suppressedCategories,
+                                    ),
                     )
                 }
     }
@@ -1614,15 +1641,16 @@ constructor(
     private fun deriveCategories(
             apps: List<AppInfo>,
             definedCategories: List<String>,
+            suppressedCategories: List<String>,
             includePrivate: Boolean,
             includeWork: Boolean,
             includeAllAppsSection: Boolean
     ): List<String> {
         val privateSpaceLast = !includeAllAppsSection
         val hasUncategorizedApps = apps.any { it.category.isBlank() }
-        val dynamic = apps.map { it.category.trim() }.filter { it.isNotBlank() }.toSet()
+        val appCategories = apps.map { it.category.trim() }.filter { it.isNotBlank() }
         val orderedDefined = definedCategories.distinct()
-        val extras = (dynamic - orderedDefined.toSet()).toList().sorted()
+        val extras = dynamicCategoryExtras(appCategories, orderedDefined, suppressedCategories)
         val reservedLower =
                 buildSet {
                     if (includeAllAppsSection) add(ReservedCategoryNames.ALL_APPS.lowercase())

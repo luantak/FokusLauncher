@@ -101,6 +101,35 @@ fun overlayCategory(
     return packageRows.find { it.launcherShortcutId == LEGACY_PACKAGE_WIDE_METADATA }?.category
 }
 
+fun resolveAppCategory(
+        app: AppInfo,
+        categoryEntities: List<com.lu4p.fokuslauncher.data.database.entity.AppCategoryEntity>,
+        suppressedCategories: Set<String> = emptySet(),
+): String {
+    overlayCategory(app, categoryEntities)?.let { return it }
+    val inferred = app.category.trim()
+    if (inferred.isBlank()) return ""
+    if (suppressedCategories.any { it.equals(inferred, ignoreCase = true) }) return ""
+    return inferred
+}
+
+fun dynamicCategoryExtras(
+        appCategories: Collection<String>,
+        definedCategories: Collection<String>,
+        suppressedCategories: Collection<String> = emptySet(),
+): List<String> {
+    val defined = definedCategories.map { it.trim() }.filter { it.isNotBlank() }.toSet()
+    val suppressedLower =
+            suppressedCategories.map { it.trim() }.filter { it.isNotBlank() }.map { it.lowercase() }.toSet()
+    return appCategories
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .filterNot { it.lowercase() in suppressedLower }
+            .toSet()
+            .minus(defined)
+            .sorted()
+}
+
 /**
  * Stable LazyColumn/LazyRow key: same package and profile can have multiple launch activities
  * (e.g. Google app); [drawerOpenCountKey] alone is not enough for those rows.

@@ -21,6 +21,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.AppInfo
+import com.lu4p.fokuslauncher.data.model.dynamicCategoryExtras
 import com.lu4p.fokuslauncher.data.model.AppShortcutAction
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.model.appListStableKey
@@ -804,9 +805,11 @@ class HomeViewModel @Inject constructor(
                 combine(
                         _allInstalledApps,
                         appRepository.getAllCategoryDefinitions(),
-                ) { apps, definitions ->
+                        appRepository.getSuppressedCategoryDefinitions(),
+                ) { apps, definitions, suppressed ->
                     val defined = definitions.map { it.name.trim() }.filter { it.isNotBlank() }
-                    val dynamic = apps.map { it.category.trim() }.filter { it.isNotBlank() }
+                    val appCategories = apps.map { it.category.trim() }.filter { it.isNotBlank() }
+                    val dynamic = dynamicCategoryExtras(appCategories, defined, suppressed)
                     (defined + dynamic)
                             .distinctBy { it.lowercase() }
                             .filterNot(::isHomeCategoryPickerReserved)

@@ -10,6 +10,7 @@ import com.lu4p.fokuslauncher.data.database.entity.AppCategoryDefinitionEntity
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryEntity
 import com.lu4p.fokuslauncher.data.database.entity.HiddenAppEntity
 import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
+import com.lu4p.fokuslauncher.data.database.entity.SuppressedCategoryDefinitionEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -141,6 +142,20 @@ interface AppDao {
     @Query("DELETE FROM app_category_definitions WHERE name = :name")
     suspend fun removeCategoryDefinition(name: String)
 
+    // --- Suppressed Category Definitions ---
+
+    @Query("SELECT * FROM suppressed_category_definitions")
+    fun getAllSuppressedCategoryDefinitions(): Flow<List<SuppressedCategoryDefinitionEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertSuppressedCategoryDefinition(entity: SuppressedCategoryDefinitionEntity)
+
+    @Query("DELETE FROM suppressed_category_definitions WHERE name = :name")
+    suspend fun removeSuppressedCategoryDefinition(name: String)
+
+    @Query("DELETE FROM suppressed_category_definitions")
+    suspend fun clearAllSuppressedCategoryDefinitions()
+
     /**
      * Clears categories, assignment rows, and the definition in one transaction so Flow collectors
      * (e.g. settings UI counts) refresh once instead of after each per-app write.
@@ -155,6 +170,7 @@ interface AppDao {
         }
         removeCategoryAssignments(categoryName)
         removeCategoryDefinition(categoryName)
+        upsertSuppressedCategoryDefinition(SuppressedCategoryDefinitionEntity(categoryName))
     }
 
     @Transaction
@@ -189,6 +205,7 @@ interface AppDao {
         clearAllRenamedApps()
         clearAllAppCategories()
         clearAllCategoryDefinitions()
+        clearAllSuppressedCategoryDefinitions()
         if (defaultCategoryDefinitions.isNotEmpty()) {
             upsertCategoryDefinitions(defaultCategoryDefinitions)
         }

@@ -81,6 +81,15 @@ object AppModule {
             "ALTER TABLE `app_categories_new` RENAME TO `app_categories`",
         )
 
+    val migration5To6 =
+        object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `suppressed_category_definitions` (`name` TEXT NOT NULL, PRIMARY KEY(`name`))"
+                )
+            }
+        }
+
     val migration4To5 =
         object : Migration(4, 5) {
             override fun migrate(db: SupportSQLiteDatabase) {
@@ -247,7 +256,7 @@ object AppModule {
         context,
         AppDatabase::class.java,
         "fokus_launcher_db"
-    ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, migration3To4(context), migration4To5).build()
+    ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, migration3To4(context), migration4To5, migration5To6).build()
 
     @Provides
     @Singleton

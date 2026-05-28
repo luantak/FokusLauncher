@@ -60,6 +60,7 @@ class AppDrawerViewModelTest {
     private val renamedFlow = MutableStateFlow<List<RenamedAppEntity>>(emptyList())
     private val categoriesFlow = MutableStateFlow<List<AppCategoryEntity>>(emptyList())
     private val categoryDefinitionsFlow = MutableStateFlow<List<AppCategoryDefinitionEntity>>(emptyList())
+    private val suppressedCategoriesFlow = MutableStateFlow<List<String>>(emptyList())
     private val favoritesFlow = MutableStateFlow<List<FavoriteApp>>(emptyList())
     private val drawerAppSortModeFlow = MutableStateFlow(DrawerAppSortMode.ALPHABETICAL)
     private val drawerAppOpenCountsFlow = MutableStateFlow<Map<String, Int>>(emptyMap())
@@ -113,6 +114,7 @@ class AppDrawerViewModelTest {
         every { appRepository.getAllRenamedApps() } returns renamedFlow
         every { appRepository.getAllAppCategories() } returns categoriesFlow
         every { appRepository.getAllCategoryDefinitions() } returns categoryDefinitionsFlow
+        every { appRepository.getSuppressedCategoryDefinitions() } returns suppressedCategoriesFlow
         every { appRepository.launchApp(any()) } returns true
         every { appRepository.launchLauncherShortcut(any(), any(), any()) } returns true
         every { preferencesManager.favoritesFlow } returns favoritesFlow

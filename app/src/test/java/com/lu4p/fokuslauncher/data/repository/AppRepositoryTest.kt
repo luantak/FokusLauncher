@@ -18,6 +18,7 @@ import com.lu4p.fokuslauncher.data.database.entity.AppCategoryDefinitionEntity
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryEntity
 import com.lu4p.fokuslauncher.data.database.entity.HiddenAppEntity
 import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
+import com.lu4p.fokuslauncher.data.database.entity.SuppressedCategoryDefinitionEntity
 import com.lu4p.fokuslauncher.data.model.AddCategoryResult
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.HOST_APP_METADATA_SENTINEL
@@ -34,6 +35,8 @@ import io.mockk.verify
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
+import androidx.room.Room
+import com.lu4p.fokuslauncher.data.database.AppDatabase
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -639,6 +642,50 @@ class AppRepositoryTest {
         repository.deleteCategory("Private")
 
         coVerify(exactly = 0) { appDao.deleteCategoryWithAppResets(any(), any()) }
+    }
+
+    @Test
+    fun `addCategoryDefinition removes suppressed category entry`() = runTest {
+        every { appDao.getAllCategoryDefinitions() } returns flowOf(emptyList())
+        coEvery { appDao.getMaxCategoryDefinitionPosition() } returns 0
+
+        repository.addCategoryDefinition("Games")
+
+        coVerify { appDao.upsertCategoryDefinition(AppCategoryDefinitionEntity("Games", 1)) }
+        coVerify { appDao.removeSuppressedCategoryDefinition("Games") }
+    }
+
+    @Test
+    fun `deleteCategory records suppressed category definition`() = runTest {
+        val realContext = RuntimeEnvironment.getApplication().applicationContext as Context
+        val db =
+                Room.inMemoryDatabaseBuilder(realContext, AppDatabase::class.java)
+                        .allowMainThreadQueries()
+                        .build()
+        try {
+            val realDao = db.appDao()
+            every {
+                launcherApps.getActivityList(null, myUser)
+            } returns
+                    listOf(
+                            createMockLauncherActivity(
+                                    "com.lu4p.game",
+                                    "Game",
+                                    ApplicationInfo.CATEGORY_GAME
+                            )
+                    )
+            val realRepository =
+                    AppRepository(realContext, realDao, PrivateSpaceManager(realContext))
+            realRepository.invalidateCache()
+            realRepository.deleteCategory("Games")
+
+            assertEquals(
+                    listOf(SuppressedCategoryDefinitionEntity("Games")),
+                    realDao.getAllSuppressedCategoryDefinitions().first(),
+            )
+        } finally {
+            db.close()
+        }
     }
 
     @Test

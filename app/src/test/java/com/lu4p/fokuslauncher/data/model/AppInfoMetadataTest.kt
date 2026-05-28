@@ -64,4 +64,47 @@ class AppInfoMetadataTest {
         assertEquals("Social", overlayCategory(pwa("pwa-twitter", "Twitter"), categories))
         assertEquals("News", overlayCategory(pwa("pwa-reddit", "Reddit"), categories))
     }
+
+    @Test
+    fun `resolveAppCategory returns overlay when assigned`() {
+        val categories =
+                listOf(
+                        AppCategoryEntity(browserPackage, "0", "Social"),
+                )
+        assertEquals("Social", resolveAppCategory(browserHost(), categories))
+    }
+
+    @Test
+    fun `resolveAppCategory clears inferred category when suppressed`() {
+        val app = browserHost().copy(category = "Games")
+        assertEquals("", resolveAppCategory(app, emptyList(), setOf("Games")))
+    }
+
+    @Test
+    fun `resolveAppCategory keeps inferred category when not suppressed`() {
+        val app = browserHost().copy(category = "Games")
+        assertEquals("Games", resolveAppCategory(app, emptyList()))
+    }
+
+    @Test
+    fun `dynamicCategoryExtras excludes defined and suppressed categories`() {
+        val extras =
+                dynamicCategoryExtras(
+                        appCategories = listOf("Games", "Social", "Games"),
+                        definedCategories = listOf("Social"),
+                        suppressedCategories = listOf("Games"),
+                )
+        assertEquals(emptyList<String>(), extras)
+    }
+
+    @Test
+    fun `dynamicCategoryExtras returns sorted undefined non-suppressed categories`() {
+        val extras =
+                dynamicCategoryExtras(
+                        appCategories = listOf("Finance", "Games"),
+                        definedCategories = emptyList(),
+                        suppressedCategories = listOf("Games"),
+                )
+        assertEquals(listOf("Finance"), extras)
+    }
 }

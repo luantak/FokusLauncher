@@ -207,4 +207,34 @@ class AppDatabaseMigrationTest {
             }
         }
     }
+
+    @Test
+    fun migrate5To6_createsSuppressedCategoryDefinitionsTable() {
+        val dbName = "migration-test-v5-to-v6"
+        helper.createDatabase(dbName, 5).apply {
+            execSQL(
+                "CREATE TABLE IF NOT EXISTS `app_category_definitions` (`name` TEXT NOT NULL, `position` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`name`))"
+            )
+            close()
+        }
+
+        val migratedDb =
+            helper.runMigrationsAndValidate(
+                    dbName,
+                    6,
+                    true,
+                    AppModule.migration5To6,
+            )
+
+        migratedDb.use { db ->
+            db.execSQL(
+                "INSERT INTO `suppressed_category_definitions` (`name`) VALUES ('Games')"
+            )
+            db.query("SELECT name FROM suppressed_category_definitions").use { cursor ->
+                assertEquals(1, cursor.count)
+                cursor.moveToFirst()
+                assertEquals("Games", cursor.getString(0))
+            }
+        }
+    }
 }

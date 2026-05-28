@@ -27,6 +27,7 @@ import com.lu4p.fokuslauncher.data.database.entity.AppCategoryDefinitionEntity
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryEntity
 import com.lu4p.fokuslauncher.data.database.entity.HiddenAppEntity
 import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
+import com.lu4p.fokuslauncher.data.database.entity.SuppressedCategoryDefinitionEntity
 import com.lu4p.fokuslauncher.data.model.AddCategoryResult
 import com.lu4p.fokuslauncher.data.model.reservedCategoryAddFailure
 import com.lu4p.fokuslauncher.data.model.AppInfo
@@ -1106,6 +1107,12 @@ constructor(
                 }.distinctBy { it.name.lowercase() }
             }
 
+    /** Returns a Flow of suppressed category names (deleted by the user). */
+    fun getSuppressedCategoryDefinitions(): Flow<List<String>> =
+            appDao.getAllSuppressedCategoryDefinitions().map { entities ->
+                entities.map { normalizeCategory(it.name) }
+            }
+
     /** Adds a user-defined category. */
     suspend fun addCategoryDefinition(name: String): AddCategoryResult {
         val normalized = normalizeCategory(name)
@@ -1120,6 +1127,7 @@ constructor(
         appDao.upsertCategoryDefinition(
                 AppCategoryDefinitionEntity(name = normalized, position = nextPosition)
         )
+        appDao.removeSuppressedCategoryDefinition(normalized)
         return AddCategoryResult.Success
     }
 
@@ -1154,6 +1162,7 @@ constructor(
         appDao.upsertCategoryDefinition(
                 AppCategoryDefinitionEntity(name = newNormalized, position = newPosition)
         )
+        appDao.removeSuppressedCategoryDefinition(newNormalized)
     }
 
     /** Deletes a category and removes its app memberships. */

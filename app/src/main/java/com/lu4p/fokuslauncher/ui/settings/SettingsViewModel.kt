@@ -18,7 +18,7 @@ import com.lu4p.fokuslauncher.data.model.TemperatureUnit
 import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import com.lu4p.fokuslauncher.data.model.metadataSettingsStableKey
 import com.lu4p.fokuslauncher.data.model.appProfileKey
-import com.lu4p.fokuslauncher.data.model.overlayCategory
+import com.lu4p.fokuslauncher.data.model.resolveAppCategory
 import com.lu4p.fokuslauncher.data.font.CustomFontImportFailure
 import com.lu4p.fokuslauncher.data.font.CustomFontImportResult
 import com.lu4p.fokuslauncher.data.font.CustomFontStore
@@ -71,6 +71,7 @@ data class SettingsUiState(
         val renamedApps: List<RenamedAppInfo> = emptyList(),
         val appCategories: Map<String, String> = emptyMap(),
         val categoryDefinitions: List<String> = emptyList(),
+        val suppressedCategories: List<String> = emptyList(),
         val favorites: List<FavoriteApp> = emptyList(),
         val rightSideShortcuts: List<HomeShortcut> = emptyList(),
         val swipeLeftTarget: ShortcutTarget? = null,
@@ -204,14 +205,20 @@ constructor(
                                 swipeLeft = swipeLeft,
                         )
                     }
+            val categoryMetadataFlow =
+                    combine(
+                            appRepository.getAllCategoryDefinitions(),
+                            appRepository.getSuppressedCategoryDefinitions(),
+                    ) { definitions, suppressed -> definitions to suppressed }
             val categoryStateFlow =
                     combine(
                             appRepository.getInstalledAppsVersion(),
                             favoritesBaseFlow,
                             privateSpaceRefreshTick,
                             appRepository.getAllAppCategories(),
-                            appRepository.getAllCategoryDefinitions(),
-                    ) { _, base, _, categories, definitions ->
+                            categoryMetadataFlow,
+                    ) { _, base, _, categories, metadata ->
+                        val (definitions, suppressed) = metadata
                         CategoryState(
                                 hiddenApps = base.hiddenApps,
                                 renamedApps = base.renamedApps,
@@ -220,6 +227,7 @@ constructor(
                                 swipeLeft = base.swipeLeft,
                                 categoryEntities = categories,
                                 categoryDefinitions = definitions.map { it.name },
+                                suppressedCategories = suppressed,
                         )
                     }
             val homeWidgetItemsFlow =
@@ -359,10 +367,16 @@ constructor(
                                 ?.takeIf { it != Process.myUserHandle() }
                                 ?.let(::appProfileKey)
                 val categoryEntities = left.categoryEntities
+                val suppressedCategories = left.suppressedCategories
                 val installedApps =
                         appRepository.getInstalledAppsOnBackground().map { app ->
                             app.copy(
-                                    category = overlayCategory(app, categoryEntities) ?: app.category,
+                                    category =
+                                            resolveAppCategory(
+                                                    app,
+                                                    categoryEntities,
+                                                    suppressedCategories.toSet(),
+                                            ),
                             )
                         }
                 val privateApps =
@@ -400,6 +414,7 @@ constructor(
                                             it.category
                                 },
                         categoryDefinitions = left.categoryDefinitions,
+                        suppressedCategories = left.suppressedCategories,
                         favorites = left.favorites,
                         rightSideShortcuts = left.rightSideShortcuts,
                         swipeLeftTarget = left.swipeLeft,
@@ -472,6 +487,7 @@ constructor(
             val swipeLeft: ShortcutTarget?,
             val categoryEntities: List<AppCategoryEntity>,
             val categoryDefinitions: List<String>,
+            val suppressedCategories: List<String>,
     )
 
     private data class DrawerPrefs(
