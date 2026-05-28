@@ -11,14 +11,1383 @@ import java.util.TreeMap
 
 internal object MaterialShippedOutlinedIcons {
 
+    /** Sorted outlined glyph names shipped in the app (subset of MaterialIcons extended). */
+    @JvmField
+    val SHIPPED_NAMES: List<String> = listOf(
+        "Abc",
+        "AcUnit",
+        "AccountBalance",
+        "AccountBalanceWallet",
+        "AccountTree",
+        "Add",
+        "AddAPhoto",
+        "AddBox",
+        "AddBusiness",
+        "AddCard",
+        "AddChart",
+        "AddComment",
+        "AddHome",
+        "AddHomeWork",
+        "AddLocation",
+        "AddLocationAlt",
+        "AddModerator",
+        "AddPhotoAlternate",
+        "AddReaction",
+        "AddRoad",
+        "AddShoppingCart",
+        "AddTask",
+        "AddToQueue",
+        "AdfScanner",
+        "Adjust",
+        "AdminPanelSettings",
+        "Agriculture",
+        "Air",
+        "AirlineSeatFlat",
+        "AirlineSeatFlatAngled",
+        "AirlineSeatIndividualSuite",
+        "AirlineSeatLegroomExtra",
+        "AirlineSeatLegroomNormal",
+        "AirlineSeatLegroomReduced",
+        "AirlineSeatReclineExtra",
+        "AirlineSeatReclineNormal",
+        "AirlineStops",
+        "Airlines",
+        "AirplaneTicket",
+        "Airplay",
+        "AirportShuttle",
+        "Alarm",
+        "Album",
+        "AllInbox",
+        "AltRoute",
+        "AlternateEmail",
+        "Analytics",
+        "Animation",
+        "Apartment",
+        "AppRegistration",
+        "Apps",
+        "AppsOutage",
+        "Architecture",
+        "AreaChart",
+        "ArrowBack",
+        "ArrowBackIos",
+        "ArrowBackIosNew",
+        "ArrowCircleDown",
+        "ArrowCircleLeft",
+        "ArrowCircleRight",
+        "ArrowCircleUp",
+        "ArrowDownward",
+        "ArrowDropDownCircle",
+        "ArrowDropUp",
+        "ArrowForward",
+        "ArrowForwardIos",
+        "ArrowLeft",
+        "ArrowOutward",
+        "ArrowRight",
+        "ArrowRightAlt",
+        "ArrowUpward",
+        "ArtTrack",
+        "AspectRatio",
+        "AssistWalker",
+        "AssistantDirection",
+        "AssuredWorkload",
+        "Atm",
+        "AttachEmail",
+        "AttachMoney",
+        "Attractions",
+        "Attribution",
+        "AudioFile",
+        "AutoAwesomeMosaic",
+        "AutoAwesomeMotion",
+        "AutoStories",
+        "AutofpsSelect",
+        "Autorenew",
+        "AvTimer",
+        "BabyChangingStation",
+        "BackHand",
+        "Backpack",
+        "Backspace",
+        "Badge",
+        "BakeryDining",
+        "Balance",
+        "Balcony",
+        "BarChart",
+        "Bathroom",
+        "Bathtub",
+        "BeachAccess",
+        "Bed",
+        "BedroomBaby",
+        "BedroomChild",
+        "BedroomParent",
+        "Bedtime",
+        "BedtimeOff",
+        "Beenhere",
+        "Bento",
+        "BikeScooter",
+        "Biotech",
+        "Blender",
+        "Blind",
+        "Blinds",
+        "BlindsClosed",
+        "Block",
+        "Bloodtype",
+        "BlurCircular",
+        "BlurLinear",
+        "BlurOff",
+        "BlurOn",
+        "Bolt",
+        "Book",
+        "Bookmark",
+        "BookmarkBorder",
+        "Boy",
+        "BrandingWatermark",
+        "BreakfastDining",
+        "Brightness1",
+        "Brightness2",
+        "Brightness3",
+        "Brightness4",
+        "Brightness5",
+        "Brightness6",
+        "Brightness7",
+        "BroadcastOnHome",
+        "BroadcastOnPersonal",
+        "BrokenImage",
+        "BrowseGallery",
+        "BrowserUpdated",
+        "BrunchDining",
+        "Brush",
+        "BubbleChart",
+        "Bungalow",
+        "BurstMode",
+        "BusAlert",
+        "BusinessCenter",
+        "Cabin",
+        "Cached",
+        "Cake",
+        "Calculate",
+        "CalendarMonth",
+        "Call",
+        "CallEnd",
+        "CallMade",
+        "CallMerge",
+        "CallMissed",
+        "CallMissedOutgoing",
+        "CallReceived",
+        "CallSplit",
+        "CallToAction",
+        "Camera",
+        "CameraAlt",
+        "CameraIndoor",
+        "CameraOutdoor",
+        "CameraRoll",
+        "Campaign",
+        "Cancel",
+        "CancelPresentation",
+        "CancelScheduleSend",
+        "CandlestickChart",
+        "CarCrash",
+        "CarRental",
+        "CarRepair",
+        "CardMembership",
+        "CardTravel",
+        "Carpenter",
+        "Cases",
+        "Casino",
+        "Cast",
+        "CastConnected",
+        "CastForEducation",
+        "Castle",
+        "Category",
+        "CellTower",
+        "CellWifi",
+        "CenterFocusStrong",
+        "CenterFocusWeak",
+        "Chair",
+        "ChairAlt",
+        "Chalet",
+        "ChangeCircle",
+        "Chat",
+        "ChatBubble",
+        "CheckBox",
+        "CheckBoxOutlineBlank",
+        "CheckCircle",
+        "Checkroom",
+        "ChevronLeft",
+        "ChevronRight",
+        "ChildCare",
+        "ChildFriendly",
+        "Church",
+        "Circle",
+        "CleanHands",
+        "CleaningServices",
+        "ClearAll",
+        "Close",
+        "CloseFullscreen",
+        "ClosedCaption",
+        "ClosedCaptionDisabled",
+        "Cloud",
+        "CoPresent",
+        "Code",
+        "Coffee",
+        "CoffeeMaker",
+        "Colorize",
+        "Comment",
+        "CommentBank",
+        "CommentsDisabled",
+        "Commute",
+        "Compare",
+        "CompareArrows",
+        "CompassCalibration",
+        "Compost",
+        "Compress",
+        "Computer",
+        "ConfirmationNumber",
+        "ConnectWithoutContact",
+        "ConnectedTv",
+        "ConnectingAirports",
+        "Construction",
+        "ContactEmergency",
+        "ContactMail",
+        "ContactPhone",
+        "ContactSupport",
+        "Contactless",
+        "Contacts",
+        "Contrast",
+        "ControlCamera",
+        "ControlPointDuplicate",
+        "Cookie",
+        "Copyright",
+        "Coronavirus",
+        "CorporateFare",
+        "Cottage",
+        "Countertops",
+        "CreateNewFolder",
+        "CreditCard",
+        "CreditCardOff",
+        "CreditScore",
+        "Crib",
+        "CrisisAlert",
+        "Crop",
+        "CropFree",
+        "CropLandscape",
+        "CropPortrait",
+        "CropRotate",
+        "CropSquare",
+        "CrueltyFree",
+        "Css",
+        "CurrencyBitcoin",
+        "CurrencyExchange",
+        "CurrencyFranc",
+        "CurrencyLira",
+        "CurrencyPound",
+        "CurrencyRuble",
+        "CurrencyRupee",
+        "CurrencyYen",
+        "CurrencyYuan",
+        "Curtains",
+        "CurtainsClosed",
+        "Cyclone",
+        "DarkMode",
+        "DataExploration",
+        "DataThresholding",
+        "Dataset",
+        "DatasetLinked",
+        "Deblur",
+        "Deck",
+        "Dehaze",
+        "Delete",
+        "DeleteForever",
+        "DeleteSweep",
+        "DensityLarge",
+        "DensityMedium",
+        "DensitySmall",
+        "DepartureBoard",
+        "Desk",
+        "DesktopAccessDisabled",
+        "DesktopMac",
+        "DesktopWindows",
+        "Details",
+        "DeveloperBoard",
+        "DeveloperBoardOff",
+        "DeviceHub",
+        "DeviceThermostat",
+        "Devices",
+        "DevicesOther",
+        "DialerSip",
+        "Dialpad",
+        "Diamond",
+        "Dining",
+        "DinnerDining",
+        "Directions",
+        "DirectionsBike",
+        "DirectionsBoat",
+        "DirectionsBus",
+        "DirectionsCar",
+        "DirectionsOff",
+        "DirectionsRailway",
+        "DirectionsRun",
+        "DirectionsSubway",
+        "DirectionsWalk",
+        "DirtyLens",
+        "DisabledByDefault",
+        "DisabledVisible",
+        "DiscFull",
+        "DisplaySettings",
+        "Diversity1",
+        "Diversity2",
+        "Diversity3",
+        "Dns",
+        "DoNotDisturbOff",
+        "DoNotDisturbOn",
+        "DoNotStep",
+        "DoNotTouch",
+        "Domain",
+        "DomainAdd",
+        "DomainDisabled",
+        "DoneAll",
+        "DoneOutline",
+        "DonutLarge",
+        "DonutSmall",
+        "DoorBack",
+        "DoorFront",
+        "DoorSliding",
+        "Doorbell",
+        "DoubleArrow",
+        "DownhillSkiing",
+        "Download",
+        "DownloadDone",
+        "DownloadForOffline",
+        "Downloading",
+        "Drafts",
+        "DragIndicator",
+        "Dry",
+        "DryCleaning",
+        "Duo",
+        "DynamicForm",
+        "Earbuds",
+        "EarbudsBattery",
+        "East",
+        "Eco",
+        "EditAttributes",
+        "EditLocation",
+        "EditLocationAlt",
+        "EditRoad",
+        "Egg",
+        "EggAlt",
+        "Eject",
+        "Elderly",
+        "ElderlyWoman",
+        "ElectricBike",
+        "ElectricBolt",
+        "ElectricCar",
+        "ElectricMeter",
+        "ElectricMoped",
+        "ElectricRickshaw",
+        "ElectricScooter",
+        "ElectricalServices",
+        "Elevator",
+        "Email",
+        "Emergency",
+        "EmergencyRecording",
+        "EmergencyShare",
+        "EmojiFoodBeverage",
+        "EmojiNature",
+        "EmojiObjects",
+        "EmojiPeople",
+        "EmojiSymbols",
+        "EmojiTransportation",
+        "EnergySavingsLeaf",
+        "Engineering",
+        "EnhancedEncryption",
+        "Equalizer",
+        "Escalator",
+        "EscalatorWarning",
+        "Euro",
+        "EuroSymbol",
+        "EvStation",
+        "Event",
+        "EventSeat",
+        "Expand",
+        "ExpandCircleDown",
+        "Explicit",
+        "Explore",
+        "ExploreOff",
+        "Exposure",
+        "ExposureNeg1",
+        "ExposureNeg2",
+        "ExposurePlus1",
+        "ExposurePlus2",
+        "ExposureZero",
+        "ExtensionOff",
+        "Face2",
+        "Face3",
+        "Face4",
+        "Face5",
+        "Face6",
+        "FaceRetouchingOff",
+        "Factory",
+        "FamilyRestroom",
+        "FastForward",
+        "FastRewind",
+        "Fastfood",
+        "Favorite",
+        "FavoriteBorder",
+        "Fax",
+        "FeaturedPlayList",
+        "FeaturedVideo",
+        "Female",
+        "Fence",
+        "Festival",
+        "FiberDvr",
+        "FiberManualRecord",
+        "FiberNew",
+        "FiberPin",
+        "FiberSmartRecord",
+        "FileDownloadOff",
+        "FileOpen",
+        "Filter",
+        "Filter1",
+        "Filter2",
+        "Filter3",
+        "Filter4",
+        "Filter5",
+        "Filter6",
+        "Filter7",
+        "Filter8",
+        "Filter9",
+        "Filter9Plus",
+        "FilterAlt",
+        "FilterAltOff",
+        "FilterBAndW",
+        "FilterCenterFocus",
+        "FilterDrama",
+        "FilterFrames",
+        "FilterList",
+        "FilterListOff",
+        "FilterNone",
+        "FilterTiltShift",
+        "FilterVintage",
+        "FireExtinguisher",
+        "FireTruck",
+        "Fireplace",
+        "FirstPage",
+        "FitScreen",
+        "FitnessCenter",
+        "Flag",
+        "FlagCircle",
+        "Flaky",
+        "Flare",
+        "FlashAuto",
+        "FlashOff",
+        "FlashOn",
+        "Flatware",
+        "Flight",
+        "FlightClass",
+        "FlightLand",
+        "FlightTakeoff",
+        "Flip",
+        "FlipCameraAndroid",
+        "FlipCameraIos",
+        "Flood",
+        "Fluorescent",
+        "FmdBad",
+        "Folder",
+        "FollowTheSigns",
+        "FoodBank",
+        "Forest",
+        "ForkLeft",
+        "ForkRight",
+        "Fort",
+        "Forum",
+        "Forward",
+        "Forward10",
+        "Forward30",
+        "Forward5",
+        "ForwardToInbox",
+        "Foundation",
+        "FrontHand",
+        "Fullscreen",
+        "FullscreenExit",
+        "GTranslate",
+        "Gamepad",
+        "Garage",
+        "GasMeter",
+        "Gavel",
+        "Gif",
+        "GifBox",
+        "Girl",
+        "Gite",
+        "GolfCourse",
+        "Gradient",
+        "Grain",
+        "Grass",
+        "GridOff",
+        "GridOn",
+        "Group",
+        "GroupAdd",
+        "GroupOff",
+        "GroupRemove",
+        "GroupWork",
+        "Groups",
+        "Groups2",
+        "Groups3",
+        "Hail",
+        "Handshake",
+        "Handyman",
+        "Hardware",
+        "Hd",
+        "HdrAuto",
+        "HdrAutoSelect",
+        "HdrEnhancedSelect",
+        "HdrOff",
+        "HdrOffSelect",
+        "HdrOn",
+        "HdrOnSelect",
+        "HdrPlus",
+        "HdrStrong",
+        "HdrWeak",
+        "Headphones",
+        "HeadphonesBattery",
+        "Headset",
+        "HeadsetMic",
+        "HeadsetOff",
+        "Healing",
+        "HealthAndSafety",
+        "Hearing",
+        "HearingDisabled",
+        "HeartBroken",
+        "HeatPump",
+        "Hevc",
+        "HideImage",
+        "HideSource",
+        "HighQuality",
+        "Highlight",
+        "Hiking",
+        "Hive",
+        "Hls",
+        "HlsOff",
+        "HolidayVillage",
+        "Home",
+        "HomeMax",
+        "HomeMini",
+        "HomeRepairService",
+        "HomeWork",
+        "HotTub",
+        "Hotel",
+        "HourglassBottom",
+        "HourglassTop",
+        "House",
+        "HouseSiding",
+        "Houseboat",
+        "HowToVote",
+        "Html",
+        "Hub",
+        "Hvac",
+        "IceSkating",
+        "Icecream",
+        "Image",
+        "ImageAspectRatio",
+        "ImageSearch",
+        "ImportContacts",
+        "ImportantDevices",
+        "Inbox",
+        "IncompleteCircle",
+        "IndeterminateCheckBox",
+        "InsertChart",
+        "InstallDesktop",
+        "InterpreterMode",
+        "Inventory2",
+        "InvertColors",
+        "InvertColorsOff",
+        "IosShare",
+        "Iron",
+        "Javascript",
+        "Kayaking",
+        "KebabDining",
+        "Key",
+        "KeyOff",
+        "Keyboard",
+        "KeyboardAlt",
+        "KeyboardBackspace",
+        "KeyboardCapslock",
+        "KeyboardCommandKey",
+        "KeyboardControlKey",
+        "KeyboardDoubleArrowDown",
+        "KeyboardDoubleArrowLeft",
+        "KeyboardDoubleArrowRight",
+        "KeyboardDoubleArrowUp",
+        "KeyboardHide",
+        "KeyboardOptionKey",
+        "KeyboardReturn",
+        "KeyboardTab",
+        "KingBed",
+        "Kitchen",
+        "Kitesurfing",
+        "Lan",
+        "Landscape",
+        "Landslide",
+        "Language",
+        "LaptopChromebook",
+        "LaptopMac",
+        "LaptopWindows",
+        "LastPage",
+        "Layers",
+        "LayersClear",
+        "Leaderboard",
+        "LeakAdd",
+        "LeakRemove",
+        "LegendToggle",
+        "LensBlur",
+        "LibraryAdd",
+        "LibraryAddCheck",
+        "LibraryBooks",
+        "LibraryMusic",
+        "Light",
+        "Link",
+        "LinkOff",
+        "LinkedCamera",
+        "Liquor",
+        "LiveHelp",
+        "LiveTv",
+        "Living",
+        "LocalActivity",
+        "LocalAtm",
+        "LocalBar",
+        "LocalCafe",
+        "LocalCarWash",
+        "LocalConvenienceStore",
+        "LocalDining",
+        "LocalDrink",
+        "LocalFireDepartment",
+        "LocalFlorist",
+        "LocalGasStation",
+        "LocalHospital",
+        "LocalLaundryService",
+        "LocalLibrary",
+        "LocalMall",
+        "LocalParking",
+        "LocalPharmacy",
+        "LocalPizza",
+        "LocalPolice",
+        "LocalPostOffice",
+        "LocalSee",
+        "LocalShipping",
+        "LocalTaxi",
+        "LocationCity",
+        "LocationDisabled",
+        "LocationOff",
+        "LocationOn",
+        "LocationSearching",
+        "Lock",
+        "Login",
+        "Logout",
+        "Looks",
+        "Looks3",
+        "Looks4",
+        "Looks5",
+        "Looks6",
+        "LooksOne",
+        "LooksTwo",
+        "Loupe",
+        "Loyalty",
+        "Luggage",
+        "LunchDining",
+        "Lyrics",
+        "MacroOff",
+        "Mail",
+        "MailLock",
+        "Male",
+        "Man",
+        "Man2",
+        "Man3",
+        "Man4",
+        "ManageSearch",
+        "Map",
+        "MapsUgc",
+        "MarkAsUnread",
+        "MarkChatRead",
+        "MarkChatUnread",
+        "MarkEmailRead",
+        "MarkEmailUnread",
+        "MarkUnreadChatAlt",
+        "MarkunreadMailbox",
+        "Masks",
+        "Maximize",
+        "Mediation",
+        "MedicalInformation",
+        "MedicalServices",
+        "Medication",
+        "MeetingRoom",
+        "Memory",
+        "Menu",
+        "MenuOpen",
+        "Merge",
+        "Mic",
+        "MicExternalOff",
+        "MicExternalOn",
+        "MicOff",
+        "Microwave",
+        "MilitaryTech",
+        "Minimize",
+        "MinorCrash",
+        "MissedVideoCall",
+        "Mms",
+        "MobileOff",
+        "ModeComment",
+        "ModeFanOff",
+        "ModeNight",
+        "ModeOfTravel",
+        "Money",
+        "MoneyOff",
+        "Monitor",
+        "MonitorHeart",
+        "MonitorWeight",
+        "MonochromePhotos",
+        "Mood",
+        "MoodBad",
+        "Moped",
+        "MoreHoriz",
+        "Mosque",
+        "MotionPhotosAuto",
+        "MotionPhotosOn",
+        "MotionPhotosPaused",
+        "Motorcycle",
+        "Mouse",
+        "MoveDown",
+        "MoveToInbox",
+        "MoveUp",
+        "Movie",
+        "Moving",
+        "Mp",
+        "MultilineChart",
+        "MultipleStop",
+        "Museum",
+        "MusicNote",
+        "MusicOff",
+        "MusicVideo",
+        "MyLocation",
+        "Nat",
+        "Nature",
+        "NaturePeople",
+        "Navigation",
+        "NearMe",
+        "NearMeDisabled",
+        "Newspaper",
+        "NextPlan",
+        "NextWeek",
+        "NightShelter",
+        "Nightlife",
+        "NoAdultContent",
+        "NoBackpack",
+        "NoCrash",
+        "NoDrinks",
+        "NoEncryption",
+        "NoFlash",
+        "NoFood",
+        "NoLuggage",
+        "NoMeals",
+        "NoMeetingRoom",
+        "NoPhotography",
+        "NoSim",
+        "NoStroller",
+        "NoTransfer",
+        "NordicWalking",
+        "North",
+        "NorthEast",
+        "NorthWest",
+        "NotAccessible",
+        "NotListedLocation",
+        "NotStarted",
+        "Notifications",
+        "NotificationsActive",
+        "NotificationsOff",
+        "NotificationsPaused",
+        "OilBarrel",
+        "Opacity",
+        "OpenInFull",
+        "OpenInNew",
+        "OpenInNewOff",
+        "OpenWith",
+        "OtherHouses",
+        "Outbox",
+        "OutdoorGrill",
+        "Outlet",
+        "Output",
+        "Paid",
+        "Palette",
+        "Panorama",
+        "PanoramaHorizontal",
+        "PanoramaPhotosphere",
+        "PanoramaVertical",
+        "PanoramaWideAngle",
+        "Paragliding",
+        "Park",
+        "PartyMode",
+        "Pause",
+        "PauseCircle",
+        "PausePresentation",
+        "Payments",
+        "PedalBike",
+        "PermCameraMic",
+        "PermPhoneMsg",
+        "Person",
+        "Person2",
+        "Person3",
+        "Person4",
+        "PersonAdd",
+        "PersonOff",
+        "PersonPin",
+        "PersonPinCircle",
+        "PersonRemove",
+        "PersonSearch",
+        "PersonalInjury",
+        "PestControl",
+        "PestControlRodent",
+        "Pets",
+        "Phishing",
+        "Phone",
+        "PhoneBluetoothSpeaker",
+        "PhoneCallback",
+        "PhoneDisabled",
+        "PhoneEnabled",
+        "PhoneForwarded",
+        "PhoneInTalk",
+        "PhoneLocked",
+        "PhoneMissed",
+        "PhonePaused",
+        "Photo",
+        "PhotoAlbum",
+        "PhotoCamera",
+        "PhotoCameraBack",
+        "PhotoCameraFront",
+        "PhotoLibrary",
+        "PhotoSizeSelectLarge",
+        "PhotoSizeSelectSmall",
+        "Php",
+        "Piano",
+        "PianoOff",
+        "PictureAsPdf",
+        "PictureInPicture",
+        "PictureInPictureAlt",
+        "PieChart",
+        "PinDrop",
+        "Pinch",
+        "Place",
+        "PlayArrow",
+        "PlayCircle",
+        "PlayDisabled",
+        "PlayForWork",
+        "PlayLesson",
+        "PlaylistAdd",
+        "PlaylistAddCheck",
+        "PlaylistAddCheckCircle",
+        "PlaylistAddCircle",
+        "PlaylistPlay",
+        "PlaylistRemove",
+        "Plumbing",
+        "Podcasts",
+        "PointOfSale",
+        "Policy",
+        "Pool",
+        "Power",
+        "PowerInput",
+        "PowerOff",
+        "PrecisionManufacturing",
+        "PregnantWoman",
+        "PresentToAll",
+        "PriceChange",
+        "PriceCheck",
+        "Print",
+        "PrintDisabled",
+        "PrivacyTip",
+        "PrivateConnectivity",
+        "ProductionQuantityLimits",
+        "Propane",
+        "PropaneTank",
+        "Psychology",
+        "PsychologyAlt",
+        "Public",
+        "PublicOff",
+        "Publish",
+        "PunchClock",
+        "QrCode",
+        "QrCode2",
+        "QrCodeScanner",
+        "QueryStats",
+        "QueueMusic",
+        "QueuePlayNext",
+        "Quickreply",
+        "Quiz",
+        "Radio",
+        "RadioButtonChecked",
+        "RadioButtonUnchecked",
+        "RailwayAlert",
+        "RamenDining",
+        "RampLeft",
+        "RampRight",
+        "RawOff",
+        "RawOn",
+        "RealEstateAgent",
+        "Receipt",
+        "ReceiptLong",
+        "RecentActors",
+        "Recommend",
+        "Recycling",
+        "Redeem",
+        "Redo",
+        "ReduceCapacity",
+        "RememberMe",
+        "Remove",
+        "RemoveDone",
+        "RemoveFromQueue",
+        "RemoveModerator",
+        "RemoveRoad",
+        "RemoveShoppingCart",
+        "Repartition",
+        "Repeat",
+        "RepeatOn",
+        "RepeatOne",
+        "RepeatOneOn",
+        "Replay",
+        "Replay10",
+        "Replay30",
+        "Replay5",
+        "Reply",
+        "ReplyAll",
+        "Report",
+        "ReportOff",
+        "ResetTv",
+        "RestartAlt",
+        "Restaurant",
+        "RestoreFromTrash",
+        "Reviews",
+        "RiceBowl",
+        "RingVolume",
+        "Rocket",
+        "RocketLaunch",
+        "RollerShades",
+        "RollerShadesClosed",
+        "RollerSkating",
+        "Roofing",
+        "RoomPreferences",
+        "RoomService",
+        "Rotate90DegreesCcw",
+        "Rotate90DegreesCw",
+        "RotateLeft",
+        "RotateRight",
+        "RoundaboutLeft",
+        "RoundaboutRight",
+        "Route",
+        "Router",
+        "Rowing",
+        "Rtt",
+        "RunCircle",
+        "RvHookup",
+        "SafetyCheck",
+        "SafetyDivider",
+        "Sailing",
+        "Sanitizer",
+        "Satellite",
+        "SatelliteAlt",
+        "Save",
+        "SavedSearch",
+        "Savings",
+        "Scale",
+        "Scanner",
+        "ScatterPlot",
+        "ScheduleSend",
+        "Schema",
+        "School",
+        "Science",
+        "Score",
+        "Scoreboard",
+        "ScreenSearchDesktop",
+        "ScreenShare",
+        "ScreenshotMonitor",
+        "ScubaDiving",
+        "Sd",
+        "SdCard",
+        "SdCardAlert",
+        "Search",
+        "SearchOff",
+        "Security",
+        "SelectAll",
+        "SelfImprovement",
+        "Sell",
+        "SendAndArchive",
+        "SendTimeExtension",
+        "SensorDoor",
+        "SensorOccupied",
+        "SensorWindow",
+        "Sensors",
+        "SensorsOff",
+        "SentimentDissatisfied",
+        "SentimentNeutral",
+        "SentimentSatisfied",
+        "SentimentVeryDissatisfied",
+        "SentimentVerySatisfied",
+        "SetMeal",
+        "Settings",
+        "SettingsAccessibility",
+        "SettingsApplications",
+        "SettingsBackupRestore",
+        "SettingsBluetooth",
+        "SettingsBrightness",
+        "SettingsEthernet",
+        "SettingsInputAntenna",
+        "SettingsInputComponent",
+        "SettingsInputHdmi",
+        "SettingsInputSvideo",
+        "SettingsPhone",
+        "SettingsRemote",
+        "SettingsVoice",
+        "SevereCold",
+        "Share",
+        "ShareLocation",
+        "Shield",
+        "ShieldMoon",
+        "Shop",
+        "ShopTwo",
+        "ShoppingBag",
+        "ShoppingBasket",
+        "ShoppingCart",
+        "ShoppingCartCheckout",
+        "ShowChart",
+        "Shower",
+        "Shuffle",
+        "ShuffleOn",
+        "ShutterSpeed",
+        "Sick",
+        "SignLanguage",
+        "Signpost",
+        "SimCard",
+        "SingleBed",
+        "Sip",
+        "Skateboarding",
+        "SkipNext",
+        "SkipPrevious",
+        "Sledding",
+        "Slideshow",
+        "SlowMotionVideo",
+        "SmartDisplay",
+        "SmartToy",
+        "SmokeFree",
+        "SmokingRooms",
+        "Sms",
+        "Snowboarding",
+        "Snowmobile",
+        "Snowshoeing",
+        "Soap",
+        "SocialDistance",
+        "SolarPower",
+        "Sort",
+        "SortByAlpha",
+        "Sos",
+        "SoupKitchen",
+        "South",
+        "SouthAmerica",
+        "SouthEast",
+        "SouthWest",
+        "Spa",
+        "SpatialAudio",
+        "SpatialAudioOff",
+        "SpatialTracking",
+        "Speaker",
+        "SpeakerGroup",
+        "SpeakerNotes",
+        "SpeakerNotesOff",
+        "SpeakerPhone",
+        "Speed",
+        "Spoke",
+        "Sports",
+        "SportsBar",
+        "SportsBaseball",
+        "SportsBasketball",
+        "SportsCricket",
+        "SportsEsports",
+        "SportsFootball",
+        "SportsGolf",
+        "SportsGymnastics",
+        "SportsHandball",
+        "SportsHockey",
+        "SportsKabaddi",
+        "SportsMartialArts",
+        "SportsMma",
+        "SportsMotorsports",
+        "SportsRugby",
+        "SportsScore",
+        "SportsSoccer",
+        "SportsTennis",
+        "SportsVolleyball",
+        "SsidChart",
+        "StackedBarChart",
+        "StackedLineChart",
+        "Stadium",
+        "Stairs",
+        "Star",
+        "StarBorder",
+        "StarHalf",
+        "StarRate",
+        "Start",
+        "Stop",
+        "StopCircle",
+        "StopScreenShare",
+        "Store",
+        "Storefront",
+        "Storm",
+        "Straight",
+        "Straighten",
+        "Stream",
+        "Streetview",
+        "StrikethroughS",
+        "Stroller",
+        "Style",
+        "SubdirectoryArrowLeft",
+        "SubdirectoryArrowRight",
+        "Subscriptions",
+        "Subtitles",
+        "Subway",
+        "SupportAgent",
+        "Surfing",
+        "SurroundSound",
+        "SwapCalls",
+        "SwapHoriz",
+        "SwapHorizontalCircle",
+        "SwapVert",
+        "SwapVerticalCircle",
+        "SwipeDown",
+        "SwipeDownAlt",
+        "SwipeLeft",
+        "SwipeLeftAlt",
+        "SwipeRight",
+        "SwipeRightAlt",
+        "SwipeUp",
+        "SwipeUpAlt",
+        "SwipeVertical",
+        "SwitchAccessShortcut",
+        "SwitchAccessShortcutAdd",
+        "SwitchAccount",
+        "SwitchCamera",
+        "SwitchLeft",
+        "SwitchRight",
+        "SwitchVideo",
+        "Synagogue",
+        "Sync",
+        "SyncAlt",
+        "SyncDisabled",
+        "SyncLock",
+        "SyncProblem",
+        "SystemUpdateAlt",
+        "Tab",
+        "TabUnselected",
+        "TableBar",
+        "TableRestaurant",
+        "Tablet",
+        "TabletAndroid",
+        "TabletMac",
+        "TakeoutDining",
+        "Tapas",
+        "TaxiAlert",
+        "TempleBuddhist",
+        "TempleHindu",
+        "Texture",
+        "TheaterComedy",
+        "Theaters",
+        "ThermostatAuto",
+        "ThumbDown",
+        "ThumbsUpDown",
+        "Thunderstorm",
+        "Timelapse",
+        "Timeline",
+        "Timer",
+        "Timer10",
+        "Timer3",
+        "TimerOff",
+        "TireRepair",
+        "ToggleOff",
+        "ToggleOn",
+        "Token",
+        "Toll",
+        "Tonality",
+        "Topic",
+        "Tornado",
+        "Tour",
+        "Toys",
+        "TrackChanges",
+        "Traffic",
+        "Train",
+        "Tram",
+        "TransferWithinAStation",
+        "Transform",
+        "Transgender",
+        "TransitEnterexit",
+        "Translate",
+        "TravelExplore",
+        "TrendingDown",
+        "TrendingFlat",
+        "TrendingUp",
+        "TripOrigin",
+        "Troubleshoot",
+        "Tsunami",
+        "Tty",
+        "Tune",
+        "TurnLeft",
+        "TurnRight",
+        "TurnSharpLeft",
+        "TurnSharpRight",
+        "TurnSlightLeft",
+        "TurnSlightRight",
+        "Tv",
+        "TvOff",
+        "TwoWheeler",
+        "UTurnLeft",
+        "UTurnRight",
+        "Umbrella",
+        "Unarchive",
+        "Undo",
+        "UnfoldLess",
+        "UnfoldLessDouble",
+        "UnfoldMore",
+        "UnfoldMoreDouble",
+        "Unsubscribe",
+        "Upcoming",
+        "Upload",
+        "Vaccines",
+        "VapeFree",
+        "VapingRooms",
+        "VerifiedUser",
+        "VerticalShades",
+        "VerticalShadesClosed",
+        "VideoCall",
+        "VideoCameraBack",
+        "VideoCameraFront",
+        "VideoChat",
+        "VideoLabel",
+        "VideoLibrary",
+        "VideoSettings",
+        "VideoStable",
+        "Videocam",
+        "VideocamOff",
+        "VideogameAsset",
+        "VideogameAssetOff",
+        "ViewComfy",
+        "ViewComfyAlt",
+        "ViewCompact",
+        "ViewCompactAlt",
+        "ViewCozy",
+        "ViewInAr",
+        "ViewKanban",
+        "ViewTimeline",
+        "Vignette",
+        "Villa",
+        "VoiceChat",
+        "Voicemail",
+        "Volcano",
+        "VolumeDown",
+        "VolumeMute",
+        "VolumeOff",
+        "VolumeUp",
+        "VolunteerActivism",
+        "VpnKey",
+        "VpnKeyOff",
+        "VpnLock",
+        "Vrpano",
+        "Wallet",
+        "Warehouse",
+        "Wash",
+        "Watch",
+        "WatchOff",
+        "Water",
+        "WaterDamage",
+        "WaterDrop",
+        "WaterfallChart",
+        "Waves",
+        "WavingHand",
+        "WbAuto",
+        "WbIncandescent",
+        "WbIridescent",
+        "WbShade",
+        "WbSunny",
+        "WbTwilight",
+        "Wc",
+        "WebStories",
+        "Weekend",
+        "West",
+        "Whatshot",
+        "WheelchairPickup",
+        "WhereToVote",
+        "WidthFull",
+        "WidthNormal",
+        "WidthWide",
+        "WifiCalling",
+        "WifiChannel",
+        "WifiPassword",
+        "WindPower",
+        "Window",
+        "WineBar",
+        "Woman",
+        "Woman2",
+        "Work",
+        "WorkHistory",
+        "WorkspacePremium",
+        "Workspaces",
+        "WrongLocation",
+        "Yard",
+        "YoutubeSearchedFor",
+        "ZoomIn",
+        "ZoomInMap",
+        "ZoomOut",
+        "ZoomOutMap",
+        "_10k",
+        "_10mp",
+        "_11mp",
+        "_123",
+        "_12mp",
+        "_13mp",
+        "_14mp",
+        "_15mp",
+        "_16mp",
+        "_17mp",
+        "_18mp",
+        "_19mp",
+        "_1k",
+        "_20mp",
+        "_21mp",
+        "_22mp",
+        "_23mp",
+        "_24mp",
+        "_2k",
+        "_2mp",
+        "_30fps",
+        "_360",
+        "_3k",
+        "_3mp",
+        "_3p",
+        "_4k",
+        "_4mp",
+        "_5k",
+        "_5mp",
+        "_60fps",
+        "_6k",
+        "_6mp",
+        "_7k",
+        "_7mp",
+        "_8k",
+        "_8mp",
+        "_9k",
+        "_9mp",
+    )
+
     @JvmField
     val byName: Map<String, ImageVector> = run {
         val m = TreeMap<String, ImageVector>()
+        m["Abc"] = Icons.Outlined.Abc
         m["AcUnit"] = Icons.Outlined.AcUnit
         m["AccountBalance"] = Icons.Outlined.AccountBalance
         m["AccountBalanceWallet"] = Icons.Outlined.AccountBalanceWallet
         m["AccountTree"] = Icons.Outlined.AccountTree
+        m["Add"] = Icons.Outlined.Add
         m["AddAPhoto"] = Icons.Outlined.AddAPhoto
+        m["AddBox"] = Icons.Outlined.AddBox
         m["AddBusiness"] = Icons.Outlined.AddBusiness
         m["AddCard"] = Icons.Outlined.AddCard
         m["AddChart"] = Icons.Outlined.AddChart
@@ -32,6 +1401,7 @@ internal object MaterialShippedOutlinedIcons {
         m["AddReaction"] = Icons.Outlined.AddReaction
         m["AddRoad"] = Icons.Outlined.AddRoad
         m["AddShoppingCart"] = Icons.Outlined.AddShoppingCart
+        m["AddTask"] = Icons.Outlined.AddTask
         m["AddToQueue"] = Icons.Outlined.AddToQueue
         m["AdfScanner"] = Icons.Outlined.AdfScanner
         m["Adjust"] = Icons.Outlined.Adjust
@@ -59,12 +1429,32 @@ internal object MaterialShippedOutlinedIcons {
         m["Analytics"] = Icons.Outlined.Analytics
         m["Animation"] = Icons.Outlined.Animation
         m["Apartment"] = Icons.Outlined.Apartment
+        m["AppRegistration"] = Icons.Outlined.AppRegistration
         m["Apps"] = Icons.Outlined.Apps
+        m["AppsOutage"] = Icons.Outlined.AppsOutage
         m["Architecture"] = Icons.Outlined.Architecture
         m["AreaChart"] = Icons.Outlined.AreaChart
+        m["ArrowBack"] = Icons.Outlined.ArrowBack
+        m["ArrowBackIos"] = Icons.Outlined.ArrowBackIos
+        m["ArrowBackIosNew"] = Icons.Outlined.ArrowBackIosNew
+        m["ArrowCircleDown"] = Icons.Outlined.ArrowCircleDown
+        m["ArrowCircleLeft"] = Icons.Outlined.ArrowCircleLeft
+        m["ArrowCircleRight"] = Icons.Outlined.ArrowCircleRight
+        m["ArrowCircleUp"] = Icons.Outlined.ArrowCircleUp
+        m["ArrowDownward"] = Icons.Outlined.ArrowDownward
+        m["ArrowDropDownCircle"] = Icons.Outlined.ArrowDropDownCircle
+        m["ArrowDropUp"] = Icons.Outlined.ArrowDropUp
+        m["ArrowForward"] = Icons.Outlined.ArrowForward
+        m["ArrowForwardIos"] = Icons.Outlined.ArrowForwardIos
+        m["ArrowLeft"] = Icons.Outlined.ArrowLeft
+        m["ArrowOutward"] = Icons.Outlined.ArrowOutward
+        m["ArrowRight"] = Icons.Outlined.ArrowRight
+        m["ArrowRightAlt"] = Icons.Outlined.ArrowRightAlt
+        m["ArrowUpward"] = Icons.Outlined.ArrowUpward
         m["ArtTrack"] = Icons.Outlined.ArtTrack
         m["AspectRatio"] = Icons.Outlined.AspectRatio
         m["AssistWalker"] = Icons.Outlined.AssistWalker
+        m["AssistantDirection"] = Icons.Outlined.AssistantDirection
         m["AssuredWorkload"] = Icons.Outlined.AssuredWorkload
         m["Atm"] = Icons.Outlined.Atm
         m["AttachEmail"] = Icons.Outlined.AttachEmail
@@ -76,10 +1466,12 @@ internal object MaterialShippedOutlinedIcons {
         m["AutoAwesomeMotion"] = Icons.Outlined.AutoAwesomeMotion
         m["AutoStories"] = Icons.Outlined.AutoStories
         m["AutofpsSelect"] = Icons.Outlined.AutofpsSelect
+        m["Autorenew"] = Icons.Outlined.Autorenew
         m["AvTimer"] = Icons.Outlined.AvTimer
         m["BabyChangingStation"] = Icons.Outlined.BabyChangingStation
         m["BackHand"] = Icons.Outlined.BackHand
         m["Backpack"] = Icons.Outlined.Backpack
+        m["Backspace"] = Icons.Outlined.Backspace
         m["Badge"] = Icons.Outlined.Badge
         m["BakeryDining"] = Icons.Outlined.BakeryDining
         m["Balance"] = Icons.Outlined.Balance
@@ -102,11 +1494,13 @@ internal object MaterialShippedOutlinedIcons {
         m["Blind"] = Icons.Outlined.Blind
         m["Blinds"] = Icons.Outlined.Blinds
         m["BlindsClosed"] = Icons.Outlined.BlindsClosed
+        m["Block"] = Icons.Outlined.Block
         m["Bloodtype"] = Icons.Outlined.Bloodtype
         m["BlurCircular"] = Icons.Outlined.BlurCircular
         m["BlurLinear"] = Icons.Outlined.BlurLinear
         m["BlurOff"] = Icons.Outlined.BlurOff
         m["BlurOn"] = Icons.Outlined.BlurOn
+        m["Bolt"] = Icons.Outlined.Bolt
         m["Book"] = Icons.Outlined.Book
         m["Bookmark"] = Icons.Outlined.Bookmark
         m["BookmarkBorder"] = Icons.Outlined.BookmarkBorder
@@ -123,6 +1517,7 @@ internal object MaterialShippedOutlinedIcons {
         m["BroadcastOnHome"] = Icons.Outlined.BroadcastOnHome
         m["BroadcastOnPersonal"] = Icons.Outlined.BroadcastOnPersonal
         m["BrokenImage"] = Icons.Outlined.BrokenImage
+        m["BrowseGallery"] = Icons.Outlined.BrowseGallery
         m["BrowserUpdated"] = Icons.Outlined.BrowserUpdated
         m["BrunchDining"] = Icons.Outlined.BrunchDining
         m["Brush"] = Icons.Outlined.Brush
@@ -132,6 +1527,7 @@ internal object MaterialShippedOutlinedIcons {
         m["BusAlert"] = Icons.Outlined.BusAlert
         m["BusinessCenter"] = Icons.Outlined.BusinessCenter
         m["Cabin"] = Icons.Outlined.Cabin
+        m["Cached"] = Icons.Outlined.Cached
         m["Cake"] = Icons.Outlined.Cake
         m["Calculate"] = Icons.Outlined.Calculate
         m["CalendarMonth"] = Icons.Outlined.CalendarMonth
@@ -150,6 +1546,7 @@ internal object MaterialShippedOutlinedIcons {
         m["CameraOutdoor"] = Icons.Outlined.CameraOutdoor
         m["CameraRoll"] = Icons.Outlined.CameraRoll
         m["Campaign"] = Icons.Outlined.Campaign
+        m["Cancel"] = Icons.Outlined.Cancel
         m["CancelPresentation"] = Icons.Outlined.CancelPresentation
         m["CancelScheduleSend"] = Icons.Outlined.CancelScheduleSend
         m["CandlestickChart"] = Icons.Outlined.CandlestickChart
@@ -173,15 +1570,24 @@ internal object MaterialShippedOutlinedIcons {
         m["Chair"] = Icons.Outlined.Chair
         m["ChairAlt"] = Icons.Outlined.ChairAlt
         m["Chalet"] = Icons.Outlined.Chalet
+        m["ChangeCircle"] = Icons.Outlined.ChangeCircle
         m["Chat"] = Icons.Outlined.Chat
         m["ChatBubble"] = Icons.Outlined.ChatBubble
+        m["CheckBox"] = Icons.Outlined.CheckBox
+        m["CheckBoxOutlineBlank"] = Icons.Outlined.CheckBoxOutlineBlank
+        m["CheckCircle"] = Icons.Outlined.CheckCircle
         m["Checkroom"] = Icons.Outlined.Checkroom
+        m["ChevronLeft"] = Icons.Outlined.ChevronLeft
+        m["ChevronRight"] = Icons.Outlined.ChevronRight
         m["ChildCare"] = Icons.Outlined.ChildCare
         m["ChildFriendly"] = Icons.Outlined.ChildFriendly
         m["Church"] = Icons.Outlined.Church
         m["Circle"] = Icons.Outlined.Circle
         m["CleanHands"] = Icons.Outlined.CleanHands
         m["CleaningServices"] = Icons.Outlined.CleaningServices
+        m["ClearAll"] = Icons.Outlined.ClearAll
+        m["Close"] = Icons.Outlined.Close
+        m["CloseFullscreen"] = Icons.Outlined.CloseFullscreen
         m["ClosedCaption"] = Icons.Outlined.ClosedCaption
         m["ClosedCaptionDisabled"] = Icons.Outlined.ClosedCaptionDisabled
         m["Cloud"] = Icons.Outlined.Cloud
@@ -195,8 +1601,10 @@ internal object MaterialShippedOutlinedIcons {
         m["CommentsDisabled"] = Icons.Outlined.CommentsDisabled
         m["Commute"] = Icons.Outlined.Commute
         m["Compare"] = Icons.Outlined.Compare
+        m["CompareArrows"] = Icons.Outlined.CompareArrows
         m["CompassCalibration"] = Icons.Outlined.CompassCalibration
         m["Compost"] = Icons.Outlined.Compost
+        m["Compress"] = Icons.Outlined.Compress
         m["Computer"] = Icons.Outlined.Computer
         m["ConfirmationNumber"] = Icons.Outlined.ConfirmationNumber
         m["ConnectWithoutContact"] = Icons.Outlined.ConnectWithoutContact
@@ -218,6 +1626,7 @@ internal object MaterialShippedOutlinedIcons {
         m["CorporateFare"] = Icons.Outlined.CorporateFare
         m["Cottage"] = Icons.Outlined.Cottage
         m["Countertops"] = Icons.Outlined.Countertops
+        m["CreateNewFolder"] = Icons.Outlined.CreateNewFolder
         m["CreditCard"] = Icons.Outlined.CreditCard
         m["CreditCardOff"] = Icons.Outlined.CreditCardOff
         m["CreditScore"] = Icons.Outlined.CreditScore
@@ -230,6 +1639,7 @@ internal object MaterialShippedOutlinedIcons {
         m["CropRotate"] = Icons.Outlined.CropRotate
         m["CropSquare"] = Icons.Outlined.CropSquare
         m["CrueltyFree"] = Icons.Outlined.CrueltyFree
+        m["Css"] = Icons.Outlined.Css
         m["CurrencyBitcoin"] = Icons.Outlined.CurrencyBitcoin
         m["CurrencyExchange"] = Icons.Outlined.CurrencyExchange
         m["CurrencyFranc"] = Icons.Outlined.CurrencyFranc
@@ -244,9 +1654,18 @@ internal object MaterialShippedOutlinedIcons {
         m["Cyclone"] = Icons.Outlined.Cyclone
         m["DarkMode"] = Icons.Outlined.DarkMode
         m["DataExploration"] = Icons.Outlined.DataExploration
+        m["DataThresholding"] = Icons.Outlined.DataThresholding
+        m["Dataset"] = Icons.Outlined.Dataset
+        m["DatasetLinked"] = Icons.Outlined.DatasetLinked
         m["Deblur"] = Icons.Outlined.Deblur
         m["Deck"] = Icons.Outlined.Deck
         m["Dehaze"] = Icons.Outlined.Dehaze
+        m["Delete"] = Icons.Outlined.Delete
+        m["DeleteForever"] = Icons.Outlined.DeleteForever
+        m["DeleteSweep"] = Icons.Outlined.DeleteSweep
+        m["DensityLarge"] = Icons.Outlined.DensityLarge
+        m["DensityMedium"] = Icons.Outlined.DensityMedium
+        m["DensitySmall"] = Icons.Outlined.DensitySmall
         m["DepartureBoard"] = Icons.Outlined.DepartureBoard
         m["Desk"] = Icons.Outlined.Desk
         m["DesktopAccessDisabled"] = Icons.Outlined.DesktopAccessDisabled
@@ -275,6 +1694,7 @@ internal object MaterialShippedOutlinedIcons {
         m["DirectionsSubway"] = Icons.Outlined.DirectionsSubway
         m["DirectionsWalk"] = Icons.Outlined.DirectionsWalk
         m["DirtyLens"] = Icons.Outlined.DirtyLens
+        m["DisabledByDefault"] = Icons.Outlined.DisabledByDefault
         m["DisabledVisible"] = Icons.Outlined.DisabledVisible
         m["DiscFull"] = Icons.Outlined.DiscFull
         m["DisplaySettings"] = Icons.Outlined.DisplaySettings
@@ -282,22 +1702,33 @@ internal object MaterialShippedOutlinedIcons {
         m["Diversity2"] = Icons.Outlined.Diversity2
         m["Diversity3"] = Icons.Outlined.Diversity3
         m["Dns"] = Icons.Outlined.Dns
+        m["DoNotDisturbOff"] = Icons.Outlined.DoNotDisturbOff
+        m["DoNotDisturbOn"] = Icons.Outlined.DoNotDisturbOn
         m["DoNotStep"] = Icons.Outlined.DoNotStep
         m["DoNotTouch"] = Icons.Outlined.DoNotTouch
         m["Domain"] = Icons.Outlined.Domain
         m["DomainAdd"] = Icons.Outlined.DomainAdd
         m["DomainDisabled"] = Icons.Outlined.DomainDisabled
+        m["DoneAll"] = Icons.Outlined.DoneAll
+        m["DoneOutline"] = Icons.Outlined.DoneOutline
         m["DonutLarge"] = Icons.Outlined.DonutLarge
         m["DonutSmall"] = Icons.Outlined.DonutSmall
         m["DoorBack"] = Icons.Outlined.DoorBack
         m["DoorFront"] = Icons.Outlined.DoorFront
         m["DoorSliding"] = Icons.Outlined.DoorSliding
         m["Doorbell"] = Icons.Outlined.Doorbell
+        m["DoubleArrow"] = Icons.Outlined.DoubleArrow
         m["DownhillSkiing"] = Icons.Outlined.DownhillSkiing
+        m["Download"] = Icons.Outlined.Download
+        m["DownloadDone"] = Icons.Outlined.DownloadDone
+        m["DownloadForOffline"] = Icons.Outlined.DownloadForOffline
+        m["Downloading"] = Icons.Outlined.Downloading
         m["Drafts"] = Icons.Outlined.Drafts
+        m["DragIndicator"] = Icons.Outlined.DragIndicator
         m["Dry"] = Icons.Outlined.Dry
         m["DryCleaning"] = Icons.Outlined.DryCleaning
         m["Duo"] = Icons.Outlined.Duo
+        m["DynamicForm"] = Icons.Outlined.DynamicForm
         m["Earbuds"] = Icons.Outlined.Earbuds
         m["EarbudsBattery"] = Icons.Outlined.EarbudsBattery
         m["East"] = Icons.Outlined.East
@@ -308,6 +1739,7 @@ internal object MaterialShippedOutlinedIcons {
         m["EditRoad"] = Icons.Outlined.EditRoad
         m["Egg"] = Icons.Outlined.Egg
         m["EggAlt"] = Icons.Outlined.EggAlt
+        m["Eject"] = Icons.Outlined.Eject
         m["Elderly"] = Icons.Outlined.Elderly
         m["ElderlyWoman"] = Icons.Outlined.ElderlyWoman
         m["ElectricBike"] = Icons.Outlined.ElectricBike
@@ -340,6 +1772,8 @@ internal object MaterialShippedOutlinedIcons {
         m["EvStation"] = Icons.Outlined.EvStation
         m["Event"] = Icons.Outlined.Event
         m["EventSeat"] = Icons.Outlined.EventSeat
+        m["Expand"] = Icons.Outlined.Expand
+        m["ExpandCircleDown"] = Icons.Outlined.ExpandCircleDown
         m["Explicit"] = Icons.Outlined.Explicit
         m["Explore"] = Icons.Outlined.Explore
         m["ExploreOff"] = Icons.Outlined.ExploreOff
@@ -349,6 +1783,7 @@ internal object MaterialShippedOutlinedIcons {
         m["ExposurePlus1"] = Icons.Outlined.ExposurePlus1
         m["ExposurePlus2"] = Icons.Outlined.ExposurePlus2
         m["ExposureZero"] = Icons.Outlined.ExposureZero
+        m["ExtensionOff"] = Icons.Outlined.ExtensionOff
         m["Face2"] = Icons.Outlined.Face2
         m["Face3"] = Icons.Outlined.Face3
         m["Face4"] = Icons.Outlined.Face4
@@ -373,6 +1808,8 @@ internal object MaterialShippedOutlinedIcons {
         m["FiberNew"] = Icons.Outlined.FiberNew
         m["FiberPin"] = Icons.Outlined.FiberPin
         m["FiberSmartRecord"] = Icons.Outlined.FiberSmartRecord
+        m["FileDownloadOff"] = Icons.Outlined.FileDownloadOff
+        m["FileOpen"] = Icons.Outlined.FileOpen
         m["Filter"] = Icons.Outlined.Filter
         m["Filter1"] = Icons.Outlined.Filter1
         m["Filter2"] = Icons.Outlined.Filter2
@@ -384,16 +1821,22 @@ internal object MaterialShippedOutlinedIcons {
         m["Filter8"] = Icons.Outlined.Filter8
         m["Filter9"] = Icons.Outlined.Filter9
         m["Filter9Plus"] = Icons.Outlined.Filter9Plus
+        m["FilterAlt"] = Icons.Outlined.FilterAlt
+        m["FilterAltOff"] = Icons.Outlined.FilterAltOff
         m["FilterBAndW"] = Icons.Outlined.FilterBAndW
         m["FilterCenterFocus"] = Icons.Outlined.FilterCenterFocus
         m["FilterDrama"] = Icons.Outlined.FilterDrama
         m["FilterFrames"] = Icons.Outlined.FilterFrames
+        m["FilterList"] = Icons.Outlined.FilterList
+        m["FilterListOff"] = Icons.Outlined.FilterListOff
         m["FilterNone"] = Icons.Outlined.FilterNone
         m["FilterTiltShift"] = Icons.Outlined.FilterTiltShift
         m["FilterVintage"] = Icons.Outlined.FilterVintage
         m["FireExtinguisher"] = Icons.Outlined.FireExtinguisher
         m["FireTruck"] = Icons.Outlined.FireTruck
         m["Fireplace"] = Icons.Outlined.Fireplace
+        m["FirstPage"] = Icons.Outlined.FirstPage
+        m["FitScreen"] = Icons.Outlined.FitScreen
         m["FitnessCenter"] = Icons.Outlined.FitnessCenter
         m["Flag"] = Icons.Outlined.Flag
         m["FlagCircle"] = Icons.Outlined.FlagCircle
@@ -421,12 +1864,15 @@ internal object MaterialShippedOutlinedIcons {
         m["ForkRight"] = Icons.Outlined.ForkRight
         m["Fort"] = Icons.Outlined.Fort
         m["Forum"] = Icons.Outlined.Forum
+        m["Forward"] = Icons.Outlined.Forward
         m["Forward10"] = Icons.Outlined.Forward10
         m["Forward30"] = Icons.Outlined.Forward30
         m["Forward5"] = Icons.Outlined.Forward5
         m["ForwardToInbox"] = Icons.Outlined.ForwardToInbox
         m["Foundation"] = Icons.Outlined.Foundation
         m["FrontHand"] = Icons.Outlined.FrontHand
+        m["Fullscreen"] = Icons.Outlined.Fullscreen
+        m["FullscreenExit"] = Icons.Outlined.FullscreenExit
         m["GTranslate"] = Icons.Outlined.GTranslate
         m["Gamepad"] = Icons.Outlined.Gamepad
         m["Garage"] = Icons.Outlined.Garage
@@ -478,10 +1924,13 @@ internal object MaterialShippedOutlinedIcons {
         m["HeatPump"] = Icons.Outlined.HeatPump
         m["Hevc"] = Icons.Outlined.Hevc
         m["HideImage"] = Icons.Outlined.HideImage
+        m["HideSource"] = Icons.Outlined.HideSource
         m["HighQuality"] = Icons.Outlined.HighQuality
         m["Highlight"] = Icons.Outlined.Highlight
         m["Hiking"] = Icons.Outlined.Hiking
         m["Hive"] = Icons.Outlined.Hive
+        m["Hls"] = Icons.Outlined.Hls
+        m["HlsOff"] = Icons.Outlined.HlsOff
         m["HolidayVillage"] = Icons.Outlined.HolidayVillage
         m["Home"] = Icons.Outlined.Home
         m["HomeMax"] = Icons.Outlined.HomeMax
@@ -496,6 +1945,7 @@ internal object MaterialShippedOutlinedIcons {
         m["HouseSiding"] = Icons.Outlined.HouseSiding
         m["Houseboat"] = Icons.Outlined.Houseboat
         m["HowToVote"] = Icons.Outlined.HowToVote
+        m["Html"] = Icons.Outlined.Html
         m["Hub"] = Icons.Outlined.Hub
         m["Hvac"] = Icons.Outlined.Hvac
         m["IceSkating"] = Icons.Outlined.IceSkating
@@ -507,19 +1957,32 @@ internal object MaterialShippedOutlinedIcons {
         m["ImportantDevices"] = Icons.Outlined.ImportantDevices
         m["Inbox"] = Icons.Outlined.Inbox
         m["IncompleteCircle"] = Icons.Outlined.IncompleteCircle
+        m["IndeterminateCheckBox"] = Icons.Outlined.IndeterminateCheckBox
         m["InsertChart"] = Icons.Outlined.InsertChart
+        m["InstallDesktop"] = Icons.Outlined.InstallDesktop
         m["InterpreterMode"] = Icons.Outlined.InterpreterMode
         m["Inventory2"] = Icons.Outlined.Inventory2
         m["InvertColors"] = Icons.Outlined.InvertColors
         m["InvertColorsOff"] = Icons.Outlined.InvertColorsOff
+        m["IosShare"] = Icons.Outlined.IosShare
         m["Iron"] = Icons.Outlined.Iron
+        m["Javascript"] = Icons.Outlined.Javascript
         m["Kayaking"] = Icons.Outlined.Kayaking
         m["KebabDining"] = Icons.Outlined.KebabDining
+        m["Key"] = Icons.Outlined.Key
+        m["KeyOff"] = Icons.Outlined.KeyOff
         m["Keyboard"] = Icons.Outlined.Keyboard
         m["KeyboardAlt"] = Icons.Outlined.KeyboardAlt
         m["KeyboardBackspace"] = Icons.Outlined.KeyboardBackspace
         m["KeyboardCapslock"] = Icons.Outlined.KeyboardCapslock
+        m["KeyboardCommandKey"] = Icons.Outlined.KeyboardCommandKey
+        m["KeyboardControlKey"] = Icons.Outlined.KeyboardControlKey
+        m["KeyboardDoubleArrowDown"] = Icons.Outlined.KeyboardDoubleArrowDown
+        m["KeyboardDoubleArrowLeft"] = Icons.Outlined.KeyboardDoubleArrowLeft
+        m["KeyboardDoubleArrowRight"] = Icons.Outlined.KeyboardDoubleArrowRight
+        m["KeyboardDoubleArrowUp"] = Icons.Outlined.KeyboardDoubleArrowUp
         m["KeyboardHide"] = Icons.Outlined.KeyboardHide
+        m["KeyboardOptionKey"] = Icons.Outlined.KeyboardOptionKey
         m["KeyboardReturn"] = Icons.Outlined.KeyboardReturn
         m["KeyboardTab"] = Icons.Outlined.KeyboardTab
         m["KingBed"] = Icons.Outlined.KingBed
@@ -532,6 +1995,7 @@ internal object MaterialShippedOutlinedIcons {
         m["LaptopChromebook"] = Icons.Outlined.LaptopChromebook
         m["LaptopMac"] = Icons.Outlined.LaptopMac
         m["LaptopWindows"] = Icons.Outlined.LaptopWindows
+        m["LastPage"] = Icons.Outlined.LastPage
         m["Layers"] = Icons.Outlined.Layers
         m["LayersClear"] = Icons.Outlined.LayersClear
         m["Leaderboard"] = Icons.Outlined.Leaderboard
@@ -539,6 +2003,7 @@ internal object MaterialShippedOutlinedIcons {
         m["LeakRemove"] = Icons.Outlined.LeakRemove
         m["LegendToggle"] = Icons.Outlined.LegendToggle
         m["LensBlur"] = Icons.Outlined.LensBlur
+        m["LibraryAdd"] = Icons.Outlined.LibraryAdd
         m["LibraryAddCheck"] = Icons.Outlined.LibraryAddCheck
         m["LibraryBooks"] = Icons.Outlined.LibraryBooks
         m["LibraryMusic"] = Icons.Outlined.LibraryMusic
@@ -579,6 +2044,8 @@ internal object MaterialShippedOutlinedIcons {
         m["LocationOn"] = Icons.Outlined.LocationOn
         m["LocationSearching"] = Icons.Outlined.LocationSearching
         m["Lock"] = Icons.Outlined.Lock
+        m["Login"] = Icons.Outlined.Login
+        m["Logout"] = Icons.Outlined.Logout
         m["Looks"] = Icons.Outlined.Looks
         m["Looks3"] = Icons.Outlined.Looks3
         m["Looks4"] = Icons.Outlined.Looks4
@@ -599,6 +2066,7 @@ internal object MaterialShippedOutlinedIcons {
         m["Man2"] = Icons.Outlined.Man2
         m["Man3"] = Icons.Outlined.Man3
         m["Man4"] = Icons.Outlined.Man4
+        m["ManageSearch"] = Icons.Outlined.ManageSearch
         m["Map"] = Icons.Outlined.Map
         m["MapsUgc"] = Icons.Outlined.MapsUgc
         m["MarkAsUnread"] = Icons.Outlined.MarkAsUnread
@@ -609,6 +2077,7 @@ internal object MaterialShippedOutlinedIcons {
         m["MarkUnreadChatAlt"] = Icons.Outlined.MarkUnreadChatAlt
         m["MarkunreadMailbox"] = Icons.Outlined.MarkunreadMailbox
         m["Masks"] = Icons.Outlined.Masks
+        m["Maximize"] = Icons.Outlined.Maximize
         m["Mediation"] = Icons.Outlined.Mediation
         m["MedicalInformation"] = Icons.Outlined.MedicalInformation
         m["MedicalServices"] = Icons.Outlined.MedicalServices
@@ -616,6 +2085,7 @@ internal object MaterialShippedOutlinedIcons {
         m["MeetingRoom"] = Icons.Outlined.MeetingRoom
         m["Memory"] = Icons.Outlined.Memory
         m["Menu"] = Icons.Outlined.Menu
+        m["MenuOpen"] = Icons.Outlined.MenuOpen
         m["Merge"] = Icons.Outlined.Merge
         m["Mic"] = Icons.Outlined.Mic
         m["MicExternalOff"] = Icons.Outlined.MicExternalOff
@@ -623,6 +2093,7 @@ internal object MaterialShippedOutlinedIcons {
         m["MicOff"] = Icons.Outlined.MicOff
         m["Microwave"] = Icons.Outlined.Microwave
         m["MilitaryTech"] = Icons.Outlined.MilitaryTech
+        m["Minimize"] = Icons.Outlined.Minimize
         m["MinorCrash"] = Icons.Outlined.MinorCrash
         m["MissedVideoCall"] = Icons.Outlined.MissedVideoCall
         m["Mms"] = Icons.Outlined.Mms
@@ -640,13 +2111,16 @@ internal object MaterialShippedOutlinedIcons {
         m["Mood"] = Icons.Outlined.Mood
         m["MoodBad"] = Icons.Outlined.MoodBad
         m["Moped"] = Icons.Outlined.Moped
+        m["MoreHoriz"] = Icons.Outlined.MoreHoriz
         m["Mosque"] = Icons.Outlined.Mosque
         m["MotionPhotosAuto"] = Icons.Outlined.MotionPhotosAuto
         m["MotionPhotosOn"] = Icons.Outlined.MotionPhotosOn
         m["MotionPhotosPaused"] = Icons.Outlined.MotionPhotosPaused
         m["Motorcycle"] = Icons.Outlined.Motorcycle
         m["Mouse"] = Icons.Outlined.Mouse
+        m["MoveDown"] = Icons.Outlined.MoveDown
         m["MoveToInbox"] = Icons.Outlined.MoveToInbox
+        m["MoveUp"] = Icons.Outlined.MoveUp
         m["Movie"] = Icons.Outlined.Movie
         m["Moving"] = Icons.Outlined.Moving
         m["Mp"] = Icons.Outlined.Mp
@@ -695,10 +2169,15 @@ internal object MaterialShippedOutlinedIcons {
         m["NotificationsPaused"] = Icons.Outlined.NotificationsPaused
         m["OilBarrel"] = Icons.Outlined.OilBarrel
         m["Opacity"] = Icons.Outlined.Opacity
+        m["OpenInFull"] = Icons.Outlined.OpenInFull
+        m["OpenInNew"] = Icons.Outlined.OpenInNew
+        m["OpenInNewOff"] = Icons.Outlined.OpenInNewOff
+        m["OpenWith"] = Icons.Outlined.OpenWith
         m["OtherHouses"] = Icons.Outlined.OtherHouses
         m["Outbox"] = Icons.Outlined.Outbox
         m["OutdoorGrill"] = Icons.Outlined.OutdoorGrill
         m["Outlet"] = Icons.Outlined.Outlet
+        m["Output"] = Icons.Outlined.Output
         m["Paid"] = Icons.Outlined.Paid
         m["Palette"] = Icons.Outlined.Palette
         m["Panorama"] = Icons.Outlined.Panorama
@@ -749,6 +2228,7 @@ internal object MaterialShippedOutlinedIcons {
         m["PhotoLibrary"] = Icons.Outlined.PhotoLibrary
         m["PhotoSizeSelectLarge"] = Icons.Outlined.PhotoSizeSelectLarge
         m["PhotoSizeSelectSmall"] = Icons.Outlined.PhotoSizeSelectSmall
+        m["Php"] = Icons.Outlined.Php
         m["Piano"] = Icons.Outlined.Piano
         m["PianoOff"] = Icons.Outlined.PianoOff
         m["PictureAsPdf"] = Icons.Outlined.PictureAsPdf
@@ -756,6 +2236,7 @@ internal object MaterialShippedOutlinedIcons {
         m["PictureInPictureAlt"] = Icons.Outlined.PictureInPictureAlt
         m["PieChart"] = Icons.Outlined.PieChart
         m["PinDrop"] = Icons.Outlined.PinDrop
+        m["Pinch"] = Icons.Outlined.Pinch
         m["Place"] = Icons.Outlined.Place
         m["PlayArrow"] = Icons.Outlined.PlayArrow
         m["PlayCircle"] = Icons.Outlined.PlayCircle
@@ -792,6 +2273,7 @@ internal object MaterialShippedOutlinedIcons {
         m["PsychologyAlt"] = Icons.Outlined.PsychologyAlt
         m["Public"] = Icons.Outlined.Public
         m["PublicOff"] = Icons.Outlined.PublicOff
+        m["Publish"] = Icons.Outlined.Publish
         m["PunchClock"] = Icons.Outlined.PunchClock
         m["QrCode"] = Icons.Outlined.QrCode
         m["QrCode2"] = Icons.Outlined.QrCode2
@@ -802,6 +2284,8 @@ internal object MaterialShippedOutlinedIcons {
         m["Quickreply"] = Icons.Outlined.Quickreply
         m["Quiz"] = Icons.Outlined.Quiz
         m["Radio"] = Icons.Outlined.Radio
+        m["RadioButtonChecked"] = Icons.Outlined.RadioButtonChecked
+        m["RadioButtonUnchecked"] = Icons.Outlined.RadioButtonUnchecked
         m["RailwayAlert"] = Icons.Outlined.RailwayAlert
         m["RamenDining"] = Icons.Outlined.RamenDining
         m["RampLeft"] = Icons.Outlined.RampLeft
@@ -815,12 +2299,16 @@ internal object MaterialShippedOutlinedIcons {
         m["Recommend"] = Icons.Outlined.Recommend
         m["Recycling"] = Icons.Outlined.Recycling
         m["Redeem"] = Icons.Outlined.Redeem
+        m["Redo"] = Icons.Outlined.Redo
         m["ReduceCapacity"] = Icons.Outlined.ReduceCapacity
         m["RememberMe"] = Icons.Outlined.RememberMe
+        m["Remove"] = Icons.Outlined.Remove
+        m["RemoveDone"] = Icons.Outlined.RemoveDone
         m["RemoveFromQueue"] = Icons.Outlined.RemoveFromQueue
         m["RemoveModerator"] = Icons.Outlined.RemoveModerator
         m["RemoveRoad"] = Icons.Outlined.RemoveRoad
         m["RemoveShoppingCart"] = Icons.Outlined.RemoveShoppingCart
+        m["Repartition"] = Icons.Outlined.Repartition
         m["Repeat"] = Icons.Outlined.Repeat
         m["RepeatOn"] = Icons.Outlined.RepeatOn
         m["RepeatOne"] = Icons.Outlined.RepeatOne
@@ -829,10 +2317,14 @@ internal object MaterialShippedOutlinedIcons {
         m["Replay10"] = Icons.Outlined.Replay10
         m["Replay30"] = Icons.Outlined.Replay30
         m["Replay5"] = Icons.Outlined.Replay5
+        m["Reply"] = Icons.Outlined.Reply
+        m["ReplyAll"] = Icons.Outlined.ReplyAll
         m["Report"] = Icons.Outlined.Report
         m["ReportOff"] = Icons.Outlined.ReportOff
         m["ResetTv"] = Icons.Outlined.ResetTv
+        m["RestartAlt"] = Icons.Outlined.RestartAlt
         m["Restaurant"] = Icons.Outlined.Restaurant
+        m["RestoreFromTrash"] = Icons.Outlined.RestoreFromTrash
         m["Reviews"] = Icons.Outlined.Reviews
         m["RiceBowl"] = Icons.Outlined.RiceBowl
         m["RingVolume"] = Icons.Outlined.RingVolume
@@ -863,6 +2355,7 @@ internal object MaterialShippedOutlinedIcons {
         m["Satellite"] = Icons.Outlined.Satellite
         m["SatelliteAlt"] = Icons.Outlined.SatelliteAlt
         m["Save"] = Icons.Outlined.Save
+        m["SavedSearch"] = Icons.Outlined.SavedSearch
         m["Savings"] = Icons.Outlined.Savings
         m["Scale"] = Icons.Outlined.Scale
         m["Scanner"] = Icons.Outlined.Scanner
@@ -881,10 +2374,13 @@ internal object MaterialShippedOutlinedIcons {
         m["SdCard"] = Icons.Outlined.SdCard
         m["SdCardAlert"] = Icons.Outlined.SdCardAlert
         m["Search"] = Icons.Outlined.Search
+        m["SearchOff"] = Icons.Outlined.SearchOff
         m["Security"] = Icons.Outlined.Security
+        m["SelectAll"] = Icons.Outlined.SelectAll
         m["SelfImprovement"] = Icons.Outlined.SelfImprovement
         m["Sell"] = Icons.Outlined.Sell
         m["SendAndArchive"] = Icons.Outlined.SendAndArchive
+        m["SendTimeExtension"] = Icons.Outlined.SendTimeExtension
         m["SensorDoor"] = Icons.Outlined.SensorDoor
         m["SensorOccupied"] = Icons.Outlined.SensorOccupied
         m["SensorWindow"] = Icons.Outlined.SensorWindow
@@ -897,6 +2393,9 @@ internal object MaterialShippedOutlinedIcons {
         m["SentimentVerySatisfied"] = Icons.Outlined.SentimentVerySatisfied
         m["SetMeal"] = Icons.Outlined.SetMeal
         m["Settings"] = Icons.Outlined.Settings
+        m["SettingsAccessibility"] = Icons.Outlined.SettingsAccessibility
+        m["SettingsApplications"] = Icons.Outlined.SettingsApplications
+        m["SettingsBackupRestore"] = Icons.Outlined.SettingsBackupRestore
         m["SettingsBluetooth"] = Icons.Outlined.SettingsBluetooth
         m["SettingsBrightness"] = Icons.Outlined.SettingsBrightness
         m["SettingsEthernet"] = Icons.Outlined.SettingsEthernet
@@ -917,6 +2416,7 @@ internal object MaterialShippedOutlinedIcons {
         m["ShoppingBag"] = Icons.Outlined.ShoppingBag
         m["ShoppingBasket"] = Icons.Outlined.ShoppingBasket
         m["ShoppingCart"] = Icons.Outlined.ShoppingCart
+        m["ShoppingCartCheckout"] = Icons.Outlined.ShoppingCartCheckout
         m["ShowChart"] = Icons.Outlined.ShowChart
         m["Shower"] = Icons.Outlined.Shower
         m["Shuffle"] = Icons.Outlined.Shuffle
@@ -945,6 +2445,8 @@ internal object MaterialShippedOutlinedIcons {
         m["Soap"] = Icons.Outlined.Soap
         m["SocialDistance"] = Icons.Outlined.SocialDistance
         m["SolarPower"] = Icons.Outlined.SolarPower
+        m["Sort"] = Icons.Outlined.Sort
+        m["SortByAlpha"] = Icons.Outlined.SortByAlpha
         m["Sos"] = Icons.Outlined.Sos
         m["SoupKitchen"] = Icons.Outlined.SoupKitchen
         m["South"] = Icons.Outlined.South
@@ -989,6 +2491,9 @@ internal object MaterialShippedOutlinedIcons {
         m["Stairs"] = Icons.Outlined.Stairs
         m["Star"] = Icons.Outlined.Star
         m["StarBorder"] = Icons.Outlined.StarBorder
+        m["StarHalf"] = Icons.Outlined.StarHalf
+        m["StarRate"] = Icons.Outlined.StarRate
+        m["Start"] = Icons.Outlined.Start
         m["Stop"] = Icons.Outlined.Stop
         m["StopCircle"] = Icons.Outlined.StopCircle
         m["StopScreenShare"] = Icons.Outlined.StopScreenShare
@@ -1002,6 +2507,8 @@ internal object MaterialShippedOutlinedIcons {
         m["StrikethroughS"] = Icons.Outlined.StrikethroughS
         m["Stroller"] = Icons.Outlined.Stroller
         m["Style"] = Icons.Outlined.Style
+        m["SubdirectoryArrowLeft"] = Icons.Outlined.SubdirectoryArrowLeft
+        m["SubdirectoryArrowRight"] = Icons.Outlined.SubdirectoryArrowRight
         m["Subscriptions"] = Icons.Outlined.Subscriptions
         m["Subtitles"] = Icons.Outlined.Subtitles
         m["Subway"] = Icons.Outlined.Subway
@@ -1009,11 +2516,35 @@ internal object MaterialShippedOutlinedIcons {
         m["Surfing"] = Icons.Outlined.Surfing
         m["SurroundSound"] = Icons.Outlined.SurroundSound
         m["SwapCalls"] = Icons.Outlined.SwapCalls
+        m["SwapHoriz"] = Icons.Outlined.SwapHoriz
+        m["SwapHorizontalCircle"] = Icons.Outlined.SwapHorizontalCircle
+        m["SwapVert"] = Icons.Outlined.SwapVert
+        m["SwapVerticalCircle"] = Icons.Outlined.SwapVerticalCircle
+        m["SwipeDown"] = Icons.Outlined.SwipeDown
+        m["SwipeDownAlt"] = Icons.Outlined.SwipeDownAlt
+        m["SwipeLeft"] = Icons.Outlined.SwipeLeft
+        m["SwipeLeftAlt"] = Icons.Outlined.SwipeLeftAlt
+        m["SwipeRight"] = Icons.Outlined.SwipeRight
+        m["SwipeRightAlt"] = Icons.Outlined.SwipeRightAlt
+        m["SwipeUp"] = Icons.Outlined.SwipeUp
+        m["SwipeUpAlt"] = Icons.Outlined.SwipeUpAlt
+        m["SwipeVertical"] = Icons.Outlined.SwipeVertical
+        m["SwitchAccessShortcut"] = Icons.Outlined.SwitchAccessShortcut
+        m["SwitchAccessShortcutAdd"] = Icons.Outlined.SwitchAccessShortcutAdd
         m["SwitchAccount"] = Icons.Outlined.SwitchAccount
         m["SwitchCamera"] = Icons.Outlined.SwitchCamera
+        m["SwitchLeft"] = Icons.Outlined.SwitchLeft
+        m["SwitchRight"] = Icons.Outlined.SwitchRight
         m["SwitchVideo"] = Icons.Outlined.SwitchVideo
         m["Synagogue"] = Icons.Outlined.Synagogue
+        m["Sync"] = Icons.Outlined.Sync
+        m["SyncAlt"] = Icons.Outlined.SyncAlt
+        m["SyncDisabled"] = Icons.Outlined.SyncDisabled
         m["SyncLock"] = Icons.Outlined.SyncLock
+        m["SyncProblem"] = Icons.Outlined.SyncProblem
+        m["SystemUpdateAlt"] = Icons.Outlined.SystemUpdateAlt
+        m["Tab"] = Icons.Outlined.Tab
+        m["TabUnselected"] = Icons.Outlined.TabUnselected
         m["TableBar"] = Icons.Outlined.TableBar
         m["TableRestaurant"] = Icons.Outlined.TableRestaurant
         m["Tablet"] = Icons.Outlined.Tablet
@@ -1038,6 +2569,9 @@ internal object MaterialShippedOutlinedIcons {
         m["Timer3"] = Icons.Outlined.Timer3
         m["TimerOff"] = Icons.Outlined.TimerOff
         m["TireRepair"] = Icons.Outlined.TireRepair
+        m["ToggleOff"] = Icons.Outlined.ToggleOff
+        m["ToggleOn"] = Icons.Outlined.ToggleOn
+        m["Token"] = Icons.Outlined.Token
         m["Toll"] = Icons.Outlined.Toll
         m["Tonality"] = Icons.Outlined.Tonality
         m["Topic"] = Icons.Outlined.Topic
@@ -1075,8 +2609,14 @@ internal object MaterialShippedOutlinedIcons {
         m["UTurnRight"] = Icons.Outlined.UTurnRight
         m["Umbrella"] = Icons.Outlined.Umbrella
         m["Unarchive"] = Icons.Outlined.Unarchive
+        m["Undo"] = Icons.Outlined.Undo
+        m["UnfoldLess"] = Icons.Outlined.UnfoldLess
+        m["UnfoldLessDouble"] = Icons.Outlined.UnfoldLessDouble
+        m["UnfoldMore"] = Icons.Outlined.UnfoldMore
+        m["UnfoldMoreDouble"] = Icons.Outlined.UnfoldMoreDouble
         m["Unsubscribe"] = Icons.Outlined.Unsubscribe
         m["Upcoming"] = Icons.Outlined.Upcoming
+        m["Upload"] = Icons.Outlined.Upload
         m["Vaccines"] = Icons.Outlined.Vaccines
         m["VapeFree"] = Icons.Outlined.VapeFree
         m["VapingRooms"] = Icons.Outlined.VapingRooms
@@ -1096,8 +2636,13 @@ internal object MaterialShippedOutlinedIcons {
         m["VideogameAsset"] = Icons.Outlined.VideogameAsset
         m["VideogameAssetOff"] = Icons.Outlined.VideogameAssetOff
         m["ViewComfy"] = Icons.Outlined.ViewComfy
+        m["ViewComfyAlt"] = Icons.Outlined.ViewComfyAlt
         m["ViewCompact"] = Icons.Outlined.ViewCompact
+        m["ViewCompactAlt"] = Icons.Outlined.ViewCompactAlt
+        m["ViewCozy"] = Icons.Outlined.ViewCozy
         m["ViewInAr"] = Icons.Outlined.ViewInAr
+        m["ViewKanban"] = Icons.Outlined.ViewKanban
+        m["ViewTimeline"] = Icons.Outlined.ViewTimeline
         m["Vignette"] = Icons.Outlined.Vignette
         m["Villa"] = Icons.Outlined.Villa
         m["VoiceChat"] = Icons.Outlined.VoiceChat
@@ -1136,6 +2681,9 @@ internal object MaterialShippedOutlinedIcons {
         m["Whatshot"] = Icons.Outlined.Whatshot
         m["WheelchairPickup"] = Icons.Outlined.WheelchairPickup
         m["WhereToVote"] = Icons.Outlined.WhereToVote
+        m["WidthFull"] = Icons.Outlined.WidthFull
+        m["WidthNormal"] = Icons.Outlined.WidthNormal
+        m["WidthWide"] = Icons.Outlined.WidthWide
         m["WifiCalling"] = Icons.Outlined.WifiCalling
         m["WifiChannel"] = Icons.Outlined.WifiChannel
         m["WifiPassword"] = Icons.Outlined.WifiPassword
@@ -1150,11 +2698,15 @@ internal object MaterialShippedOutlinedIcons {
         m["Workspaces"] = Icons.Outlined.Workspaces
         m["WrongLocation"] = Icons.Outlined.WrongLocation
         m["Yard"] = Icons.Outlined.Yard
+        m["YoutubeSearchedFor"] = Icons.Outlined.YoutubeSearchedFor
+        m["ZoomIn"] = Icons.Outlined.ZoomIn
         m["ZoomInMap"] = Icons.Outlined.ZoomInMap
+        m["ZoomOut"] = Icons.Outlined.ZoomOut
         m["ZoomOutMap"] = Icons.Outlined.ZoomOutMap
         m["_10k"] = Icons.Outlined._10k
         m["_10mp"] = Icons.Outlined._10mp
         m["_11mp"] = Icons.Outlined._11mp
+        m["_123"] = Icons.Outlined._123
         m["_12mp"] = Icons.Outlined._12mp
         m["_13mp"] = Icons.Outlined._13mp
         m["_14mp"] = Icons.Outlined._14mp

@@ -42,6 +42,6 @@ class MinimalIconsPickerCountTest {
 
     companion object {
         /** Distinct [MinimalIcons.names] entries offered in pickers (baseline; bump when catalog changes). */
-        const val EXPECTED_PICKER_ICON_COUNT: Int = 1140
+        const val EXPECTED_PICKER_ICON_COUNT: Int = 1333
     }
 }

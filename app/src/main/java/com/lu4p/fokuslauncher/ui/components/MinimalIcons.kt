@@ -96,14 +96,38 @@ object MinimalIcons {
             setOf(
                     "Text",
                     "Android",
-                    "UI actions",
                     "Actions",
                     "Home",
+            )
+
+    /**
+     * Outlined glyphs in [MaterialShippedOutlinedIcons] / [legacyAliases] that have no row in
+     * [MaterialOutlinedIconCategories] (not in the extended index). Google Symbols still lists them
+     * under **UI actions** — keep pickers aligned with fonts.google.com.
+     */
+    private val pickerCategoryOverrides: Map<String, String> =
+            mapOf(
+                    "Search" to "UI actions",
+                    "Home" to "UI actions",
+                    "Menu" to "UI actions",
+                    "Close" to "UI actions",
+                    "Settings" to "UI actions",
+                    "CheckCircle" to "UI actions",
+                    "Favorite" to "UI actions",
+                    "Add" to "UI actions",
+                    "Delete" to "UI actions",
+                    "ArrowBack" to "UI actions",
+                    "Star" to "UI actions",
+                    "ArrowForward" to "UI actions",
+                    "ChevronRight" to "UI actions",
+                    "Logout" to "UI actions",
+                    "Cancel" to "UI actions",
             )
 
     /** Display order for [MaterialOutlinedIconCategories] labels (aligned roughly with fonts.google.com). */
     private val googleCategorySectionOrder: List<String> =
             listOf(
+                    "UI actions",
                     "Communicate",
                     "Social",
                     "Maps",
@@ -119,12 +143,16 @@ object MinimalIcons {
             )
  
     private fun isOmittedFromIconPickers(name: String): Boolean {
-        val cat = MaterialOutlinedIconCategories.GOOGLE_CATEGORY_BY_ICON_NAME[name] ?: return true
+        val cat =
+                pickerCategoryOverrides[name]
+                        ?: MaterialOutlinedIconCategories.GOOGLE_CATEGORY_BY_ICON_NAME[name]
+                                ?: return true
         return cat in pickerOmittedGoogleCategories
     }
 
     /** Picker section bucket: Google category, or Communicate for legacy `send` (not in metadata). */
     private fun pickerSectionCategoryForName(name: String): String? {
+        pickerCategoryOverrides[name]?.let { return it }
         MaterialOutlinedIconCategories.GOOGLE_CATEGORY_BY_ICON_NAME[name]?.let { return it }
         return if (name == "send") "Communicate" else null
     }

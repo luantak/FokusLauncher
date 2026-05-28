@@ -16,9 +16,7 @@ from __future__ import annotations
 import re
 import sys
 
-PICKER_OMITTED = frozenset(
-    {"Text", "Android", "UI actions", "Actions", "Home"}
-)
+PICKER_OMITTED = frozenset({"Text", "Android", "Actions", "Home"})
 
 # Icons.Outlined.* basenames from legacyAliases in MinimalIcons.kt (send uses AutoMirrored — skip).
 LEGACY_OUTLINED = frozenset(
@@ -73,6 +71,15 @@ LEGACY_OUTLINED = frozenset(
         "StarBorder",
         "Cloud",
         "Search",
+        "Close",
+        "Add",
+        "Delete",
+        "ArrowBack",
+        "CheckCircle",
+        "ArrowForward",
+        "ChevronRight",
+        "Logout",
+        "Cancel",
         "Notifications",
         "Lock",
         "DarkMode",
