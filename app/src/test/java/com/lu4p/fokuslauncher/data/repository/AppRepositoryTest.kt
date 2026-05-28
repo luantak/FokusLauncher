@@ -136,11 +136,11 @@ class AppRepositoryTest {
 
     @Test
     fun `getInstalledApps retries when owner profile is empty but work profile has apps`() {
-        val workUser = mockk<UserHandle>(relaxed = true)
+        val workUser = secondaryUserHandle()
         every { userManager.userProfiles } returns listOf(myUser, workUser)
         every { privateSpaceManager.isPrivateSpaceProfile(workUser) } returns false
         var ownerCalls = 0
-        every { launcherApps.getActivityList(null, myUser) } answers {
+        every { launcherApps.getActivityList(null, Process.myUserHandle()) } answers {
             ownerCalls++
             if (ownerCalls < 2) {
                 emptyList()
@@ -161,10 +161,10 @@ class AppRepositoryTest {
 
     @Test
     fun `getInstalledApps does not cache work-only snapshot when owner stays empty`() {
-        val workUser = mockk<UserHandle>(relaxed = true)
+        val workUser = secondaryUserHandle()
         every { userManager.userProfiles } returns listOf(myUser, workUser)
         every { privateSpaceManager.isPrivateSpaceProfile(workUser) } returns false
-        every { launcherApps.getActivityList(null, myUser) } returns emptyList()
+        every { launcherApps.getActivityList(null, Process.myUserHandle()) } returns emptyList()
         every {
             launcherApps.getActivityList(null, workUser)
         } returns listOf(createMockLauncherActivity("com.work.slack", "Slack"))
@@ -172,7 +172,7 @@ class AppRepositoryTest {
         repository.getInstalledApps()
         repository.getInstalledApps()
 
-        verify(atLeast = 2) { launcherApps.getActivityList(null, myUser) }
+        verify(atLeast = 2) { launcherApps.getActivityList(null, Process.myUserHandle()) }
     }
 
     @Test
@@ -754,6 +754,13 @@ class AppRepositoryTest {
     }
 
     // --- Helpers ---
+
+    /** Real non-owner [UserHandle]; relaxed mocks match too broadly as MockK argument matchers. */
+    private fun secondaryUserHandle(userId: Int = 10): UserHandle {
+        val constructor = UserHandle::class.java.getDeclaredConstructor(Int::class.javaPrimitiveType)
+        constructor.isAccessible = true
+        return constructor.newInstance(userId)
+    }
 
     private fun createMockLauncherActivity(
             packageName: String,
