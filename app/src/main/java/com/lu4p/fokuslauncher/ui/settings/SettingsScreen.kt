@@ -95,13 +95,13 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.AppShortcutAction
-import com.lu4p.fokuslauncher.ui.drawer.GroupedAppPickerDialog
 import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
 import com.lu4p.fokuslauncher.data.model.HomeDateFormatStyle
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.TemperatureUnit
 import com.lu4p.fokuslauncher.data.model.LauncherVisualStyle
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
+import com.lu4p.fokuslauncher.data.model.WidgetTapTarget
 import com.lu4p.fokuslauncher.utils.LockScreenHelper
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
 import com.lu4p.fokuslauncher.ui.theme.LocalLauncherFontScale
@@ -133,11 +133,12 @@ private data class SwipeTargetPick(
         val onClear: () -> Unit,
 )
 
-private data class PreferredAppPickerRow(
+private data class WidgetTapPickerRow(
         @param:StringRes val labelRes: Int,
-        val packageName: String,
+        val tapTarget: WidgetTapTarget?,
         val pickerKey: String,
         val onClear: () -> Unit,
+        val emptyLabel: (Context, Resources) -> String = ::formatWidgetAppEmptyLabel,
 )
 
 private data class DeviceControlToggleRow(
@@ -856,36 +857,40 @@ fun HomeWidgetsSettingsScreen(
                         onRequestLocationPermission = requestCoarseLocation,
                         context = context,
                         resources = resources,
-                        preferredWeatherAppPackage = uiState.preferredWeatherAppPackage,
+                        preferredWeatherTap = uiState.preferredWeatherTap,
                         allApps = uiState.allApps,
+                        allShortcutActions = uiState.allShortcutActions,
                         onPickApp = { showAppPickerFor.value = "weather" },
-                        onClear = { viewModel.setPreferredWeatherApp("") },
+                        onClear = { viewModel.setPreferredWeatherTap(null) },
                 )
             }
             items(
                     listOf(
-                            PreferredAppPickerRow(
-                                    R.string.settings_widget_clock_app,
-                                    uiState.preferredClockAppPackage,
-                                    "clock",
-                            ) { viewModel.setPreferredClockApp("") },
-                            PreferredAppPickerRow(
-                                    R.string.settings_widget_calendar_app,
-                                    uiState.preferredCalendarAppPackage,
-                                    "calendar",
-                            ) { viewModel.setPreferredCalendarApp("") },
+                            WidgetTapPickerRow(
+                                    labelRes = R.string.settings_widget_clock_app,
+                                    tapTarget = uiState.preferredClockTap,
+                                    pickerKey = "clock",
+                                    onClear = { viewModel.setPreferredClockTap(null) },
+                            ),
+                            WidgetTapPickerRow(
+                                    labelRes = R.string.settings_widget_calendar_app,
+                                    tapTarget = uiState.preferredCalendarTap,
+                                    pickerKey = "calendar",
+                                    onClear = { viewModel.setPreferredCalendarTap(null) },
+                            ),
                     ),
                     key = { it.labelRes },
             ) { row ->
                 ShortcutTargetRow(
                         label = stringResource(row.labelRes),
                         currentTarget =
-                                formatPreferredAppLabel(
-                                        context,
-                                        resources,
-                                        row.packageName,
-                                        uiState.allApps,
-                                        ::formatWidgetAppEmptyLabel,
+                                formatWidgetTapTarget(
+                                        context = context,
+                                        resources = resources,
+                                        binding = row.tapTarget,
+                                        allApps = uiState.allApps,
+                                        allActions = uiState.allShortcutActions,
+                                        emptyLabel = row.emptyLabel,
                                 ),
                         onPickApp = { showAppPickerFor.value = row.pickerKey },
                         onClear = row.onClear,
@@ -895,15 +900,15 @@ fun HomeWidgetsSettingsScreen(
     }
 
     showAppPickerFor.value?.let { pickerTarget ->
-        GroupedAppPickerDialog(
-                apps = uiState.allApps,
-                title = stringResource(R.string.settings_app_picker_title),
-                keyPrefix = "settings_app_pick",
-                onSelect = { app ->
+        ShortcutActionPickerDialog(
+                allActions = uiState.allShortcutActions,
+                allApps = uiState.allApps,
+                title = stringResource(R.string.edit_shortcuts_section_all_actions),
+                onSelect = { action ->
                     when (pickerTarget) {
-                        "weather" -> viewModel.setPreferredWeatherApp(app.packageName)
-                        "clock" -> viewModel.setPreferredClockApp(app.packageName)
-                        "calendar" -> viewModel.setPreferredCalendarApp(app.packageName)
+                        "weather" -> viewModel.setPreferredWeatherTap(action)
+                        "clock" -> viewModel.setPreferredClockTap(action)
+                        "calendar" -> viewModel.setPreferredCalendarTap(action)
                     }
                     showAppPickerFor.value = null
                 },
@@ -1689,8 +1694,9 @@ private fun WeatherAppSettingRow(
         onRequestLocationPermission: () -> Unit,
         context: Context,
         resources: Resources,
-        preferredWeatherAppPackage: String,
+        preferredWeatherTap: WidgetTapTarget?,
         allApps: List<AppInfo>,
+        allShortcutActions: List<AppShortcutAction>,
         onPickApp: () -> Unit,
         onClear: () -> Unit,
 ) {
@@ -1716,12 +1722,13 @@ private fun WeatherAppSettingRow(
             )
         } else {
             val weatherAppLabel =
-                    formatPreferredAppLabel(
-                            context,
-                            resources,
-                            preferredWeatherAppPackage,
-                            allApps,
-                            ::formatWeatherAppEmptyLabel,
+                    formatWidgetTapTarget(
+                            context = context,
+                            resources = resources,
+                            binding = preferredWeatherTap,
+                            allApps = allApps,
+                            allActions = allShortcutActions,
+                            emptyLabel = ::formatWeatherAppEmptyLabel,
                     )
             ShortcutTargetRow(
                     label = stringResource(R.string.settings_weather_app),
@@ -1790,19 +1797,6 @@ private fun ShortcutTargetRow(
 
 // =====================  DIALOGS  =====================
 
-private fun formatPreferredAppLabel(
-        context: Context,
-        resources: Resources,
-        packageName: String,
-        allApps: List<AppInfo>,
-        emptyLabel: (Context, Resources) -> String,
-): String {
-    if (packageName.isNotBlank()) {
-        return allApps.find { it.packageName == packageName }?.label ?: packageName
-    }
-    return emptyLabel(context, resources)
-}
-
 private fun formatWidgetAppEmptyLabel(context: Context, resources: Resources): String =
         resources.getString(R.string.settings_weather_app_system_default)
 
@@ -1820,6 +1814,29 @@ private fun formatWeatherAppEmptyLabel(context: Context, resources: Resources): 
     } else {
         resources.getString(R.string.settings_weather_app_not_configured)
     }
+}
+
+private fun formatWidgetTapTarget(
+        context: Context,
+        resources: Resources,
+        binding: WidgetTapTarget?,
+        allApps: List<AppInfo>,
+        allActions: List<AppShortcutAction>,
+        emptyLabel: (Context, Resources) -> String,
+): String {
+    if (binding == null) return emptyLabel(context, resources)
+    val resolvedLabel =
+            allActions.find {
+                it.target == binding.target && it.profileKey == binding.profileKey
+            }?.actionLabel
+    return formatShortcutTargetDisplay(
+            context = context,
+            target = binding.target,
+            allApps = allApps,
+            notSetLabel = emptyLabel(context, resources),
+            resolvedLauncherActionLabel = resolvedLabel,
+            profileKey = binding.profileKey,
+    )
 }
 
 private fun formatShortcutTarget(

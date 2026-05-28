@@ -38,6 +38,7 @@ import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.model.WeatherData
+import com.lu4p.fokuslauncher.data.model.WidgetTapTarget
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.data.repository.WeatherRepository
@@ -212,14 +213,14 @@ class HomeViewModel @Inject constructor(
                     emptyMap(),
             )
 
-    private val preferredWeatherAppPackage: StateFlow<String> =
-            preferencesManager.preferredWeatherAppFlow.stateEagerlyIn(viewModelScope, "")
+    private val preferredWeatherTap: StateFlow<WidgetTapTarget?> =
+            preferencesManager.preferredWeatherTapFlow.stateEagerlyIn(viewModelScope, null)
 
-    private val preferredClockAppPackage: StateFlow<String> =
-            preferencesManager.preferredClockAppFlow.stateEagerlyIn(viewModelScope, "")
+    private val preferredClockTap: StateFlow<WidgetTapTarget?> =
+            preferencesManager.preferredClockTapFlow.stateEagerlyIn(viewModelScope, null)
 
-    private val preferredCalendarAppPackage: StateFlow<String> =
-            preferencesManager.preferredCalendarAppFlow.stateEagerlyIn(viewModelScope, "")
+    private val preferredCalendarTap: StateFlow<WidgetTapTarget?> =
+            preferencesManager.preferredCalendarTapFlow.stateEagerlyIn(viewModelScope, null)
 
     private var weatherTickerJob: Job? = null
 
@@ -530,30 +531,26 @@ class HomeViewModel @Inject constructor(
     }
 
     fun openWeatherAppPicker() {
-        val preferredPackage = preferredWeatherAppPackage.value
-        if (preferredPackage.isBlank()) {
-            _showWeatherAppPicker.value = true
-            return
-        }
-
-        val launched = appRepository.launchApp(preferredPackage)
-        if (!launched) {
+        preferredWeatherTap.value?.let { tap ->
+            if (launchWidgetTapTarget(tap)) return
             Toast.makeText(
                 context,
                 context.getString(R.string.toast_weather_app_launch_failed),
                 Toast.LENGTH_SHORT
             ).show()
-            _showWeatherAppPicker.value = true
         }
+        _showWeatherAppPicker.value = true
     }
 
     fun closeWeatherAppPicker() {
         _showWeatherAppPicker.value = false
     }
 
-    fun setPreferredWeatherApp(packageName: String) {
+    fun setPreferredWeatherTap(action: AppShortcutAction) {
         viewModelScope.launch {
-            preferencesManager.setPreferredWeatherApp(packageName)
+            preferencesManager.setPreferredWeatherTap(
+                    WidgetTapTarget(action.target, action.profileKey)
+            )
             _showWeatherAppPicker.value = false
         }
     }
@@ -871,11 +868,20 @@ class HomeViewModel @Inject constructor(
         launchShortcutTarget(shortcut.target, shortcut.profileKey)
     }
 
-    private fun launchShortcutTarget(target: ShortcutTarget, profileKey: String) {
-        when (target) {
-            is ShortcutTarget.PhoneDial -> launchDefaultDialer()
-            is ShortcutTarget.WidgetPage -> Unit
-            is ShortcutTarget.DeepLink -> launchDeepLink(target.intentUri)
+    private fun launchWidgetTapTarget(binding: WidgetTapTarget): Boolean =
+            launchShortcutTarget(binding.target, binding.profileKey)
+
+    private fun launchShortcutTarget(target: ShortcutTarget, profileKey: String): Boolean {
+        return when (target) {
+            is ShortcutTarget.PhoneDial -> {
+                launchDefaultDialer()
+                true
+            }
+            is ShortcutTarget.WidgetPage -> false
+            is ShortcutTarget.DeepLink -> {
+                launchDeepLink(target.intentUri)
+                true
+            }
             is ShortcutTarget.LauncherShortcut -> {
                 val user = resolveUserHandleForShortcut(profileKey, target.packageName)
                 appRepository.launchLauncherShortcut(
@@ -965,7 +971,9 @@ class HomeViewModel @Inject constructor(
      * Opens the default clock / alarm app.
      */
     fun openClockApp() {
-        if (tryLaunchPreferredPackage(preferredClockAppPackage.value)) return
+        preferredClockTap.value?.let { tap ->
+            if (launchWidgetTapTarget(tap)) return
+        }
         val showAlarms =
                 Intent(AlarmClock.ACTION_SHOW_ALARMS).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -990,7 +998,9 @@ class HomeViewModel @Inject constructor(
      * Opens the default calendar app.
      */
     fun openCalendarApp() {
-        if (tryLaunchPreferredPackage(preferredCalendarAppPackage.value)) return
+        preferredCalendarTap.value?.let { tap ->
+            if (launchWidgetTapTarget(tap)) return
+        }
         try {
             val intent = Intent(Intent.ACTION_VIEW).apply {
                 data = CalendarContract.CONTENT_URI.buildUpon()
@@ -1155,9 +1165,6 @@ class HomeViewModel @Inject constructor(
         val idx = indexOfFirst(predicate)
         if (idx >= 0) removeAt(idx) else add(factory())
     }
-
-    private fun tryLaunchPreferredPackage(packageName: String): Boolean =
-            packageName.isNotBlank() && appRepository.launchApp(packageName)
 
     private fun FavoriteApp.isPhoneFavoriteSentinel(): Boolean =
             packageName == ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE

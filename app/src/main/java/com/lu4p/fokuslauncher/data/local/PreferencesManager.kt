@@ -19,6 +19,9 @@ import com.lu4p.fokuslauncher.data.model.LauncherFontScale
 import com.lu4p.fokuslauncher.data.model.SystemCategoryKeys
 import com.lu4p.fokuslauncher.data.model.HomeDateFormatStyle
 import com.lu4p.fokuslauncher.data.model.HostedWidget
+import com.lu4p.fokuslauncher.data.model.decodeWidgetTapTarget
+import com.lu4p.fokuslauncher.data.model.encodeWidgetTapTarget
+import com.lu4p.fokuslauncher.data.model.WidgetTapTarget
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.TemperatureUnit
 import com.lu4p.fokuslauncher.data.model.LauncherAppearance
@@ -300,11 +303,15 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         context.fokusLauncherPreferencesDataStore.edit { prefs -> prefs[SWIPE_RIGHT_KEY] = ShortcutTarget.encode(target) }
     }
 
-    // --- Preferred weather app ---
+    // --- Home widget tap targets (clock / calendar / weather) ---
 
-    val preferredWeatherAppFlow: Flow<String> = prefFlow(PREFERRED_WEATHER_APP_KEY, "")
-    suspend fun setPreferredWeatherApp(packageName: String) =
-            setPref(PREFERRED_WEATHER_APP_KEY, packageName)
+    val preferredWeatherTapFlow: Flow<WidgetTapTarget?> =
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
+                decodeWidgetTapTarget(prefs[PREFERRED_WEATHER_APP_KEY] ?: "")
+            }
+
+    suspend fun setPreferredWeatherTap(target: WidgetTapTarget?) =
+            setPref(PREFERRED_WEATHER_APP_KEY, encodeWidgetTapTarget(target))
 
     suspend fun getLastKnownWeatherLocation(): Pair<Double, Double>? {
         val raw =
@@ -325,15 +332,21 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         }
     }
 
-    // --- Clock / calendar tap overrides (home widgets) ---
+    val preferredClockTapFlow: Flow<WidgetTapTarget?> =
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
+                decodeWidgetTapTarget(prefs[PREFERRED_CLOCK_APP_KEY] ?: "")
+            }
 
-    val preferredClockAppFlow: Flow<String> = prefFlow(PREFERRED_CLOCK_APP_KEY, "")
-    suspend fun setPreferredClockApp(packageName: String) =
-            setPref(PREFERRED_CLOCK_APP_KEY, packageName)
+    suspend fun setPreferredClockTap(target: WidgetTapTarget?) =
+            setPref(PREFERRED_CLOCK_APP_KEY, encodeWidgetTapTarget(target))
 
-    val preferredCalendarAppFlow: Flow<String> = prefFlow(PREFERRED_CALENDAR_APP_KEY, "")
-    suspend fun setPreferredCalendarApp(packageName: String) =
-            setPref(PREFERRED_CALENDAR_APP_KEY, packageName)
+    val preferredCalendarTapFlow: Flow<WidgetTapTarget?> =
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
+                decodeWidgetTapTarget(prefs[PREFERRED_CALENDAR_APP_KEY] ?: "")
+            }
+
+    suspend fun setPreferredCalendarTap(target: WidgetTapTarget?) =
+            setPref(PREFERRED_CALENDAR_APP_KEY, encodeWidgetTapTarget(target))
 
     // --- System UI ---
 

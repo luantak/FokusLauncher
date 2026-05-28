@@ -25,6 +25,7 @@ import com.lu4p.fokuslauncher.data.model.PhotoWallpaperDrawerOverlayIntensity
 import com.lu4p.fokuslauncher.data.model.PhotoWallpaperOutlineWidthDp
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
+import com.lu4p.fokuslauncher.data.model.WidgetTapTarget
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.data.util.AppLocaleHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -68,9 +69,9 @@ data class SettingsUiState(
         val rightSideShortcuts: List<HomeShortcut> = emptyList(),
         val swipeLeftTarget: ShortcutTarget? = null,
         val swipeRightTarget: ShortcutTarget? = null,
-        val preferredWeatherAppPackage: String = "",
-        val preferredClockAppPackage: String = "",
-        val preferredCalendarAppPackage: String = "",
+        val preferredWeatherTap: WidgetTapTarget? = null,
+        val preferredClockTap: WidgetTapTarget? = null,
+        val preferredCalendarTap: WidgetTapTarget? = null,
         val showStatusBar: Boolean = false,
         val showHomeClock: Boolean = true,
         val showHomeDate: Boolean = true,
@@ -216,8 +217,8 @@ constructor(
             val homeWidgetItemsFlow =
                     combine(
                             preferencesManager.homeWidgetVisibilityFlow,
-                            preferencesManager.preferredClockAppFlow,
-                            preferencesManager.preferredCalendarAppFlow,
+                            preferencesManager.preferredClockTapFlow,
+                            preferencesManager.preferredCalendarTapFlow,
                             preferencesManager.homeDateFormatStyleFlow,
                             preferencesManager.temperatureUnitFlow,
                     ) { vis, clk, cal, fmt, tempUnit ->
@@ -226,8 +227,8 @@ constructor(
                                 showDate = vis.showDate,
                                 showWeather = vis.showWeather,
                                 showBattery = vis.showBattery,
-                                preferredClockAppPackage = clk,
-                                preferredCalendarAppPackage = cal,
+                                preferredClockTap = clk,
+                                preferredCalendarTap = cal,
                                 homeDateFormatStyle = fmt,
                                 temperatureUnit = tempUnit,
                         )
@@ -236,10 +237,10 @@ constructor(
                     combine(
                             combine(
                                     preferencesManager.swipeRightTargetFlow,
-                                    preferencesManager.preferredWeatherAppFlow,
+                                    preferencesManager.preferredWeatherTapFlow,
                                     preferencesManager.showStatusBarFlow,
-                            ) { swipeRight, weatherPkg, showStatusBar ->
-                                Triple(swipeRight, weatherPkg, showStatusBar)
+                            ) { swipeRight, weatherTap, showStatusBar ->
+                                Triple(swipeRight, weatherTap, showStatusBar)
                             },
                             combine(
                                     preferencesManager.drawerSidebarCategoriesFlow,
@@ -249,7 +250,7 @@ constructor(
                             ) { sidebarCategories, sortMode, searchAutoLaunch, scrollToTopAutoKeyboard ->
                                 DrawerPrefs(
                                         swipeRightTarget = null, // placeholder
-                                        preferredWeatherAppPackage = "", // placeholder
+                                        preferredWeatherTap = null, // placeholder
                                         showStatusBar = false, // placeholder
                                         drawerSidebarCategories = sidebarCategories,
                                         drawerAppSortMode = sortMode,
@@ -260,7 +261,7 @@ constructor(
                     ) { swipeAndWeather, drawerLayout ->
                         drawerLayout.copy(
                                 swipeRightTarget = swipeAndWeather.first,
-                                preferredWeatherAppPackage = swipeAndWeather.second,
+                                preferredWeatherTap = swipeAndWeather.second,
                                 showStatusBar = swipeAndWeather.third,
                         )
                     }
@@ -386,10 +387,9 @@ constructor(
                         rightSideShortcuts = left.rightSideShortcuts,
                         swipeLeftTarget = left.swipeLeft,
                         swipeRightTarget = drawer.swipeRightTarget,
-                        preferredWeatherAppPackage = drawer.preferredWeatherAppPackage,
-                        preferredClockAppPackage = homeWidgetItems.preferredClockAppPackage,
-                        preferredCalendarAppPackage =
-                                homeWidgetItems.preferredCalendarAppPackage,
+                        preferredWeatherTap = drawer.preferredWeatherTap,
+                        preferredClockTap = homeWidgetItems.preferredClockTap,
+                        preferredCalendarTap = homeWidgetItems.preferredCalendarTap,
                         showStatusBar = drawer.showStatusBar,
                         showHomeClock = homeWidgetItems.showClock,
                         showHomeDate = homeWidgetItems.showDate,
@@ -431,8 +431,8 @@ constructor(
             val showDate: Boolean,
             val showWeather: Boolean,
             val showBattery: Boolean,
-            val preferredClockAppPackage: String,
-            val preferredCalendarAppPackage: String,
+            val preferredClockTap: WidgetTapTarget?,
+            val preferredCalendarTap: WidgetTapTarget?,
             val homeDateFormatStyle: HomeDateFormatStyle,
             val temperatureUnit: TemperatureUnit
     )
@@ -457,7 +457,7 @@ constructor(
 
     private data class DrawerPrefs(
             val swipeRightTarget: ShortcutTarget?,
-            val preferredWeatherAppPackage: String,
+            val preferredWeatherTap: WidgetTapTarget?,
             val showStatusBar: Boolean,
             val drawerSidebarCategories: Boolean,
             val drawerAppSortMode: DrawerAppSortMode,
@@ -683,14 +683,26 @@ constructor(
     fun setSwipeRightTarget(target: ShortcutTarget?) =
             launchPreferences { setSwipeRightTarget(target) }
 
-    fun setPreferredWeatherApp(packageName: String) =
-            launchPreferences { setPreferredWeatherApp(packageName) }
+    fun setPreferredWeatherTap(action: AppShortcutAction?) =
+            launchPreferences {
+                setPreferredWeatherTap(
+                        action?.let { WidgetTapTarget(it.target, it.profileKey) }
+                )
+            }
 
-    fun setPreferredClockApp(packageName: String) =
-            launchPreferences { setPreferredClockApp(packageName) }
+    fun setPreferredClockTap(action: AppShortcutAction?) =
+            launchPreferences {
+                setPreferredClockTap(
+                        action?.let { WidgetTapTarget(it.target, it.profileKey) }
+                )
+            }
 
-    fun setPreferredCalendarApp(packageName: String) =
-            launchPreferences { setPreferredCalendarApp(packageName) }
+    fun setPreferredCalendarTap(action: AppShortcutAction?) =
+            launchPreferences {
+                setPreferredCalendarTap(
+                        action?.let { WidgetTapTarget(it.target, it.profileKey) }
+                )
+            }
 
     fun setShowStatusBar(show: Boolean) = launchPreferences { setShowStatusBar(show) }
 

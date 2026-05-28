@@ -55,7 +55,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.appProfileKey
-import com.lu4p.fokuslauncher.ui.drawer.GroupedAppPickerDialog
+import com.lu4p.fokuslauncher.ui.settings.ShortcutActionPickerDialog
 import com.lu4p.fokuslauncher.ui.drawer.profileOriginLabelForFavorite
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
@@ -92,6 +92,7 @@ fun HomeScreen(
     val favorites by viewModel.favorites.collectAsStateWithLifecycle()
     val rightSideShortcuts by viewModel.rightSideShortcuts.collectAsStateWithLifecycle()
     val allInstalledApps by viewModel.allInstalledApps.collectAsStateWithLifecycle()
+    val allShortcutActions by viewModel.allShortcutActions.collectAsStateWithLifecycle()
     val profileDisplayNameOverrides by viewModel.profileDisplayNameOverrides.collectAsStateWithLifecycle()
     val categoryOptions by viewModel.categoryOptions.collectAsStateWithLifecycle()
     val showWeatherAppPicker by viewModel.showWeatherAppPicker.collectAsStateWithLifecycle()
@@ -192,11 +193,11 @@ fun HomeScreen(
     }
 
     if (showWeatherAppPicker) {
-        GroupedAppPickerDialog(
-            apps = allInstalledApps,
+        ShortcutActionPickerDialog(
+            allActions = allShortcutActions,
+            allApps = allInstalledApps,
             title = stringResource(R.string.home_weather_app_picker_title),
-            keyPrefix = "weather_app_pick",
-            onSelect = { app -> viewModel.setPreferredWeatherApp(app.packageName) },
+            onSelect = viewModel::setPreferredWeatherTap,
             onDismiss = { viewModel.closeWeatherAppPicker() },
             profileDisplayNameOverrides = profileDisplayNameOverrides,
         )
