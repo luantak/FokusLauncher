@@ -18,7 +18,11 @@ import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import com.lu4p.fokuslauncher.data.model.appMetadataKey
 import com.lu4p.fokuslauncher.data.model.metadataSettingsStableKey
 import com.lu4p.fokuslauncher.data.model.appProfileKey
+import com.lu4p.fokuslauncher.data.font.CustomFontImportFailure
+import com.lu4p.fokuslauncher.data.font.CustomFontImportResult
+import com.lu4p.fokuslauncher.data.font.CustomFontStore
 import com.lu4p.fokuslauncher.data.font.SystemFontFamiliesProvider
+import com.lu4p.fokuslauncher.data.model.LauncherFontPreferences
 import com.lu4p.fokuslauncher.data.model.LauncherFontScale
 import com.lu4p.fokuslauncher.data.model.LauncherVisualStyle
 import com.lu4p.fokuslauncher.data.model.PhotoWallpaperDrawerOverlayIntensity
@@ -47,6 +51,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.lu4p.fokuslauncher.R
@@ -92,6 +97,10 @@ data class SettingsUiState(
         val drawerAppSortMode: DrawerAppSortMode = DrawerAppSortMode.ALPHABETICAL,
         val homeAlignment: HomeAlignment = HomeAlignment.LEFT,
         val launcherFontFamilyName: String = "",
+        /** True when an imported `.ttf` is present in app-private storage. */
+        val hasCustomFontFile: Boolean = false,
+        /** Label shown for the imported font in the font dropdown (file name without `.ttf`). */
+        val customFontDisplayName: String = "",
         val launcherFontScale: Float = LauncherFontScale.DEFAULT,
         val launcherVisualStyle: LauncherVisualStyle = LauncherVisualStyle.CLASSIC,
         /** Text shadow + icon halo; independent of [launcherVisualStyle]. */
@@ -144,7 +153,8 @@ constructor(
         @param:ApplicationContext private val context: Context,
         private val appRepository: AppRepository,
         private val preferencesManager: PreferencesManager,
-        private val privateSpaceManager: PrivateSpaceManager
+        private val privateSpaceManager: PrivateSpaceManager,
+        private val customFontStore: CustomFontStore,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -270,13 +280,19 @@ constructor(
                             preferencesManager.launcherFontFamilyFlow,
                             preferencesManager.launcherFontScaleFlow,
                             preferencesManager.launcherAppearanceFlow,
-                    ) { font, fontScale, appearance ->
+                            preferencesManager.launcherCustomFontDisplayNameFlow,
+                    ) { font, fontScale, appearance, customFontDisplayName ->
+                        val resolvedCustomLabel =
+                                customFontDisplayName.ifBlank {
+                                    customFontStore.readStoredFontDisplayLabel().orEmpty()
+                                }
                         FontVisualPrefs(
                                 family = font,
                                 scale = fontScale,
                                 visualStyle = appearance.visualStyle,
                                 glowEnabled = appearance.glowEnabled,
                                 usesPhotoWallpaper = appearance.usesPhotoWallpaper,
+                                customFontDisplayName = resolvedCustomLabel,
                         )
                     }
             val lookPrefsFlow =
@@ -295,6 +311,8 @@ constructor(
                         val (fontVisual, outlineWidthDp, drawerOverlayIntensity) = fontOutlineDrawer
                         LookPrefs(
                                 launcherFontFamilyName = fontVisual.family,
+                                hasCustomFontFile = customFontStore.hasStoredFont(),
+                                customFontDisplayName = fontVisual.customFontDisplayName,
                                 launcherFontScale = fontVisual.scale,
                                 launcherVisualStyle = fontVisual.visualStyle,
                                 launcherGlowEnabled = fontVisual.glowEnabled,
@@ -405,6 +423,8 @@ constructor(
                         drawerAppSortMode = drawer.drawerAppSortMode,
                         homeAlignment = look.homeAlignment,
                         launcherFontFamilyName = look.launcherFontFamilyName,
+                        hasCustomFontFile = look.hasCustomFontFile,
+                        customFontDisplayName = look.customFontDisplayName,
                         launcherFontScale = look.launcherFontScale,
                         launcherVisualStyle = look.launcherVisualStyle,
                         launcherGlowEnabled = look.launcherGlowEnabled,
@@ -471,10 +491,13 @@ constructor(
             val visualStyle: LauncherVisualStyle,
             val glowEnabled: Boolean,
             val usesPhotoWallpaper: Boolean,
+            val customFontDisplayName: String,
     )
 
     private data class LookPrefs(
             val launcherFontFamilyName: String,
+            val hasCustomFontFile: Boolean,
+            val customFontDisplayName: String,
             val launcherFontScale: Float,
             val launcherVisualStyle: LauncherVisualStyle,
             val launcherGlowEnabled: Boolean,
@@ -786,6 +809,52 @@ constructor(
     fun setLauncherFontFamilyName(familyName: String) =
             launchPreferences { setLauncherFontFamilyName(familyName) }
 
+    fun resolveCustomFontFile(storageValue: String) = customFontStore.resolveFile(storageValue)
+
+    fun importCustomFont(uri: Uri, onResult: (CustomFontImportFailure?) -> Unit) {
+        viewModelScope.launch {
+            val failure =
+                    withContext(Dispatchers.IO) {
+                        when (val result = customFontStore.importFromUri(uri)) {
+                            is CustomFontImportResult.Success -> {
+                                preferencesManager.setLauncherFontFamilyName(result.storageValue)
+                                preferencesManager.setLauncherCustomFontDisplayName(
+                                        result.displayLabel
+                                )
+                                _uiState.update {
+                                    it.copy(
+                                            hasCustomFontFile = true,
+                                            customFontDisplayName = result.displayLabel,
+                                    )
+                                }
+                                null
+                            }
+                            is CustomFontImportResult.Failure -> result.reason
+                        }
+                    }
+            onResult(failure)
+        }
+    }
+
+    fun clearCustomFont(selectSystemDefault: Boolean = true) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                customFontStore.deleteStoredFont()
+                preferencesManager.clearLauncherCustomFontDisplayName()
+                if (selectSystemDefault &&
+                                LauncherFontPreferences.isCustomFont(
+                                        _uiState.value.launcherFontFamilyName
+                                )
+                ) {
+                    preferencesManager.setLauncherFontFamilyName(
+                            LauncherFontPreferences.DEFAULT_FONT_FAMILY_STORAGE
+                    )
+                }
+            }
+            _uiState.update { it.copy(hasCustomFontFile = false, customFontDisplayName = "") }
+        }
+    }
+
     fun setLauncherFontScale(scale: Float) =
             launchPreferences { setLauncherFontScale(scale) }
 
@@ -817,7 +886,7 @@ constructor(
         }
     }
 
-    /** Builds a share intent for a diagnostic text file (metadata + app process logcat). */
+    /** Builds a share intent for a diagnostic text file (metadata + logcat, including prior sessions). */
     suspend fun createLogShareIntent(): Intent? =
             withContext(Dispatchers.IO) {
                 runCatching {
@@ -848,6 +917,7 @@ constructor(
 
     /** Clears all app state (preferences + database), equivalent to clearing storage. */
     suspend fun resetAllState() {
+        customFontStore.deleteStoredFont()
         preferencesManager.clearAll()
         appRepository.clearAllAppData()
         appRepository.invalidateCache()

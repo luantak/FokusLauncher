@@ -286,6 +286,14 @@
     <string name="settings_reset_confirm_message">This will clear favorites, shortcuts, hidden apps, renamed apps, and all other settings. The app will return to its initial state.</string>
     <string name="settings_app_picker_title">Select app</string>
     <string name="settings_font_label">Font</string>
+    <string name="settings_font_import_ttf">Import font (.ttf)</string>
+    <string name="settings_font_import_ttf_subtitle">Use a TrueType font file from your device</string>
+    <string name="settings_font_clear_custom">Remove imported font</string>
+    <string name="settings_font_custom_imported">Imported font</string>
+    <string name="settings_font_import_failed_unreadable">Could not read that file</string>
+    <string name="settings_font_import_failed_extension">Only .ttf files are supported</string>
+    <string name="settings_font_import_failed_invalid">That file is not a valid TrueType font</string>
+    <string name="settings_font_import_failed_io">Could not save the font file</string>
     <string name="settings_font_size_label">Font size</string>
     <string name="settings_font_size_subtitle">Stacks with your device font size</string>
     <string name="settings_visual_style_label">Color style</string>

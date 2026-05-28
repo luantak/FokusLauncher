@@ -14,16 +14,28 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import com.lu4p.fokuslauncher.data.model.LauncherFontPreferences
 import com.lu4p.fokuslauncher.data.model.LauncherFontScale
 import com.lu4p.fokuslauncher.data.model.LauncherVisualStyle
+import java.io.File
 
 /**
  * Resolves a stored font family name to a Compose [FontFamily]. Empty or blank uses the platform
- * default. Names match device config / [android.graphics.Typeface.create] (e.g. sans-serif, Roboto).
+ * default. System names match device config / [android.graphics.Typeface.create] (e.g. sans-serif,
+ * Roboto). Values prefixed with [LauncherFontPreferences.CUSTOM_FONT_PREFIX] load a copied `.ttf`
+ * via [resolveCustomFontFile].
  */
-fun composeFontFamilyFromStoredName(storedName: String?): FontFamily {
+fun composeFontFamilyFromStoredName(
+        storedName: String?,
+        resolveCustomFontFile: (String) -> File? = { null },
+): FontFamily {
     val name = storedName?.trim().orEmpty()
     if (name.isEmpty()) return FontFamily.Default
+    if (LauncherFontPreferences.isCustomFont(name)) {
+        val file = resolveCustomFontFile(name)
+        if (file == null || !file.isFile) return FontFamily.Default
+        return FontFamily(Font(file))
+    }
     val dn = DeviceFontFamilyName(name)
     return FontFamily(
             Font(dn, FontWeight.Thin, FontStyle.Normal),

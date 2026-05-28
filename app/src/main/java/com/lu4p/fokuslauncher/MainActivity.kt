@@ -18,6 +18,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.lu4p.fokuslauncher.data.font.CustomFontStore
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.LauncherFontScale
 import com.lu4p.fokuslauncher.data.model.LauncherAppearance
@@ -43,6 +44,9 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var appRepository: AppRepository
+
+    @Inject
+    lateinit var customFontStore: CustomFontStore
 
     private val launcherHomeCoordinator: LauncherHomeCoordinatorViewModel by viewModels()
 
@@ -104,7 +108,10 @@ class MainActivity : AppCompatActivity() {
             ProvideAppLocale(localeTag = appLocaleTag) {
                 val wallpaperIsPhoto = launcherAppearance.usesPhotoWallpaper
                 FokusLauncherTheme(
-                        fontFamily = composeFontFamilyFromStoredName(launcherFontFamilyName),
+                        fontFamily =
+                                composeFontFamilyFromStoredName(launcherFontFamilyName) {
+                                    customFontStore.resolveFile(it)
+                                },
                         fontScale = launcherFontScale,
                         visualStyle =
                                 if (wallpaperIsPhoto) LauncherVisualStyle.CLASSIC

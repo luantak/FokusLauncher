@@ -144,6 +144,8 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         private val PHOTO_WALLPAPER_DRAWER_OVERLAY_INTENSITY_KEY =
                 floatPreferencesKey("photo_wallpaper_drawer_overlay_intensity")
         private val LAUNCHER_FONT_FAMILY_KEY = stringPreferencesKey("launcher_font_family")
+        private val LAUNCHER_CUSTOM_FONT_DISPLAY_NAME_KEY =
+                stringPreferencesKey("launcher_custom_font_display_name")
         private val LAUNCHER_FONT_SCALE_KEY = floatPreferencesKey("launcher_font_scale")
         private val ALLOW_LANDSCAPE_ROTATION_KEY =
                 booleanPreferencesKey("allow_landscape_rotation")
@@ -725,6 +727,28 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         context.fokusLauncherPreferencesDataStore.edit { prefs ->
             if (trimmed.isEmpty()) prefs.remove(LAUNCHER_FONT_FAMILY_KEY)
             else prefs[LAUNCHER_FONT_FAMILY_KEY] = trimmed
+        }
+    }
+
+    val launcherCustomFontDisplayNameFlow: Flow<String> =
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
+                prefs[LAUNCHER_CUSTOM_FONT_DISPLAY_NAME_KEY]?.trim().orEmpty()
+            }
+
+    suspend fun setLauncherCustomFontDisplayName(displayName: String) {
+        val trimmed = displayName.trim()
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            if (trimmed.isEmpty()) {
+                prefs.remove(LAUNCHER_CUSTOM_FONT_DISPLAY_NAME_KEY)
+            } else {
+                prefs[LAUNCHER_CUSTOM_FONT_DISPLAY_NAME_KEY] = trimmed
+            }
+        }
+    }
+
+    suspend fun clearLauncherCustomFontDisplayName() {
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            prefs.remove(LAUNCHER_CUSTOM_FONT_DISPLAY_NAME_KEY)
         }
     }
 

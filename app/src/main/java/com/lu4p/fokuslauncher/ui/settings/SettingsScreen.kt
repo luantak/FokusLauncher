@@ -82,6 +82,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.background
 import com.lu4p.fokuslauncher.R
+import com.lu4p.fokuslauncher.data.font.CustomFontImportFailure
+import com.lu4p.fokuslauncher.data.model.LauncherFontPreferences
 import com.lu4p.fokuslauncher.data.model.LauncherFontScale
 import com.lu4p.fokuslauncher.data.model.PhotoWallpaperDrawerOverlayIntensity
 import com.lu4p.fokuslauncher.data.model.PhotoWallpaperOutlineWidthDp
@@ -268,6 +270,35 @@ fun SettingsScreen(
         }
     }
 
+    val fontImportFailedUnreadable =
+            stringResource(R.string.settings_font_import_failed_unreadable)
+    val fontImportFailedExtension =
+            stringResource(R.string.settings_font_import_failed_extension)
+    val fontImportFailedInvalid = stringResource(R.string.settings_font_import_failed_invalid)
+    val fontImportFailedIo = stringResource(R.string.settings_font_import_failed_io)
+    val fontPickerLauncher =
+            rememberLauncherForActivityResult(contract = ActivityResultContracts.OpenDocument()) {
+                    uri: Uri? ->
+                uri?.let { picked ->
+                    viewModel.importCustomFont(picked) { failure ->
+                        val message =
+                                when (failure) {
+                                    CustomFontImportFailure.UNREADABLE_URI ->
+                                            fontImportFailedUnreadable
+                                    CustomFontImportFailure.INVALID_EXTENSION ->
+                                            fontImportFailedExtension
+                                    CustomFontImportFailure.INVALID_FONT ->
+                                            fontImportFailedInvalid
+                                    CustomFontImportFailure.IO_ERROR -> fontImportFailedIo
+                                    null -> null
+                                }
+                        if (message != null) {
+                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            }
+
     Column(modifier = Modifier
         .fillMaxSize()
         .background(backgroundScrim)
@@ -287,6 +318,18 @@ fun SettingsScreen(
                 context = context,
                 resources = resources,
                 onPickWallpaper = { wallpaperPickerLauncher.launch("image/*") },
+                onImportCustomFont = {
+                    fontPickerLauncher.launch(
+                            arrayOf(
+                                    "font/ttf",
+                                    "application/x-font-ttf",
+                                    "application/font-sfnt",
+                                    "application/octet-stream",
+                            )
+                    )
+                },
+                onClearCustomFont = viewModel::clearCustomFont,
+                resolveCustomFontFile = viewModel::resolveCustomFontFile,
                 onSetBlackWallpaper = {
                     viewModel.setBlackWallpaper()
                     onNavigateToHome()
@@ -329,6 +372,9 @@ private fun SettingsScreenContent(
         context: Context,
         resources: Resources,
         onPickWallpaper: () -> Unit,
+        onImportCustomFont: () -> Unit,
+        onClearCustomFont: () -> Unit,
+        resolveCustomFontFile: (String) -> java.io.File?,
         onSetBlackWallpaper: () -> Unit,
         onOpenHomeWidgetsSettings: () -> Unit,
         onOpenDeviceControlSettings: () -> Unit,
@@ -424,8 +470,28 @@ private fun SettingsScreenContent(
             LauncherFontFamilyDropdown(
                     currentFamilyName = uiState.launcherFontFamilyName,
                     installedFamilies = installedFontFamilies,
+                    hasCustomFontFile = uiState.hasCustomFontFile,
+                    customFontDisplayName = uiState.customFontDisplayName,
+                    resolveCustomFontFile = resolveCustomFontFile,
                     onFamilySelected = viewModel::setLauncherFontFamilyName
             )
+        }
+        item {
+            SettingsRow(
+                    label = stringResource(R.string.settings_font_import_ttf),
+                    subtitle = stringResource(R.string.settings_font_import_ttf_subtitle),
+                    verticalPadding = 14.dp,
+                    onClick = onImportCustomFont,
+            )
+        }
+        if (uiState.hasCustomFontFile) {
+            item {
+                SettingsRow(
+                        label = stringResource(R.string.settings_font_clear_custom),
+                        verticalPadding = 14.dp,
+                        onClick = onClearCustomFont,
+                )
+            }
         }
         item {
             LauncherFontSizeSlider(
@@ -1175,18 +1241,43 @@ private fun AppLanguageDropdown(
 private fun LauncherFontFamilyDropdown(
         currentFamilyName: String,
         installedFamilies: List<String>,
+        hasCustomFontFile: Boolean,
+        customFontDisplayName: String,
+        resolveCustomFontFile: (String) -> java.io.File?,
         onFamilySelected: (String) -> Unit
 ) {
     val systemDefault = stringResource(R.string.settings_weather_app_system_default)
+    val customImportedFallback = stringResource(R.string.settings_font_custom_imported)
+    val customFontLabel =
+            customFontDisplayName.trim().ifBlank { customImportedFallback }
     val options =
-            remember(currentFamilyName, installedFamilies, systemDefault) {
+            remember(
+                    currentFamilyName,
+                    installedFamilies,
+                    systemDefault,
+                    hasCustomFontFile,
+                    customFontLabel,
+            ) {
                 buildList {
                     add("" to systemDefault)
+                    if (hasCustomFontFile) {
+                        add(LauncherFontPreferences.CUSTOM_FONT_STORAGE to customFontLabel)
+                    }
                     val sorted = installedFamilies.sortedWith(String.CASE_INSENSITIVE_ORDER)
                     sorted.forEach { add(it to it) }
                     val cur = currentFamilyName.trim()
-                    if (cur.isNotEmpty() && sorted.none { it.equals(cur, ignoreCase = true) }) {
-                        add(cur to cur)
+                    if (cur.isNotEmpty() &&
+                                    sorted.none { it.equals(cur, ignoreCase = true) } &&
+                                    !(hasCustomFontFile &&
+                                            cur == LauncherFontPreferences.CUSTOM_FONT_STORAGE)
+                    ) {
+                        val label =
+                                if (LauncherFontPreferences.isCustomFont(cur)) {
+                                    customFontLabel
+                                } else {
+                                    cur
+                                }
+                        add(cur to label)
                     }
                 }
             }
@@ -1203,7 +1294,10 @@ private fun LauncherFontFamilyDropdown(
             selectedDisplayText = selectedLabel,
             textStyle =
                     MaterialTheme.typography.bodyLarge.copy(
-                            fontFamily = composeFontFamilyFromStoredName(currentFamilyName)
+                            fontFamily =
+                                    composeFontFamilyFromStoredName(currentFamilyName) {
+                                        resolveCustomFontFile(it)
+                                    }
                     ),
             itemContent = { (storageValue, label) ->
                 Text(
@@ -1211,7 +1305,9 @@ private fun LauncherFontFamilyDropdown(
                         style =
                                 MaterialTheme.typography.bodyLarge.copy(
                                         fontFamily =
-                                                composeFontFamilyFromStoredName(storageValue)
+                                                composeFontFamilyFromStoredName(storageValue) {
+                                                    resolveCustomFontFile(it)
+                                                }
                                 ),
                         color = MaterialTheme.colorScheme.onBackground,
                 )
