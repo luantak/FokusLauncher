@@ -167,29 +167,6 @@ private fun appOrderKey(apps: List<AppInfo>): String =
 
 /** Horizontal swipe distance (px) to move to the next/previous category in the app list. */
 private const val DRAWER_CATEGORY_SWIPE_THRESHOLD_PX = 120f
-
-/**
- * Grace period after the drawer composes: slide-in animation and [scrollToItem] can briefly report
- * `!isAtTop`, which used to mark the list as scrolled and suppress the opening keyboard.
- */
-private const val DRAWER_KEYBOARD_SETTLE_MS = 400L
-
-/** Request search focus and show the IME, retrying until [FocusRequester] is attached. */
-private suspend fun focusSearchFieldWithKeyboard(
-        focusRequester: FocusRequester,
-        keyboardController: androidx.compose.ui.platform.SoftwareKeyboardController?,
-) {
-    repeat(8) { attempt ->
-        try {
-            focusRequester.requestFocus()
-            keyboardController?.show()
-            return
-        } catch (_: IllegalStateException) {
-            // Search field not in the composition tree yet (drawer still animating in).
-        }
-        delay(50L * (attempt + 1).coerceAtMost(6))
-    }
-}
 private val DRAWER_MIN_TOP_PADDING = 48.dp
 private val DRAWER_TOP_INSET_BUFFER = 16.dp
 private val DRAWER_CATEGORY_CHIPS_TOP_OFFSET = 12.dp
@@ -868,38 +845,36 @@ fun AppDrawerContent(
         derivedStateOf { listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0 }
     }
     var hasScrolledDown by remember { mutableStateOf(false) }
-    var drawerSettling by remember { mutableStateOf(true) }
-    LaunchedEffect(Unit) {
-        drawerSettling = true
-        hasScrolledDown = false
-        delay(DRAWER_KEYBOARD_SETTLE_MS)
-        drawerSettling = false
-    }
 
     // Unified Search/Keyboard management: entry focus, scroll-to-top (chip layout only), pull-to-open.
-    LaunchedEffect(
-            isAtTop,
-            showSearch,
-            useSidebarCategoryDrawer,
-            uiState.drawerScrollToTopAutoKeyboard,
-            drawerSettling,
-    ) {
-        val shouldFocusSearch =
-                if (useSidebarCategoryDrawer) {
-                    showSearch && isAtTop
-                } else {
-                    isAtTop && (!hasScrolledDown || uiState.drawerScrollToTopAutoKeyboard)
+    LaunchedEffect(isAtTop, showSearch, useSidebarCategoryDrawer, uiState.drawerScrollToTopAutoKeyboard) {
+        if (useSidebarCategoryDrawer) {
+            // Scroll-to-top does not apply: search is icon-only; focus only when user opens search.
+            if (showSearch && isAtTop) {
+                delay(100)
+                focusRequester.requestFocus()
+                keyboardController?.show()
+            } else if (!isAtTop) {
+                hasScrolledDown = true
+                if (uiState.searchQuery.isBlank()) {
+                    keyboardController?.hide()
+                    focusManager.clearFocus(force = true)
+                    showSearch = false
                 }
-        // Chip layout: wait for drawer settle so scrollToItem(0) does not block opening keyboard.
-        val readyToFocus = shouldFocusSearch && (!drawerSettling || useSidebarCategoryDrawer)
-        if (readyToFocus) {
-            focusSearchFieldWithKeyboard(focusRequester, keyboardController)
-        } else if (!isAtTop && !drawerSettling) {
-            hasScrolledDown = true
-            if (uiState.searchQuery.isBlank()) {
-                keyboardController?.hide()
-                focusManager.clearFocus(force = true)
-                if (useSidebarCategoryDrawer) showSearch = false
+            }
+        } else {
+            val topAutoLaunch =
+                    isAtTop && (!hasScrolledDown || uiState.drawerScrollToTopAutoKeyboard)
+            if (topAutoLaunch) {
+                delay(100)
+                focusRequester.requestFocus()
+                keyboardController?.show()
+            } else if (!isAtTop) {
+                hasScrolledDown = true
+                if (uiState.searchQuery.isBlank()) {
+                    keyboardController?.hide()
+                    focusManager.clearFocus(force = true)
+                }
             }
         }
     }
