@@ -140,7 +140,7 @@
     <string name="drawer_filter_private">Только приватные</string>
     <string name="drawer_menu_launcher_settings">Настройки лаунчера</string>
     <string name="settings_return_home_after_long_lock">Возврат на домашний экран после долгой блокировки</string>
-    <string name="settings_show_status_bar">Показать панель статуса</string>
+    <string name="settings_show_status_bar">Показать строку состояния</string>
     <string name="category_add_error_reserved_all_apps">\"Все приложения\" — встроенное имя фильтра. Выберите другое имя.</string>
     <string name="settings_accessibility_permission">Разрешение специальных возможностей</string>
     <string name="icon_cat_communicate">Связь</string>
@@ -334,4 +334,13 @@
     <string name="settings_glow_subtitle"></string>
     <string name="settings_dot_search_url_template_dialog_title"></string>
     <string name="settings_visual_style_subtitle"></string>
+    <string name="settings_font_label">Шрифт</string>
+    <string name="settings_font_size_label">Размер шрифта</string>
+    <string name="widget_page">Страница виджетов</string>
+    <plurals name="settings_categories_count">
+        <item quantity="one">%d категория</item>
+        <item quantity="few">%d категорий</item>
+        <item quantity="many">%d категорий</item>
+        <item quantity="other">%d категорий</item>
+    </plurals>
 </resources>
