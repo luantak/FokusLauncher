@@ -218,7 +218,7 @@
     <string name="settings_home_date_format">Tarih biçimi</string>
     <string name="icon_cat_android">Android</string>
     <string name="settings_photo_outline_width_dp_default">Varsayılan</string>
-    <string name="icon_cat_travel">Seyahat</string>
+    <string name="icon_cat_travel">Seyehat</string>
     <string name="settings_temperature_unit_fahrenheit">Fahrenheit (°F)</string>
     <string name="icon_cat_social">Sosyal</string>
     <string name="settings_photo_outline_width_dp_value">Seviye %1$d</string>
