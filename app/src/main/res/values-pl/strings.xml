@@ -358,4 +358,12 @@
     <string name="settings_drawer_scroll_to_top_auto_keyboard_subtitle">Automatycznie otwórz klawiaturę i wyszukiwarkę po dojechaniu na górę listy aplikacji</string>
     <string name="home_alignment_middle">Środek</string>
     <string name="action_remove_shortcut">Usuń skrót</string>
+    <string name="settings_font_import_ttf">Zaimportuj czcionkę (.ttf)</string>
+    <string name="settings_font_import_ttf_subtitle">Użyj pliku czcionki TrueType z twojego urządzenia</string>
+    <string name="settings_font_clear_custom">Usuń zaimportowaną czcionkę</string>
+    <string name="settings_font_custom_imported">Zaimportowana czcionka</string>
+    <string name="settings_font_import_failed_unreadable">Nie udało się odczytać tego pliku</string>
+    <string name="settings_font_import_failed_extension">Obsługiwane są tylko pliki .ttf</string>
+    <string name="settings_font_import_failed_invalid">To nie jest prawidłowy plik czcionki TrueType</string>
+    <string name="settings_font_import_failed_io">Nie udało się zapisać pliku czcionki</string>
 </resources>
