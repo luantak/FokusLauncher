@@ -60,10 +60,10 @@
     <string name="inferred_category_media">Медиа</string>
     <string name="home_weather_app_picker_title">Выбрать приложение погоды</string>
     <string name="home_alignment_title">Выравнивание на рабочем столе</string>
-    <string name="home_alignment_left">Слева</string>
-    <string name="home_alignment_center">Центр</string>
-    <string name="home_alignment_right">Справа</string>
-    <string name="edit_home_title">Редактировать рабочий стол</string>
+    <string name="home_alignment_left">Внизу слева</string>
+    <string name="home_alignment_center">Внизу центр</string>
+    <string name="home_alignment_right">Внизу справа</string>
+    <string name="edit_home_title">Редактировать домашний экран</string>
     <string name="edit_shortcuts_section_all_actions">Все действия приложений</string>
     <string name="edit_home_section_on_home">Приложения на рабочем столе</string>
     <string name="edit_shortcuts_choose_icon">Выбрать значок</string>
@@ -162,7 +162,7 @@
     <string name="settings_allow_landscape_rotation">Разрешить альбомную ориентацию</string>
     <string name="category_action_reset_icon">Сбросить значок</string>
     <string name="double_tap_lock_failed">Невозможно заблокировать устройство</string>
-    <string name="settings_drawer_search_auto_launch">Авто-запуск приложений</string>
+    <string name="settings_drawer_search_auto_launch">Автозапуск приложений</string>
     <string name="drawer_private_space_lock">Блокировка приватного пространства</string>
     <string name="icon_cat_privacy">Приватность</string>
     <string name="settings_long_lock_duration">Длительность долгой блокировки</string>
@@ -196,12 +196,12 @@
     <string name="settings_dot_search_screen_title">Поиск и быстрые команды</string>
     <string name="settings_dot_search_default_label">Стандартное приложение поиска</string>
     <string name="action_set_category">Установить категорию</string>
-    <string name="home_alignment_middle">В центре экрана</string>
+    <string name="home_alignment_middle">Центр экрана</string>
     <string name="settings_section_hidden_apps">Скрытые приложения</string>
     <string name="settings_look_locked_image_wallpaper">Недоступно с фоновым изображением. Установите чёрный фон ниже, чтобы использовать цвета и свечение.</string>
     <string name="settings_no_hidden_apps">Нет скрытых приложений</string>
-    <string name="settings_section_renamed_apps">Приложения с измененным названием</string>
-    <string name="settings_no_renamed_apps">Нет приложений с измененным названием</string>
+    <string name="settings_section_renamed_apps">Переименованные приложения</string>
+    <string name="settings_no_renamed_apps">Нет переименованных приложений</string>
     <string name="settings_profile_names_reset">Сбросить</string>
     <string name="settings_dot_search_explanation">Используйте поиск точкой для запросов и ярлыки для мгновенных действий. Введите `. запрос` для цели поиска по умолчанию. Добавьте цель поиска или шаблон URL для `.x запрос` или добавьте цель открытия ярлыка для `.x`. Шаблоны URL используют %1$s на месте для запроса (напр. https://example.com/search?q=%1$s).</string>
     <string name="settings_section_image_wallpaper_accessibility">Фоновое изображение — читаемость</string>
@@ -281,4 +281,16 @@
         <item quantity="many">%d категорий</item>
         <item quantity="other">%d категорий</item>
     </plurals>
+    <string name="settings_github_title">Поставить звезду на GitHub</string>
+    <string name="settings_weather_location_disabled">Применить местоположение для погоды</string>
+    <string name="settings_font_import_ttf">Импорт шрифта (.ttf)</string>
+    <string name="settings_export_logs_title">Экспорт логов приложения</string>
+    <string name="settings_section_data">Данные</string>
+    <string name="settings_dot_search_add_alias">Добавить ярлык</string>
+    <string name="settings_dot_search_default_system">По умолчанию (браузер)</string>
+    <string name="settings_dot_search_add_search_target_app">Цель поиска</string>
+    <string name="settings_font_clear_custom">Удалить импортированный шрифт</string>
+    <string name="settings_font_custom_imported">Импортированный шрифт</string>
+    <string name="settings_reset_all_data">Сбросить все данные</string>
+    <string name="settings_reset_confirm_title">Сбросить все данные?</string>
 </resources>
