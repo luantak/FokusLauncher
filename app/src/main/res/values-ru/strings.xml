@@ -293,4 +293,21 @@
     <string name="settings_font_custom_imported">Импортированный шрифт</string>
     <string name="settings_reset_all_data">Сбросить все данные</string>
     <string name="settings_reset_confirm_title">Сбросить все данные?</string>
+    <string name="settings_dot_search_url_template">Шаблон URL</string>
+    <string name="settings_profile_names_subtitle">Измените названия личного, рабочего и других разделов профилей в ящике и на домашнем экране</string>
+    <string name="settings_profile_names_help">Оставьте поле пустым и нажмите «Сохранить», чтобы восстановить имя по умолчанию. Названия применяются к заголовкам в ящике, выбранным группам и меткам рядом с избранным.</string>
+    <string name="settings_profile_names_field_label">Отображаемое имя</string>
+    <string name="settings_dot_search_url_template_dialog_title">Шаблон URL для поиска</string>
+    <string name="settings_dot_search_url_template_help">Вы можете использовать HTTPS-ссылку поиска или глубокую ссылку приложения (например, intent://). Вставьте %1$s туда, где должен быть запрос — лаунчер заменит его на то, что вы введёте после `. запрос` или `.x запрос`. Пример: https://example.com/search?q=%1$s</string>
+    <string name="settings_dot_search_url_template_error">Добавьте %1$s туда, где должен быть запрос (пример: https://example.com/search?q=%1$s).</string>
+    <string name="settings_dot_search_add_shortcut_app">Цель открытия ярлыка</string>
+    <string name="settings_dot_search_add_shortcut_help">Введите `.x`, чтобы сразу открыть приложение, действие телефона или ярлык лаунчера.</string>
+    <string name="settings_dot_search_add_search_target_help">Введите `.x запрос`, чтобы отправить запрос в приложение, которое поддерживает поиск.</string>
+    <string name="settings_dot_search_add_shortcut_url">Шаблон URL</string>
+    <string name="settings_dot_search_add_url_template_help">Введите `.x запрос`, чтобы открыть URL или глубокую ссылку с подставленным запросом.</string>
+    <string name="settings_dot_search_no_web_search_apps">Нет установленных приложений, предоставляющих веб-поиск или внутриприложенный поиск для своего пакета.</string>
+    <string name="settings_dot_search_url_template_for_alias">URL для .%1$s …</string>
+    <string name="settings_dot_search_alias_dialog_title">Буква ярлыка</string>
+    <string name="settings_dot_search_aliases_section">Буквы ярлыков</string>
+    <string name="settings_dot_search_invalid_alias">Введите одну строчную букву (a-z).</string>
 </resources>
