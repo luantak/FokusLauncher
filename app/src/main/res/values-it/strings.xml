@@ -336,4 +336,6 @@
     <string name="settings_drawer_scroll_to_top_auto_keyboard">Tastiera scorrendo in cima</string>
     <string name="home_alignment_middle">Al centro</string>
     <string name="action_remove_shortcut">Rimuovi scorciatoia</string>
+    <string name="edit_home_section_all_apps" translatable="false"></string>
+    <string name="app_name" translatable="false"></string>
 </resources>
