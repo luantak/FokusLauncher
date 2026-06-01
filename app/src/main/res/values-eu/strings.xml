@@ -182,7 +182,7 @@
     <string name="home_alignment_center">Erdia</string>
     <string name="home_set_default_launcher">Abiarazle lehenetsia jarri</string>
     <string name="action_app_info">Aplikazioaren informazioa</string>
-    <string name="settings_dot_search_title">Puntuekin bilatu</string>
+    <string name="settings_dot_search_title">Puntuekin bilatu eta lasterbideak</string>
     <string name="edit_shortcuts_section_selected">Aukeratutako lasterbideak</string>
     <string name="settings_long_lock_duration_subtitle">Gailuak zenbat denbora egon behar du blokeatuta desblokeatzean Fokus zure hasierako pantailara itzuli baino lehen.</string>
     <string name="inferred_category_utilities">Tresnak</string>
@@ -306,4 +306,13 @@
     <string name="settings_temperature_unit_system">Automatikoa (lokala)</string>
     <string name="settings_temperature_unit_celsius">Celsius (°C)</string>
     <string name="settings_temperature_unit_fahrenheit">Fahrenheit (°F)</string>
+    <string name="action_remove_shortcut">Lasterbidea Kendu</string>
+    <string name="home_alignment_middle">Erdia</string>
+    <string name="settings_section_image_wallpaper_accessibility">Atzeko planoko irudia — irakurgarritasuna</string>
+    <string name="settings_photo_outline_strength_label">Testua eta ikonoen atze-oihala</string>
+    <string name="settings_photo_outline_strength_subtitle">Pilula beltz erdi gardenak erlojuaren atzean, gogokoak, etxeko trepetak, eta lasterbideko ikonoak atzeko irudi baten gainean.</string>
+    <string name="settings_photo_outline_width_dp_default">Jatorrizkoak</string>
+    <string name="settings_photo_outline_width_dp_value">%1$d. maila</string>
+    <string name="settings_photo_drawer_overlay_label">Aplikazioen tiraderak iluntze indarra</string>
+    <string name="settings_photo_drawer_overlay_subtitle">Handitu egiten du pantaila osoaren iluntasuna aplikazioen tiraderaren atzean.</string>
 </resources>
