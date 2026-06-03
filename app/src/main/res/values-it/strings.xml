@@ -336,4 +336,12 @@
     <string name="settings_drawer_scroll_to_top_auto_keyboard">Tastiera scorrendo in cima</string>
     <string name="home_alignment_middle">Al centro</string>
     <string name="action_remove_shortcut">Rimuovi scorciatoia</string>
+    <string name="settings_font_import_failed_io">Impossibile salvare il file del carattere</string>
+    <string name="settings_font_import_ttf">Importa un carattere (.ttf)</string>
+    <string name="settings_font_import_ttf_subtitle">Utilizza un file di carattere TrueType dal tuo dispositivo</string>
+    <string name="settings_font_clear_custom">Rimuovi carattere importato</string>
+    <string name="settings_font_custom_imported">Carattere importato</string>
+    <string name="settings_font_import_failed_unreadable">Impossibile leggere il file</string>
+    <string name="settings_font_import_failed_extension">Sono supportati solo i file .ttf</string>
+    <string name="settings_font_import_failed_invalid">Il file non è un carattere TrueType valido</string>
 </resources>

@@ -63,7 +63,7 @@
     <string name="home_alignment_left">Слева</string>
     <string name="home_alignment_center">Центр</string>
     <string name="home_alignment_right">Справа</string>
-    <string name="edit_home_title">Редактировать рабочий стол</string>
+    <string name="edit_home_title">Редактировать домашний экран</string>
     <string name="edit_shortcuts_section_all_actions">Все действия приложений</string>
     <string name="edit_home_section_on_home">Приложения на рабочем столе</string>
     <string name="edit_shortcuts_choose_icon">Выбрать значок</string>
@@ -140,7 +140,7 @@
     <string name="drawer_filter_private">Только приватные</string>
     <string name="drawer_menu_launcher_settings">Настройки лаунчера</string>
     <string name="settings_return_home_after_long_lock">Возврат на домашний экран после долгой блокировки</string>
-    <string name="settings_show_status_bar">Показать панель статуса</string>
+    <string name="settings_show_status_bar">Показать строку состояния</string>
     <string name="category_add_error_reserved_all_apps">\"Все приложения\" — встроенное имя фильтра. Выберите другое имя.</string>
     <string name="settings_accessibility_permission">Разрешение специальных возможностей</string>
     <string name="icon_cat_communicate">Связь</string>
@@ -162,7 +162,7 @@
     <string name="settings_allow_landscape_rotation">Разрешить альбомную ориентацию</string>
     <string name="category_action_reset_icon">Сбросить значок</string>
     <string name="double_tap_lock_failed">Невозможно заблокировать устройство</string>
-    <string name="settings_drawer_search_auto_launch">Авто-запуск приложений</string>
+    <string name="settings_drawer_search_auto_launch">Автозапуск приложений</string>
     <string name="drawer_private_space_lock">Блокировка приватного пространства</string>
     <string name="icon_cat_privacy">Приватность</string>
     <string name="settings_long_lock_duration">Длительность долгой блокировки</string>
@@ -196,12 +196,12 @@
     <string name="settings_dot_search_screen_title">Поиск и быстрые команды</string>
     <string name="settings_dot_search_default_label">Стандартное приложение поиска</string>
     <string name="action_set_category">Установить категорию</string>
-    <string name="home_alignment_middle">В центре экрана</string>
+    <string name="home_alignment_middle">Центр экрана</string>
     <string name="settings_section_hidden_apps">Скрытые приложения</string>
     <string name="settings_look_locked_image_wallpaper">Недоступно с фоновым изображением. Установите чёрный фон ниже, чтобы использовать цвета и свечение.</string>
     <string name="settings_no_hidden_apps">Нет скрытых приложений</string>
-    <string name="settings_section_renamed_apps">Приложения с измененным названием</string>
-    <string name="settings_no_renamed_apps">Нет приложений с измененным названием</string>
+    <string name="settings_section_renamed_apps">Переименованные приложения</string>
+    <string name="settings_no_renamed_apps">Нет переименованных приложений</string>
     <string name="settings_profile_names_reset">Сбросить</string>
     <string name="settings_dot_search_explanation">Используйте поиск точкой для запросов и ярлыки для мгновенных действий. Введите `. запрос` для цели поиска по умолчанию. Добавьте цель поиска или шаблон URL для `.x запрос` или добавьте цель открытия ярлыка для `.x`. Шаблоны URL используют %1$s на месте для запроса (напр. https://example.com/search?q=%1$s).</string>
     <string name="settings_section_image_wallpaper_accessibility">Фоновое изображение — читаемость</string>
@@ -272,4 +272,42 @@
         <item quantity="many">%d приложений на домашнем экране</item>
         <item quantity="other">%d приложений на домашнем экране</item>
     </plurals>
+    <string name="settings_font_label">Шрифт</string>
+    <string name="settings_font_size_label">Размер шрифта</string>
+    <string name="widget_page">Страница виджетов</string>
+    <plurals name="settings_categories_count">
+        <item quantity="one">%d категория</item>
+        <item quantity="few">%d категорий</item>
+        <item quantity="many">%d категорий</item>
+        <item quantity="other">%d категорий</item>
+    </plurals>
+    <string name="settings_github_title">Поставить звезду на GitHub</string>
+    <string name="settings_weather_location_disabled">Применить местоположение для погоды</string>
+    <string name="settings_font_import_ttf">Импорт шрифта (.ttf)</string>
+    <string name="settings_export_logs_title">Экспорт логов приложения</string>
+    <string name="settings_section_data">Данные</string>
+    <string name="settings_dot_search_add_alias">Добавить ярлык</string>
+    <string name="settings_dot_search_default_system">По умолчанию (браузер)</string>
+    <string name="settings_dot_search_add_search_target_app">Цель поиска</string>
+    <string name="settings_font_clear_custom">Удалить импортированный шрифт</string>
+    <string name="settings_font_custom_imported">Импортированный шрифт</string>
+    <string name="settings_reset_all_data">Сбросить все данные</string>
+    <string name="settings_reset_confirm_title">Сбросить все данные?</string>
+    <string name="settings_dot_search_url_template">Шаблон URL</string>
+    <string name="settings_profile_names_subtitle">Измените названия личного, рабочего и других разделов профилей в ящике и на домашнем экране</string>
+    <string name="settings_profile_names_help">Оставьте поле пустым и нажмите «Сохранить», чтобы восстановить имя по умолчанию. Названия применяются к заголовкам в ящике, выбранным группам и меткам рядом с избранным.</string>
+    <string name="settings_profile_names_field_label">Отображаемое имя</string>
+    <string name="settings_dot_search_url_template_dialog_title">Шаблон URL для поиска</string>
+    <string name="settings_dot_search_url_template_help">Вы можете использовать HTTPS-ссылку поиска или глубокую ссылку приложения (например, intent://). Вставьте %1$s туда, где должен быть запрос — лаунчер заменит его на то, что вы введёте после `. запрос` или `.x запрос`. Пример: https://example.com/search?q=%1$s</string>
+    <string name="settings_dot_search_url_template_error">Добавьте %1$s туда, где должен быть запрос (пример: https://example.com/search?q=%1$s).</string>
+    <string name="settings_dot_search_add_shortcut_app">Цель открытия ярлыка</string>
+    <string name="settings_dot_search_add_shortcut_help">Введите `.x`, чтобы сразу открыть приложение, действие телефона или ярлык лаунчера.</string>
+    <string name="settings_dot_search_add_search_target_help">Введите `.x запрос`, чтобы отправить запрос в приложение, которое поддерживает поиск.</string>
+    <string name="settings_dot_search_add_shortcut_url">Шаблон URL</string>
+    <string name="settings_dot_search_add_url_template_help">Введите `.x запрос`, чтобы открыть URL или глубокую ссылку с подставленным запросом.</string>
+    <string name="settings_dot_search_no_web_search_apps">Нет установленных приложений, предоставляющих веб-поиск или внутриприложенный поиск для своего пакета.</string>
+    <string name="settings_dot_search_url_template_for_alias">URL для .%1$s …</string>
+    <string name="settings_dot_search_alias_dialog_title">Буква ярлыка</string>
+    <string name="settings_dot_search_aliases_section">Буквы ярлыков</string>
+    <string name="settings_dot_search_invalid_alias">Введите одну строчную букву (a-z).</string>
 </resources>

@@ -95,7 +95,7 @@
     <string name="home_alignment_title">Alignement sur l\'écran d\'accueil</string>
     <string name="home_alignment_subtitle">Position des intitulés d\'applications et des icônes de raccourcis</string>
     <string name="home_alignment_left">Gauche</string>
-    <string name="home_alignment_center">Centre bas</string>
+    <string name="home_alignment_center">Centre</string>
     <string name="home_alignment_right">Droite</string>
     <string name="edit_home_title">Modifier l\'écran d\'accueil</string>
     <string name="edit_shortcuts_title">Modifier les raccourcis</string>
@@ -336,4 +336,12 @@
     <string name="settings_look_locked_image_wallpaper">Non disponible avec une image de fond d\'écran. Paramétrez un fond d\'écran noir ci-dessous pour définir une couleur et utiliser la lueur.</string>
     <string name="home_alignment_middle">Milieu</string>
     <string name="action_remove_shortcut">Supprimer le raccourci</string>
+    <string name="settings_font_import_ttf">Importer une police (.ttf)</string>
+    <string name="settings_font_import_ttf_subtitle">Utiliser une police de caractères TrueType de votre périphérique</string>
+    <string name="settings_font_clear_custom">Supprimer la police importée</string>
+    <string name="settings_font_custom_imported">Police importée</string>
+    <string name="settings_font_import_failed_unreadable">Impossible de lire ce fichier</string>
+    <string name="settings_font_import_failed_extension">Seuls les fichiers .ttf sont autorisés</string>
+    <string name="settings_font_import_failed_invalid">Ce fichier n\'est pas une police TrueType valide</string>
+    <string name="settings_font_import_failed_io">Impossible d\'enregistrer cette police de caractères</string>
 </resources>
