@@ -306,7 +306,7 @@
     <string name="settings_temperature_unit_system">Automatikoa (lokala)</string>
     <string name="settings_temperature_unit_celsius">Celsius (°C)</string>
     <string name="settings_temperature_unit_fahrenheit">Fahrenheit (°F)</string>
-    <string name="action_remove_shortcut">Lasterbidea kendu</string>
+    <string name="action_remove_shortcut">Lasterbidea Kendu</string>
     <string name="home_alignment_middle">Erdia</string>
     <string name="settings_section_image_wallpaper_accessibility">Atzeko planoko irudia — irakurgarritasuna</string>
     <string name="settings_photo_outline_strength_label">Testua eta ikonoen atze-oihala</string>
