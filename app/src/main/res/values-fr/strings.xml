@@ -344,4 +344,6 @@
     <string name="settings_font_import_failed_extension">Seuls les fichiers .ttf sont autorisés</string>
     <string name="settings_font_import_failed_invalid">Ce fichier n\'est pas une police TrueType valide</string>
     <string name="settings_font_import_failed_io">Impossible d\'enregistrer cette police de caractères</string>
+    <string name="edit_home_section_all_apps" translatable="false"></string>
+    <string name="app_name" translatable="false"></string>
 </resources>
