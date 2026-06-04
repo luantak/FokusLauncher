@@ -60,9 +60,9 @@
     <string name="inferred_category_media">Медиа</string>
     <string name="home_weather_app_picker_title">Выбрать приложение погоды</string>
     <string name="home_alignment_title">Выравнивание на рабочем столе</string>
-    <string name="home_alignment_left">Слева</string>
-    <string name="home_alignment_center">Центр</string>
-    <string name="home_alignment_right">Справа</string>
+    <string name="home_alignment_left">Внизу слева</string>
+    <string name="home_alignment_center">Внизу центр</string>
+    <string name="home_alignment_right">Внизу справа</string>
     <string name="edit_home_title">Редактировать домашний экран</string>
     <string name="edit_shortcuts_section_all_actions">Все действия приложений</string>
     <string name="edit_home_section_on_home">Приложения на рабочем столе</string>
