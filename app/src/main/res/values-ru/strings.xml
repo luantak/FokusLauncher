@@ -310,4 +310,45 @@
     <string name="settings_dot_search_alias_dialog_title">Буква ярлыка</string>
     <string name="settings_dot_search_aliases_section">Буквы ярлыков</string>
     <string name="settings_dot_search_invalid_alias">Введите одну строчную букву (a-z).</string>
+    <string name="settings_font_size_subtitle"></string>
+    <string name="settings_weather_app_system_default"></string>
+    <string name="visual_style_classic"></string>
+    <string name="toast_export_logs_failed"></string>
+    <string name="edit_home_section_all_apps" translatable="false"></string>
+    <string name="settings_weather_app_not_configured"></string>
+    <string name="settings_drawer_scroll_to_top_auto_keyboard"></string>
+    <string name="visual_style_neon_lime"></string>
+    <string name="visual_style_emerald"></string>
+    <string name="settings_weather_location_disabled_subtitle"></string>
+    <string name="settings_drawer_scroll_to_top_auto_keyboard_subtitle"></string>
+    <string name="settings_export_logs_share_subject"></string>
+    <string name="settings_dot_search_alias_taken"></string>
+    <string name="settings_font_import_failed_io"></string>
+    <string name="settings_weblate_subtitle"></string>
+    <string name="settings_font_import_ttf_subtitle"></string>
+    <string name="visual_style_sage"></string>
+    <string name="settings_github_subtitle"></string>
+    <string name="settings_dot_search_shortcut_mode_label"></string>
+    <string name="settings_dot_search_pick_alias_app"></string>
+    <string name="visual_style_lavender"></string>
+    <string name="visual_style_neon_magenta"></string>
+    <string name="settings_dot_search_pick_alias_search_app"></string>
+    <string name="visual_style_neon_pink"></string>
+    <string name="visual_style_neon_amber"></string>
+    <string name="settings_export_logs_subtitle"></string>
+    <string name="settings_font_import_failed_extension"></string>
+    <string name="settings_weather_location_enable_button"></string>
+    <string name="settings_matrix_subtitle"></string>
+    <string name="settings_reset_confirm_message"></string>
+    <string name="settings_font_import_failed_unreadable"></string>
+    <string name="settings_font_import_failed_invalid"></string>
+    <string name="settings_weblate_title"></string>
+    <string name="settings_connect_section"></string>
+    <string name="settings_dot_search_pick_default_app"></string>
+    <string name="app_name" translatable="false"></string>
+    <string name="visual_style_rose"></string>
+    <string name="visual_style_sky"></string>
+    <string name="settings_matrix_title"></string>
+    <string name="settings_glow_subtitle"></string>
+    <string name="settings_visual_style_subtitle"></string>
 </resources>
