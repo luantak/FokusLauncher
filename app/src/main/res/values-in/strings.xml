@@ -326,4 +326,14 @@
     <string name="onboarding_tip_swipe">Geser ke atas untuk membuka laci aplikasi</string>
     <string name="settings_drawer_scroll_to_top_auto_keyboard">Keyboard saat gulir ke atas</string>
     <string name="settings_drawer_scroll_to_top_auto_keyboard_subtitle">Secara otomatis buka keyboard dan pencarian saat menggulir ke bagian atas daftar aplikasi</string>
+    <string name="edit_home_section_all_apps" translatable="false"></string>
+    <string name="settings_font_import_ttf"></string>
+    <string name="settings_font_import_failed_io"></string>
+    <string name="settings_font_import_ttf_subtitle"></string>
+    <string name="settings_font_clear_custom"></string>
+    <string name="settings_font_import_failed_extension"></string>
+    <string name="settings_font_import_failed_unreadable"></string>
+    <string name="settings_font_import_failed_invalid"></string>
+    <string name="settings_font_custom_imported"></string>
+    <string name="app_name" translatable="false"></string>
 </resources>
