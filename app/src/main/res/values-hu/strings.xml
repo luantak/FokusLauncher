@@ -339,6 +339,4 @@
     <string name="settings_section_renamed_apps">Átnevezett alkalmazások</string>
     <string name="settings_dot_search_url_template_dialog_title">Keresési URL minta</string>
     <string name="settings_visual_style_subtitle">Neon vagy klasszikus szöveg és ikonok</string>
-    <string name="edit_home_section_all_apps" translatable="false"></string>
-    <string name="app_name" translatable="false"></string>
 </resources>
