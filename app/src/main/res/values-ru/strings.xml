@@ -249,9 +249,9 @@
     <string name="onboarding_skip">Пропустить</string>
     <string name="onboarding_swipe_change">Изменить</string>
     <string name="onboarding_welcome_title">Fokus Launcher</string>
-    <string name="onboarding_swipe_left">Свайп слева</string>
+    <string name="onboarding_swipe_left">Свайп влево</string>
     <string name="onboarding_swipe_not_set">Не задано</string>
-    <string name="onboarding_swipe_right">Свайп справа</string>
+    <string name="onboarding_swipe_right">Свайп вправо</string>
     <string name="onboarding_swipe_subtitle">Свайпните влево или вправо на домашнем экране, чтобы запускать любимые приложения</string>
     <string name="onboarding_swipe_title">Ярлыки по свайпу</string>
     <string name="onboarding_tip_longpress">Долгое нажатие на домашнем экране откроет настройки</string>
@@ -305,7 +305,7 @@
     <string name="settings_dot_search_add_search_target_help">Введите `.x запрос`, чтобы отправить запрос в приложение, которое поддерживает поиск.</string>
     <string name="settings_dot_search_add_shortcut_url">Шаблон URL</string>
     <string name="settings_dot_search_add_url_template_help">Введите `.x запрос`, чтобы открыть URL или глубокую ссылку с подставленным запросом.</string>
-    <string name="settings_dot_search_no_web_search_apps">Нет установленных приложений, предоставляющих веб-поиск или внутриприложенный поиск для своего пакета.</string>
+    <string name="settings_dot_search_no_web_search_apps">Нет установленных приложений, предоставляющих веб-поиск или поиск в приложениях для своего пакета.</string>
     <string name="settings_dot_search_url_template_for_alias">URL для .%1$s …</string>
     <string name="settings_dot_search_alias_dialog_title">Буква ярлыка</string>
     <string name="settings_dot_search_aliases_section">Буквы ярлыков</string>
