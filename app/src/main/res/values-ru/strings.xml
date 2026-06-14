@@ -274,7 +274,7 @@
     </plurals>
     <string name="settings_font_label">Шрифт</string>
     <string name="settings_font_size_label">Размер шрифта</string>
-    <string name="widget_page">Страница виджетов</string>
+    <string name="widget_page">страница виджета</string>
     <plurals name="settings_categories_count">
         <item quantity="one">%d категория</item>
         <item quantity="few">%d категорий</item>
