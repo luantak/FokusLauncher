@@ -318,4 +318,5 @@
     <string name="settings_drawer_scroll_to_top_auto_keyboard">Tepeye kaydırıldığı zaman klavyeyi aç</string>
     <string name="settings_glow_subtitle">Metin ve ikonlarda hafif hare</string>
     <string name="settings_font_size_subtitle">Cihaz yazı boyutunun üzerine eklenir</string>
+    <string name="settings_dot_search_add_shortcut_help">Anına bir uygulama açmak, telefonla ilgili bir işlem yapmak, veya başlatıcı kısayolu açmak için \".x\" yazınız</string>
 </resources>
