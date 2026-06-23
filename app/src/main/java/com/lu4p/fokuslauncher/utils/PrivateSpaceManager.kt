@@ -53,6 +53,9 @@ class PrivateSpaceManager @Inject constructor(
     val isSupported: Boolean
         get() = Build.VERSION.SDK_INT >= 35
 
+    /** Whether the user has set up a Private Space profile on this device. */
+    fun hasPrivateSpaceProfile(): Boolean = getPrivateSpaceProfile() != null
+
     init {
         if (isSupported) {
             registerProfileReceiver()

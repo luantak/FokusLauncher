@@ -138,6 +138,7 @@ class AppDrawerViewModelTest {
         every { preferencesManager.drawerDotSearchAliasesFlow } returns drawerDotSearchAliasesFlow
         every { appRepository.launchDotSearch(any(), any(), any(), any()) } returns true
         every { privateSpaceManager.isSupported } returns false
+        every { privateSpaceManager.hasPrivateSpaceProfile() } returns false
         every { privateSpaceManager.isPrivateSpaceUnlocked() } returns false
         every { privateSpaceManager.launchApp(any(), any()) } returns true
         every { privateSpaceManager.profileStateChanged } returns privateProfileChanges
@@ -416,6 +417,7 @@ class AppDrawerViewModelTest {
                         componentName = ComponentName("com.private.app", "Main"),
                 )
         every { privateSpaceManager.isSupported } returns true
+        every { privateSpaceManager.hasPrivateSpaceProfile() } returns true
         every { privateSpaceManager.isPrivateSpaceUnlocked() } returns true
         every { privateSpaceManager.getPrivateSpaceApps() } returns listOf(privateApp)
 
@@ -1042,8 +1044,19 @@ class AppDrawerViewModelTest {
     }
 
     @Test
+    fun `private space lock menu hidden when device supports but no profile configured`() {
+        every { privateSpaceManager.isSupported } returns true
+        every { privateSpaceManager.hasPrivateSpaceProfile() } returns false
+
+        viewModel.refreshPrivateSpaceState()
+
+        assertFalse(viewModel.uiState.value.isPrivateSpaceSupported)
+    }
+
+    @Test
     fun `refreshPrivateSpaceState reads from manager`() {
         every { privateSpaceManager.isSupported } returns true
+        every { privateSpaceManager.hasPrivateSpaceProfile() } returns true
         every { privateSpaceManager.isPrivateSpaceUnlocked() } returns true
         val privateUser = mockk<UserHandle>()
         every { privateUser.hashCode() } returns 77
@@ -1069,6 +1082,7 @@ class AppDrawerViewModelTest {
     @Test
     fun `refreshPrivateSpaceState keeps private category when unlocked app query is empty`() {
         every { privateSpaceManager.isSupported } returns true
+        every { privateSpaceManager.hasPrivateSpaceProfile() } returns true
         every { privateSpaceManager.isPrivateSpaceUnlocked() } returns true
         every { privateSpaceManager.getPrivateSpaceApps() } returns emptyList()
 
@@ -1087,6 +1101,7 @@ class AppDrawerViewModelTest {
     @Test
     fun `rebuild restores private category when unlock flag stale but manager reports unlocked`() {
         every { privateSpaceManager.isSupported } returns true
+        every { privateSpaceManager.hasPrivateSpaceProfile() } returns true
         every { privateSpaceManager.isPrivateSpaceUnlocked() } returns false
         every { privateSpaceManager.getPrivateSpaceApps() } returns emptyList()
         viewModel.refreshPrivateSpaceState()
@@ -1124,6 +1139,7 @@ class AppDrawerViewModelTest {
         val privateUser = mockk<UserHandle>()
         every { privateUser.hashCode() } returns 77
         every { privateSpaceManager.isSupported } returns true
+        every { privateSpaceManager.hasPrivateSpaceProfile() } returns true
         every { privateSpaceManager.isPrivateSpaceUnlocked() } returns true
         every { privateSpaceManager.getPrivateSpaceApps() } returns
             listOf(
@@ -1151,6 +1167,7 @@ class AppDrawerViewModelTest {
     @Test
     fun `togglePrivateSpace when unlocked clears private apps`() {
         every { privateSpaceManager.isSupported } returns true
+        every { privateSpaceManager.hasPrivateSpaceProfile() } returns true
         every { privateSpaceManager.isPrivateSpaceUnlocked() } returns true
         every { privateSpaceManager.getPrivateSpaceApps() } returns
                 listOf(AppInfo("com.private.app", "Private App", null))

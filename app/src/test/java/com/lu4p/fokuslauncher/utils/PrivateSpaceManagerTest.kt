@@ -40,4 +40,13 @@ class PrivateSpaceManagerTest {
         assertFalse(manager.requestUnlock())
         assertFalse(manager.lock())
     }
+
+    @Test
+    @Config(sdk = [35])
+    fun `hasPrivateSpaceProfile is false when no profile exists`() {
+        val context = RuntimeEnvironment.getApplication().applicationContext as Context
+        val manager = PrivateSpaceManager(context)
+
+        assertFalse(manager.hasPrivateSpaceProfile())
+    }
 }

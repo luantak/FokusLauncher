@@ -64,6 +64,7 @@ data class AppDrawerUiState(
         val categories: List<String> = listOf(ReservedCategoryNames.ALL_APPS),
         val selectedApp: AppInfo? = null,
         val showMenu: Boolean = false,
+        /** True when Private Space is available on this device (profile exists). */
         val isPrivateSpaceSupported: Boolean = false,
         val isPrivateSpaceUnlocked: Boolean = false,
         /** Full (unfiltered) private space app list – used for launch lookups. */
@@ -1318,7 +1319,9 @@ constructor(
 
     fun refreshPrivateSpaceState() {
         viewModelScope.launch {
-            val supported = privateSpaceManager.isSupported
+            val supported =
+                    privateSpaceManager.isSupported &&
+                            privateSpaceManager.hasPrivateSpaceProfile()
             val unlocked = privateSpaceManager.isPrivateSpaceUnlocked()
             if (!unlocked) {
                 privateSpaceLockPending = false
@@ -1363,6 +1366,7 @@ constructor(
     }
 
     fun togglePrivateSpace() {
+        if (!privateSpaceManager.hasPrivateSpaceProfile()) return
         if (_uiState.value.isPrivateSpaceUnlocked) {
             privateSpaceLockPending = true
             privateSpaceManager.lock()
