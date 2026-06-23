@@ -251,6 +251,8 @@ constructor(
     private val _events = MutableSharedFlow<DrawerEvent>()
     val events: SharedFlow<DrawerEvent> = _events.asSharedFlow()
     private var latestHiddenApps: List<HiddenAppEntity> = emptyList()
+    /** Installed apps with metadata overlays but including hidden rows — used for global drawer search. */
+    private var latestSearchableApps: List<AppInfo> = emptyList()
     private var latestRenamedApps: List<RenamedAppEntity> = emptyList()
     private var latestCategoryEntities: List<AppCategoryEntity> = emptyList()
     private var latestDefinedCategories: List<String> = emptyList()
@@ -375,6 +377,7 @@ constructor(
                                 privateApps = reorderedPrivate,
                                 rawSearchQuery = state.searchQuery,
                                 category = state.selectedCategory,
+                                useSidebarCategoryDrawer = state.useSidebarCategoryDrawer,
                         )
                 _uiState.update { s ->
                     s.withFilteredContent(filteredContent).copy(
@@ -507,6 +510,7 @@ constructor(
                         privateApps = privateApps,
                         rawSearchQuery = stateSnapshot.searchQuery,
                         category = selectedCategory,
+                        useSidebarCategoryDrawer = useSidebarCategoryDrawer,
                 )
         return Triple(categories, selectedCategory, filteredContent)
     }
@@ -636,7 +640,8 @@ constructor(
                                         allApps = state.allApps,
                                         privateApps = reorderedPrivate,
                                         rawSearchQuery = state.searchQuery,
-                                        category = state.selectedCategory
+                                        category = state.selectedCategory,
+                                        useSidebarCategoryDrawer = state.useSidebarCategoryDrawer,
                                 )
                         _uiState.update { state ->
                             state.withFilteredContent(filteredContent).copy(
@@ -800,6 +805,19 @@ constructor(
                                 drawerOpenCountKey(app.packageName, app.userHandle) in
                                         removedSnapshot
                             }
+            latestSearchableApps =
+                    applyMetadataOverlays(
+                                    apps = base,
+                                    hiddenApps = metadata.hiddenApps,
+                                    renamedApps = metadata.renamedApps,
+                                    categoryEntities = metadata.categoryEntities,
+                                    suppressedCategories = metadata.suppressedCategories.toSet(),
+                                    excludeHidden = false,
+                            )
+                            .filterNot { app ->
+                                drawerOpenCountKey(app.packageName, app.userHandle) in
+                                        removedSnapshot
+                            }
 
             val privateAppsFiltered =
                     resolvedPrivateSpaceAppsForDrawer(
@@ -848,6 +866,10 @@ constructor(
                     )
             val visible =
                     stateSnapshot.allApps.filterNot {
+                        it.packageName == packageName && appProfileKey(it.userHandle) == profileKey
+                    }
+            latestSearchableApps =
+                    latestSearchableApps.filterNot {
                         it.packageName == packageName && appProfileKey(it.userHandle) == profileKey
                     }
             val privateApps =
@@ -911,7 +933,8 @@ constructor(
                                     allApps = snapshot.allApps,
                                     privateApps = snapshot.privateSpaceApps,
                                     rawSearchQuery = query,
-                                    category = snapshot.selectedCategory
+                                    category = snapshot.selectedCategory,
+                                    useSidebarCategoryDrawer = snapshot.useSidebarCategoryDrawer,
                             )
                     _uiState.update { state ->
                         if (requestId != searchQueryRequestId || state.searchQuery != query) {
@@ -1021,7 +1044,8 @@ constructor(
                             allApps = state.allApps,
                             privateApps = state.privateSpaceApps,
                             rawSearchQuery = state.searchQuery,
-                            category = category
+                            category = category,
+                            useSidebarCategoryDrawer = state.useSidebarCategoryDrawer,
                     )
             _uiState.update {
                 it.withFilteredContent(filteredContent).copy(selectedCategory = category)
@@ -1172,7 +1196,8 @@ constructor(
                         allApps = state.allApps,
                         privateApps = state.privateSpaceApps,
                         rawSearchQuery = state.searchQuery,
-                        category = state.selectedCategory
+                        category = state.selectedCategory,
+                        useSidebarCategoryDrawer = state.useSidebarCategoryDrawer,
                 )
         _uiState.update { it.withFilteredContent(filteredContent) }
     }
@@ -1378,7 +1403,8 @@ constructor(
                             allApps = state.allApps,
                             privateApps = state.privateSpaceApps,
                             rawSearchQuery = "",
-                            category = defaultCategory
+                            category = defaultCategory,
+                            useSidebarCategoryDrawer = state.useSidebarCategoryDrawer,
                     )
             _uiState.update {
                 it.withFilteredContent(filteredContent).copy(
@@ -1467,9 +1493,16 @@ constructor(
             renamedApps: List<RenamedAppEntity>,
             categoryEntities: List<AppCategoryEntity>,
             suppressedCategories: Set<String> = emptySet(),
+            excludeHidden: Boolean = true,
     ): List<AppInfo> {
         return apps
-                .filterNot { app -> isAppHiddenByMetadata(app, hiddenApps) }
+                .let { list ->
+                    if (excludeHidden) {
+                        list.filterNot { app -> isAppHiddenByMetadata(app, hiddenApps) }
+                    } else {
+                        list
+                    }
+                }
                 .map { app ->
                     app.copy(
                             label = overlayCustomName(app, renamedApps) ?: app.label,
@@ -1716,24 +1749,31 @@ constructor(
             allApps: List<AppInfo>,
             privateApps: List<AppInfo>,
             rawSearchQuery: String,
-            category: String
+            category: String,
+            useSidebarCategoryDrawer: Boolean,
     ): FilteredDrawerContent {
-        val sections = buildProfileSectionsSuspend(allApps)
         val trimmed = rawSearchQuery.trimStart()
         val filterQuery =
                 if (DotSearchSyntax.isPossibleDotSearchPrefix(trimmed)) "" else trimmed
+        val searchActive = filterQuery.isNotBlank()
+        // Issue #150: sidebar layout has no "All apps" — search all apps (incl. hidden) there only.
+        val globalSearch = searchActive && useSidebarCategoryDrawer
+        val appsForFilter = if (globalSearch) latestSearchableApps else allApps
+        val effectiveCategory =
+                if (globalSearch) ReservedCategoryNames.ALL_APPS else category
+        val sections = buildProfileSectionsSuspend(appsForFilter)
         return withContext(drawerComputationDispatcher) {
             FilteredDrawerContent(
                     filteredProfileSections =
                             filterProfileSections(
                                     sections = sections,
                                     query = filterQuery,
-                                    category = category
+                                    category = effectiveCategory
                             ),
                     filteredPrivateSpaceApps =
                             applyPrivateFilter(
                                     query = filterQuery,
-                                    selectedCategory = category,
+                                    selectedCategory = effectiveCategory,
                                     privateApps = privateApps
                             )
             )

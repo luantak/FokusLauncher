@@ -464,12 +464,63 @@ class AppDrawerViewModelTest {
     }
 
     @Test
-    fun `search and category filters work together`() {
+    fun `search and category filters work together in chip drawer mode`() {
         viewModel.onCategorySelected("Productivity")
         viewModel.onSearchQueryChanged("gm")
 
-        // Gmail is only result, auto-launched
         verify { appRepository.launchApp("com.lu4p.gmail") }
+    }
+
+    @Test
+    fun `chip drawer search respects selected category`() {
+        drawerSearchAutoLaunchFlow.value = false
+        viewModel.onCategorySelected("Social")
+        viewModel.onSearchQueryChanged("chrome")
+
+        assertTrue(flatFiltered(viewModel.uiState.value).isEmpty())
+    }
+
+    @Test
+    fun `sidebar category search matches apps outside selected category`() {
+        drawerSidebarCategoriesFlow.value = true
+        awaitState("sidebar drawer ready") { it.useSidebarCategoryDrawer }
+
+        viewModel.onCategorySelected("Finance")
+        viewModel.onSearchQueryChanged("gmail")
+
+        verify { appRepository.launchApp("com.lu4p.gmail") }
+    }
+
+    @Test
+    fun `hidden apps appear in sidebar search results but not in visible list`() {
+        drawerSidebarCategoriesFlow.value = true
+        awaitState("sidebar drawer ready") { it.useSidebarCategoryDrawer }
+
+        hiddenFlow.value = listOf(HiddenAppEntity("com.lu4p.atom", "0"))
+        awaitState("hidden app removed from visible list") { state ->
+            state.allApps.none { it.packageName == "com.lu4p.atom" }
+        }
+
+        drawerSearchAutoLaunchFlow.value = false
+        viewModel.onSearchQueryChanged("atom")
+
+        awaitState("hidden app searchable") { state ->
+            flatFiltered(state).any { it.packageName == "com.lu4p.atom" }
+        }
+        assertFalse(viewModel.uiState.value.allApps.any { it.packageName == "com.lu4p.atom" })
+    }
+
+    @Test
+    fun `hidden apps stay excluded from chip drawer search`() {
+        hiddenFlow.value = listOf(HiddenAppEntity("com.lu4p.atom", "0"))
+        awaitState("hidden app removed from visible list") { state ->
+            state.allApps.none { it.packageName == "com.lu4p.atom" }
+        }
+
+        drawerSearchAutoLaunchFlow.value = false
+        viewModel.onSearchQueryChanged("atom")
+
+        assertTrue(flatFiltered(viewModel.uiState.value).isEmpty())
     }
 
     @Test
