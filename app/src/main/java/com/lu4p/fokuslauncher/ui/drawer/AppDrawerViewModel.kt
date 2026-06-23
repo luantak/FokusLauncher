@@ -746,8 +746,13 @@ constructor(
             hadOwnerProfileApps: Boolean,
     ): List<AppInfo> {
         var base = withContext(drawerComputationDispatcher) { appRepository.getInstalledApps() }
+        var archived = appRepository.getArchivedApps()
+        val ownerArchived = { archived.any { it.userHandle == null } }
         if (hadVisibleApps &&
-                        (base.isEmpty() || (hadOwnerProfileApps && isWorkOnlyOwnerMissingSnapshot(base)))
+                        ((base.isEmpty() && archived.isEmpty()) ||
+                                (hadOwnerProfileApps &&
+                                        isWorkOnlyOwnerMissingSnapshot(base) &&
+                                        !ownerArchived()))
         ) {
             Log.w(
                     DRAWER_LOAD_TAG,
@@ -757,7 +762,8 @@ constructor(
             delay(EMPTY_INSTALLED_APPS_RETRY_DELAY_MS)
             appRepository.invalidateCache()
             base = withContext(drawerComputationDispatcher) { appRepository.getInstalledApps() }
-            if (hadOwnerProfileApps && isWorkOnlyOwnerMissingSnapshot(base)) {
+            archived = appRepository.getArchivedApps()
+            if (hadOwnerProfileApps && isWorkOnlyOwnerMissingSnapshot(base) && !ownerArchived()) {
                 Log.w(
                         DRAWER_LOAD_TAG,
                         "drawer reload still work-only after retry (secondary=${base.count { it.userHandle != null }}); " +
@@ -784,10 +790,12 @@ constructor(
                             hadVisibleApps = hadVisibleApps,
                             hadOwnerProfileApps = hadOwnerProfileApps,
                     )
-            if (base.isEmpty() && hadVisibleApps) {
+            val archivedApps = appRepository.getArchivedApps()
+            val ownerArchived = archivedApps.any { it.userHandle == null }
+            if (base.isEmpty() && hadVisibleApps && archivedApps.isEmpty()) {
                 return
             }
-            if (hadOwnerProfileApps && isWorkOnlyOwnerMissingSnapshot(base)) {
+            if (hadOwnerProfileApps && isWorkOnlyOwnerMissingSnapshot(base) && !ownerArchived) {
                 return
             }
             val rawPrivateApps = rawPrivateSpaceAppsForRebuild(stateSnapshot)

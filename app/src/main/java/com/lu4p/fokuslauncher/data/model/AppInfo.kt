@@ -15,10 +15,12 @@ data class AppInfo(
     val category: String = "",
     /** Non-null for apps in a secondary Android user (work, clone, …); used with [LauncherApps]. */
     val userHandle: UserHandle? = null,
-    /** Non-null when [userHandle] is set; the activity to start in that profile. */
+    /** Non-null when [userHandle] is set, or for archived owner apps restored via [LauncherApps]. */
     val componentName: ComponentName? = null,
     /** Non-null for pinned launcher shortcuts, including browser-created PWA shortcuts. */
-    val launcherShortcutId: String? = null
+    val launcherShortcutId: String? = null,
+    /** True when Android has archived the app and it should only be shown in Settings. */
+    val isArchived: Boolean = false,
 ) {
     val normalizedLabel: String by lazy(LazyThreadSafetyMode.NONE) { label.normalizedForSearch() }
 }

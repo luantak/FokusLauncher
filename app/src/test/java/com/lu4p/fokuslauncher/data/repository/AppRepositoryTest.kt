@@ -44,6 +44,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 
@@ -74,6 +75,7 @@ class AppRepositoryTest {
         every { packageManager.getUserBadgedLabel(any(), any()) } answers { firstArg<CharSequence>() }
         every { privateSpaceManager.isPrivateSpaceProfile(any()) } returns false
         every { context.getSystemService(Context.LAUNCHER_APPS_SERVICE) } returns launcherApps
+        every { context.getSystemService(LauncherApps::class.java) } returns launcherApps
         every { context.getSystemService(Context.USER_SERVICE) } returns userManager
         every { userManager.userProfiles } returns listOf(myUser)
         every { launcherApps.getActivityList(null, myUser) } returns emptyList()
@@ -110,6 +112,53 @@ class AppRepositoryTest {
         assertEquals("Calculator", result[1].label)
         assertEquals("Chrome", result[2].label)
         assertTrue(result.none { it.packageName == "com.lu4p.fokuslauncher" })
+    }
+
+    @Test
+    @Config(sdk = [35])
+    fun `getInstalledApps excludes archived apps and getArchivedApps returns them`() {
+        every {
+            launcherApps.getActivityList(null, myUser)
+        } returns
+                listOf(
+                        createMockLauncherActivity("com.lu4p.notes", "Notes"),
+                        createMockLauncherActivity(
+                                packageName = "com.lu4p.reader",
+                                label = "Reader",
+                                archived = true,
+                        ),
+                )
+
+        val installed = repository.getInstalledApps()
+        val archived = repository.getArchivedApps()
+
+        assertEquals(listOf("com.lu4p.notes"), installed.map { it.packageName })
+        assertEquals(listOf("com.lu4p.reader"), archived.map { it.packageName })
+        assertTrue(archived.single().isArchived)
+        assertNotNull(archived.single().componentName)
+    }
+
+    @Test
+    @Config(sdk = [35])
+    fun `restoreArchivedApp starts archived owner activity through LauncherApps`() {
+        val app =
+                AppInfo(
+                        packageName = "com.lu4p.reader",
+                        label = "Reader",
+                        icon = null,
+                        componentName =
+                                ComponentName(
+                                        "com.lu4p.reader",
+                                        "com.lu4p.reader.MainActivity",
+                                ),
+                        isArchived = true,
+                )
+
+        assertTrue(repository.restoreArchivedApp(app))
+
+        verify {
+            launcherApps.startMainActivity(app.componentName!!, myUser, null, null)
+        }
     }
 
     @Test
@@ -766,7 +815,8 @@ class AppRepositoryTest {
             packageName: String,
             label: String,
             category: Int = ApplicationInfo.CATEGORY_UNDEFINED,
-            flags: Int = 0
+            flags: Int = 0,
+            archived: Boolean = false,
     ): android.content.pm.LauncherActivityInfo {
         val mockLa = mockk<android.content.pm.LauncherActivityInfo>(relaxed = true)
         val appInfo =
@@ -774,6 +824,7 @@ class AppRepositoryTest {
                     this.packageName = packageName
                     this.category = category
                     this.flags = flags
+                    this.isArchived = archived
                 }
         every { mockLa.applicationInfo } returns appInfo
         every { mockLa.label } returns label

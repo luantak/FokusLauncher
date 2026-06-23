@@ -114,17 +114,31 @@ class PrivateSpaceManager @Inject constructor(
         }
     }
 
-    /** Returns apps installed in the Private Space profile. */
-    fun getPrivateSpaceApps(): List<AppInfo> {
+    /** Returns non-archived apps installed in the Private Space profile. */
+    fun getPrivateSpaceApps(): List<AppInfo> =
+            loadPrivateSpaceApps(includeArchived = false)
+
+    /** Returns archived apps installed in the Private Space profile. */
+    fun getArchivedPrivateSpaceApps(): List<AppInfo> =
+            loadPrivateSpaceApps(includeArchived = true)
+
+    private fun loadPrivateSpaceApps(includeArchived: Boolean): List<AppInfo> {
         val profile = getPrivateSpaceProfile() ?: return emptyList()
         return try {
-            launcherApps.getActivityList(null, profile).map { activityInfo ->
+            launcherApps.getActivityList(null, profile).mapNotNull { activityInfo ->
+                val isArchived =
+                        Build.VERSION.SDK_INT >= 35 &&
+                                runCatching {
+                                    activityInfo.applicationInfo.isArchived
+                                }.getOrDefault(false)
+                if (isArchived != includeArchived) return@mapNotNull null
                 AppInfo(
                     packageName = activityInfo.applicationInfo.packageName,
                     label = activityInfo.label.toString(),
                     icon = activityInfo.getBadgedIcon(0),
                     userHandle = profile,
-                    componentName = activityInfo.componentName
+                    componentName = activityInfo.componentName,
+                    isArchived = isArchived,
                 )
             }.sortedBy { it.label.lowercase() }
         } catch (_: Exception) {

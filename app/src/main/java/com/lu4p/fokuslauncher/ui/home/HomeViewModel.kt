@@ -27,10 +27,10 @@ import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.model.appListStableKey
 import com.lu4p.fokuslauncher.data.model.appMetadataKey
 import com.lu4p.fokuslauncher.data.model.appProfileKey
+import com.lu4p.fokuslauncher.data.model.drawerOpenCountKey
 import com.lu4p.fokuslauncher.data.model.favoriteAppStableKey
 import com.lu4p.fokuslauncher.data.model.HOST_APP_METADATA_SENTINEL
 import com.lu4p.fokuslauncher.data.model.metadataSettingsStableKey
-import com.lu4p.fokuslauncher.data.model.appProfileKey
 import com.lu4p.fokuslauncher.data.model.HomeDateFormatStyle
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.PhotoWallpaperOutlineWidthDp
@@ -160,6 +160,7 @@ class HomeViewModel @Inject constructor(
 
     // App name lookup keyed by package and profile.
     private val _appNameMap = MutableStateFlow<Map<String, String>>(emptyMap())
+    private val _archivedAppKeys = MutableStateFlow<Set<String>>(emptySet())
 
     /**
      * Favorites with resolved display names.
@@ -168,9 +169,10 @@ class HomeViewModel @Inject constructor(
     val favorites: StateFlow<List<FavoriteApp>> = combine(
         rawFavorites,
         _renameMap,
-        _appNameMap
-    ) { favs, renames, appNames ->
-        favs.map { fav ->
+        _appNameMap,
+        _archivedAppKeys
+    ) { favs, renames, appNames, archivedKeys ->
+        favs.filterNot { favoriteAppStableKey(it) in archivedKeys }.map { fav ->
             val appKey = favoriteAppStableKey(fav)
             val resolvedName = renames[appKey]
                 ?: renames[appMetadataKey(fav.packageName, fav.profileKey)]
@@ -221,7 +223,11 @@ class HomeViewModel @Inject constructor(
             preferencesManager.swipeRightTargetFlow.stateWhileSubscribedIn(viewModelScope, null)
 
     val rightSideShortcuts: StateFlow<List<HomeShortcut>> =
-            preferencesManager.rightSideShortcutsFlow.stateWhileSubscribedIn(
+            combine(preferencesManager.rightSideShortcutsFlow, _archivedAppKeys) {
+                    shortcuts,
+                    archivedKeys ->
+                shortcuts.filterNot { shortcutArchivedKey(it) in archivedKeys }
+            }.stateWhileSubscribedIn(
                     viewModelScope,
                     emptyList(),
             )
@@ -375,7 +381,12 @@ class HomeViewModel @Inject constructor(
             appRepository.invalidateCache()
         }
         val apps = appRepository.getInstalledApps()
+        val archivedApps = appRepository.getArchivedApps()
         if (apps.isEmpty()) {
+            if (archivedApps.isNotEmpty()) {
+                applyInstalledAppsSnapshot(apps)
+                return false
+            }
             if (_allInstalledApps.value.isNotEmpty() ||
                             rawFavorites.value.any { !it.isPhoneFavoriteSentinel() }
             ) {
@@ -386,6 +397,7 @@ class HomeViewModel @Inject constructor(
         }
         applyInstalledAppsSnapshot(apps)
         val installedAppKeys = apps.map { appListStableKey(it) }.toSet()
+        val archivedAppKeys = _archivedAppKeys.value
         val currentFavorites = rawFavorites.value
         val nonSentinel = currentFavorites.filterNot { it.isPhoneFavoriteSentinel() }
         val missingFavoriteKeys =
@@ -400,6 +412,7 @@ class HomeViewModel @Inject constructor(
                 currentFavorites.filter {
                     it.packageName == ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE ||
                             favoriteAppStableKey(it) in installedAppKeys ||
+                            favoriteAppStableKey(it) in archivedAppKeys ||
                             favoriteAppStableKey(it) in launchableMissing
                 }
         if (updatedFavorites.size != currentFavorites.size) {
@@ -411,6 +424,10 @@ class HomeViewModel @Inject constructor(
     private fun applyInstalledAppsSnapshot(apps: List<AppInfo>) {
         _allInstalledApps.value = apps
         _appNameMap.value = apps.associate { appMetadataKey(it) to it.label }
+        _archivedAppKeys.value =
+                appRepository.getArchivedApps().mapTo(mutableSetOf()) {
+                    drawerOpenCountKey(it.packageName, it.userHandle)
+                }
     }
 
     private fun loadInstalledAppsForEditing(
@@ -1206,6 +1223,16 @@ class HomeViewModel @Inject constructor(
     private fun installedAppFor(packageName: String, profileKey: String): AppInfo? =
             _allInstalledApps.value.firstOrNull {
                 it.packageName == packageName && appProfileKey(it.userHandle) == profileKey
+            }
+
+    private fun shortcutArchivedKey(shortcut: HomeShortcut): String? =
+            when (val target = shortcut.target) {
+                is ShortcutTarget.App -> drawerOpenCountKey(target.packageName, shortcut.profileKey)
+                is ShortcutTarget.LauncherShortcut ->
+                        drawerOpenCountKey(target.packageName, shortcut.profileKey)
+                is ShortcutTarget.DeepLink,
+                is ShortcutTarget.PhoneDial,
+                is ShortcutTarget.WidgetPage -> null
             }
 
     private fun FavoriteApp.matches(packageName: String, profileKey: String): Boolean =

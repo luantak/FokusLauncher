@@ -657,6 +657,29 @@ private fun SettingsScreenContent(
         item { SettingsDivider() }
 
         manageableAppsSection(
+                headerRes = R.string.settings_section_archived_apps,
+                emptyTextRes = R.string.settings_no_archived_apps,
+                apps = uiState.archivedApps,
+                key = { "archived_${it.stableKey}" },
+                label = { it.app.label },
+                subtitle = { archived ->
+                    archived.profileLabel?.let { pl -> "$pl • ${archived.app.packageName}" }
+                            ?: archived.app.packageName
+                },
+                onRowClick = viewModel::restoreArchivedApp,
+                trailingContent = {
+                    Spacer(Modifier.width(8.dp))
+                    LauncherIcon(
+                            Icons.Default.Restore,
+                            stringResource(R.string.cd_restore_archived_app),
+                            tint = MaterialTheme.colorScheme.secondary,
+                            iconSize = 24.dp,
+                    )
+                },
+        )
+        item { SettingsDivider() }
+
+        manageableAppsSection(
                 headerRes = R.string.settings_section_hidden_apps,
                 emptyTextRes = R.string.settings_no_hidden_apps,
                 apps = uiState.hiddenApps,

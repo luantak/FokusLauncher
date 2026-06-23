@@ -17,6 +17,7 @@ import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.TemperatureUnit
 import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import com.lu4p.fokuslauncher.data.model.metadataSettingsStableKey
+import com.lu4p.fokuslauncher.data.model.appListStableKey
 import com.lu4p.fokuslauncher.data.model.appProfileKey
 import com.lu4p.fokuslauncher.data.model.resolveAppCategory
 import com.lu4p.fokuslauncher.data.font.CustomFontImportFailure
@@ -69,6 +70,7 @@ import com.lu4p.fokuslauncher.utils.WallpaperHelper
 data class SettingsUiState(
         val hiddenApps: List<HiddenAppInfo> = emptyList(),
         val renamedApps: List<RenamedAppInfo> = emptyList(),
+        val archivedApps: List<ArchivedAppInfo> = emptyList(),
         val appCategories: Map<String, String> = emptyMap(),
         val categoryDefinitions: List<String> = emptyList(),
         val suppressedCategories: List<String> = emptyList(),
@@ -147,6 +149,14 @@ data class RenamedAppInfo(
 ) {
     val stableKey: String
         get() = metadataSettingsStableKey(packageName, profileKey, launcherShortcutId)
+}
+
+data class ArchivedAppInfo(
+        val app: AppInfo,
+        val profileLabel: String?,
+) {
+    val stableKey: String
+        get() = appListStableKey(app)
 }
 
 @HiltViewModel
@@ -386,13 +396,20 @@ constructor(
                                             ),
                             )
                         }
+                val privateArchivedApps =
+                        if (privateSpaceUnlocked) {
+                            privateSpaceManager.getArchivedPrivateSpaceApps()
+                        } else {
+                            emptyList()
+                        }
+                val archivedApps = appRepository.getArchivedAppsOnBackground() + privateArchivedApps
                 val privateApps =
                         if (privateSpaceUnlocked) {
                             privateSpaceManager.getPrivateSpaceApps()
                         } else {
                             emptyList()
                         }
-                val metadataLookupApps = installedApps + privateApps
+                val metadataLookupApps = installedApps + archivedApps + privateApps
                 val allShortcutActions = appRepository.getAllShortcutActionsOnBackground()
                 SettingsUiState(
                         hiddenApps =
@@ -408,6 +425,12 @@ constructor(
                                         left.renamedApps,
                                         metadataLookupApps,
                                         privateSpaceUnlocked,
+                                        privateProfileKey,
+                                        profileDisplayNameOverrides,
+                                ),
+                        archivedApps =
+                                archivedInfosForSettings(
+                                        archivedApps,
                                         privateProfileKey,
                                         profileDisplayNameOverrides,
                                 ),
@@ -648,6 +671,31 @@ constructor(
                     ),
             )
 
+    private fun archivedInfosForSettings(
+            archivedApps: List<AppInfo>,
+            privateProfileKey: String?,
+            profileDisplayNameOverrides: Map<String, String>,
+    ): List<ArchivedAppInfo> =
+            archivedApps.map { app ->
+                ArchivedAppInfo(
+                        app = app,
+                        profileLabel =
+                                profileLabelForSettings(
+                                        appProfileKey(app.userHandle),
+                                        app,
+                                        privateProfileKey,
+                                        profileDisplayNameOverrides,
+                                ),
+                )
+            }.sortedWith(
+                    compareBy(
+                            { profileSortBucket(it.profileLabel) },
+                            { it.profileLabel ?: "" },
+                            { it.app.label.lowercase() },
+                            { it.app.packageName.lowercase() },
+                    ),
+            )
+
     private fun profileLabelForSettings(
             profileKey: String,
             matchingApp: AppInfo?,
@@ -678,6 +726,12 @@ constructor(
 
     private fun profileSortBucket(profileLabel: String?): Int =
             if (profileLabel == null) 0 else 1
+
+    fun restoreArchivedApp(app: ArchivedAppInfo) {
+        viewModelScope.launch(Dispatchers.IO) {
+            appRepository.restoreArchivedApp(app.app)
+        }
+    }
 
     // --- Hidden Apps ---
 

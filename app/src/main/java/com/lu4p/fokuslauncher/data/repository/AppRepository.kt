@@ -72,6 +72,7 @@ constructor(
         private val privateSpaceManager: PrivateSpaceManager
 ) {
     private var cachedApps: List<AppInfo>? = null
+    private var cachedArchivedApps: List<AppInfo>? = null
     private val installedAppsVersion = MutableStateFlow(0L)
     private val removedPackages = MutableSharedFlow<RemovedApp>(extraBufferCapacity = 8)
     private val packageChangeReceiver =
@@ -145,8 +146,8 @@ constructor(
     // --- App Loading ---
 
     /**
-     * Returns all launchable apps installed on the device, sorted alphabetically. Results are
-     * cached in memory after the first successful non-empty load.
+     * Returns all non-archived launchable apps, sorted alphabetically. Results are cached in memory
+     * after the first successful non-empty launcher snapshot.
      *
      * Empty lists are not cached: [LauncherApps.getActivityList] / package events can briefly
      * yield no activities; caching that would hide every app until process death (e.g. force stop).
@@ -156,13 +157,18 @@ constructor(
             return it
         }
 
-        val apps = loadInstalledAppsMergedAcrossProfiles()
+        val allApps = loadInstalledAppsMergedAcrossProfiles()
+        val apps = allApps.filterNot { it.isArchived }
+        val archivedApps = allApps.filter { it.isArchived }
         when {
-            apps.isNotEmpty() && !isIncompleteOwnerProfileSnapshot(apps) -> cachedApps = apps
-            apps.isNotEmpty() ->
+            allApps.isNotEmpty() && !isIncompleteOwnerProfileSnapshot(allApps) -> {
+                cachedApps = apps
+                cachedArchivedApps = archivedApps
+            }
+            allApps.isNotEmpty() ->
                     Log.w(
                             TAG,
-                            "not caching installed-apps snapshot (${mergedAppsSummary(apps)}); " +
+                            "not caching installed-apps snapshot (${mergedAppsSummary(allApps)}); " +
                                     "owner profile still missing from merged list",
                     )
         }
@@ -171,6 +177,22 @@ constructor(
 
     suspend fun getInstalledAppsOnBackground(): List<AppInfo> =
             withContext(Dispatchers.IO) { getInstalledApps() }
+
+    /** Returns archived apps that are intentionally hidden from home, drawer, and pickers. */
+    fun getArchivedApps(): List<AppInfo> {
+        cachedArchivedApps?.let { return it }
+        val allApps = loadInstalledAppsMergedAcrossProfiles()
+        val apps = allApps.filterNot { it.isArchived }
+        val archivedApps = allApps.filter { it.isArchived }
+        if (allApps.isNotEmpty() && !isIncompleteOwnerProfileSnapshot(allApps)) {
+            cachedApps = apps
+            cachedArchivedApps = archivedApps
+        }
+        return archivedApps
+    }
+
+    suspend fun getArchivedAppsOnBackground(): List<AppInfo> =
+            withContext(Dispatchers.IO) { getArchivedApps() }
 
     /**
      * Returns launchable package/profile keys for the requested profiles using one launcher query
@@ -211,6 +233,7 @@ constructor(
                         emptyList()
                     }
             for (activity in activities) {
+                if (isArchivedLauncherActivity(activity)) continue
                 val packageName = activity.applicationInfo.packageName
                 if (packageName == context.packageName) continue
                 val userHandle = if (user == Process.myUserHandle()) null else user
@@ -314,7 +337,8 @@ constructor(
                                 isPrimary = isPrimary,
                                 icon = icon,
                                 category = inferCategoryFromApplicationInfo(info.applicationInfo),
-                                componentName = info.componentName
+                                componentName = info.componentName,
+                                isArchived = isArchivedLauncherActivity(info),
                         )
                 )
             }
@@ -342,7 +366,9 @@ constructor(
                             icon = e.icon,
                             category = e.category,
                             userHandle = if (e.isPrimary) null else e.user,
-                            componentName = if (e.isPrimary) null else e.componentName
+                            componentName =
+                                    if (e.isPrimary && !e.isArchived) null else e.componentName,
+                            isArchived = e.isArchived,
                     )
                 }
 
@@ -356,7 +382,7 @@ constructor(
                 loadPinnedLauncherShortcutApps(
                         launcherApps = launcherApps,
                         users = userManager.userProfiles.filterNot(privateSpaceManager::isPrivateSpaceProfile),
-                        knownApps = primary + secondary,
+                        knownApps = (primary + secondary).filterNot { it.isArchived },
                 )
 
         return (primary + secondary + pinnedShortcuts).sortedBy { it.label.lowercase() }
@@ -440,8 +466,13 @@ constructor(
             val isPrimary: Boolean,
             val icon: Drawable?,
             val category: String,
-            val componentName: ComponentName
+            val componentName: ComponentName,
+            val isArchived: Boolean,
     )
+
+    private fun isArchivedLauncherActivity(info: android.content.pm.LauncherActivityInfo): Boolean =
+            Build.VERSION.SDK_INT >= 35 &&
+                    runCatching { info.applicationInfo.isArchived }.getOrDefault(false)
 
     private fun loadPinnedLauncherShortcutApps(
             launcherApps: LauncherApps,
@@ -560,6 +591,7 @@ constructor(
     /** Clears the cached app list, forcing a reload on next access. */
     fun invalidateCache() {
         cachedApps = null
+        cachedArchivedApps = null
         installedAppsVersion.value += 1
     }
 
@@ -787,6 +819,15 @@ constructor(
             true
         } catch (_: Exception) {
             false
+        }
+    }
+
+    /** Starts Android's archived-app restore flow without exposing archived apps in launcher UI. */
+    fun restoreArchivedApp(app: AppInfo): Boolean {
+        val component = app.componentName ?: return false
+        val user = app.userHandle ?: Process.myUserHandle()
+        return launchMainActivity(component, user).also { launched ->
+            if (launched) invalidateCache()
         }
     }
 
