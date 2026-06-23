@@ -34,7 +34,7 @@ sealed interface ShortcutTarget {
         private const val WIDGET_PAGE_INTERNAL_KEY = "widget_page"
 
         /**
-         * [FavoriteApp.packageName] for the built-in Health / phone row — not an installed package.
+         * [FavoriteApp.packageName] for a built-in phone-dial row — not an installed package.
          * See [decode] / favorites migration for legacy dialer package names.
          */
         const val PHONE_FAVORITE_SENTINEL_PACKAGE = "com.lu4p.fokuslauncher.internal.phone"

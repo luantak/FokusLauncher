@@ -485,6 +485,12 @@ class HomeViewModel @Inject constructor(
         _editFavorites.value = current
     }
 
+    /** Removes a home favorite during edit mode, including built-in rows with no installed app. */
+    fun removeFavoriteFromEdit(fav: FavoriteApp) {
+        val key = favoriteAppStableKey(fav)
+        _editFavorites.value = _editFavorites.value.filterNot { favoriteAppStableKey(it) == key }
+    }
+
     private fun <T> reorderInList(items: List<T>, from: Int, to: Int): List<T>? {
         if (from !in items.indices || to !in items.indices) return null
         val next = items.toMutableList()

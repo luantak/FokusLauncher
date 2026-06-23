@@ -176,7 +176,6 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
                         "Work;com.google.android.gm;work|" +
                         "Read;com.google.android.apps.docs;read|" +
                         "Social;com.google.android.apps.messaging;chat|" +
-                        "Health;${ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE};call;internal:phone|" +
                         "Finance;com.android.vending;finance"
     }
 

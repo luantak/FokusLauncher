@@ -682,6 +682,36 @@ class HomeViewModelTest {
     }
 
     @Test
+    fun `removeFavoriteFromEdit removes built-in phone favorite without installed app`() {
+        val phoneFavorite =
+                FavoriteApp(
+                        label = "Health",
+                        packageName = ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE,
+                        iconName = "call",
+                        iconPackage = ShortcutTarget.encode(ShortcutTarget.PhoneDial),
+                )
+        every { preferencesManager.favoritesFlow } returns
+                flowOf(testFavorites + phoneFavorite)
+
+        val viewModel = createViewModel()
+        val collectJob = CoroutineScope(testDispatcher).launch { viewModel.favorites.collect { } }
+        testDispatcher.scheduler.advanceUntilIdle()
+        viewModel.startEditingHomeApps()
+
+        assertEquals(4, viewModel.editFavorites.value.size)
+
+        viewModel.removeFavoriteFromEdit(phoneFavorite)
+
+        assertEquals(3, viewModel.editFavorites.value.size)
+        assertTrue(
+                viewModel.editFavorites.value.none {
+                    it.packageName == ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE
+                }
+        )
+        collectJob.cancel()
+    }
+
+    @Test
     fun `refreshInstalledApps prunes favorites missing from one profile only`() {
         every { preferencesManager.favoritesFlow } returns flowOf(
             listOf(

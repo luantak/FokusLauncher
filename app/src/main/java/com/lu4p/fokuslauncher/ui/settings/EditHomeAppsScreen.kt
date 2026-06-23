@@ -101,6 +101,7 @@ fun EditHomeAppsScreen(
                 allApps = allApps,
                 profileDisplayNameOverrides = profileDisplayNameOverrides,
                 onToggle = { viewModel.toggleAppOnHomeScreen(it) },
+                onRemoveFavorite = { viewModel.removeFavoriteFromEdit(it) },
                 onReorder = { from, to -> viewModel.reorderFavorite(from, to) }
         )
     }
@@ -114,6 +115,7 @@ private fun ReorderableEditHomeAppsList(
         allApps: List<AppInfo>,
         profileDisplayNameOverrides: Map<String, String>,
         onToggle: (AppInfo) -> Unit,
+        onRemoveFavorite: (FavoriteApp) -> Unit,
         onReorder: (Int, Int) -> Unit
 ) {
     val context = LocalContext.current
@@ -169,6 +171,7 @@ private fun ReorderableEditHomeAppsList(
                                 rememberBooleanChangeWithSystemSound {
                                     allApps.find { favoriteAppStableKey(fav) == appListStableKey(it) }
                                             ?.let { onToggle(it) }
+                                            ?: onRemoveFavorite(fav)
                                 },
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
