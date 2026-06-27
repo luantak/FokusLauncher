@@ -31,7 +31,7 @@
     <string name="cd_change_icon">Changer d\'icône</string>
     <string name="cd_shortcut_icon">Icône de raccourci</string>
     <string name="cd_edit_home_screen">Modifier l\'écran d\'accueil</string>
-    <string name="cd_settings">Paramétrages</string>
+    <string name="cd_settings">Paramètres</string>
     <string name="cd_menu">Menu</string>
     <string name="cd_open_link">Ouvrir le lien</string>
     <string name="cd_unhide_app">Rendre l\'application visible</string>
@@ -120,12 +120,12 @@
     <string name="icon_cat_android">Android</string>
     <string name="icon_cat_other">Autre</string>
     <string name="icon_cat_search_results">Icônes correspondantes</string>
-    <string name="settings_title">Paramétrages</string>
+    <string name="settings_title">Paramètres</string>
     <string name="settings_section_appearance">Apparence</string>
     <string name="settings_show_status_bar">Afficher la barre de statut</string>
     <string name="settings_allow_landscape_rotation">Autoriser le mode paysage</string>
     <string name="settings_language_label">Langue</string>
-    <string name="settings_language_system_default">Paramétrage système</string>
+    <string name="settings_language_system_default">Paramètre du système</string>
     <string name="settings_set_background_image">Définir un fond d\'écran</string>
     <string name="settings_set_black_wallpaper">Préférer un fond d\'écran noir</string>
     <string name="settings_section_image_wallpaper_accessibility">Fond d\'écran — lisibilité</string>
@@ -282,7 +282,7 @@
     <string name="toast_export_logs_failed">Impossible de générer les logs d\'export</string>
     <string name="settings_reset_all_data">Réinitialiser toutes les données</string>
     <string name="settings_reset_confirm_title">Réinitialiser toutes les données ?</string>
-    <string name="settings_reset_confirm_message">Cela effacera vos favoris, raccourcis, applications cachées, applications renommées, et tous les autres paramétrages. L\'application sera réinitialisée à son état d\'origine.</string>
+    <string name="settings_reset_confirm_message">Cela effacera vos favoris, raccourcis, applications cachées, applications renommées, et tous les autres paramètres. L\'application sera réinitialisée à son état d\'origine.</string>
     <string name="settings_app_picker_title">Sélectionner une app</string>
     <string name="settings_font_label">Police de caractères</string>
     <string name="settings_font_size_label">Taille de la police de caractères</string>
