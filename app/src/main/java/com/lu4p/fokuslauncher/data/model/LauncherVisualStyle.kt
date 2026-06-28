@@ -8,6 +8,7 @@ enum class LauncherVisualStyle(@param:StringRes val labelRes: Int) {
     CLASSIC(R.string.visual_style_classic),
     NEON_MAGENTA(R.string.visual_style_neon_magenta),
     NEON_LIME(R.string.visual_style_neon_lime),
+    GOLD(R.string.visual_style_gold),
     NEON_AMBER(R.string.visual_style_neon_amber),
     NEON_PINK(R.string.visual_style_neon_pink),
     LAVENDER(R.string.visual_style_lavender),

@@ -13,6 +13,8 @@ fun LauncherVisualStyle.neonPalette(): NeonPalette? =
                     NeonPalette(primary = Color(0xFFE070FF), muted = Color(0xFFB092D0))
             LauncherVisualStyle.NEON_LIME ->
                     NeonPalette(primary = Color(0xFF58FF7A), muted = Color(0xFF78C892))
+            LauncherVisualStyle.GOLD ->
+                    NeonPalette(primary = Color(0xFFFFD700), muted = Color(0xFFFFC125))
             LauncherVisualStyle.NEON_AMBER ->
                     NeonPalette(primary = Color(0xFFFF8F70), muted = Color(0xFFD9A894))
             LauncherVisualStyle.NEON_PINK ->

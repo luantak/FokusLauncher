@@ -304,6 +304,7 @@
     <string name="visual_style_classic">Classic</string>
     <string name="visual_style_neon_magenta">Cosmic Violet</string>
     <string name="visual_style_neon_lime">Terminal Green</string>
+    <string name="visual_style_gold">Gold</string>
     <string name="visual_style_neon_amber">Coral</string>
     <string name="visual_style_neon_pink">Hot Pink</string>
     <string name="visual_style_lavender">Lavender</string>
