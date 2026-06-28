@@ -56,6 +56,13 @@ class PreferencesManagerTest {
     }
 
     @Test
+    fun `parseFavorites treats empty marker as no favorites`() {
+        // The marker is persisted in place of an empty string so the key is not dropped and
+        // DEFAULT_FAVORITES is not re-seeded when the user clears all favorites.
+        assertEquals(0, parseFavorites("__empty__").size)
+    }
+
+    @Test
     fun `parseFavorites handles single entry new format`() {
         val raw = "Music;com.lu4p.music;star"
         val result = parseFavorites(raw)

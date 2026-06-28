@@ -65,6 +65,8 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
 
     companion object {
         private val FAVORITES_KEY = stringPreferencesKey("favorite_apps")
+        /** Written when the user clears all favorites so the key survives (see [setFavorites]). */
+        private const val FAVORITES_EMPTY_MARKER = "__empty__"
         private val SWIPE_LEFT_KEY = stringPreferencesKey("swipe_left_app")
         private val SWIPE_RIGHT_KEY = stringPreferencesKey("swipe_right_app")
         private val RIGHT_SIDE_SHORTCUTS_KEY = stringPreferencesKey("right_side_shortcuts")
@@ -186,9 +188,16 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
 
     suspend fun setFavorites(favorites: List<FavoriteApp>) {
         context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            // Store a non-empty marker when the user clears all favorites: some DataStore backends
+            // omit empty strings, which would drop the key and re-seed [DEFAULT_FAVORITES]. This
+            // mirrors [RIGHT_SIDE_SHORTCUTS_EMPTY_MARKER].
             prefs[FAVORITES_KEY] =
-                    favorites.joinToString("|") {
-                        "${it.label};${it.packageName};${it.iconName};${it.iconPackage};${it.profileKey}"
+                    if (favorites.isEmpty()) {
+                        FAVORITES_EMPTY_MARKER
+                    } else {
+                        favorites.joinToString("|") {
+                            "${it.label};${it.packageName};${it.iconName};${it.iconPackage};${it.profileKey}"
+                        }
                     }
         }
     }
@@ -829,7 +838,7 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
     // --- Parsing ---
 
     private fun parseFavorites(raw: String): List<FavoriteApp> {
-        if (raw.isBlank()) return emptyList()
+        if (raw.isBlank() || raw == FAVORITES_EMPTY_MARKER) return emptyList()
         return raw.split("|").mapNotNull { entry ->
             // New format: "label;packageName;iconName;iconPackage"
             val semiParts = entry.split(";")
