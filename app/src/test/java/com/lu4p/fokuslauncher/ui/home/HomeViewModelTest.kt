@@ -27,6 +27,7 @@ import com.lu4p.fokuslauncher.data.model.favoriteAppStableKey
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.data.repository.RemovedApp
 import com.lu4p.fokuslauncher.data.repository.WeatherRepository
+import com.lu4p.fokuslauncher.media.MediaRepository
 import com.lu4p.fokuslauncher.utils.LockScreenHelper
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -39,6 +40,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -67,6 +69,7 @@ class HomeViewModelTest {
     private lateinit var appRepository: AppRepository
     private lateinit var preferencesManager: PreferencesManager
     private lateinit var weatherRepository: WeatherRepository
+    private lateinit var mediaRepository: MediaRepository
     private lateinit var removedPackages: MutableSharedFlow<RemovedApp>
     private val testDispatcher = StandardTestDispatcher()
     private var originalLocale: Locale = Locale.getDefault()
@@ -88,6 +91,8 @@ class HomeViewModelTest {
         appRepository = mockk(relaxed = true)
         preferencesManager = mockk(relaxed = true)
         weatherRepository = mockk(relaxed = true)
+        mediaRepository = mockk(relaxed = true)
+        every { mediaRepository.state } returns MutableStateFlow(null)
         removedPackages = MutableSharedFlow(extraBufferCapacity = 1)
 
         // Mock battery intent
@@ -114,6 +119,8 @@ class HomeViewModelTest {
         every { preferencesManager.showHomeDateFlow } returns flowOf(true)
         every { preferencesManager.showHomeWeatherFlow } returns flowOf(true)
         every { preferencesManager.showHomeBatteryFlow } returns flowOf(true)
+        every { preferencesManager.showHomeMediaFlow } returns flowOf(false)
+        every { preferencesManager.registeredMediaAppsFlow } returns flowOf(emptySet())
         every { preferencesManager.homeDateFormatStyleFlow } returns
                 flowOf(HomeDateFormatStyle.SYSTEM_DEFAULT)
         every { preferencesManager.doubleTapEmptyLockFlow } returns flowOf(false)
@@ -136,11 +143,11 @@ class HomeViewModelTest {
     }
 
     private fun createViewModel() = HomeViewModel(
-        context, appRepository, preferencesManager, weatherRepository
+        context, appRepository, preferencesManager, weatherRepository, mediaRepository
     )
 
     private fun createViewModel(withContext: Context) = HomeViewModel(
-        withContext, appRepository, preferencesManager, weatherRepository
+        withContext, appRepository, preferencesManager, weatherRepository, mediaRepository
     )
 
     /**

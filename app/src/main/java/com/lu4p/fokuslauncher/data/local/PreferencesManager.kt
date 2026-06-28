@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.model.drawerOpenCountKey
@@ -90,6 +91,10 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         private val TEMPERATURE_UNIT_KEY = stringPreferencesKey("temperature_unit")
         private val SHOW_HOME_WEATHER_KEY = booleanPreferencesKey("show_home_weather")
         private val SHOW_HOME_BATTERY_KEY = booleanPreferencesKey("show_home_battery")
+        /** Opt-in media widget; off by default since no apps are registered yet. */
+        private val SHOW_HOME_MEDIA_KEY = booleanPreferencesKey("show_home_media")
+        /** Package names of media apps the user registered for the widget to connect to. */
+        private val REGISTERED_MEDIA_APPS_KEY = stringSetPreferencesKey("registered_media_apps")
         /** Vertical category sidebar in the drawer instead of chips + search bar. */
         private val DRAWER_SIDEBAR_CATEGORIES_KEY =
                 booleanPreferencesKey("drawer_sidebar_categories")
@@ -386,6 +391,14 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
 
     val showHomeBatteryFlow: Flow<Boolean> = prefFlow(SHOW_HOME_BATTERY_KEY, true)
     suspend fun setShowHomeBattery(show: Boolean) = setPref(SHOW_HOME_BATTERY_KEY, show)
+
+    val showHomeMediaFlow: Flow<Boolean> = prefFlow(SHOW_HOME_MEDIA_KEY, false)
+    suspend fun setShowHomeMedia(show: Boolean) = setPref(SHOW_HOME_MEDIA_KEY, show)
+
+    val registeredMediaAppsFlow: Flow<Set<String>> =
+            prefFlow(REGISTERED_MEDIA_APPS_KEY, emptySet())
+    suspend fun setRegisteredMediaApps(packages: Set<String>) =
+            setPref(REGISTERED_MEDIA_APPS_KEY, packages)
 
     val homeWidgetVisibilityFlow: Flow<HomeWidgetVisibility> =
             combine(

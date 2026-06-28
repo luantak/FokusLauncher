@@ -21,6 +21,10 @@
         <intent>
             <action android:name="android.intent.action.SHOW_ALARMS" />
         </intent>
+        <!-- Discover media apps exposing a browser service for the registered-apps media widget. -->
+        <intent>
+            <action android:name="android.media.browse.MediaBrowserService" />
+        </intent>
     </queries>
 
     <application

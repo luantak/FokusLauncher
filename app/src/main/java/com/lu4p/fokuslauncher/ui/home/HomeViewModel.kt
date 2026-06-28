@@ -43,6 +43,8 @@ import com.lu4p.fokuslauncher.data.model.WidgetTapTarget
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.data.repository.WeatherRepository
+import com.lu4p.fokuslauncher.media.MediaPlaybackUiState
+import com.lu4p.fokuslauncher.media.MediaRepository
 import com.lu4p.fokuslauncher.utils.LockScreenHelper
 import com.lu4p.fokuslauncher.utils.registerBroadcastReceiverNotExported
 import com.lu4p.fokuslauncher.utils.registerStickyBroadcastReceiverNotExported
@@ -109,12 +111,24 @@ data class HomeWeatherUiState(
     val showWeatherWidget: Boolean = false,
 )
 
+data class HomeMediaUiState(
+    /** User preference; the widget is opt-in and off by default. */
+    val enabled: Boolean = false,
+    /** Current now-playing session, or null when nothing is playing. */
+    val playback: MediaPlaybackUiState? = null,
+) {
+    /** The widget is only drawn when enabled and something is actually playing. */
+    val showWidget: Boolean
+        get() = enabled && playback != null
+}
+
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val appRepository: AppRepository,
     private val preferencesManager: PreferencesManager,
-    private val weatherRepository: WeatherRepository
+    private val weatherRepository: WeatherRepository,
+    private val mediaRepository: MediaRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -129,6 +143,9 @@ class HomeViewModel @Inject constructor(
 
     private val _weatherUiState = MutableStateFlow(HomeWeatherUiState())
     val weatherUiState: StateFlow<HomeWeatherUiState> = _weatherUiState.asStateFlow()
+
+    private val _mediaUiState = MutableStateFlow(HomeMediaUiState())
+    val mediaUiState: StateFlow<HomeMediaUiState> = _mediaUiState.asStateFlow()
 
     /** Serializes home app-list refresh so concurrent loads cannot race and prune favorites. */
     private val installedAppsRefreshMutex = Mutex()
@@ -268,6 +285,7 @@ class HomeViewModel @Inject constructor(
         observeTemperatureUnit()
         observeHomeWidgetItemPreferences()
         observeWeatherRefreshTriggers()
+        observeMedia()
         observeDoubleTapEmptyLock()
         checkDefaultLauncher()
         refreshInstalledApps(includeShortcuts = true)
@@ -286,6 +304,7 @@ class HomeViewModel @Inject constructor(
             }
         }
         weatherTickerJob?.cancel()
+        mediaRepository.stop()
         super.onCleared()
     }
 
@@ -799,6 +818,41 @@ class HomeViewModel @Inject constructor(
     private fun observeDoubleTapEmptyLock() {
         observeFlow(preferencesManager.doubleTapEmptyLockFlow, ::recomputeDoubleTapEmptyLockUi)
     }
+
+    // ── Media widget ────────────────────────────────────────────────
+
+    private var mediaEnabled = false
+    private var registeredMediaApps: Set<String> = emptySet()
+
+    private fun observeMedia() {
+        observeFlow(
+                combine(
+                        preferencesManager.showHomeMediaFlow,
+                        preferencesManager.registeredMediaAppsFlow,
+                ) { enabled, apps -> enabled to apps }
+        ) { (enabled, apps) ->
+            mediaEnabled = enabled
+            registeredMediaApps = apps
+            _mediaUiState.value = _mediaUiState.value.copy(enabled = enabled)
+            if (enabled) mediaRepository.setRegisteredApps(apps) else mediaRepository.stop()
+        }
+        observeFlow(mediaRepository.state) { playback ->
+            _mediaUiState.value = _mediaUiState.value.copy(playback = playback)
+        }
+    }
+
+    /** Re-applies registered apps on resume so newly added apps connect promptly. */
+    fun refreshMedia() {
+        if (mediaEnabled) mediaRepository.setRegisteredApps(registeredMediaApps)
+    }
+
+    fun mediaOpenApp() = mediaRepository.openMediaApp()
+
+    fun mediaPlayPause() = mediaRepository.playPause()
+
+    fun mediaRewind() = mediaRepository.rewind()
+
+    fun mediaForward() = mediaRepository.forward()
 
     private fun observeCategoryOptions() {
         observeFlow(

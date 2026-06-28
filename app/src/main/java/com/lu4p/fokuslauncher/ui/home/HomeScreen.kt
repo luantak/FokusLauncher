@@ -63,6 +63,7 @@ import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.ui.components.ClockWidget
 import com.lu4p.fokuslauncher.ui.components.DateBatteryRow
 import com.lu4p.fokuslauncher.ui.components.FokusBottomSheet
+import com.lu4p.fokuslauncher.ui.components.MediaWidget
 import com.lu4p.fokuslauncher.ui.components.FokusOutlinedButton
 import com.lu4p.fokuslauncher.ui.components.LauncherIcon
 import com.lu4p.fokuslauncher.ui.components.MinimalIcons
@@ -89,6 +90,7 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val clockUiState by viewModel.clockUiState.collectAsStateWithLifecycle()
     val weatherUiState by viewModel.weatherUiState.collectAsStateWithLifecycle()
+    val mediaUiState by viewModel.mediaUiState.collectAsStateWithLifecycle()
     val favorites by viewModel.favorites.collectAsStateWithLifecycle()
     val rightSideShortcuts by viewModel.rightSideShortcuts.collectAsStateWithLifecycle()
     val allInstalledApps by viewModel.allInstalledApps.collectAsStateWithLifecycle()
@@ -120,6 +122,7 @@ fun HomeScreen(
         viewModel.recheckDefaultLauncher()
         viewModel.refreshDoubleTapLockEffective()
         viewModel.refreshWeather()
+        viewModel.refreshMedia()
     }
 
     Box(modifier = modifier.fillMaxSize()) {
@@ -127,6 +130,7 @@ fun HomeScreen(
             uiState = uiState,
             clockUiState = clockUiState,
             weatherUiState = weatherUiState,
+            mediaUiState = mediaUiState,
             favorites = favorites,
             installedApps = allInstalledApps,
             rightSideShortcuts = rightSideShortcuts,
@@ -139,6 +143,10 @@ fun HomeScreen(
             onClockClick = onClockClick,
             onDateClick = onDateClick,
             onWeatherClick = onWeatherClick,
+            onMediaOpenApp = viewModel::mediaOpenApp,
+            onMediaRewind = viewModel::mediaRewind,
+            onMediaPlayPause = viewModel::mediaPlayPause,
+            onMediaForward = viewModel::mediaForward,
             doubleTapEmptyLockEnabled = uiState.doubleTapEmptyLockEnabled,
             onDoubleTapEmptyLock = onDoubleTapEmptyLock,
         )
@@ -216,6 +224,7 @@ fun HomeScreenContent(
     onLabelClick: (FavoriteApp) -> Unit,
     onIconClick: (HomeShortcut) -> Unit,
     modifier: Modifier = Modifier,
+    mediaUiState: HomeMediaUiState = HomeMediaUiState(),
     installedApps: List<AppInfo> = emptyList(),
     onLabelLongPress: (FavoriteApp) -> Unit = {},
     onHomeScreenLongPress: () -> Unit = {},
@@ -223,6 +232,10 @@ fun HomeScreenContent(
     onClockClick: () -> Unit = {},
     onDateClick: () -> Unit = {},
     onWeatherClick: () -> Unit = {},
+    onMediaOpenApp: () -> Unit = {},
+    onMediaRewind: () -> Unit = {},
+    onMediaPlayPause: () -> Unit = {},
+    onMediaForward: () -> Unit = {},
     doubleTapEmptyLockEnabled: Boolean = false,
     onDoubleTapEmptyLock: () -> Unit = {},
 ) {
@@ -262,9 +275,14 @@ fun HomeScreenContent(
                 uiState = uiState,
                 clockUiState = clockUiState,
                 weatherUiState = weatherUiState,
+                mediaUiState = mediaUiState,
                 onClockClick = onClockClick,
                 onDateClick = onDateClick,
                 onWeatherClick = onWeatherClick,
+                onMediaOpenApp = onMediaOpenApp,
+                onMediaRewind = onMediaRewind,
+                onMediaPlayPause = onMediaPlayPause,
+                onMediaForward = onMediaForward,
                 outlined = uiState.usesPhotoWallpaper,
             )
 
@@ -357,9 +375,14 @@ private fun HomeWidgetsSection(
     uiState: HomeUiState,
     clockUiState: HomeClockUiState,
     weatherUiState: HomeWeatherUiState,
+    mediaUiState: HomeMediaUiState,
     onClockClick: () -> Unit,
     onDateClick: () -> Unit,
     onWeatherClick: () -> Unit,
+    onMediaOpenApp: () -> Unit,
+    onMediaRewind: () -> Unit,
+    onMediaPlayPause: () -> Unit,
+    onMediaForward: () -> Unit,
     outlined: Boolean,
 ) {
     val showClock = uiState.showHomeClock
@@ -406,6 +429,24 @@ private fun HomeWidgetsSection(
                         Modifier.fillMaxWidth()
                                 .padding(top = if (showClock) 8.dp else 0.dp)
                                 .testTag("date_battery_row"),
+        )
+    }
+
+    val playback = mediaUiState.playback
+    if (mediaUiState.showWidget && playback != null) {
+        MediaWidget(
+                title = playback.title,
+                artist = playback.artist,
+                isPlaying = playback.isPlaying,
+                canSeek = playback.canSeek,
+                outlined = outlined,
+                onOpenApp = onMediaOpenApp,
+                onRewind = onMediaRewind,
+                onPlayPause = onMediaPlayPause,
+                onForward = onMediaForward,
+                modifier =
+                        Modifier.fillMaxWidth()
+                                .padding(top = if (showDateOrBattery || showClock) 8.dp else 0.dp),
         )
     }
 }
