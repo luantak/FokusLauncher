@@ -8,6 +8,9 @@
     <uses-permission android:name="android.permission.ACCESS_HIDDEN_PROFILES" />
     <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
     <uses-permission android:name="android.permission.SET_WALLPAPER" />
+    <uses-permission
+        android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
 
     <queries>
         <intent>
@@ -21,6 +24,12 @@
         <intent>
             <action android:name="android.intent.action.SHOW_ALARMS" />
         </intent>
+        <intent>
+            <action android:name="android.settings.action.APP_USAGE_SETTINGS" />
+        </intent>
+        <package android:name="com.google.android.apps.wellbeing" />
+        <package android:name="com.samsung.android.forest" />
+        <package android:name="com.samsung.android.sm.usage" />
     </queries>
 
     <application

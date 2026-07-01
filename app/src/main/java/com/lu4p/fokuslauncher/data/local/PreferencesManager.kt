@@ -93,6 +93,7 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         private val SHOW_HOME_BATTERY_KEY = booleanPreferencesKey("show_home_battery")
         /** Opt-in media widget; off by default since no apps are registered yet. */
         private val SHOW_HOME_MEDIA_KEY = booleanPreferencesKey("show_home_media")
+        private val SHOW_HOME_SCREEN_TIME_KEY = booleanPreferencesKey("show_home_screen_time")
         /** Package names of media apps the user registered for the widget to connect to. */
         /** Vertical category sidebar in the drawer instead of chips + search bar. */
         private val DRAWER_SIDEBAR_CATEGORIES_KEY =
@@ -392,6 +393,9 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
 
     val showHomeMediaFlow: Flow<Boolean> = prefFlow(SHOW_HOME_MEDIA_KEY, false)
     suspend fun setShowHomeMedia(show: Boolean) = setPref(SHOW_HOME_MEDIA_KEY, show)
+
+    val showHomeScreenTimeFlow: Flow<Boolean> = prefFlow(SHOW_HOME_SCREEN_TIME_KEY, false)
+    suspend fun setShowHomeScreenTime(show: Boolean) = setPref(SHOW_HOME_SCREEN_TIME_KEY, show)
 
     val homeWidgetVisibilityFlow: Flow<HomeWidgetVisibility> =
             combine(

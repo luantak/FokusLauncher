@@ -1,14 +1,14 @@
-Now-playing media widget on the home screen with play/pause, skip, and like/save controls.
+Now-playing media widget with play/pause, skip, and like/save on home.
 
-New Gold visual style accent option.
+Optional 24h screen-on time under weather; tap opens Digital Wellbeing.
 
 More responsive swipe gestures on home, drawer, and widget pages.
 
-Search all apps when using sidebar category mode.
+Search all apps in sidebar category mode.
 
 Fix unremovable home apps.
 
-Hide Private Space lock/unlock when no Private Space profile is set up.
+Hide Private Space lock when no profile is set up.
 
 Support archived apps.
 

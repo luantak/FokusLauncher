@@ -64,6 +64,7 @@ import com.lu4p.fokuslauncher.ui.components.ClockWidget
 import com.lu4p.fokuslauncher.ui.components.DateBatteryRow
 import com.lu4p.fokuslauncher.ui.components.FokusBottomSheet
 import com.lu4p.fokuslauncher.ui.components.MediaWidget
+import com.lu4p.fokuslauncher.ui.components.ScreenTimeWidget
 import com.lu4p.fokuslauncher.ui.components.FokusOutlinedButton
 import com.lu4p.fokuslauncher.ui.components.LauncherIcon
 import com.lu4p.fokuslauncher.ui.components.MinimalIcons
@@ -91,6 +92,7 @@ fun HomeScreen(
     val clockUiState by viewModel.clockUiState.collectAsStateWithLifecycle()
     val weatherUiState by viewModel.weatherUiState.collectAsStateWithLifecycle()
     val mediaUiState by viewModel.mediaUiState.collectAsStateWithLifecycle()
+    val screenTimeUiState by viewModel.screenTimeUiState.collectAsStateWithLifecycle()
     val favorites by viewModel.favorites.collectAsStateWithLifecycle()
     val rightSideShortcuts by viewModel.rightSideShortcuts.collectAsStateWithLifecycle()
     val allInstalledApps by viewModel.allInstalledApps.collectAsStateWithLifecycle()
@@ -109,6 +111,7 @@ fun HomeScreen(
     val onClockClick = viewModel::openClockApp
     val onDateClick = viewModel::openCalendarApp
     val onWeatherClick = viewModel::openWeatherAppPicker
+    val onScreenTimeClick = viewModel::openDigitalWellbeing
     val onDoubleTapEmptyLock = viewModel::onDoubleTapEmptyLock
 
     LaunchedEffect(viewModel) {
@@ -123,6 +126,7 @@ fun HomeScreen(
         viewModel.refreshDoubleTapLockEffective()
         viewModel.refreshWeather()
         viewModel.refreshMedia()
+        viewModel.refreshScreenTime()
     }
 
     Box(modifier = modifier.fillMaxSize()) {
@@ -131,6 +135,7 @@ fun HomeScreen(
             clockUiState = clockUiState,
             weatherUiState = weatherUiState,
             mediaUiState = mediaUiState,
+            screenTimeUiState = screenTimeUiState,
             favorites = favorites,
             installedApps = allInstalledApps,
             rightSideShortcuts = rightSideShortcuts,
@@ -143,6 +148,7 @@ fun HomeScreen(
             onClockClick = onClockClick,
             onDateClick = onDateClick,
             onWeatherClick = onWeatherClick,
+            onScreenTimeClick = onScreenTimeClick,
             onMediaOpenApp = viewModel::mediaOpenApp,
             onMediaPrevious = viewModel::mediaSkipToPrevious,
             onMediaPlayPause = viewModel::mediaPlayPause,
@@ -227,6 +233,7 @@ fun HomeScreenContent(
     onIconClick: (HomeShortcut) -> Unit,
     modifier: Modifier = Modifier,
     mediaUiState: HomeMediaUiState = HomeMediaUiState(),
+    screenTimeUiState: HomeScreenTimeUiState = HomeScreenTimeUiState(),
     installedApps: List<AppInfo> = emptyList(),
     onLabelLongPress: (FavoriteApp) -> Unit = {},
     onHomeScreenLongPress: () -> Unit = {},
@@ -234,6 +241,7 @@ fun HomeScreenContent(
     onClockClick: () -> Unit = {},
     onDateClick: () -> Unit = {},
     onWeatherClick: () -> Unit = {},
+    onScreenTimeClick: () -> Unit = {},
     onMediaOpenApp: () -> Unit = {},
     onMediaPrevious: () -> Unit = {},
     onMediaPlayPause: () -> Unit = {},
@@ -278,11 +286,13 @@ fun HomeScreenContent(
             HomeWidgetsSection(
                 uiState = uiState,
                 clockUiState = clockUiState,
-                weatherUiState = weatherUiState,
-                mediaUiState = mediaUiState,
-                onClockClick = onClockClick,
+            weatherUiState = weatherUiState,
+            mediaUiState = mediaUiState,
+            screenTimeUiState = screenTimeUiState,
+            onClockClick = onClockClick,
                 onDateClick = onDateClick,
                 onWeatherClick = onWeatherClick,
+                onScreenTimeClick = onScreenTimeClick,
                 onMediaOpenApp = onMediaOpenApp,
                 onMediaPrevious = onMediaPrevious,
                 onMediaPlayPause = onMediaPlayPause,
@@ -322,18 +332,28 @@ fun HomeScreenContent(
     }
 }
 
+@Composable
+private fun rememberTitleMediumRowHeight(extra: Dp = 8.dp): Dp {
+    val density = LocalDensity.current
+    val style = MaterialTheme.typography.titleMedium
+    return remember(density, style, extra) { with(density) { style.fontSize.toDp() } + extra }
+}
+
 /**
  * Clock [TopStart], weather [TopEnd] on the full content width. Baseline-based placement was wrong:
  * the clock’s first baseline sits far below the top, which shoved weather down into the AM/PM
  * cluster. A small top inset on weather matches roughly where [displayLarge] glyphs start.
+ * Screen time sits under weather via [Modifier.offset] so it does not expand the header height.
  */
 @Composable
 private fun HomeClockWeatherHeader(
         clockUiState: HomeClockUiState,
         weatherUiState: HomeWeatherUiState,
+        screenTimeUiState: HomeScreenTimeUiState,
         showWeather: Boolean,
         onClockClick: () -> Unit,
         onWeatherClick: () -> Unit,
+        onScreenTimeClick: () -> Unit,
         outlined: Boolean,
 ) {
     val density = LocalDensity.current
@@ -353,6 +373,10 @@ private fun HomeClockWeatherHeader(
             remember(density.density, density.fontScale, launcherScale) {
                 with(density) { (10f * launcherScale).sp.toDp() } + 8.dp
             }
+    val weatherRowHeight = rememberTitleMediumRowHeight()
+    val weatherTop = weatherTopPad + weatherLowerInset
+    val screenTimeTop =
+            weatherTop + if (showWeather) weatherRowHeight + 4.dp else 0.dp
     Box(modifier = Modifier.fillMaxWidth()) {
         if (showWeather) {
             WeatherWidget(
@@ -363,7 +387,17 @@ private fun HomeClockWeatherHeader(
                     onClick = onWeatherClick,
                     modifier =
                             Modifier.align(Alignment.TopEnd)
-                                    .padding(top = weatherTopPad + weatherLowerInset),
+                                    .padding(top = weatherTop),
+            )
+        }
+        if (screenTimeUiState.showWidget) {
+            ScreenTimeWidget(
+                    durationText = screenTimeUiState.durationText.orEmpty(),
+                    outlined = outlined,
+                    onClick = onScreenTimeClick,
+                    modifier =
+                            Modifier.align(Alignment.TopEnd)
+                                    .offset(y = screenTimeTop),
             )
         }
         ClockWidget(
@@ -382,9 +416,11 @@ private fun HomeWidgetsSection(
     clockUiState: HomeClockUiState,
     weatherUiState: HomeWeatherUiState,
     mediaUiState: HomeMediaUiState,
+    screenTimeUiState: HomeScreenTimeUiState,
     onClockClick: () -> Unit,
     onDateClick: () -> Unit,
     onWeatherClick: () -> Unit,
+    onScreenTimeClick: () -> Unit,
     onMediaOpenApp: () -> Unit,
     onMediaPrevious: () -> Unit,
     onMediaPlayPause: () -> Unit,
@@ -396,31 +432,50 @@ private fun HomeWidgetsSection(
     val showClock = uiState.showHomeClock
     val showWeather = uiState.showHomeWeather && weatherUiState.showWeatherWidget
     val showDateOrBattery = uiState.showHomeDate || uiState.showHomeBattery
+    val weatherRowHeight = rememberTitleMediumRowHeight()
 
     when {
         showClock -> {
             HomeClockWeatherHeader(
                     clockUiState = clockUiState,
                     weatherUiState = weatherUiState,
+                    screenTimeUiState = screenTimeUiState,
                     showWeather = showWeather,
                     onClockClick = onClockClick,
                     onWeatherClick = onWeatherClick,
+                    onScreenTimeClick = onScreenTimeClick,
                     outlined = outlined,
             )
         }
-        showWeather -> {
-            Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically,
-            ) {
-                WeatherWidget(
-                        weather = weatherUiState.weather,
-                        useFahrenheit = weatherUiState.weatherUseFahrenheit,
-                        prominent = false,
-                        outlined = outlined,
-                        onClick = onWeatherClick,
-                )
+        showWeather || screenTimeUiState.showWidget -> {
+            Box(modifier = Modifier.fillMaxWidth()) {
+                if (showWeather) {
+                    WeatherWidget(
+                            weather = weatherUiState.weather,
+                            useFahrenheit = weatherUiState.weatherUseFahrenheit,
+                            prominent = false,
+                            outlined = outlined,
+                            onClick = onWeatherClick,
+                            modifier = Modifier.align(Alignment.TopEnd),
+                    )
+                }
+                if (screenTimeUiState.showWidget) {
+                    ScreenTimeWidget(
+                            durationText = screenTimeUiState.durationText.orEmpty(),
+                            outlined = outlined,
+                            onClick = onScreenTimeClick,
+                            modifier =
+                                    Modifier.align(Alignment.TopEnd)
+                                            .offset(
+                                                    y =
+                                                            if (showWeather) {
+                                                                weatherRowHeight + 4.dp
+                                                            } else {
+                                                                0.dp
+                                                            },
+                                            ),
+                    )
+                }
             }
         }
     }

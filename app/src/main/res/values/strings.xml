@@ -60,6 +60,7 @@
     <string name="shortcut_target_phone">Phone (default dialer)</string>
     <string name="widget_page_shortcut_label">Widget page</string>
     <string name="toast_weather_app_launch_failed">Selected weather app could not be launched</string>
+    <string name="toast_digital_wellbeing_launch_failed">Digital Wellbeing could not be opened</string>
 
     <!-- App & category sheets -->
     <string name="app_name_placeholder">App name</string>
@@ -198,6 +199,9 @@
     <string name="settings_show_home_media">Show media controls</string>
     <string name="settings_show_home_media_subtitle">Now playing with transport controls when audio is active</string>
     <string name="settings_show_home_media_subtitle_grant_access">Requires notification access — turn on to grant in system settings</string>
+    <string name="settings_show_home_screen_time">Show screen time</string>
+    <string name="settings_show_home_screen_time_subtitle">Screen-on time in the past 24 hours</string>
+    <string name="settings_show_home_screen_time_subtitle_grant_access">Requires usage access — turn on to grant in system settings</string>
     <string name="media_notification_listener_label">Fokus now playing</string>
     <!-- Media widget content descriptions -->
     <string name="media_previous_track">Previous track</string>

@@ -253,6 +253,56 @@ class HomeScreenTest {
     }
 
     @Test
+    fun homeScreen_screenTimeWidget_showsLast24HoursTotal() {
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                HomeScreenContent(
+                        uiState = HomeUiState(showHomeWeather = true),
+                        clockUiState = clock(),
+                        weatherUiState =
+                                HomeWeatherUiState(
+                                        weather = WeatherData(temperature = 22, iconCode = "01d"),
+                                        showWeatherWidget = true,
+                                ),
+                        screenTimeUiState =
+                                HomeScreenTimeUiState(
+                                        enabled = true,
+                                        durationText = "4h 32m",
+                                ),
+                        favorites = testFavorites,
+                        rightSideShortcuts = testRightSideShortcuts,
+                        onLabelClick = {},
+                        onLabelLongPress = {},
+                        onIconClick = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("screen_time_widget").assertIsDisplayed()
+        composeTestRule.onNodeWithText("4h 32m").assertIsDisplayed()
+    }
+
+    @Test
+    fun homeScreen_screenTimeWidget_hiddenWhenDisabled() {
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                HomeScreenContent(
+                        uiState = HomeUiState(),
+                        clockUiState = clock(),
+                        screenTimeUiState = HomeScreenTimeUiState(),
+                        favorites = testFavorites,
+                        rightSideShortcuts = testRightSideShortcuts,
+                        onLabelClick = {},
+                        onLabelLongPress = {},
+                        onIconClick = {},
+                )
+            }
+        }
+
+        composeTestRule.onAllNodesWithTag("screen_time_widget").assertCountEquals(0)
+    }
+
+    @Test
     fun homeScreen_hidesAllHomeInfo_whenAllItemTogglesOff() {
         composeTestRule.setContent {
             FokusLauncherTheme {

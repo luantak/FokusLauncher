@@ -28,6 +28,7 @@ import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.data.repository.RemovedApp
 import com.lu4p.fokuslauncher.data.repository.WeatherRepository
 import com.lu4p.fokuslauncher.media.MediaRepository
+import com.lu4p.fokuslauncher.usage.ScreenTimeRepository
 import com.lu4p.fokuslauncher.utils.LockScreenHelper
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -70,6 +71,7 @@ class HomeViewModelTest {
     private lateinit var preferencesManager: PreferencesManager
     private lateinit var weatherRepository: WeatherRepository
     private lateinit var mediaRepository: MediaRepository
+    private lateinit var screenTimeRepository: ScreenTimeRepository
     private lateinit var removedPackages: MutableSharedFlow<RemovedApp>
     private val testDispatcher = StandardTestDispatcher()
     private var originalLocale: Locale = Locale.getDefault()
@@ -92,7 +94,9 @@ class HomeViewModelTest {
         preferencesManager = mockk(relaxed = true)
         weatherRepository = mockk(relaxed = true)
         mediaRepository = mockk(relaxed = true)
+        screenTimeRepository = mockk(relaxed = true)
         every { mediaRepository.state } returns MutableStateFlow(null)
+        every { screenTimeRepository.queryLast24HoursTotalMs() } returns 0L
         removedPackages = MutableSharedFlow(extraBufferCapacity = 1)
 
         // Mock battery intent
@@ -120,6 +124,7 @@ class HomeViewModelTest {
         every { preferencesManager.showHomeWeatherFlow } returns flowOf(true)
         every { preferencesManager.showHomeBatteryFlow } returns flowOf(true)
         every { preferencesManager.showHomeMediaFlow } returns flowOf(false)
+        every { preferencesManager.showHomeScreenTimeFlow } returns flowOf(false)
         every { preferencesManager.homeDateFormatStyleFlow } returns
                 flowOf(HomeDateFormatStyle.SYSTEM_DEFAULT)
         every { preferencesManager.doubleTapEmptyLockFlow } returns flowOf(false)
@@ -142,11 +147,11 @@ class HomeViewModelTest {
     }
 
     private fun createViewModel() = HomeViewModel(
-        context, appRepository, preferencesManager, weatherRepository, mediaRepository
+        context, appRepository, preferencesManager, weatherRepository, mediaRepository, screenTimeRepository
     )
 
     private fun createViewModel(withContext: Context) = HomeViewModel(
-        withContext, appRepository, preferencesManager, weatherRepository, mediaRepository
+        withContext, appRepository, preferencesManager, weatherRepository, mediaRepository, screenTimeRepository
     )
 
     /**

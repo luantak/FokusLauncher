@@ -46,6 +46,10 @@ import com.lu4p.fokuslauncher.data.repository.WeatherRepository
 import com.lu4p.fokuslauncher.media.MediaNotificationHelper
 import com.lu4p.fokuslauncher.media.MediaPlaybackUiState
 import com.lu4p.fokuslauncher.media.MediaRepository
+import com.lu4p.fokuslauncher.usage.DigitalWellbeingHelper
+import com.lu4p.fokuslauncher.usage.ScreenTimeRepository
+import com.lu4p.fokuslauncher.usage.UsageStatsHelper
+import com.lu4p.fokuslauncher.usage.formatScreenTimeDuration
 import com.lu4p.fokuslauncher.utils.LockScreenHelper
 import com.lu4p.fokuslauncher.utils.registerBroadcastReceiverNotExported
 import com.lu4p.fokuslauncher.utils.registerStickyBroadcastReceiverNotExported
@@ -123,13 +127,24 @@ data class HomeMediaUiState(
         get() = enabled && playback != null
 }
 
+data class HomeScreenTimeUiState(
+    /** User preference; the widget is opt-in and off by default. */
+    val enabled: Boolean = false,
+    /** Formatted rolling 24-hour total, or null when usage access is missing. */
+    val durationText: String? = null,
+) {
+    val showWidget: Boolean
+        get() = enabled && durationText != null
+}
+
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val appRepository: AppRepository,
     private val preferencesManager: PreferencesManager,
     private val weatherRepository: WeatherRepository,
-    private val mediaRepository: MediaRepository
+    private val mediaRepository: MediaRepository,
+    private val screenTimeRepository: ScreenTimeRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -147,6 +162,9 @@ class HomeViewModel @Inject constructor(
 
     private val _mediaUiState = MutableStateFlow(HomeMediaUiState())
     val mediaUiState: StateFlow<HomeMediaUiState> = _mediaUiState.asStateFlow()
+
+    private val _screenTimeUiState = MutableStateFlow(HomeScreenTimeUiState())
+    val screenTimeUiState: StateFlow<HomeScreenTimeUiState> = _screenTimeUiState.asStateFlow()
 
     /** Serializes home app-list refresh so concurrent loads cannot race and prune favorites. */
     private val installedAppsRefreshMutex = Mutex()
@@ -248,6 +266,7 @@ class HomeViewModel @Inject constructor(
             preferencesManager.preferredCalendarTapFlow.stateEagerlyIn(viewModelScope, null)
 
     private var weatherTickerJob: Job? = null
+    private var screenTimeTickerJob: Job? = null
 
     private val batteryChangedReceiver = object : BroadcastReceiver() {
         override fun onReceive(ctx: Context?, intent: Intent?) {
@@ -293,6 +312,7 @@ class HomeViewModel @Inject constructor(
         observeHomeWidgetItemPreferences()
         observeWeatherRefreshTriggers()
         observeMedia()
+        observeScreenTime()
         observeDoubleTapEmptyLock()
         checkDefaultLauncher()
         refreshInstalledApps(includeShortcuts = true)
@@ -311,6 +331,7 @@ class HomeViewModel @Inject constructor(
             }
         }
         weatherTickerJob?.cancel()
+        screenTimeTickerJob?.cancel()
         mediaRepository.stop()
         super.onCleared()
     }
@@ -875,6 +896,72 @@ class HomeViewModel @Inject constructor(
     fun mediaLike() = mediaRepository.invokeLikeAction()
 
     fun mediaSave() = mediaRepository.invokeSaveAction()
+
+    // ── Screen time widget ──────────────────────────────────────────
+
+    private var screenTimeEnabled = false
+
+    private fun observeScreenTime() {
+        observeFlow(preferencesManager.showHomeScreenTimeFlow) { enabled ->
+            if (!enabled) {
+                screenTimeEnabled = false
+                stopScreenTimeTicker()
+                _screenTimeUiState.value = HomeScreenTimeUiState()
+            } else {
+                refreshScreenTime(startTickerIfEnabled = true)
+            }
+        }
+    }
+
+    fun refreshScreenTime(startTickerIfEnabled: Boolean = false) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val prefEnabled = preferencesManager.showHomeScreenTimeFlow.first()
+            if (!prefEnabled) {
+                screenTimeEnabled = false
+                _screenTimeUiState.value = HomeScreenTimeUiState()
+                return@launch
+            }
+            screenTimeEnabled = UsageStatsHelper.hasUsageAccess(context)
+            if (!screenTimeEnabled) {
+                _screenTimeUiState.value = HomeScreenTimeUiState()
+                stopScreenTimeTicker()
+                return@launch
+            }
+            val totalMs = screenTimeRepository.queryLast24HoursTotalMs() ?: 0L
+            _screenTimeUiState.value =
+                    HomeScreenTimeUiState(
+                            enabled = true,
+                            durationText = formatScreenTimeDuration(totalMs),
+                    )
+            if (startTickerIfEnabled) startScreenTimeTicker()
+        }
+    }
+
+    fun openDigitalWellbeing() {
+        if (!DigitalWellbeingHelper.openDashboard(context)) {
+            Toast.makeText(
+                            context,
+                            context.getString(R.string.toast_digital_wellbeing_launch_failed),
+                            Toast.LENGTH_SHORT,
+                    )
+                    .show()
+        }
+    }
+
+    private fun startScreenTimeTicker() {
+        if (screenTimeTickerJob?.isActive == true) return
+        screenTimeTickerJob = viewModelScope.launch(Dispatchers.IO) {
+            while (true) {
+                delay(15 * 60 * 1000L)
+                refreshScreenTime()
+            }
+        }
+    }
+
+    private fun stopScreenTimeTicker() {
+        screenTimeTickerJob?.cancel()
+        screenTimeTickerJob = null
+    }
 
     private fun observeCategoryOptions() {
         observeFlow(

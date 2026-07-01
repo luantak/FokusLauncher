@@ -87,6 +87,7 @@ data class SettingsUiState(
         val showHomeWeather: Boolean = true,
         val showHomeBattery: Boolean = true,
         val showHomeMedia: Boolean = false,
+        val showHomeScreenTime: Boolean = false,
         val homeDateFormatStyle: HomeDateFormatStyle = HomeDateFormatStyle.SYSTEM_DEFAULT,
         val temperatureUnit: TemperatureUnit = TemperatureUnit.SYSTEM_DEFAULT,
         /** Vertical category sidebar in the app drawer. */
@@ -245,7 +246,8 @@ constructor(
                     combine(
                             preferencesManager.homeWidgetVisibilityFlow,
                             preferencesManager.showHomeMediaFlow,
-                    ) { vis, showMedia -> vis to showMedia }
+                            preferencesManager.showHomeScreenTimeFlow,
+                    ) { vis, showMedia, showScreenTime -> Triple(vis, showMedia, showScreenTime) }
             val homeWidgetItemsFlow =
                     combine(
                             visibilityAndMediaFlow,
@@ -253,13 +255,14 @@ constructor(
                             preferencesManager.preferredCalendarTapFlow,
                             preferencesManager.homeDateFormatStyleFlow,
                             preferencesManager.temperatureUnitFlow,
-                    ) { (vis, showMedia), clk, cal, fmt, tempUnit ->
+                    ) { (vis, showMedia, showScreenTime), clk, cal, fmt, tempUnit ->
                         HomeWidgetItemSettings(
                                 showClock = vis.showClock,
                                 showDate = vis.showDate,
                                 showWeather = vis.showWeather,
                                 showBattery = vis.showBattery,
                                 showMedia = showMedia,
+                                showScreenTime = showScreenTime,
                                 preferredClockTap = clk,
                                 preferredCalendarTap = cal,
                                 homeDateFormatStyle = fmt,
@@ -458,6 +461,7 @@ constructor(
                         showHomeWeather = homeWidgetItems.showWeather,
                         showHomeBattery = homeWidgetItems.showBattery,
                         showHomeMedia = homeWidgetItems.showMedia,
+                        showHomeScreenTime = homeWidgetItems.showScreenTime,
                         homeDateFormatStyle = homeWidgetItems.homeDateFormatStyle,
                         temperatureUnit = homeWidgetItems.temperatureUnit,
                         drawerSidebarCategories = drawer.drawerSidebarCategories,
@@ -497,6 +501,7 @@ constructor(
             val showWeather: Boolean,
             val showBattery: Boolean,
             val showMedia: Boolean,
+            val showScreenTime: Boolean,
             val preferredClockTap: WidgetTapTarget?,
             val preferredCalendarTap: WidgetTapTarget?,
             val homeDateFormatStyle: HomeDateFormatStyle,
@@ -835,6 +840,8 @@ constructor(
     fun setShowHomeBattery(show: Boolean) = launchPreferences { setShowHomeBattery(show) }
 
     fun setShowHomeMedia(show: Boolean) = launchPreferences { setShowHomeMedia(show) }
+
+    fun setShowHomeScreenTime(show: Boolean) = launchPreferences { setShowHomeScreenTime(show) }
 
     fun setHomeDateFormatStyle(style: HomeDateFormatStyle) =
             launchPreferences { setHomeDateFormatStyle(style) }

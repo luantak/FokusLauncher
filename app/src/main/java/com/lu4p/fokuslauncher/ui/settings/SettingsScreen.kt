@@ -50,6 +50,7 @@ import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Translate
 import com.lu4p.fokuslauncher.media.MediaNotificationHelper
+import com.lu4p.fokuslauncher.usage.UsageStatsHelper
 import com.lu4p.fokuslauncher.ui.components.FokusAlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -880,18 +881,33 @@ fun HomeWidgetsSettingsScreen(
 
     var mediaNotificationAccessTick by remember { mutableIntStateOf(0) }
     var pendingMediaEnable by remember { mutableStateOf(false) }
+    var usageAccessTick by remember { mutableIntStateOf(0) }
+    var pendingScreenTimeEnable by remember { mutableStateOf(false) }
     val lifecycleOwner = LocalLifecycleOwner.current
-    OnResumeEffect(lifecycleOwner) { mediaNotificationAccessTick++ }
+    OnResumeEffect(lifecycleOwner) {
+        mediaNotificationAccessTick++
+        usageAccessTick++
+    }
     val mediaNotificationAccessEnabled =
             remember(mediaNotificationAccessTick) {
                 MediaNotificationHelper.isListenerEnabled(context)
             }
+    val usageAccessEnabled =
+            remember(usageAccessTick) { UsageStatsHelper.hasUsageAccess(context) }
     LaunchedEffect(mediaNotificationAccessTick, uiState.showHomeMedia, pendingMediaEnable) {
         if (pendingMediaEnable && mediaNotificationAccessEnabled) {
             pendingMediaEnable = false
             viewModel.setShowHomeMedia(true)
         } else if (uiState.showHomeMedia && !mediaNotificationAccessEnabled) {
             viewModel.setShowHomeMedia(false)
+        }
+    }
+    LaunchedEffect(usageAccessTick, uiState.showHomeScreenTime, pendingScreenTimeEnable) {
+        if (pendingScreenTimeEnable && usageAccessEnabled) {
+            pendingScreenTimeEnable = false
+            viewModel.setShowHomeScreenTime(true)
+        } else if (uiState.showHomeScreenTime && !usageAccessEnabled) {
+            viewModel.setShowHomeScreenTime(false)
         }
     }
 
@@ -939,6 +955,44 @@ fun HomeWidgetsSettingsScreen(
             items(
                     listOf(
                             Triple(R.string.settings_show_home_weather, uiState.showHomeWeather, viewModel::setShowHomeWeather),
+                    ),
+                    key = { it.first },
+            ) { (labelRes, checked, onChange) ->
+                SettingsToggleRow(
+                        label = stringResource(labelRes),
+                        checked = checked,
+                        onCheckedChange = onChange,
+                )
+            }
+            item {
+                SettingsToggleRow(
+                        label = stringResource(R.string.settings_show_home_screen_time),
+                        subtitle =
+                                if (usageAccessEnabled) {
+                                    stringResource(R.string.settings_show_home_screen_time_subtitle)
+                                } else {
+                                    stringResource(
+                                            R.string.settings_show_home_screen_time_subtitle_grant_access
+                                    )
+                                },
+                        checked = uiState.showHomeScreenTime,
+                        onCheckedChange = { checked ->
+                            if (checked) {
+                                if (usageAccessEnabled) {
+                                    viewModel.setShowHomeScreenTime(true)
+                                } else {
+                                    pendingScreenTimeEnable = true
+                                    UsageStatsHelper.openUsageAccessSettings(context)
+                                }
+                            } else {
+                                pendingScreenTimeEnable = false
+                                viewModel.setShowHomeScreenTime(false)
+                            }
+                        },
+                )
+            }
+            items(
+                    listOf(
                             Triple(R.string.settings_show_home_battery, uiState.showHomeBattery, viewModel::setShowHomeBattery),
                     ),
                     key = { it.first },
