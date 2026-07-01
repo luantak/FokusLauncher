@@ -1,0 +1,15 @@
+Now-playing media widget on the home screen with play/pause, skip, and like/save controls.
+
+New Gold visual style accent option.
+
+More responsive swipe gestures on home, drawer, and widget pages.
+
+Search all apps when using sidebar category mode.
+
+Fix unremovable home apps.
+
+Hide Private Space lock/unlock when no Private Space profile is set up.
+
+Support archived apps.
+
+Updated Basque, Finnish, French, Hungarian, Italian, Polish, Russian, and Turkish via Weblate. Thanks to everyone who contributed.
