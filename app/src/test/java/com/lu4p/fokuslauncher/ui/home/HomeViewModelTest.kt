@@ -120,7 +120,6 @@ class HomeViewModelTest {
         every { preferencesManager.showHomeWeatherFlow } returns flowOf(true)
         every { preferencesManager.showHomeBatteryFlow } returns flowOf(true)
         every { preferencesManager.showHomeMediaFlow } returns flowOf(false)
-        every { preferencesManager.registeredMediaAppsFlow } returns flowOf(emptySet())
         every { preferencesManager.homeDateFormatStyleFlow } returns
                 flowOf(HomeDateFormatStyle.SYSTEM_DEFAULT)
         every { preferencesManager.doubleTapEmptyLockFlow } returns flowOf(false)

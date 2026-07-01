@@ -43,6 +43,7 @@ import com.lu4p.fokuslauncher.data.model.WidgetTapTarget
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.data.repository.WeatherRepository
+import com.lu4p.fokuslauncher.media.MediaNotificationHelper
 import com.lu4p.fokuslauncher.media.MediaPlaybackUiState
 import com.lu4p.fokuslauncher.media.MediaRepository
 import com.lu4p.fokuslauncher.utils.LockScreenHelper
@@ -822,37 +823,35 @@ class HomeViewModel @Inject constructor(
     // ── Media widget ────────────────────────────────────────────────
 
     private var mediaEnabled = false
-    private var registeredMediaApps: Set<String> = emptySet()
-
     private fun observeMedia() {
-        observeFlow(
-                combine(
-                        preferencesManager.showHomeMediaFlow,
-                        preferencesManager.registeredMediaAppsFlow,
-                ) { enabled, apps -> enabled to apps }
-        ) { (enabled, apps) ->
-            mediaEnabled = enabled
-            registeredMediaApps = apps
-            _mediaUiState.value = _mediaUiState.value.copy(enabled = enabled)
-            if (enabled) mediaRepository.setRegisteredApps(apps) else mediaRepository.stop()
+        observeFlow(preferencesManager.showHomeMediaFlow) { enabled ->
+            mediaEnabled = enabled && MediaNotificationHelper.isListenerEnabled(context)
+            _mediaUiState.value = _mediaUiState.value.copy(enabled = mediaEnabled)
+            mediaRepository.setWidgetEnabled(mediaEnabled)
         }
         observeFlow(mediaRepository.state) { playback ->
             _mediaUiState.value = _mediaUiState.value.copy(playback = playback)
         }
     }
 
-    /** Re-applies registered apps on resume so newly added apps connect promptly. */
+    /** Re-reads active sessions on resume so newly started playback appears promptly. */
     fun refreshMedia() {
-        if (mediaEnabled) mediaRepository.setRegisteredApps(registeredMediaApps)
+        if (mediaEnabled) {
+            mediaRepository.refreshNotificationSessions()
+        }
     }
 
     fun mediaOpenApp() = mediaRepository.openMediaApp()
 
     fun mediaPlayPause() = mediaRepository.playPause()
 
-    fun mediaRewind() = mediaRepository.rewind()
+    fun mediaSkipToPrevious() = mediaRepository.skipToPrevious()
 
-    fun mediaForward() = mediaRepository.forward()
+    fun mediaSkipToNext() = mediaRepository.skipToNext()
+
+    fun mediaLike() = mediaRepository.invokeLikeAction()
+
+    fun mediaSave() = mediaRepository.invokeSaveAction()
 
     private fun observeCategoryOptions() {
         observeFlow(

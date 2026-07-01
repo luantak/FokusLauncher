@@ -49,7 +49,7 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Translate
-import com.lu4p.fokuslauncher.media.MediaAppInfo
+import com.lu4p.fokuslauncher.media.MediaNotificationHelper
 import com.lu4p.fokuslauncher.ui.components.FokusAlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -855,12 +855,22 @@ fun HomeWidgetsSettingsScreen(
     val (hasCoarseLocationPermission, requestCoarseLocation) =
             rememberCoarseLocationPermission(context, activity)
 
-    var showMediaAppPicker by remember { mutableStateOf(false) }
-    // Discovery touches PackageManager, so only run it while the picker is open.
-    val discoveredMediaApps =
-            remember(showMediaAppPicker) {
-                if (showMediaAppPicker) viewModel.discoverMediaApps() else emptyList()
+    var mediaNotificationAccessTick by remember { mutableIntStateOf(0) }
+    var pendingMediaEnable by remember { mutableStateOf(false) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    OnResumeEffect(lifecycleOwner) { mediaNotificationAccessTick++ }
+    val mediaNotificationAccessEnabled =
+            remember(mediaNotificationAccessTick) {
+                MediaNotificationHelper.isListenerEnabled(context)
             }
+    LaunchedEffect(mediaNotificationAccessTick, uiState.showHomeMedia, pendingMediaEnable) {
+        if (pendingMediaEnable && mediaNotificationAccessEnabled) {
+            pendingMediaEnable = false
+            viewModel.setShowHomeMedia(true)
+        } else if (uiState.showHomeMedia && !mediaNotificationAccessEnabled) {
+            viewModel.setShowHomeMedia(false)
+        }
+    }
 
     Column(
             modifier =
@@ -919,29 +929,27 @@ fun HomeWidgetsSettingsScreen(
             item {
                 SettingsToggleRow(
                         label = stringResource(R.string.settings_show_home_media),
-                        subtitle = stringResource(R.string.settings_show_home_media_subtitle),
+                        subtitle =
+                                if (mediaNotificationAccessEnabled) {
+                                    stringResource(R.string.settings_show_home_media_subtitle)
+                                } else {
+                                    stringResource(R.string.settings_show_home_media_subtitle_grant_access)
+                                },
                         checked = uiState.showHomeMedia,
-                        onCheckedChange = viewModel::setShowHomeMedia,
+                        onCheckedChange = { checked ->
+                            if (checked) {
+                                if (mediaNotificationAccessEnabled) {
+                                    viewModel.setShowHomeMedia(true)
+                                } else {
+                                    pendingMediaEnable = true
+                                    MediaNotificationHelper.openListenerSettings(context)
+                                }
+                            } else {
+                                pendingMediaEnable = false
+                                viewModel.setShowHomeMedia(false)
+                            }
+                        },
                 )
-            }
-            if (uiState.showHomeMedia) {
-                item {
-                    val count = uiState.registeredMediaApps.size
-                    SettingsRow(
-                            label = stringResource(R.string.settings_media_apps),
-                            subtitle =
-                                    if (count == 0) {
-                                        stringResource(R.string.settings_media_apps_none)
-                                    } else {
-                                        pluralStringResource(
-                                                R.plurals.settings_media_apps_count,
-                                                count,
-                                                count,
-                                        )
-                                    },
-                            onClick = { showMediaAppPicker = true },
-                    )
-                }
             }
             item { SettingsDivider() }
             item {
@@ -1009,66 +1017,6 @@ fun HomeWidgetsSettingsScreen(
                 profileDisplayNameOverrides = uiState.profileDisplayNameOverrides,
         )
     }
-
-    if (showMediaAppPicker) {
-        MediaAppsPickerDialog(
-                apps = discoveredMediaApps,
-                registered = uiState.registeredMediaApps,
-                onToggle = { packageName, checked ->
-                    val next =
-                            if (checked) uiState.registeredMediaApps + packageName
-                            else uiState.registeredMediaApps - packageName
-                    viewModel.setRegisteredMediaApps(next)
-                },
-                onDismiss = { showMediaAppPicker = false },
-        )
-    }
-}
-
-/** Multi-select checklist of installed media apps the widget can connect to. */
-@Composable
-private fun MediaAppsPickerDialog(
-        apps: List<MediaAppInfo>,
-        registered: Set<String>,
-        onToggle: (String, Boolean) -> Unit,
-        onDismiss: () -> Unit,
-) {
-    FokusAlertDialog(
-            onDismissRequest = onDismiss,
-            title = {
-                Text(
-                        stringResource(R.string.settings_media_apps_picker_title),
-                        color = MaterialTheme.colorScheme.onBackground,
-                )
-            },
-            text = {
-                if (apps.isEmpty()) {
-                    Text(
-                            stringResource(R.string.settings_media_apps_empty),
-                            color = MaterialTheme.colorScheme.onBackground,
-                    )
-                } else {
-                    Column(
-                            modifier =
-                                    Modifier.heightIn(max = 360.dp)
-                                            .verticalScroll(rememberScrollState())
-                    ) {
-                        apps.forEach { app ->
-                            SettingsToggleRow(
-                                    label = app.label,
-                                    checked = app.packageName in registered,
-                                    onCheckedChange = { onToggle(app.packageName, it) },
-                            )
-                        }
-                    }
-                }
-            },
-            dismissButton = {
-                FokusTextButton(onClick = onDismiss) {
-                    Text(stringResource(R.string.action_done))
-                }
-            },
-    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

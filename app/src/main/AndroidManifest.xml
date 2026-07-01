@@ -21,10 +21,6 @@
         <intent>
             <action android:name="android.intent.action.SHOW_ALARMS" />
         </intent>
-        <!-- Discover media apps exposing a browser service for the registered-apps media widget. -->
-        <intent>
-            <action android:name="android.media.browse.MediaBrowserService" />
-        </intent>
     </queries>
 
     <application
@@ -52,6 +48,16 @@
             <meta-data
                 android:name="android.accessibilityservice"
                 android:resource="@xml/lock_screen_accessibility_config" />
+        </service>
+
+        <service
+            android:name=".media.MediaNotificationListenerService"
+            android:exported="true"
+            android:label="@string/media_notification_listener_label"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
         </service>
 
         <receiver

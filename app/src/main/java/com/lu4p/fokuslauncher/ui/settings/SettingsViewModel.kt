@@ -33,8 +33,6 @@ import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.model.WidgetTapTarget
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.data.util.AppLocaleHelper
-import com.lu4p.fokuslauncher.media.MediaAppInfo
-import com.lu4p.fokuslauncher.media.MediaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import android.app.WallpaperManager
 import android.content.ClipData
@@ -87,7 +85,6 @@ data class SettingsUiState(
         val showHomeWeather: Boolean = true,
         val showHomeBattery: Boolean = true,
         val showHomeMedia: Boolean = false,
-        val registeredMediaApps: Set<String> = emptySet(),
         val homeDateFormatStyle: HomeDateFormatStyle = HomeDateFormatStyle.SYSTEM_DEFAULT,
         val temperatureUnit: TemperatureUnit = TemperatureUnit.SYSTEM_DEFAULT,
         /** Vertical category sidebar in the app drawer. */
@@ -161,7 +158,6 @@ constructor(
         private val preferencesManager: PreferencesManager,
         private val privateSpaceManager: PrivateSpaceManager,
         private val customFontStore: CustomFontStore,
-        private val mediaRepository: MediaRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -235,14 +231,11 @@ constructor(
                                 suppressedCategories = suppressed,
                         )
                     }
-            // Media visibility and registered apps are bundled with the widget-visibility flow to
-            // stay within the five-argument combine; all feed the same HomeWidgetItemSettings.
             val visibilityAndMediaFlow =
                     combine(
                             preferencesManager.homeWidgetVisibilityFlow,
                             preferencesManager.showHomeMediaFlow,
-                            preferencesManager.registeredMediaAppsFlow,
-                    ) { vis, showMedia, apps -> Triple(vis, showMedia, apps) }
+                    ) { vis, showMedia -> vis to showMedia }
             val homeWidgetItemsFlow =
                     combine(
                             visibilityAndMediaFlow,
@@ -250,14 +243,13 @@ constructor(
                             preferencesManager.preferredCalendarTapFlow,
                             preferencesManager.homeDateFormatStyleFlow,
                             preferencesManager.temperatureUnitFlow,
-                    ) { (vis, showMedia, mediaApps), clk, cal, fmt, tempUnit ->
+                    ) { (vis, showMedia), clk, cal, fmt, tempUnit ->
                         HomeWidgetItemSettings(
                                 showClock = vis.showClock,
                                 showDate = vis.showDate,
                                 showWeather = vis.showWeather,
                                 showBattery = vis.showBattery,
                                 showMedia = showMedia,
-                                registeredMediaApps = mediaApps,
                                 preferredClockTap = clk,
                                 preferredCalendarTap = cal,
                                 homeDateFormatStyle = fmt,
@@ -443,7 +435,6 @@ constructor(
                         showHomeWeather = homeWidgetItems.showWeather,
                         showHomeBattery = homeWidgetItems.showBattery,
                         showHomeMedia = homeWidgetItems.showMedia,
-                        registeredMediaApps = homeWidgetItems.registeredMediaApps,
                         homeDateFormatStyle = homeWidgetItems.homeDateFormatStyle,
                         temperatureUnit = homeWidgetItems.temperatureUnit,
                         drawerSidebarCategories = drawer.drawerSidebarCategories,
@@ -483,7 +474,6 @@ constructor(
             val showWeather: Boolean,
             val showBattery: Boolean,
             val showMedia: Boolean,
-            val registeredMediaApps: Set<String>,
             val preferredClockTap: WidgetTapTarget?,
             val preferredCalendarTap: WidgetTapTarget?,
             val homeDateFormatStyle: HomeDateFormatStyle,
@@ -791,12 +781,6 @@ constructor(
     fun setShowHomeBattery(show: Boolean) = launchPreferences { setShowHomeBattery(show) }
 
     fun setShowHomeMedia(show: Boolean) = launchPreferences { setShowHomeMedia(show) }
-
-    fun setRegisteredMediaApps(packages: Set<String>) =
-            launchPreferences { setRegisteredMediaApps(packages) }
-
-    /** Installed apps exposing a connectable media browser service, for the registration picker. */
-    fun discoverMediaApps(): List<MediaAppInfo> = mediaRepository.discoverMediaApps()
 
     fun setHomeDateFormatStyle(style: HomeDateFormatStyle) =
             launchPreferences { setHomeDateFormatStyle(style) }

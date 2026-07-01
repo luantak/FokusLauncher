@@ -94,7 +94,6 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         /** Opt-in media widget; off by default since no apps are registered yet. */
         private val SHOW_HOME_MEDIA_KEY = booleanPreferencesKey("show_home_media")
         /** Package names of media apps the user registered for the widget to connect to. */
-        private val REGISTERED_MEDIA_APPS_KEY = stringSetPreferencesKey("registered_media_apps")
         /** Vertical category sidebar in the drawer instead of chips + search bar. */
         private val DRAWER_SIDEBAR_CATEGORIES_KEY =
                 booleanPreferencesKey("drawer_sidebar_categories")
@@ -394,11 +393,6 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
 
     val showHomeMediaFlow: Flow<Boolean> = prefFlow(SHOW_HOME_MEDIA_KEY, false)
     suspend fun setShowHomeMedia(show: Boolean) = setPref(SHOW_HOME_MEDIA_KEY, show)
-
-    val registeredMediaAppsFlow: Flow<Set<String>> =
-            prefFlow(REGISTERED_MEDIA_APPS_KEY, emptySet())
-    suspend fun setRegisteredMediaApps(packages: Set<String>) =
-            setPref(REGISTERED_MEDIA_APPS_KEY, packages)
 
     val homeWidgetVisibilityFlow: Flow<HomeWidgetVisibility> =
             combine(

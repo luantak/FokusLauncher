@@ -195,20 +195,19 @@
     <string name="settings_show_home_weather">Show weather</string>
     <string name="settings_show_home_battery">Show battery level</string>
     <string name="settings_show_home_media">Show media controls</string>
-    <string name="settings_show_home_media_subtitle">A now-playing line with rewind, play/pause and forward, shown when audio is playing</string>
-    <string name="settings_media_apps">Media apps</string>
-    <string name="settings_media_apps_none">Tap to choose which apps to control</string>
-    <string name="settings_media_apps_picker_title">Choose media apps</string>
-    <string name="settings_media_apps_empty">No compatible media apps found. Apps must allow other apps to connect.</string>
-    <plurals name="settings_media_apps_count">
-        <item quantity="one">%d app</item>
-        <item quantity="other">%d apps</item>
-    </plurals>
+    <string name="settings_show_home_media_subtitle">Now playing with transport controls when audio is active</string>
+    <string name="settings_show_home_media_subtitle_grant_access">Requires notification access — turn on to grant in system settings</string>
+    <string name="media_notification_listener_label">Fokus now playing</string>
     <!-- Media widget content descriptions -->
-    <string name="media_rewind_15">Rewind 15 seconds</string>
+    <string name="media_previous_track">Previous track</string>
     <string name="media_play">Play</string>
     <string name="media_pause">Pause</string>
-    <string name="media_forward_30">Forward 30 seconds</string>
+    <string name="media_buffering">Buffering</string>
+    <string name="media_next_track">Next track</string>
+    <string name="media_like">Like</string>
+    <string name="media_unlike">Unlike</string>
+    <string name="media_save">Save to library</string>
+    <string name="media_unsave">Remove from library</string>
     <string name="settings_widget_clock_app">Clock app</string>
     <string name="settings_widget_calendar_app">Calendar app</string>
     <string name="settings_double_tap_to_lock">Double tap to lock</string>

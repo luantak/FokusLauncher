@@ -5,13 +5,14 @@ import android.app.PendingIntent
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.os.Handler
+import android.media.session.MediaController
+import android.media.session.MediaSessionManager
 import android.os.Build
+import android.os.Bundle
+import android.os.Handler
 import android.os.Looper
-import android.os.SystemClock
-import android.support.v4.media.MediaBrowserCompat
-import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaControllerCompat
+import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import androidx.annotation.MainThread
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -21,24 +22,25 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-/** An installed app that exposes a MediaBrowserService we can attempt to connect to. */
-data class MediaAppInfo(val packageName: String, val label: String)
-
 /** Now-playing snapshot for the home media widget; null when nothing is actively playing. */
 data class MediaPlaybackUiState(
         val title: String,
         val artist: String?,
+        /** True for [PlaybackStateCompat.STATE_PLAYING] and [PlaybackStateCompat.STATE_BUFFERING]. */
         val isPlaying: Boolean,
-        /** False when the active app does not advertise [PlaybackStateCompat.ACTION_SEEK_TO]. */
-        val canSeek: Boolean,
+        val isBuffering: Boolean = false,
+        /** False when the active app does not advertise [PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS]. */
+        val canSkipToPrevious: Boolean,
+        /** False when the active app does not advertise [PlaybackStateCompat.ACTION_SKIP_TO_NEXT]. */
+        val canSkipToNext: Boolean,
+        val like: MediaCustomActionButton? = null,
+        val save: MediaCustomActionButton? = null,
 )
 
 /**
  * Surfaces the now-playing session for user-registered media apps and forwards transport controls
- * to them. Unlike a notification listener, this connects directly to each app's MediaBrowserService
- * via [MediaBrowserCompat], so it needs no special permission — but an app only appears if it allows
- * outside connections (its `onGetRoot` accepts us). Apps that whitelist only system callers (some
- * mainstream players) simply never connect, which is why registration is per-app and opt-in.
+ * to them via notification access ([MediaNotificationListenerService] +
+ * [MediaSessionManager.getActiveSessions]).
  *
  * All session interaction happens on the main thread.
  */
@@ -50,48 +52,104 @@ class MediaRepository @Inject constructor(@param:ApplicationContext private val 
     private val _state = MutableStateFlow<MediaPlaybackUiState?>(null)
     val state: StateFlow<MediaPlaybackUiState?> = _state.asStateFlow()
 
-    /** Live connections keyed by package name. */
-    private val connections = LinkedHashMap<String, AppConnection>()
+    /** Session controllers from notification access, keyed by package name. */
+    private val sessionControllers = LinkedHashMap<String, MediaControllerCompat>()
+
+    private var widgetEnabled = false
+    private var listenerComponent: ComponentName? = null
+    private var sessionsListener: MediaSessionManager.OnActiveSessionsChangedListener? = null
 
     /** True once a session has stayed paused past the grace period, so the widget hides until it
      *  plays again. Many apps leave a paused session alive after they're closed; this clears it up. */
     private var pausedGraceExpired = false
     private var hideScheduled = false
+    private var optimisticToggle: OptimisticCustomActionToggle? = null
     private val hideRunnable = Runnable {
         hideScheduled = false
         pausedGraceExpired = true
         publishState()
     }
 
-    /** Installed apps advertising a MediaBrowserService, for the registration picker. */
-    fun discoverMediaApps(): List<MediaAppInfo> {
-        val pm = context.packageManager
-        return pm.queryIntentServices(Intent(SERVICE_INTERFACE), 0)
-                .mapNotNull { it.serviceInfo }
-                .filter { it.packageName != context.packageName }
-                .distinctBy { it.packageName }
-                .map { MediaAppInfo(it.packageName, it.loadLabel(pm).toString()) }
-                .sortedBy { it.label.lowercase() }
-    }
+    private val sessionCallback =
+            object : MediaControllerCompat.Callback() {
+                override fun onPlaybackStateChanged(state: PlaybackStateCompat?) = publishState()
 
-    /** Reconcile live connections with the registered set: drop removed apps, connect new ones. */
+                override fun onMetadataChanged(metadata: android.support.v4.media.MediaMetadataCompat?) =
+                        publishState()
+
+                override fun onSessionDestroyed() {
+                    refreshNotificationSessions()
+                }
+            }
+
+    /** Enable or disable the home media widget; requires notification access when enabling. */
     @MainThread
-    fun setRegisteredApps(packages: Set<String>) {
-        (connections.keys - packages).toList().forEach { disconnect(it) }
-        (packages - connections.keys).forEach { connect(it) }
+    fun setWidgetEnabled(enabled: Boolean) {
+        widgetEnabled = enabled
+        if (!enabled || !MediaNotificationHelper.isListenerEnabled(context)) {
+            resetPauseGrace()
+            optimisticToggle = null
+            _state.value = null
+            return
+        }
+        refreshNotificationSessions()
         publishState()
     }
 
     @MainThread
     fun stop() {
-        connections.keys.toList().forEach { disconnect(it) }
-        resetPauseGrace()
-        _state.value = null
+        setWidgetEnabled(false)
+    }
+
+    @MainThread
+    fun onNotificationListenerConnected(component: ComponentName) {
+        listenerComponent = component
+        val manager = context.getSystemService(MediaSessionManager::class.java) ?: return
+        sessionsListener =
+                MediaSessionManager.OnActiveSessionsChangedListener { controllers ->
+                    mainHandler.post { updateSessionControllers(controllers) }
+                }
+        try {
+            manager.addOnActiveSessionsChangedListener(
+                    sessionsListener!!,
+                    component,
+                    mainHandler,
+            )
+            updateSessionControllers(manager.getActiveSessions(component))
+        } catch (_: SecurityException) {
+            onNotificationListenerDisconnected()
+        }
+    }
+
+    @MainThread
+    fun onNotificationListenerDisconnected() {
+        sessionsListener?.let { listener ->
+            try {
+                context.getSystemService(MediaSessionManager::class.java)
+                        ?.removeOnActiveSessionsChangedListener(listener)
+            } catch (_: Exception) {}
+        }
+        sessionsListener = null
+        listenerComponent = null
+        sessionControllers.values.forEach { it.unregisterCallback(sessionCallback) }
+        sessionControllers.clear()
+        publishState()
+    }
+
+    /** Re-read active sessions when the home screen resumes or registered apps change. */
+    @MainThread
+    fun refreshNotificationSessions() {
+        if (!widgetEnabled || !MediaNotificationHelper.isListenerEnabled(context)) return
+        val component = listenerComponent ?: MediaNotificationHelper.componentName(context)
+        val manager = context.getSystemService(MediaSessionManager::class.java) ?: return
+        try {
+            updateSessionControllers(manager.getActiveSessions(component))
+        } catch (_: SecurityException) {}
     }
 
     @MainThread fun playPause() {
         val controller = activeController() ?: return
-        if (controller.playbackState?.state == PlaybackStateCompat.STATE_PLAYING) {
+        if (MediaPlaybackState.isActivelyPlaying(controller.playbackState?.state)) {
             controller.transportControls.pause()
         } else {
             controller.transportControls.play()
@@ -101,11 +159,10 @@ class MediaRepository @Inject constructor(@param:ApplicationContext private val 
     /** Opens the playing app — its now-playing screen via [MediaControllerCompat.getSessionActivity]
      *  when offered, otherwise the app's launcher entry. */
     @MainThread fun openMediaApp() {
-        val controller = activeController() ?: return
+        val playback = resolveActivePlayback() ?: return
+        val controller = playback.controller
         controller.sessionActivity?.let { pending ->
             try {
-                // Android 14+ drops a sent PendingIntent's activity start unless the sender grants
-                // it, even from the foreground; opt in so the app's now-playing screen opens.
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                     val options =
                             ActivityOptions.makeBasic()
@@ -122,92 +179,204 @@ class MediaRepository @Inject constructor(@param:ApplicationContext private val 
                 // Stale PendingIntent; fall through to a plain launch.
             }
         }
-        val launch =
-                context.packageManager.getLaunchIntentForPackage(controller.packageName) ?: return
-        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        try {
-            context.startActivity(launch)
-        } catch (_: Exception) {}
+        launchPackage(controller.packageName)
     }
 
-    @MainThread fun rewind() = seekBy(-REWIND_MS)
-
-    @MainThread fun forward() = seekBy(FORWARD_MS)
-
-    private fun seekBy(deltaMs: Long) {
+    @MainThread
+    fun skipToPrevious() {
         val controller = activeController() ?: return
-        val playbackState = controller.playbackState ?: return
-        if (playbackState.actions and PlaybackStateCompat.ACTION_SEEK_TO == 0L) return
-        controller.transportControls.seekTo(seekTarget(playbackState.currentPosition(), deltaMs))
+        val actions = controller.playbackState?.actions ?: return
+        if (actions and PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS == 0L) return
+        controller.transportControls.skipToPrevious()
     }
 
-    private fun connect(packageName: String) {
-        val component = resolveServiceComponent(packageName) ?: return
-        val connection = AppConnection(packageName)
-        connections[packageName] = connection
-        val browser = MediaBrowserCompat(context, component, connection.browserCallback, null)
-        connection.browser = browser
-        try {
-            browser.connect()
-        } catch (_: IllegalStateException) {
-            // Already connecting/connected.
+    @MainThread
+    fun skipToNext() {
+        val controller = activeController() ?: return
+        val actions = controller.playbackState?.actions ?: return
+        if (actions and PlaybackStateCompat.ACTION_SKIP_TO_NEXT == 0L) return
+        controller.transportControls.skipToNext()
+    }
+
+    @MainThread
+    fun invokeLikeAction() {
+        val current = _state.value ?: return
+        val like = current.like ?: return
+        val trackKey = trackKey(current.title, current.artist)
+        val previous = optimisticToggle?.takeIf { it.trackKey == trackKey }
+        optimisticToggle =
+                OptimisticCustomActionToggle(
+                        trackKey = trackKey,
+                        likeActive = !like.active,
+                        saveActive = previous?.saveActive,
+                )
+        _state.value = current.copy(like = like.copy(active = !like.active))
+        invokeCustomAction(like)
+    }
+
+    @MainThread
+    fun invokeSaveAction() {
+        val current = _state.value ?: return
+        val save = current.save ?: return
+        val trackKey = trackKey(current.title, current.artist)
+        val previous = optimisticToggle?.takeIf { it.trackKey == trackKey }
+        optimisticToggle =
+                OptimisticCustomActionToggle(
+                        trackKey = trackKey,
+                        likeActive = previous?.likeActive,
+                        saveActive = !save.active,
+                )
+        _state.value = current.copy(save = save.copy(active = !save.active))
+        invokeCustomAction(save)
+    }
+
+    private fun invokeCustomAction(button: MediaCustomActionButton) {
+        val controller = activeController() ?: return
+        controller.transportControls.sendCustomAction(button.actionId, button.extras ?: Bundle())
+    }
+
+    private fun updateSessionControllers(frameworkControllers: List<MediaController>?) {
+        val incoming =
+                frameworkControllers.orEmpty().filter { it.packageName != context.packageName }
+        val incomingPackages = incoming.map { it.packageName }.toSet()
+
+        (sessionControllers.keys - incomingPackages).toList().forEach { packageName ->
+            sessionControllers.remove(packageName)?.unregisterCallback(sessionCallback)
         }
+
+        for (frameworkController in incoming) {
+            val packageName = frameworkController.packageName
+            val compatToken = MediaSessionCompat.Token.fromToken(frameworkController.sessionToken)
+            val existing = sessionControllers[packageName]
+            if (existing != null && existing.sessionToken == compatToken) continue
+            existing?.unregisterCallback(sessionCallback)
+            val compat = MediaControllerCompat(context, compatToken)
+            compat.registerCallback(sessionCallback, mainHandler)
+            sessionControllers[packageName] = compat
+        }
+        publishState()
     }
 
-    private fun disconnect(packageName: String) {
-        connections.remove(packageName)?.release()
+    private fun allShowableControllers(): List<MediaControllerCompat> =
+            sessionControllers.values.filter {
+                MediaPlaybackState.isShowable(it.playbackState?.state)
+            }
+
+    private fun activeController(): MediaControllerCompat? {
+        val controllers = allShowableControllers()
+        val active =
+                controllers.filter {
+                    MediaPlaybackState.isActivelyPlaying(it.playbackState?.state)
+                }
+        if (active.isNotEmpty()) {
+            return active.maxWithOrNull(
+                    compareBy { it.playbackState?.lastPositionUpdateTime ?: 0L }
+            )
+        }
+        return controllers.maxWithOrNull(
+                compareBy { it.playbackState?.lastPositionUpdateTime ?: 0L }
+        )
     }
 
-    private fun resolveServiceComponent(packageName: String): ComponentName? {
-        val intent = Intent(SERVICE_INTERFACE).setPackage(packageName)
-        val service =
-                context.packageManager.queryIntentServices(intent, 0).firstOrNull()?.serviceInfo
-                        ?: return null
-        return ComponentName(service.packageName, service.name)
-    }
-
-    /** Active = a connected controller, preferring one that is playing, then most recently updated. */
-    private fun activeController(): MediaControllerCompat? =
-            connections.values
-                    .mapNotNull { it.controller }
-                    .filter { it.playbackState.isShowable() }
-                    .maxWithOrNull(
-                            compareBy(
-                                    { if (it.playbackState?.state == PlaybackStateCompat.STATE_PLAYING) 1 else 0 },
-                                    { it.playbackState?.lastPositionUpdateTime ?: 0L },
-                            )
-                    )
-
-    private fun publishState() {
+    private fun resolveActivePlayback(): ActivePlayback? {
         val controller = activeController()
         val metadata = controller?.metadata
         val playbackState = controller?.playbackState
-        val title =
-                metadata?.getString(MediaMetadataCompat.METADATA_KEY_TITLE)
-                        ?: metadata?.getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE)
-        if (controller == null || playbackState == null || title.isNullOrBlank()) {
-            resetPauseGrace()
+        val title = MediaMetadataReader.trackTitle(metadata)
+        if (controller == null || playbackState == null || title.isNullOrBlank()) return null
+
+        val state = playbackState.state
+        return ActivePlayback(
+                title = title,
+                artist = MediaMetadataReader.artistName(metadata, title),
+                isPlaying = MediaPlaybackState.isActivelyPlaying(state),
+                isBuffering = MediaPlaybackState.isBuffering(state),
+                controller = controller,
+                packageName = controller.packageName,
+        )
+    }
+
+    private fun publishState() {
+        if (!widgetEnabled || !MediaNotificationHelper.isListenerEnabled(context)) {
             _state.value = null
             return
         }
-        val isPlaying = playbackState.state == PlaybackStateCompat.STATE_PLAYING
-        if (isPlaying) {
-            // Playing again cancels any pending hide and clears the expired flag.
+
+        val playback = resolveActivePlayback()
+        if (playback == null) {
+            resetPauseGrace()
+            optimisticToggle = null
+            _state.value = null
+            return
+        }
+
+        if (playback.isPlaying) {
             resetPauseGrace()
         } else if (pausedGraceExpired) {
-            // Still paused after the grace period: keep the stale session hidden.
             _state.value = null
             return
         } else {
             schedulePauseHide()
         }
+
+        val actions = playback.controller.playbackState?.actions ?: 0L
+        val playbackState = playback.controller.playbackState
+        val metadata = playback.controller.metadata
+        val trackKey = trackKey(playback.title, playback.artist)
+        var like = MediaCustomActionsReader.likeButton(playbackState, metadata)
+        var save = MediaCustomActionsReader.saveButton(playbackState, metadata)
+        reconcileOptimisticToggle(trackKey, like, save)
+        val optimistic = optimisticToggle?.takeIf { it.trackKey == trackKey }
+        like = applyOptimisticToggle(like, optimistic?.likeActive)
+        save = applyOptimisticToggle(save, optimistic?.saveActive)
         _state.value =
                 MediaPlaybackUiState(
-                        title = title,
-                        artist = metadata?.getString(MediaMetadataCompat.METADATA_KEY_ARTIST),
-                        isPlaying = isPlaying,
-                        canSeek = playbackState.actions and PlaybackStateCompat.ACTION_SEEK_TO != 0L,
+                        title = playback.title,
+                        artist = playback.artist,
+                        isPlaying = playback.isPlaying,
+                        isBuffering = playback.isBuffering,
+                        canSkipToPrevious =
+                                actions and PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS != 0L,
+                        canSkipToNext =
+                                actions and PlaybackStateCompat.ACTION_SKIP_TO_NEXT != 0L,
+                        like = like,
+                        save = save,
                 )
+    }
+
+    private fun trackKey(title: String, artist: String?): String = "$title|${artist.orEmpty()}"
+
+    private fun applyOptimisticToggle(
+            button: MediaCustomActionButton?,
+            activeOverride: Boolean?,
+    ): MediaCustomActionButton? {
+        button ?: return null
+        return if (activeOverride != null) button.copy(active = activeOverride) else button
+    }
+
+    private fun reconcileOptimisticToggle(
+            trackKey: String,
+            like: MediaCustomActionButton?,
+            save: MediaCustomActionButton?,
+    ) {
+        val optimistic = optimisticToggle ?: return
+        if (optimistic.trackKey != trackKey) {
+            optimisticToggle = null
+            return
+        }
+        val likeMatches = optimistic.likeActive == null || like?.active == optimistic.likeActive
+        val saveMatches = optimistic.saveActive == null || save?.active == optimistic.saveActive
+        if (likeMatches && saveMatches) {
+            optimisticToggle = null
+        }
+    }
+
+    private fun launchPackage(packageName: String) {
+        val launch = context.packageManager.getLaunchIntentForPackage(packageName) ?: return
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        try {
+            context.startActivity(launch)
+        } catch (_: Exception) {}
     }
 
     private fun schedulePauseHide() {
@@ -222,79 +391,27 @@ class MediaRepository @Inject constructor(@param:ApplicationContext private val 
         mainHandler.removeCallbacks(hideRunnable)
     }
 
-    /** One app's browser + controller pair, with callbacks that republish on any change. */
-    private inner class AppConnection(val packageName: String) {
-        var browser: MediaBrowserCompat? = null
-        var controller: MediaControllerCompat? = null
+    private data class OptimisticCustomActionToggle(
+            val trackKey: String,
+            val likeActive: Boolean? = null,
+            val saveActive: Boolean? = null,
+    )
 
-        val browserCallback =
-                object : MediaBrowserCompat.ConnectionCallback() {
-                    override fun onConnected() {
-                        val token = browser?.sessionToken ?: return
-                        val ctrl = MediaControllerCompat(context, token)
-                        controller = ctrl
-                        ctrl.registerCallback(controllerCallback, mainHandler)
-                        publishState()
-                    }
-
-                    override fun onConnectionSuspended() {
-                        detachController()
-                        publishState()
-                    }
-
-                    override fun onConnectionFailed() {
-                        // The app refused our connection; leave it disconnected.
-                    }
-                }
-
-        private val controllerCallback =
-                object : MediaControllerCompat.Callback() {
-                    override fun onPlaybackStateChanged(state: PlaybackStateCompat?) = publishState()
-                    override fun onMetadataChanged(metadata: MediaMetadataCompat?) = publishState()
-                    override fun onSessionDestroyed() {
-                        detachController()
-                        publishState()
-                    }
-                }
-
-        private fun detachController() {
-            controller?.unregisterCallback(controllerCallback)
-            controller = null
-        }
-
-        fun release() {
-            detachController()
-            try {
-                browser?.disconnect()
-            } catch (_: Exception) {}
-            browser = null
-        }
-    }
-
-    private fun PlaybackStateCompat?.isShowable(): Boolean =
-            when (this?.state) {
-                null,
-                PlaybackStateCompat.STATE_NONE,
-                PlaybackStateCompat.STATE_STOPPED,
-                PlaybackStateCompat.STATE_ERROR -> false
-                else -> true
-            }
-
-    private fun PlaybackStateCompat.currentPosition(): Long {
-        if (state != PlaybackStateCompat.STATE_PLAYING) return position
-        val elapsed = SystemClock.elapsedRealtime() - lastPositionUpdateTime
-        return position + (elapsed * playbackSpeed).toLong()
-    }
+    private data class ActivePlayback(
+            val title: String,
+            val artist: String?,
+            val isPlaying: Boolean,
+            val isBuffering: Boolean,
+            val controller: MediaControllerCompat,
+            val packageName: String,
+    )
 
     companion object {
-        const val REWIND_MS = 15_000L
-        const val FORWARD_MS = 30_000L
         /** Hide a session that stays paused this long, so closed apps don't leave the widget up. */
         private const val PAUSE_HIDE_DELAY_MS = 60_000L
-        private const val SERVICE_INTERFACE = "android.media.browse.MediaBrowserService"
 
-        /** Seek destination clamped to the start of the track; extracted for unit testing. */
-        fun seekTarget(currentPosition: Long, deltaMs: Long): Long =
-                (currentPosition + deltaMs).coerceAtLeast(0L)
+        /** First non-blank artist-like field; many players only populate display subtitle. */
+        fun artistName(metadata: android.support.v4.media.MediaMetadataCompat?): String? =
+                MediaMetadataReader.artistName(metadata)
     }
 }
