@@ -366,4 +366,25 @@
     <string name="settings_font_import_failed_extension">Obsługiwane są tylko pliki .ttf</string>
     <string name="settings_font_import_failed_invalid">To nie jest prawidłowy plik czcionki TrueType</string>
     <string name="settings_font_import_failed_io">Nie udało się zapisać pliku czcionki</string>
+    <string name="cd_restore_archived_app">Przywróć zarchiwizowaną aplikację</string>
+    <string name="toast_digital_wellbeing_launch_failed">Cyfrowa równowaga nie mogła zostać otwarta</string>
+    <string name="settings_show_home_media">Pokaż sterowanie multimediów</string>
+    <string name="settings_show_home_media_subtitle">Aktualnie odtwarzane z sterowaniem odtwarzaniem, gdy audio jest aktywne</string>
+    <string name="settings_show_home_media_subtitle_grant_access">Wymaga dostępu do powiadomień — włącz, aby przyznać w ustawieniach systemu</string>
+    <string name="settings_show_home_screen_time">Pokaż czas używania</string>
+    <string name="settings_show_home_screen_time_subtitle">Czas używania przez ostatnie 24 godziny</string>
+    <string name="settings_show_home_screen_time_subtitle_grant_access">Wymaga dostępu do informacji o użyciu — włącz, aby przyznać w ustawieniach systenu</string>
+    <string name="media_notification_listener_label">Fokus aktualnie odtwarzane</string>
+    <string name="media_previous_track">Poprzedni utwór</string>
+    <string name="media_play">Odtwarzaj</string>
+    <string name="media_pause">Wstrzymaj</string>
+    <string name="media_buffering">Buforowanie</string>
+    <string name="media_next_track">Następny utwór</string>
+    <string name="media_like">Polub</string>
+    <string name="media_unlike">Przestań lubić</string>
+    <string name="media_save">Zapisz do biblioteki</string>
+    <string name="media_unsave">Usuń z biblioteki</string>
+    <string name="settings_section_archived_apps">Zarchiwizowane aplikacje</string>
+    <string name="settings_no_archived_apps">Brak zarchiwizowanych aplikacji</string>
+    <string name="visual_style_gold">Złoty</string>
 </resources>
