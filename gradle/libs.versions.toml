@@ -28,6 +28,7 @@ robolectric = "4.16.1"
 # Core
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+androidx-media = { group = "androidx.media", name = "media", version = "1.7.0" }
 google-material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 
 # Compose (versions managed by BOM)

@@ -20,6 +20,9 @@ import com.lu4p.fokuslauncher.ui.util.rememberBooleanChangeWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.rememberClickWithSystemSound
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -46,6 +49,7 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Translate
+import com.lu4p.fokuslauncher.media.MediaNotificationHelper
 import com.lu4p.fokuslauncher.ui.components.FokusAlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -851,6 +855,23 @@ fun HomeWidgetsSettingsScreen(
     val (hasCoarseLocationPermission, requestCoarseLocation) =
             rememberCoarseLocationPermission(context, activity)
 
+    var mediaNotificationAccessTick by remember { mutableIntStateOf(0) }
+    var pendingMediaEnable by remember { mutableStateOf(false) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    OnResumeEffect(lifecycleOwner) { mediaNotificationAccessTick++ }
+    val mediaNotificationAccessEnabled =
+            remember(mediaNotificationAccessTick) {
+                MediaNotificationHelper.isListenerEnabled(context)
+            }
+    LaunchedEffect(mediaNotificationAccessTick, uiState.showHomeMedia, pendingMediaEnable) {
+        if (pendingMediaEnable && mediaNotificationAccessEnabled) {
+            pendingMediaEnable = false
+            viewModel.setShowHomeMedia(true)
+        } else if (uiState.showHomeMedia && !mediaNotificationAccessEnabled) {
+            viewModel.setShowHomeMedia(false)
+        }
+    }
+
     Column(
             modifier =
                     Modifier.fillMaxSize()
@@ -903,6 +924,31 @@ fun HomeWidgetsSettingsScreen(
                         label = stringResource(labelRes),
                         checked = checked,
                         onCheckedChange = onChange,
+                )
+            }
+            item {
+                SettingsToggleRow(
+                        label = stringResource(R.string.settings_show_home_media),
+                        subtitle =
+                                if (mediaNotificationAccessEnabled) {
+                                    stringResource(R.string.settings_show_home_media_subtitle)
+                                } else {
+                                    stringResource(R.string.settings_show_home_media_subtitle_grant_access)
+                                },
+                        checked = uiState.showHomeMedia,
+                        onCheckedChange = { checked ->
+                            if (checked) {
+                                if (mediaNotificationAccessEnabled) {
+                                    viewModel.setShowHomeMedia(true)
+                                } else {
+                                    pendingMediaEnable = true
+                                    MediaNotificationHelper.openListenerSettings(context)
+                                }
+                            } else {
+                                pendingMediaEnable = false
+                                viewModel.setShowHomeMedia(false)
+                            }
+                        },
                 )
             }
             item { SettingsDivider() }

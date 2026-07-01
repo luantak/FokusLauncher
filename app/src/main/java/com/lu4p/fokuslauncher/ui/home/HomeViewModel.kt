@@ -43,6 +43,9 @@ import com.lu4p.fokuslauncher.data.model.WidgetTapTarget
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.data.repository.WeatherRepository
+import com.lu4p.fokuslauncher.media.MediaNotificationHelper
+import com.lu4p.fokuslauncher.media.MediaPlaybackUiState
+import com.lu4p.fokuslauncher.media.MediaRepository
 import com.lu4p.fokuslauncher.utils.LockScreenHelper
 import com.lu4p.fokuslauncher.utils.registerBroadcastReceiverNotExported
 import com.lu4p.fokuslauncher.utils.registerStickyBroadcastReceiverNotExported
@@ -109,12 +112,24 @@ data class HomeWeatherUiState(
     val showWeatherWidget: Boolean = false,
 )
 
+data class HomeMediaUiState(
+    /** User preference; the widget is opt-in and off by default. */
+    val enabled: Boolean = false,
+    /** Current now-playing session, or null when nothing is playing. */
+    val playback: MediaPlaybackUiState? = null,
+) {
+    /** The widget is only drawn when enabled and something is actually playing. */
+    val showWidget: Boolean
+        get() = enabled && playback != null
+}
+
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val appRepository: AppRepository,
     private val preferencesManager: PreferencesManager,
-    private val weatherRepository: WeatherRepository
+    private val weatherRepository: WeatherRepository,
+    private val mediaRepository: MediaRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -129,6 +144,9 @@ class HomeViewModel @Inject constructor(
 
     private val _weatherUiState = MutableStateFlow(HomeWeatherUiState())
     val weatherUiState: StateFlow<HomeWeatherUiState> = _weatherUiState.asStateFlow()
+
+    private val _mediaUiState = MutableStateFlow(HomeMediaUiState())
+    val mediaUiState: StateFlow<HomeMediaUiState> = _mediaUiState.asStateFlow()
 
     /** Serializes home app-list refresh so concurrent loads cannot race and prune favorites. */
     private val installedAppsRefreshMutex = Mutex()
@@ -268,6 +286,7 @@ class HomeViewModel @Inject constructor(
         observeTemperatureUnit()
         observeHomeWidgetItemPreferences()
         observeWeatherRefreshTriggers()
+        observeMedia()
         observeDoubleTapEmptyLock()
         checkDefaultLauncher()
         refreshInstalledApps(includeShortcuts = true)
@@ -286,6 +305,7 @@ class HomeViewModel @Inject constructor(
             }
         }
         weatherTickerJob?.cancel()
+        mediaRepository.stop()
         super.onCleared()
     }
 
@@ -799,6 +819,39 @@ class HomeViewModel @Inject constructor(
     private fun observeDoubleTapEmptyLock() {
         observeFlow(preferencesManager.doubleTapEmptyLockFlow, ::recomputeDoubleTapEmptyLockUi)
     }
+
+    // ── Media widget ────────────────────────────────────────────────
+
+    private var mediaEnabled = false
+    private fun observeMedia() {
+        observeFlow(preferencesManager.showHomeMediaFlow) { enabled ->
+            mediaEnabled = enabled && MediaNotificationHelper.isListenerEnabled(context)
+            _mediaUiState.value = _mediaUiState.value.copy(enabled = mediaEnabled)
+            mediaRepository.setWidgetEnabled(mediaEnabled)
+        }
+        observeFlow(mediaRepository.state) { playback ->
+            _mediaUiState.value = _mediaUiState.value.copy(playback = playback)
+        }
+    }
+
+    /** Re-reads active sessions on resume so newly started playback appears promptly. */
+    fun refreshMedia() {
+        if (mediaEnabled) {
+            mediaRepository.refreshNotificationSessions()
+        }
+    }
+
+    fun mediaOpenApp() = mediaRepository.openMediaApp()
+
+    fun mediaPlayPause() = mediaRepository.playPause()
+
+    fun mediaSkipToPrevious() = mediaRepository.skipToPrevious()
+
+    fun mediaSkipToNext() = mediaRepository.skipToNext()
+
+    fun mediaLike() = mediaRepository.invokeLikeAction()
+
+    fun mediaSave() = mediaRepository.invokeSaveAction()
 
     private fun observeCategoryOptions() {
         observeFlow(

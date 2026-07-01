@@ -51,6 +51,16 @@
                 android:resource="@xml/lock_screen_accessibility_config" />
         </service>
 
+        <service
+            android:name=".media.MediaNotificationListenerService"
+            android:exported="true"
+            android:label="@string/media_notification_listener_label"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
         <receiver
             android:name=".accessibility.LongLockAlarmReceiver"
             android:exported="false" />

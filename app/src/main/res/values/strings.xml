@@ -194,6 +194,20 @@
     <string name="settings_temperature_unit_fahrenheit">Fahrenheit (°F)</string>
     <string name="settings_show_home_weather">Show weather</string>
     <string name="settings_show_home_battery">Show battery level</string>
+    <string name="settings_show_home_media">Show media controls</string>
+    <string name="settings_show_home_media_subtitle">Now playing with transport controls when audio is active</string>
+    <string name="settings_show_home_media_subtitle_grant_access">Requires notification access — turn on to grant in system settings</string>
+    <string name="media_notification_listener_label">Fokus now playing</string>
+    <!-- Media widget content descriptions -->
+    <string name="media_previous_track">Previous track</string>
+    <string name="media_play">Play</string>
+    <string name="media_pause">Pause</string>
+    <string name="media_buffering">Buffering</string>
+    <string name="media_next_track">Next track</string>
+    <string name="media_like">Like</string>
+    <string name="media_unlike">Unlike</string>
+    <string name="media_save">Save to library</string>
+    <string name="media_unsave">Remove from library</string>
     <string name="settings_widget_clock_app">Clock app</string>
     <string name="settings_widget_calendar_app">Calendar app</string>
     <string name="settings_double_tap_to_lock">Double tap to lock</string>
