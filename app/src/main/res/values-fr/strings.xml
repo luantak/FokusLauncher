@@ -344,4 +344,25 @@
     <string name="settings_font_import_failed_extension">Seuls les fichiers .ttf sont autorisés</string>
     <string name="settings_font_import_failed_invalid">Ce fichier n\'est pas une police TrueType valide</string>
     <string name="settings_font_import_failed_io">Impossible d\'enregistrer cette police de caractères</string>
+    <string name="cd_restore_archived_app">Restaurer les applications archivées</string>
+    <string name="toast_digital_wellbeing_launch_failed">L\'application Bien-être ne peut pas être lancée</string>
+    <string name="settings_show_home_media">Afficher le contrôle des médias</string>
+    <string name="settings_show_home_screen_time_subtitle_grant_access">Nécessite l\'accès aux données d\'utilisation. Veuillez l\'accorder dans les paramètres lu système</string>
+    <string name="media_pause">Pause</string>
+    <string name="media_next_track">Piste suivante</string>
+    <string name="media_save">Enregistrer dans la bibliothèque</string>
+    <string name="media_unsave">Supprimer de la bibliothèque</string>
+    <string name="settings_section_archived_apps">Applications archivées</string>
+    <string name="settings_no_archived_apps">Aucune application archivée</string>
+    <string name="visual_style_gold">Or</string>
+    <string name="settings_show_home_media_subtitle">Contrôle de la lecture des médias lorsque le son est activé</string>
+    <string name="settings_show_home_media_subtitle_grant_access">Nécessite l\'autorisation d\'accès aux notifications. Veuillez l\'accorder dans les paramètres système</string>
+    <string name="settings_show_home_screen_time">Afficher le temps d\'écran</string>
+    <string name="settings_show_home_screen_time_subtitle">Durée durant laquelle l\'écran est resté allumé, les dernièrs 24 heures</string>
+    <string name="media_notification_listener_label">Fokus joue actuellement</string>
+    <string name="media_previous_track">Description du contenu du widget Média</string>
+    <string name="media_play">Lecture</string>
+    <string name="media_buffering">Tampon</string>
+    <string name="media_like">Aimer</string>
+    <string name="media_unlike">Ne plus aimer</string>
 </resources>
