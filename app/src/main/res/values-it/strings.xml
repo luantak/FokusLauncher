@@ -355,4 +355,14 @@
     <string name="settings_section_archived_apps">App archiviate</string>
     <string name="settings_no_archived_apps">Nessuna app archiviata</string>
     <string name="visual_style_gold">Oro</string>
+    <string name="settings_show_home_media_subtitle_grant_access">Richiede l\'accesso alle notifiche: concedilo nelle impostazioni di sistema</string>
+    <string name="settings_show_home_screen_time">Mostra tempo di utilizzo</string>
+    <string name="settings_show_home_screen_time_subtitle">Tempo di utilizzo nelle ultime 24 ore</string>
+    <string name="media_buffering">Caricamento</string>
+    <string name="media_next_track">Brano successivo</string>
+    <string name="media_like">Mi piace</string>
+    <string name="media_unlike">Non mi piace</string>
+    <string name="media_save">Salva nella libreria</string>
+    <string name="media_unsave">Rimuovi dalla libreria</string>
+    <string name="settings_show_home_media_subtitle">In riproduzione con controlli di trasporto quando l\'audio è attivo</string>
 </resources>
