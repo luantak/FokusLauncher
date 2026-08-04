@@ -223,10 +223,15 @@ class HomeViewModelTest {
         }
     }
 
-    private fun mockBatteryStickyIntent(level: Int = 75, scale: Int = 100): Intent {
+    private fun mockBatteryStickyIntent(
+            level: Int = 75,
+            scale: Int = 100,
+            status: Int = BatteryManager.BATTERY_STATUS_DISCHARGING
+    ): Intent {
         val batteryIntent = mockk<Intent>(relaxed = true)
         every { batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) } returns level
         every { batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1) } returns scale
+        every { batteryIntent.getIntExtra(BatteryManager.EXTRA_STATUS, -1) } returns status
         return batteryIntent
     }
 
@@ -447,19 +452,24 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun `refreshBattery updates battery percentage`() {
+    fun `refreshBattery updates battery percentage and charging status`() {
         val batteryIntent = mockk<Intent>(relaxed = true)
         every { batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) } returns 50
         every { batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1) } returns 100
+        every { batteryIntent.getIntExtra(BatteryManager.EXTRA_STATUS, -1) } returns
+                BatteryManager.BATTERY_STATUS_DISCHARGING
         stubNullReceiverBatterySticky(batteryIntent)
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceTimeBy(100)
 
         every { batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) } returns 30
+        every { batteryIntent.getIntExtra(BatteryManager.EXTRA_STATUS, -1) } returns
+                BatteryManager.BATTERY_STATUS_CHARGING
         viewModel.refreshBattery()
 
         assertEquals(30, viewModel.clockUiState.value.batteryPercent)
+        assertTrue(viewModel.clockUiState.value.isCharging)
     }
 
     @Test
