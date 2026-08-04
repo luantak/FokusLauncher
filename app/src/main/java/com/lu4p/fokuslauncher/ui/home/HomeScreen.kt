@@ -2,6 +2,7 @@ package com.lu4p.fokuslauncher.ui.home
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -694,6 +695,7 @@ private fun HomeFavoritesSection(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     onLabelClick = onLabelClick,
                     onLabelLongPress = onLabelLongPress,
+                    modifier = Modifier.fillMaxWidth(),
                     outlined = outlined,
                     notificationIndicatorUiState = notificationIndicatorUiState,
                 )
@@ -866,8 +868,9 @@ private fun FavoriteAppItem(
     Column(
             horizontalAlignment = horizontalAlignment,
             modifier =
-                    Modifier.combinedClickableWithSystemSound(
-                                    indication = null,
+                    Modifier.fillMaxWidth()
+                            .combinedClickableWithSystemSound(
+                                    indication = LocalIndication.current,
                                     interactionSource = remember { MutableInteractionSource() },
                                     onClick = onClick,
                                     onLongClick = onLongPress,
