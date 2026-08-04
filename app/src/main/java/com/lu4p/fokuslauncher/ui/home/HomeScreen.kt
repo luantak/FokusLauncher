@@ -423,13 +423,49 @@ private fun HomeClockWeatherHeader(
                                     .offset(y = screenTimeTop),
             )
         }
-        ClockWidget(
-                time = clockUiState.currentTime,
-                is24HourFormat = clockUiState.is24HourFormat,
-                outlined = outlined,
-                onClick = onClockClick,
-                modifier = Modifier.align(Alignment.TopStart).testTag("clock_widget"),
-        )
+        Column(
+                modifier = Modifier.align(Alignment.TopStart),
+        ) {
+            ClockWidget(
+                    time = clockUiState.currentTime,
+                    is24HourFormat = clockUiState.is24HourFormat,
+                    outlined = outlined,
+                    onClick = onClockClick,
+                    modifier = Modifier.testTag("clock_widget"),
+            )
+            clockUiState.nextAlarm?.let { alarm ->
+                Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier =
+                                Modifier.padding(top = 4.dp)
+                                        .clickableNoRippleWithSystemSound(onClick = onClockClick)
+                                        .testTag("next_alarm_widget"),
+                ) {
+                    LauncherIcon(
+                            imageVector = MinimalIcons.iconFor("alarm"),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onBackground,
+                            iconSize = 14.dp,
+                            outlined = outlined,
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    if (outlined) {
+                        OutlinedText(
+                                text = alarm,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onBackground,
+                                outlineWidth = 1.5f,
+                        )
+                    } else {
+                        Text(
+                                text = alarm,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onBackground,
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
