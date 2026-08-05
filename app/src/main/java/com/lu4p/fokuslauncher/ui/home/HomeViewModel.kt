@@ -120,6 +120,7 @@ data class HomeClockUiState(
     val currentTime: String = "",
     val currentDate: String = "",
     val batteryPercent: Int = 0,
+    val isCharging: Boolean = false,
     /** Mirrors [DateFormat.is24HourFormat] for the home clock layout and semantics. */
     val is24HourFormat: Boolean = true,
 )
@@ -821,10 +822,14 @@ class HomeViewModel @Inject constructor(
     private fun setBatteryPercentFromIntent(intent: Intent) {
         val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
         val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
+        val status = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
+        val isCharging =
+                status == BatteryManager.BATTERY_STATUS_CHARGING ||
+                        status == BatteryManager.BATTERY_STATUS_FULL
         val percent = if (level >= 0 && scale > 0) (level * 100) / scale else 0
         val current = _clockUiState.value
-        if (current.batteryPercent != percent) {
-            _clockUiState.value = current.copy(batteryPercent = percent)
+        if (current.batteryPercent != percent || current.isCharging != isCharging) {
+            _clockUiState.value = current.copy(batteryPercent = percent, isCharging = isCharging)
         }
     }
 
@@ -837,10 +842,12 @@ class HomeViewModel @Inject constructor(
             if (batteryIntent != null) {
                 setBatteryPercentFromIntent(batteryIntent)
             } else {
-                _clockUiState.value = _clockUiState.value.copy(batteryPercent = 0)
+                _clockUiState.value =
+                        _clockUiState.value.copy(batteryPercent = 0, isCharging = false)
             }
         } catch (_: Exception) {
-            _clockUiState.value = _clockUiState.value.copy(batteryPercent = 0)
+            _clockUiState.value =
+                    _clockUiState.value.copy(batteryPercent = 0, isCharging = false)
         }
     }
 

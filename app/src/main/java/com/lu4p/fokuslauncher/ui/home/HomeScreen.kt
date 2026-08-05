@@ -510,6 +510,7 @@ private fun HomeWidgetsSection(
         DateBatteryRow(
                 date = clockUiState.currentDate,
                 batteryPercent = clockUiState.batteryPercent,
+                isCharging = clockUiState.isCharging,
                 showDate = uiState.showHomeDate,
                 showBattery = uiState.showHomeBattery,
                 outlined = outlined,
