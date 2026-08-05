@@ -1,6 +1,7 @@
 package com.lu4p.fokuslauncher.ui.home
 
 import android.Manifest
+import android.app.AlarmManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -123,6 +124,8 @@ data class HomeClockUiState(
     val isCharging: Boolean = false,
     /** Mirrors [DateFormat.is24HourFormat] for the home clock layout and semantics. */
     val is24HourFormat: Boolean = true,
+    /** Next upcoming alarm text (e.g. "Wed 07:15"), or null when no alarm is set. */
+    val nextAlarm: String? = null,
 )
 
 data class HomeWeatherUiState(
@@ -332,6 +335,13 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    private val alarmChangedReceiver = object : BroadcastReceiver() {
+        override fun onReceive(ctx: Context?, intent: Intent?) {
+            if (intent?.action != AlarmManager.ACTION_NEXT_ALARM_CLOCK_CHANGED) return
+            refreshNextAlarm()
+        }
+    }
+
     /**
      * JVM default timezone is fixed at process start and does not track system changes until we
      * handle [Intent.ACTION_TIMEZONE_CHANGED] and refresh cached formatters.
@@ -360,7 +370,9 @@ class HomeViewModel @Inject constructor(
         startClockTicker()
         registerBatteryReceiver()
         registerTimezoneChangedReceiver()
+        registerAlarmChangedReceiver()
         updateBattery()
+        refreshNextAlarm()
         observeHomeAlignment()
         observeLauncherFontScale()
         observePhotoWallpaperAppearance()
@@ -385,7 +397,7 @@ class HomeViewModel @Inject constructor(
     }
 
     override fun onCleared() {
-        listOf(batteryChangedReceiver, timezoneChangedReceiver).forEach { receiver ->
+        listOf(batteryChangedReceiver, timezoneChangedReceiver, alarmChangedReceiver).forEach { receiver ->
             try {
                 context.unregisterReceiver(receiver)
             } catch (_: IllegalArgumentException) {
@@ -789,6 +801,9 @@ class HomeViewModel @Inject constructor(
                 if (updated != current) {
                     _clockUiState.value = updated
                 }
+                if ((now.time / 1000) % 60 == 0L) {
+                    refreshNextAlarm()
+                }
                 refreshWorldClockTimes(now.time)
                 refreshCountdownRemaining(now.time)
                 delay(1_000)
@@ -819,6 +834,13 @@ class HomeViewModel @Inject constructor(
         )
     }
 
+    private fun registerAlarmChangedReceiver() {
+        registerPrivateNotExportedReceiver(
+            alarmChangedReceiver,
+            IntentFilter(AlarmManager.ACTION_NEXT_ALARM_CLOCK_CHANGED)
+        )
+    }
+
     private fun setBatteryPercentFromIntent(intent: Intent) {
         val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
         val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
@@ -831,6 +853,27 @@ class HomeViewModel @Inject constructor(
         if (current.batteryPercent != percent || current.isCharging != isCharging) {
             _clockUiState.value = current.copy(batteryPercent = percent, isCharging = isCharging)
         }
+    }
+
+    private fun refreshNextAlarm() {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val nextAlarm = alarmManager.nextAlarmClock
+        val alarmText = if (nextAlarm != null) {
+            formatNextAlarm(nextAlarm.triggerTime)
+        } else {
+            null
+        }
+        val current = _clockUiState.value
+        if (current.nextAlarm != alarmText) {
+            _clockUiState.value = current.copy(nextAlarm = alarmText)
+        }
+    }
+
+    private fun formatNextAlarm(triggerTime: Long): String {
+        val is24Hour = DateFormat.is24HourFormat(context)
+        val skeleton = if (is24Hour) "E HHmm" else "E hmm"
+        val pattern = DateFormat.getBestDateTimePattern(Locale.getDefault(), skeleton)
+        return DateFormat.format(pattern, triggerTime).toString()
     }
 
     private fun updateBattery() {
