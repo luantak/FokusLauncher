@@ -1689,30 +1689,30 @@ class HomeViewModel @Inject constructor(
     fun getShortcutIcon(action: AppShortcutAction) = appRepository.getShortcutIcon(action)
 
     private fun isHomeCategoryPickerReserved(category: String): Boolean =
-            category.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true) ||
-                    category.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true) ||
-                    category.equals(ReservedCategoryNames.WORK, ignoreCase = true) ||
-                    category.equals(ReservedCategoryNames.UNCATEGORIZED, ignoreCase = true)
+        category.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true) ||
+            category.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true) ||
+            category.equals(ReservedCategoryNames.WORK, ignoreCase = true) ||
+            category.equals(ReservedCategoryNames.UNCATEGORIZED, ignoreCase = true)
 
     private companion object {
         private val shortcutActionIconKeywordHints =
-                listOf(
-                        "music" to "music",
-                        "work" to "work",
-                        "mail" to "work",
-                        "chat" to "chat",
-                        "message" to "chat",
-                        "call" to "call",
-                        "dial" to "call",
-                        "dialer" to "call",
-                        "phone" to "call",
-                        "camera" to "camera",
-                        "photo" to "gallery",
-                        "gallery" to "gallery",
-                        "video" to "video",
-                        "map" to "map",
-                        "direction" to "map",
-                )
+            listOf(
+                "music" to "music",
+                "work" to "work",
+                "mail" to "work",
+                "chat" to "chat",
+                "message" to "chat",
+                "call" to "call",
+                "dial" to "call",
+                "dialer" to "call",
+                "phone" to "call",
+                "camera" to "camera",
+                "photo" to "gallery",
+                "gallery" to "gallery",
+                "video" to "video",
+                "map" to "map",
+                "direction" to "map",
+            )
 
         /**
          * [Intent.EXTRA_TIMEZONE] documents this key but the constant is not inlined below API 30;

@@ -40,129 +40,129 @@ import com.lu4p.fokuslauncher.utils.containsNormalizedSearch
  */
 @Composable
 fun ShortcutActionPickerDialog(
-        allActions: List<AppShortcutAction>,
-        allApps: List<AppInfo>,
-        title: String,
-        onSelect: (AppShortcutAction) -> Unit,
-        onDismiss: () -> Unit,
-        containerColor: Color = MaterialTheme.colorScheme.surfaceVariant,
-        includeWidgetPageTarget: Boolean = false,
-        profileDisplayNameOverrides: Map<String, String> = emptyMap(),
+    allActions: List<AppShortcutAction>,
+    allApps: List<AppInfo>,
+    title: String,
+    onSelect: (AppShortcutAction) -> Unit,
+    onDismiss: () -> Unit,
+    containerColor: Color = MaterialTheme.colorScheme.surfaceVariant,
+    includeWidgetPageTarget: Boolean = false,
+    profileDisplayNameOverrides: Map<String, String> = emptyMap(),
 ) {
     SearchablePickerDialog(
-            title = title,
-            onDismiss = onDismiss,
-            containerColor = containerColor,
+        title = title,
+        onDismiss = onDismiss,
+        containerColor = containerColor,
     ) { filter, onFilterChange ->
         val context = LocalContext.current
         val filtered =
-                remember(filter, allActions) {
-                    if (filter.isBlank()) allActions
-                    else allActions.filter { it.displayLabel.containsNormalizedSearch(filter) }
-                }
+            remember(filter, allActions) {
+                if (filter.isBlank()) allActions
+                else allActions.filter { it.displayLabel.containsNormalizedSearch(filter) }
+            }
         val sections =
-                remember(filtered, allApps, context, profileDisplayNameOverrides) {
-                    groupShortcutActionsIntoProfileSections(
-                            context,
-                            filtered,
-                            allApps,
-                            profileDisplayNameOverrides,
-                    )
-                }
+            remember(filtered, allApps, context, profileDisplayNameOverrides) {
+                groupShortcutActionsIntoProfileSections(
+                    context,
+                    filtered,
+                    allApps,
+                    profileDisplayNameOverrides,
+                )
+            }
 
         OutlinedTextField(
-                value = filter,
-                onValueChange = onFilterChange,
-                label = { Text(stringResource(R.string.search)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
+            value = filter,
+            onValueChange = onFilterChange,
+            label = { Text(stringResource(R.string.search)) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
         )
         Spacer(Modifier.height(8.dp))
         LazyColumn(
-                modifier =
-                        Modifier.fillMaxWidth().heightIn(min = 200.dp, max = 420.dp)
+            modifier =
+                Modifier.fillMaxWidth().heightIn(min = 200.dp, max = 420.dp)
         ) {
             if (includeWidgetPageTarget) {
                 item(key = "shortcut_action_widget_page") {
                     Text(
-                            text = stringResource(R.string.widget_page_shortcut_label),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onBackground,
-                            modifier =
-                                    Modifier.fillMaxWidth()
-                                            .clickableWithSystemSound {
-                                                onSelect(
-                                                        AppShortcutAction(
-                                                                appLabel =
-                                                                        context.getString(
-                                                                                R.string.app_name
-                                                                        ),
-                                                                actionLabel =
-                                                                        context.getString(
-                                                                                R.string.widget_page_shortcut_label
-                                                                        ),
-                                                                target = ShortcutTarget.WidgetPage,
-                                                        )
-                                                )
-                                            }
-                                            .padding(vertical = 10.dp, horizontal = 8.dp),
+                        text = stringResource(R.string.widget_page_shortcut_label),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier =
+                            Modifier.fillMaxWidth()
+                                .clickableWithSystemSound {
+                                    onSelect(
+                                        AppShortcutAction(
+                                            appLabel =
+                                                context.getString(
+                                                    R.string.app_name
+                                                ),
+                                            actionLabel =
+                                                context.getString(
+                                                    R.string.widget_page_shortcut_label
+                                                ),
+                                            target = ShortcutTarget.WidgetPage,
+                                        )
+                                    )
+                                }
+                                .padding(vertical = 10.dp, horizontal = 8.dp),
                     )
                 }
             }
             profileGroupedShortcutItems(
-                    sections = sections,
-                    keyPrefix = "shortcut_action_pick",
-                    horizontalPadding = 8.dp,
+                sections = sections,
+                keyPrefix = "shortcut_action_pick",
+                horizontalPadding = 8.dp,
             ) { action ->
                 val line =
-                        when {
-                            action.actionLabel == AppShortcutAction.OPEN_APP_LABEL -> action.appLabel
-                            action.target is ShortcutTarget.PhoneDial -> action.appLabel
-                            else -> action.displayLabel
-                        }
+                    when {
+                        action.actionLabel == AppShortcutAction.OPEN_APP_LABEL -> action.appLabel
+                        action.target is ShortcutTarget.PhoneDial -> action.appLabel
+                        else -> action.displayLabel
+                    }
                 Row(
-                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                        modifier =
-                                Modifier.fillMaxWidth()
-                                        .clickableWithSystemSound { onSelect(action) }
-                                        .padding(vertical = 8.dp, horizontal = 8.dp)
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .clickableWithSystemSound { onSelect(action) }
+                            .padding(vertical = 8.dp, horizontal = 8.dp)
                 ) {
                     val icon = action.icon
                     androidx.compose.foundation.layout.Box(
-                            contentAlignment = androidx.compose.ui.Alignment.Center,
-                            modifier =
-                                    Modifier.size(32.dp)
-                                            .background(
-                                                    MaterialTheme.colorScheme.secondaryContainer,
-                                                    androidx.compose.foundation.shape.CircleShape
-                                            )
+                        contentAlignment = androidx.compose.ui.Alignment.Center,
+                        modifier =
+                            Modifier.size(32.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.secondaryContainer,
+                                    androidx.compose.foundation.shape.CircleShape
+                                )
                     ) {
                         if (icon != null) {
                             LauncherIcon(
-                                    drawable = icon,
-                                    contentDescription = null,
-                                    iconSize = 26.dp,
-                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                drawable = icon,
+                                contentDescription = null,
+                                iconSize = 26.dp,
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
                             )
                         } else {
                             LauncherIcon(
-                                    imageVector =
-                                            if (action.target is ShortcutTarget.PhoneDial) {
-                                                Icons.Outlined.Phone
-                                            } else {
-                                                Icons.AutoMirrored.Filled.Launch
-                                            },
-                                    contentDescription = null,
-                                    iconSize = 20.dp,
-                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                imageVector =
+                                    if (action.target is ShortcutTarget.PhoneDial) {
+                                        Icons.Outlined.Phone
+                                    } else {
+                                        Icons.AutoMirrored.Filled.Launch
+                                    },
+                                contentDescription = null,
+                                iconSize = 20.dp,
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
                             )
                         }
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                            text = line,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onBackground,
+                        text = line,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onBackground,
                     )
                 }
             }
