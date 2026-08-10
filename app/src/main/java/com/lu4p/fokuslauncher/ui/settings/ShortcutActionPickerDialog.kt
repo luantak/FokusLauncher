@@ -1,11 +1,18 @@
 package com.lu4p.fokuslauncher.ui.settings
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Launch
+import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -20,6 +27,7 @@ import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.AppShortcutAction
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
+import com.lu4p.fokuslauncher.ui.components.LauncherIcon
 import com.lu4p.fokuslauncher.ui.components.SearchablePickerDialog
 import com.lu4p.fokuslauncher.ui.drawer.groupShortcutActionsIntoProfileSections
 import com.lu4p.fokuslauncher.ui.drawer.profileGroupedShortcutItems
@@ -112,15 +120,51 @@ fun ShortcutActionPickerDialog(
                             action.target is ShortcutTarget.PhoneDial -> action.appLabel
                             else -> action.displayLabel
                         }
-                Text(
-                        text = line,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onBackground,
+                Row(
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
                         modifier =
                                 Modifier.fillMaxWidth()
                                         .clickableWithSystemSound { onSelect(action) }
-                                        .padding(vertical = 10.dp, horizontal = 8.dp)
-                )
+                                        .padding(vertical = 8.dp, horizontal = 8.dp)
+                ) {
+                    val icon = action.icon
+                    androidx.compose.foundation.layout.Box(
+                            contentAlignment = androidx.compose.ui.Alignment.Center,
+                            modifier =
+                                    Modifier.size(32.dp)
+                                            .background(
+                                                    MaterialTheme.colorScheme.secondaryContainer,
+                                                    androidx.compose.foundation.shape.CircleShape
+                                            )
+                    ) {
+                        if (icon != null) {
+                            LauncherIcon(
+                                    drawable = icon,
+                                    contentDescription = null,
+                                    iconSize = 26.dp,
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                            )
+                        } else {
+                            LauncherIcon(
+                                    imageVector =
+                                            if (action.target is ShortcutTarget.PhoneDial) {
+                                                Icons.Outlined.Phone
+                                            } else {
+                                                Icons.AutoMirrored.Filled.Launch
+                                            },
+                                    contentDescription = null,
+                                    iconSize = 20.dp,
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                            text = line,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onBackground,
+                    )
+                }
             }
         }
     }

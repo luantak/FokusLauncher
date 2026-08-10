@@ -112,6 +112,7 @@ fun HomeScreen(
     val categoryOptions by viewModel.categoryOptions.collectAsStateWithLifecycle()
     val showWeatherAppPicker by viewModel.showWeatherAppPicker.collectAsStateWithLifecycle()
     val appMenuTarget by viewModel.appMenuTarget.collectAsStateWithLifecycle()
+    val appMenuShortcuts by viewModel.appMenuShortcuts.collectAsStateWithLifecycle()
     val showHomeScreenMenu by viewModel.showHomeScreenMenu.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val onFavoriteClick = viewModel::launchFavorite
@@ -179,18 +180,12 @@ fun HomeScreen(
 
     // App menu bottom sheet (opened directly on long-press)
     appMenuTarget?.let { fav ->
-        val currentCategory =
-                allInstalledApps
-                        .firstOrNull {
-                            it.packageName == fav.packageName &&
-                                    appProfileKey(it.userHandle) == fav.profileKey
-                        }
-                        ?.category
-                        .orEmpty()
+        val currentCategory = viewModel.getCategoryForFavorite(fav)
         HomeAppMenuSheet(
             fav = fav,
             currentCategory = currentCategory,
             categoryOptions = categoryOptions,
+            shortcuts = appMenuShortcuts,
             onDismiss = { viewModel.dismissAppMenu() },
             onRename = { newName -> viewModel.renameApp(fav, newName) },
             onSetCategory = { category -> viewModel.setFavoriteCategory(fav, category) },
@@ -201,7 +196,8 @@ fun HomeScreen(
             },
             onAppInfo = { viewModel.openAppInfo(fav) },
             onHide = { viewModel.hideApp(fav) },
-            onUninstall = { viewModel.uninstallApp(fav) }
+            onUninstall = { viewModel.uninstallApp(fav) },
+            onShortcutClick = { viewModel.launchAppShortcutAction(it) }
         )
     }
 

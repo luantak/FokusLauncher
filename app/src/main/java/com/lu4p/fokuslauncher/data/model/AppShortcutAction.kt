@@ -1,15 +1,18 @@
 package com.lu4p.fokuslauncher.data.model
 
+import android.graphics.drawable.Drawable
+
 /**
  * A selectable shortcut action for right-side home shortcuts.
  * Includes the app launch action and launcher-published long-press actions.
  */
 data class AppShortcutAction(
-    val appLabel: String,
-    val actionLabel: String,
-    val target: ShortcutTarget,
-    /** Same encoding as [FavoriteApp.profileKey] (`"0"` = owner). */
-    val profileKey: String = "0",
+        val appLabel: String,
+        val actionLabel: String,
+        val target: ShortcutTarget,
+        /** Same encoding as [FavoriteApp.profileKey] (`"0"` = owner). */
+        val profileKey: String = "0",
+        val icon: Drawable? = null,
 ) {
     /** Stable list / selection id (profile + target). */
     val id: String get() = "$profileKey|${ShortcutTarget.encode(target)}"

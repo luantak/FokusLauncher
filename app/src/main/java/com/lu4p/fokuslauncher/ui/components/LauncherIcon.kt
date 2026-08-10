@@ -1,5 +1,6 @@
 package com.lu4p.fokuslauncher.ui.components
 
+import android.graphics.drawable.Drawable
 import android.os.Build
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,7 +16,9 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.BlurEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
@@ -23,12 +26,13 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.drawable.toBitmap
 import com.lu4p.fokuslauncher.data.model.LauncherFontScale
 import com.lu4p.fokuslauncher.data.model.PhotoWallpaperOutlineWidthDp
-import com.lu4p.fokuslauncher.ui.theme.LocalPhotoWallpaperOutlineWidthDp
 import com.lu4p.fokuslauncher.ui.theme.LauncherIconGlowSpec
 import com.lu4p.fokuslauncher.ui.theme.LocalLauncherFontScale
 import com.lu4p.fokuslauncher.ui.theme.LocalLauncherIconGlow
+import com.lu4p.fokuslauncher.ui.theme.LocalPhotoWallpaperOutlineWidthDp
 import com.lu4p.fokuslauncher.ui.theme.launcherIconDp
 
 /**
@@ -64,6 +68,83 @@ fun LauncherIcon(
 
 @Composable
 fun LauncherIcon(
+        drawable: Drawable?,
+        contentDescription: String?,
+        modifier: Modifier = Modifier,
+        tint: Color? = null,
+        iconSize: Dp = 24.dp,
+        suppressGlow: Boolean = false,
+        outlined: Boolean = false,
+) {
+    if (drawable == null) return
+    val density = LocalDensity.current
+
+    val (painter, canTint) =
+            remember(drawable, density, iconSize) {
+                val sizePx = with(density) { iconSize.toPx() }.toInt()
+
+                var finalDrawable: Drawable = drawable
+                var isAdaptive = false
+                var monochrome = false
+
+                if (drawable is android.graphics.drawable.AdaptiveIconDrawable) {
+                    isAdaptive = true
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        drawable.monochrome?.let {
+                            finalDrawable = it
+                            monochrome = true
+                        }
+                    }
+                    if (!monochrome) {
+                        finalDrawable = drawable.foreground
+                    }
+                } else if (drawable is android.graphics.drawable.VectorDrawable ||
+                                drawable.javaClass.name.contains("VectorDrawable")
+                ) {
+                    monochrome = true
+                }
+
+                val bitmap =
+                        if (isAdaptive) {
+                            // Zoom in to fill the safe zone. Adaptive icons are 108dp with a 72dp
+                            // safe zone. To fill the space better, we scale up.
+                            val scale = 1.42f
+                            val drawSize = (sizePx * scale).toInt()
+                            val bmp =
+                                    android.graphics.Bitmap.createBitmap(
+                                            sizePx,
+                                            sizePx,
+                                            android.graphics.Bitmap.Config.ARGB_8888
+                                    )
+                            val canvas = android.graphics.Canvas(bmp)
+                            val offset = (sizePx - drawSize) / 2
+                            finalDrawable.setBounds(
+                                    offset,
+                                    offset,
+                                    sizePx - offset,
+                                    sizePx - offset
+                            )
+                            finalDrawable.draw(canvas)
+                            bmp
+                        } else {
+                            finalDrawable.toBitmap(width = sizePx, height = sizePx)
+                        }
+                BitmapPainter(bitmap.asImageBitmap()) to monochrome
+            }
+
+    LauncherIcon(
+            painter = painter,
+            contentDescription = contentDescription,
+            modifier = modifier,
+            tint = if (canTint) tint else Color.Unspecified,
+            iconSize = iconSize,
+            suppressGlow = suppressGlow,
+            outlined = outlined,
+    )
+}
+
+@Composable
+fun LauncherIcon(
         painter: Painter,
         contentDescription: String?,
         modifier: Modifier = Modifier,
@@ -75,12 +156,16 @@ fun LauncherIcon(
     val glowSpec = LocalLauncherIconGlow.current
     val glow = if (suppressGlow) LauncherIconGlowSpec.None else glowSpec
     val resolvedTint =
-            tint
-                    ?: if (glow.enabled) {
-                        MaterialTheme.colorScheme.onSurface
-                    } else {
-                        LocalContentColor.current
-                    }
+            if (tint == Color.Unspecified) {
+                Color.Unspecified
+            } else {
+                tint
+                        ?: if (glow.enabled) {
+                            MaterialTheme.colorScheme.onSurface
+                        } else {
+                            LocalContentColor.current
+                        }
+            }
     val haloTint =
             if (!glow.enabled) {
                 Color.Transparent

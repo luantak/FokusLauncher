@@ -1,5 +1,6 @@
 package com.lu4p.fokuslauncher.data.model
 
+import android.os.Process
 import android.os.UserHandle
 import androidx.annotation.StringRes
 import com.lu4p.fokuslauncher.R
@@ -17,8 +18,10 @@ enum class DrawerAppSortMode(@param:StringRes val labelRes: Int) {
 }
 
 /** Stable profile segment for [userHandle]: owner user is `"0"`. */
-fun appProfileKey(userHandle: UserHandle?): String =
-    userHandle?.hashCode()?.toString() ?: "0"
+fun appProfileKey(userHandle: UserHandle?): String {
+    if (userHandle == null || userHandle == Process.myUserHandle()) return "0"
+    return userHandle.hashCode().toString()
+}
 
 /** Stable key for open counts, list rows, and matching [FavoriteApp.profileKey]. */
 fun drawerOpenCountKey(packageName: String, profileKey: String): String =

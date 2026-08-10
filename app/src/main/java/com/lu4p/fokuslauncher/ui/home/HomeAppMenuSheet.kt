@@ -1,8 +1,12 @@
 package com.lu4p.fokuslauncher.ui.home
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Launch
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
@@ -11,6 +15,7 @@ import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -22,7 +27,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.lu4p.fokuslauncher.R
+import com.lu4p.fokuslauncher.data.model.AppShortcutAction
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
+import com.lu4p.fokuslauncher.ui.components.LauncherIcon
 import com.lu4p.fokuslauncher.ui.components.RenameableBottomSheet
 import com.lu4p.fokuslauncher.ui.components.SheetActionRow
 import com.lu4p.fokuslauncher.ui.util.categoryChipDisplayLabel
@@ -42,17 +49,19 @@ import com.lu4p.fokuslauncher.ui.util.categoryChipDisplayLabel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeAppMenuSheet(
-    fav: FavoriteApp,
-    currentCategory: String,
-    categoryOptions: List<String>,
-    onDismiss: () -> Unit,
-    onRename: (String) -> Unit,
-    onSetCategory: (String) -> Unit,
-    onRemoveFromHome: () -> Unit,
-    onEditHomeScreen: () -> Unit,
-    onAppInfo: () -> Unit,
-    onHide: () -> Unit,
-    onUninstall: () -> Unit
+        fav: FavoriteApp,
+        currentCategory: String,
+        categoryOptions: List<String>,
+        shortcuts: List<AppShortcutAction>,
+        onDismiss: () -> Unit,
+        onRename: (String) -> Unit,
+        onSetCategory: (String) -> Unit,
+        onRemoveFromHome: () -> Unit,
+        onEditHomeScreen: () -> Unit,
+        onAppInfo: () -> Unit,
+        onHide: () -> Unit,
+        onUninstall: () -> Unit,
+        onShortcutClick: (AppShortcutAction) -> Unit,
 ) {
     var showingCategoryPicker by remember(fav.packageName, fav.profileKey) { mutableStateOf(false) }
     val context = LocalContext.current
@@ -95,6 +104,51 @@ fun HomeAppMenuSheet(
             return@RenameableBottomSheet
         }
 
+        shortcuts.forEach { action ->
+            SheetActionRow(
+                    label = action.actionLabel,
+                    onClick = {
+                        onShortcutClick(action)
+                        onDismiss()
+                    },
+                    leadingContent = {
+                        val icon = action.icon
+                        androidx.compose.foundation.layout.Box(
+                                contentAlignment = androidx.compose.ui.Alignment.Center,
+                                modifier =
+                                        Modifier.size(32.dp)
+                                                .background(
+                                                        MaterialTheme.colorScheme.secondaryContainer,
+                                                        androidx.compose.foundation.shape.CircleShape
+                                                )
+                        ) {
+                            if (icon != null) {
+                                LauncherIcon(
+                                        drawable = icon,
+                                        contentDescription = action.actionLabel,
+                                        iconSize = 26.dp,
+                                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                )
+                            } else {
+                                LauncherIcon(
+                                        imageVector = Icons.AutoMirrored.Filled.Launch,
+                                        contentDescription = action.actionLabel,
+                                        iconSize = 20.dp,
+                                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                )
+                            }
+                        }
+                    },
+                    testTag = "shortcut_${action.id}",
+            )
+        }
+
+        if (shortcuts.isNotEmpty()) {
+            androidx.compose.material3.HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 8.dp)
+            )
+        }
+
         val actions: List<Triple<Int, ImageVector, () -> Unit>> =
                 listOf(
                         Triple(
@@ -102,8 +156,16 @@ fun HomeAppMenuSheet(
                                 Icons.Default.Category,
                                 { showingCategoryPicker = true },
                         ),
-                        Triple(R.string.action_remove_from_home, Icons.Default.Close, onRemoveFromHome),
-                        Triple(R.string.settings_nav_home_screen, Icons.Outlined.Edit, onEditHomeScreen),
+                        Triple(
+                                R.string.action_remove_from_home,
+                                Icons.Default.Close,
+                                onRemoveFromHome
+                        ),
+                        Triple(
+                                R.string.settings_nav_home_screen,
+                                Icons.Outlined.Edit,
+                                onEditHomeScreen
+                        ),
                         Triple(R.string.action_app_info, Icons.Default.Info, onAppInfo),
                         Triple(R.string.action_hide, Icons.Default.VisibilityOff, onHide),
                         Triple(R.string.action_uninstall, Icons.Default.Delete, onUninstall),
