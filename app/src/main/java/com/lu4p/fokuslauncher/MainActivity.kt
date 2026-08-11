@@ -29,6 +29,7 @@ import com.lu4p.fokuslauncher.ui.navigation.LauncherHomeCoordinatorViewModel
 import com.lu4p.fokuslauncher.ui.theme.FokusLauncherTheme
 import com.lu4p.fokuslauncher.ui.util.ProvideAppLocale
 import com.lu4p.fokuslauncher.ui.theme.composeFontFamilyFromStoredName
+import com.lu4p.fokuslauncher.utils.FrozenRendererRecovery
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -51,6 +52,9 @@ class MainActivity : AppCompatActivity() {
     private val launcherHomeCoordinator: LauncherHomeCoordinatorViewModel by viewModels()
 
     private var shouldShowStatusBar: Boolean = false
+
+    private val frozenRendererCheck =
+            Runnable { FrozenRendererRecovery.maybeRestartIfFrozen(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -141,9 +145,26 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        // AOSP can leave ViewRootImpl drawing suppressed after sleep/wake with another app on top.
+        window.decorView.removeCallbacks(frozenRendererCheck)
+        window.decorView.postDelayed(frozenRendererCheck, FrozenRendererRecovery.CHECK_DELAY_MS)
+    }
+
+    override fun onPause() {
+        window.decorView.removeCallbacks(frozenRendererCheck)
+        super.onPause()
+    }
+
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) applySystemBarsAppearance()
+        if (hasFocus) {
+            applySystemBarsAppearance()
+            // Unlock / focus after sleep can land after onResume; re-check then too.
+            window.decorView.removeCallbacks(frozenRendererCheck)
+            window.decorView.postDelayed(frozenRendererCheck, FrozenRendererRecovery.CHECK_DELAY_MS)
+        }
     }
 
     private fun applySystemBarsAppearance() {
