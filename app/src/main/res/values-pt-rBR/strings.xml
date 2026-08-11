@@ -42,7 +42,7 @@
     <string name="app_name_placeholder">Nome do aplicativo</string>
     <string name="action_add_to_home">Adicionar para tela inicial</string>
     <string name="action_remove_from_home">Remover da tela inicial</string>
-    <string name="action_app_info">Informação do aplicativo</string>
+    <string name="action_app_info">Informações do aplicativo</string>
     <string name="action_hide">Ocultar</string>
     <string name="action_uninstall">Desinstalar</string>
     <string name="category_name_label">Nome da categoria</string>
@@ -310,4 +310,8 @@
     <string name="settings_weblate_subtitle">Contribua com traduções no Weblate</string>
     <string name="settings_matrix_title">Participe da discussão</string>
     <string name="settings_matrix_subtitle">Obtenha ajuda e compartilhe feedback</string>
+    <string name="toast_digital_wellbeing_launch_failed">Não foi possível abrir o Bem-estar Digital</string>
+    <string name="action_set_category">Definir categoria</string>
+    <string name="cd_restore_archived_app">Restaurar aplicativo arquivado</string>
+    <string name="action_remove_shortcut">Remover atalho</string>
 </resources>

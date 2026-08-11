@@ -347,7 +347,7 @@
     <string name="cd_restore_archived_app">Ripristina app archiviata</string>
     <string name="toast_digital_wellbeing_launch_failed">Impossibile avviare Benessere digitale</string>
     <string name="settings_show_home_media">Mostra controlli multimediali</string>
-    <string name="settings_show_home_screen_time_subtitle_grant_access">Richiede l\'accesso all\'utilizzo: concedilo nelle impostazioni di sistema</string>
+    <string name="settings_show_home_screen_time_subtitle_grant_access">Richiede l\'accesso all\'utlizzo: concedilo nelle impostazioni di sistema</string>
     <string name="media_notification_listener_label">In riproduzione Fokus</string>
     <string name="media_previous_track">Brano precedente</string>
     <string name="media_play">Riproduci</string>

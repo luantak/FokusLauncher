@@ -63,7 +63,7 @@
     <string name="drawer_filter_work">Munka</string>
     <string name="settings_photo_outline_strength_label">Szöveg és ikonok háttere</string>
     <string name="cd_unhide_app">Alkalmazás megjelenítése</string>
-    <string name="home_alignment_middle">Legbelül</string>
+    <string name="home_alignment_middle">Központ</string>
     <string name="category_no_category">Nincs kategória</string>
     <string name="icon_picker_current_icon">Jelenlegi ikon</string>
     <string name="icon_cat_audio_video">Audió &amp; videó</string>
@@ -251,7 +251,7 @@
         <item quantity="one">%d parancsikon beállítva</item>
         <item quantity="other">%d parancsikon beállítva</item>
     </plurals>
-    <string name="settings_weblate_subtitle">Jároljon hozzá a fordításokhoz a Weblate-n</string>
+    <string name="settings_weblate_subtitle">Járuljon hozzá a fordításokhoz a Weblate-n</string>
     <string name="settings_no_renamed_apps">Nincsenek átnevezett alkalmazások</string>
     <string name="settings_font_import_ttf_subtitle">Használjon egy TrueType típust a készülékéről</string>
     <string name="onboarding_choose_apps">Alkalmazások kiválasztása</string>
@@ -339,4 +339,25 @@
     <string name="settings_section_renamed_apps">Átnevezett alkalmazások</string>
     <string name="settings_dot_search_url_template_dialog_title">Keresési URL minta</string>
     <string name="settings_visual_style_subtitle">Neon vagy klasszikus szöveg és ikonok</string>
+    <string name="settings_show_home_media">Médialejátszó megjelenítése</string>
+    <string name="media_play">Lejátszás</string>
+    <string name="toast_digital_wellbeing_launch_failed">Digitális Jólét megnyitása sikertelen</string>
+    <string name="media_pause">Megállítás</string>
+    <string name="settings_show_home_media_subtitle_grant_access">Értesítési hozzáférés szükséges — kapcsolja be hogy engedélyezze a rendszerbeállításokban</string>
+    <string name="media_unlike">Nem tetszik</string>
+    <string name="settings_show_home_screen_time_subtitle">Megjeleníti a képernyőn töltött időt az elmúlt 24 órában</string>
+    <string name="settings_show_home_screen_time_subtitle_grant_access">Használati hozzáférés szükséges — kapcsolja be hogy engedélyezze a rendszerbeállításokban</string>
+    <string name="visual_style_gold">Arany</string>
+    <string name="media_like">Tetszik</string>
+    <string name="media_notification_listener_label">Fokus lejátszó</string>
+    <string name="media_save">Mentés a könyvtárba</string>
+    <string name="settings_section_archived_apps">Archivált alkalmazások</string>
+    <string name="media_buffering">Pufferelés</string>
+    <string name="cd_restore_archived_app">Archivált alkalmazás visszaállítása</string>
+    <string name="media_next_track">Következő</string>
+    <string name="settings_no_archived_apps">Nincs archivált alkalmazás</string>
+    <string name="settings_show_home_media_subtitle">Lejátszó vezérlőgombokkal mikor az audió aktív</string>
+    <string name="media_unsave">Törlés a könyvtárból</string>
+    <string name="media_previous_track">Előző</string>
+    <string name="settings_show_home_screen_time">Képernyőhasználat megjelenítése</string>
 </resources>
