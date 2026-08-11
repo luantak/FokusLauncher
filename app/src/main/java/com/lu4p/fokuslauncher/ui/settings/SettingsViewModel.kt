@@ -1154,7 +1154,8 @@ constructor(
     }
 
     fun refreshArcticonsInstallState() {
-        arcticonsIconPackRepository.invalidate()
+        // Detect install/uninstall only; keep appfilter + icon caches when the pack is unchanged.
+        arcticonsIconPackRepository.refreshInstalledPackage()
     }
 
     fun openArcticonsFdroidInstall() {

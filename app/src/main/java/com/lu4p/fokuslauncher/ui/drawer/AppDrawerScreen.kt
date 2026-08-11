@@ -721,12 +721,16 @@ fun AppDrawerScreen(
 
     LaunchedEffect(uiState.useArcticonsDrawerIcons) {
         if (uiState.useArcticonsDrawerIcons) {
-            viewModel.refreshArcticonsPack()
+            // Warm caches only — do not invalidate (that caused continuous icon reloads).
+            viewModel.warmArcticonsPack()
         }
     }
 
+    val arcticonsIconLoader: suspend (AppInfo) -> android.graphics.drawable.Drawable? =
+            remember(viewModel) { { app -> viewModel.loadArcticonsIcon(app) } }
+
     CompositionLocalProvider(
-            LocalArcticonsIconLoader provides { app -> viewModel.loadArcticonsIcon(app) },
+            LocalArcticonsIconLoader provides arcticonsIconLoader,
     ) {
     AppDrawerContent(
             uiState = uiState,
@@ -1359,6 +1363,11 @@ fun AppListItem(
     }
 }
 
+/** Drawer Arcticons slot — slightly larger than before so fine line-art stays readable. */
+private val ArcticonsDrawerIconSlotSize = 30.dp
+private val ArcticonsDrawerIconSize = 28.dp
+private val ArcticonsDrawerIconPlaceholderSize = 22.dp
+
 @Composable
 private fun ArcticonsDrawerAppIcon(app: AppInfo, tint: Color) {
     val loadIcon = LocalArcticonsIconLoader.current
@@ -1367,11 +1376,12 @@ private fun ArcticonsDrawerAppIcon(app: AppInfo, tint: Color) {
             produceState<android.graphics.drawable.Drawable?>(
                     initialValue = null,
                     key1 = iconKey,
+                    key2 = loadIcon,
             ) {
                 value = loadIcon(app)
             }
     Box(
-            modifier = Modifier.size(24.dp).testTag("app_icon_${app.packageName}"),
+            modifier = Modifier.size(ArcticonsDrawerIconSlotSize).testTag("app_icon_${app.packageName}"),
             contentAlignment = Alignment.Center,
     ) {
         val drawable = loadedIcon
@@ -1380,14 +1390,14 @@ private fun ArcticonsDrawerAppIcon(app: AppInfo, tint: Color) {
                     drawable = drawable,
                     contentDescription = stringResource(R.string.cd_app_icon),
                     tint = tint,
-                    iconSize = 22.dp,
+                    iconSize = ArcticonsDrawerIconSize,
                     forceTint = true,
             )
         } else {
             // Placeholder while loading or when Arcticons has no mapping for this app.
             Box(
                     modifier =
-                            Modifier.size(18.dp)
+                            Modifier.size(ArcticonsDrawerIconPlaceholderSize)
                                     .background(
                                             color = tint.copy(alpha = 0.28f),
                                             shape = CircleShape,

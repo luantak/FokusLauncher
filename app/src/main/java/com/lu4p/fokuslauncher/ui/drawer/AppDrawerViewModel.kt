@@ -400,9 +400,6 @@ constructor(
                         enabled && installed
                     }
                     .collect { showIcons ->
-                        if (showIcons) {
-                            arcticonsIconPackRepository.refreshInstalledPackage()
-                        }
                         _uiState.update { it.copy(useArcticonsDrawerIcons = showIcons) }
                     }
         }
@@ -410,8 +407,9 @@ constructor(
 
     suspend fun loadArcticonsIcon(app: AppInfo) = arcticonsIconPackRepository.getIcon(app)
 
-    fun refreshArcticonsPack() {
-        arcticonsIconPackRepository.invalidate()
+    /** Ensures the Arcticons appfilter is loaded without wiping icon caches. */
+    fun warmArcticonsPack() {
+        viewModelScope.launch { arcticonsIconPackRepository.warmUp() }
     }
 
     private fun observeDrawerDotSearchPreferences() {
