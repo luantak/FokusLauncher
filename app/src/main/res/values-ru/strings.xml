@@ -110,7 +110,7 @@
     <string name="category_add_error_duplicate">Категория \"%1$s\" уже существует. Если вы ввели перевод имени, возможно он совпадает со встроенным, например \"Games\".</string>
     <string name="settings_nav_home_screen">Рабочий стол</string>
     <string name="settings_accessibility_subtitle">Настройки функций, требующих доступ к специальным возможностям</string>
-    <string name="settings_home_date_format_weekday_month">Мес ДД, ГГГГ</string>
+    <string name="settings_home_date_format_weekday_month">Пн ДД, ГГГГ</string>
     <string name="settings_drawer_sidebar_categories_subtitle">Заменяет строку поиска на вертикальную панель.</string>
     <string name="icon_cat_household">Быт</string>
     <string name="drawer_private_space_unlock">Разблокировка приватного пространства</string>
@@ -143,7 +143,7 @@
     <string name="settings_show_status_bar">Показать строку состояния</string>
     <string name="category_add_error_reserved_all_apps">\"Все приложения\" — встроенное имя фильтра. Выберите другое имя.</string>
     <string name="settings_accessibility_permission">Разрешение специальных возможностей</string>
-    <string name="icon_cat_communicate">Связь</string>
+    <string name="icon_cat_communicate">Общение</string>
     <string name="settings_drawer_app_sort_custom">Ручная</string>
     <string name="settings_home_date_format_system">Автоматически (регион)</string>
     <string name="settings_drawer_sidebar_categories">Использовать боковую панель категорий</string>
@@ -169,7 +169,7 @@
     <string name="widget_page_shortcut_label">Страницы виджета</string>
     <plurals name="category_app_count">
         <item quantity="one">%d приложение</item>
-        <item quantity="few">%d приложений</item>
+        <item quantity="few">%d приложения</item>
         <item quantity="many">%d приложений</item>
         <item quantity="other">%d приложений</item>
     </plurals>
@@ -191,8 +191,8 @@
     <string name="accessibility_prominent_disclosure_continue">Продолжить</string>
     <string name="accessibility_prominent_disclosure_not_now">Не сейчас</string>
     <string name="settings_drawer_category_rail_side_subtitle">По умолчанию, боковая панель находится справа. Зажмите по категории в панели для изменения его иконки.</string>
-    <string name="settings_dot_search_title">Точечный поиск</string>
-    <string name="settings_dot_search_subtitle">Введите `.условия` или `&lt;слово в нижнем регистре&gt; условия` в строке поиска меню приложений</string>
+    <string name="settings_dot_search_title">Поиск через точку и ярлыки</string>
+    <string name="settings_dot_search_subtitle">Введите `. запрос` для поиска, `.x запрос` для цели поиска или `.x` для мгновенного ярлыка</string>
     <string name="settings_dot_search_screen_title">Поиск и быстрые команды</string>
     <string name="settings_dot_search_default_label">Стандартное приложение поиска</string>
     <string name="action_set_category">Заменить категорию</string>
@@ -226,7 +226,7 @@
     <string name="settings_profile_names_default_label">По умолчанию: %1$s</string>
     <plurals name="settings_long_lock_duration_minutes">
         <item quantity="one">%d минута</item>
-        <item quantity="few">%d минут</item>
+        <item quantity="few">%d минуты</item>
         <item quantity="many">%d минут</item>
         <item quantity="other">%d минут</item>
     </plurals>
@@ -260,7 +260,7 @@
     <string name="settings_visual_style_label">Цветовой стиль</string>
     <plurals name="settings_shortcuts_configured">
         <item quantity="one">%d ярлык настроен</item>
-        <item quantity="few">%d ярлыков настроено</item>
+        <item quantity="few">%d ярлыка настроено</item>
         <item quantity="many">%d ярлыков настроено</item>
         <item quantity="other">%d ярлыков настроено</item>
     </plurals>
@@ -268,7 +268,7 @@
     <string name="settings_profile_names_save">Сохранить</string>
     <plurals name="settings_home_screen_apps_count">
         <item quantity="one">%d приложение на домашнем экране</item>
-        <item quantity="few">%d приложений на домашнем экране</item>
+        <item quantity="few">%d приложения на домашнем экране</item>
         <item quantity="many">%d приложений на домашнем экране</item>
         <item quantity="other">%d приложений на домашнем экране</item>
     </plurals>
@@ -277,7 +277,7 @@
     <string name="widget_page">страница виджета</string>
     <plurals name="settings_categories_count">
         <item quantity="one">%d категория</item>
-        <item quantity="few">%d категорий</item>
+        <item quantity="few">%d категории</item>
         <item quantity="many">%d категорий</item>
         <item quantity="other">%d категорий</item>
     </plurals>
@@ -323,4 +323,51 @@
     <string name="settings_font_import_failed_unreadable">Не удалось прочитать этот файл</string>
     <string name="settings_font_import_failed_extension">Поддерживаются только шрифты .ttf</string>
     <string name="settings_drawer_scroll_to_top_auto_keyboard_subtitle">Автоматически открывать клавиатуру и поиск при достижении верха списка приложений</string>
+    <string name="settings_font_size_subtitle">Применяется вместе с размером шрифта устройства</string>
+    <string name="settings_show_home_media">Показывать элементы управления медиа</string>
+    <string name="media_play">Воспроизвести</string>
+    <string name="toast_digital_wellbeing_launch_failed">Не удалось открыть «Цифровое благополучие»</string>
+    <string name="settings_weather_app_system_default">Системное по умолчанию</string>
+    <string name="visual_style_classic">Классический</string>
+    <string name="media_pause">Пауза</string>
+    <string name="settings_show_home_media_subtitle_grant_access">Требуется доступ к уведомлениям — включите его в системных настройках</string>
+    <string name="settings_weather_app_not_configured">Не настроено</string>
+    <string name="settings_drawer_scroll_to_top_auto_keyboard">Клавиатура при прокрутке к началу</string>
+    <string name="visual_style_neon_lime">Зеленый терминал</string>
+    <string name="visual_style_emerald">Изумрудный</string>
+    <string name="settings_weather_location_disabled_subtitle">Нажмите, чтобы разрешить доступ к местоположению</string>
+    <string name="media_unlike">Не нравится</string>
+    <string name="settings_show_home_screen_time_subtitle">Время использывания экрана на последние 24 часа</string>
+    <string name="settings_show_home_screen_time_subtitle_grant_access">Требуется доступ к статистике использования — включите его в системных настройках</string>
+    <string name="visual_style_gold">Золотой</string>
+    <string name="settings_font_import_failed_io">Не удалось сохранить файл шрифта</string>
+    <string name="settings_weblate_subtitle">Участвуйте в переводе на Weblate</string>
+    <string name="visual_style_sage">Шалфейный</string>
+    <string name="settings_github_subtitle">Посмотреть исходный код и внести вклад</string>
+    <string name="media_like">Нравится</string>
+    <string name="media_notification_listener_label">Fokus: Сейчас воспроизводится</string>
+    <string name="media_save">Сохранить в библиотеке</string>
+    <string name="settings_section_archived_apps">Архивированые приложения</string>
+    <string name="visual_style_lavender">Лавандовый</string>
+    <string name="visual_style_neon_magenta">Фиолетовый космос</string>
+    <string name="media_buffering">Буферизация</string>
+    <string name="visual_style_neon_pink">Ярко-розовый</string>
+    <string name="visual_style_neon_amber">Коралловый</string>
+    <string name="settings_weather_location_enable_button">Включить</string>
+    <string name="settings_matrix_subtitle">Получайте помощь и делитесь отзывами</string>
+    <string name="cd_restore_archived_app">Восстановить архивированное приложение</string>
+    <string name="media_next_track">Следующий трек</string>
+    <string name="settings_font_import_failed_invalid">Этот файл не является допустимым шрифтом TrueType</string>
+    <string name="settings_no_archived_apps">Нет архивированных приложений</string>
+    <string name="settings_show_home_media_subtitle">Текущее воспроизведение и кнопки управления, когда активно аудио</string>
+    <string name="settings_weblate_title">Помочь с переводом</string>
+    <string name="media_unsave">Удалить из библиотеки</string>
+    <string name="settings_connect_section">Связь</string>
+    <string name="visual_style_rose">Розовый</string>
+    <string name="visual_style_sky">Небесный</string>
+    <string name="settings_matrix_title">Присоединяйтесь к обсуждению</string>
+    <string name="settings_glow_subtitle">Мягкий ореол вокруг текста и значков</string>
+    <string name="media_previous_track">Предыдущий трек</string>
+    <string name="settings_show_home_screen_time">Показывать время использования экрана</string>
+    <string name="settings_visual_style_subtitle">Неоновые или классические цвета текста и значков</string>
 </resources>
