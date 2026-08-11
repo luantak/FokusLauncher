@@ -335,4 +335,24 @@
     <string name="onboarding_location_subtitle"></string>
     <string name="settings_section_renamed_apps"></string>
     <string name="settings_visual_style_subtitle"></string>
+    <string name="settings_show_home_media">Mostrar controles multimedia</string>
+    <string name="media_play">Jugar</string>
+    <string name="settings_section_image_wallpaper_accessibility">Fondo de pantalla de imagen: legibilidad</string>
+    <string name="toast_digital_wellbeing_launch_failed">No se pudo abrir Bienestar digital</string>
+    <string name="settings_photo_drawer_overlay_label">Cajón de aplicaciones con intensidad reducida</string>
+    <string name="settings_show_home_media_subtitle_grant_access">Requiere acceso a notificaciones: active esta opción en la configuración del sistema</string>
+    <string name="settings_show_home_screen_time_subtitle">Tiempo de uso de pantalla en las últimas 24 horas</string>
+    <string name="settings_photo_outline_strength_subtitle">Pastillas negras semitransparentes detrás del reloj, los favoritos, los widgets de inicio y los iconos de acceso directo sobre una imagen de fondo.</string>
+    <string name="settings_photo_outline_width_dp_default">Por defecto</string>
+    <string name="settings_show_home_screen_time_subtitle_grant_access">Requiere acceso de uso: active la opción para otorgar permisos en la configuración del sistema</string>
+    <string name="media_notification_listener_label">Fokus ahora está jugando</string>
+    <string name="settings_photo_outline_width_dp_value">Nivel %1$d</string>
+    <string name="settings_photo_outline_strength_label">Fondo de texto e iconos</string>
+    <string name="home_alignment_middle">Medio</string>
+    <string name="cd_restore_archived_app">Restaurar aplicación archivada</string>
+    <string name="settings_show_home_media_subtitle">Ahora se está jugando con los controles de transporte cuando el audio está activo</string>
+    <string name="action_remove_shortcut">Eliminar acceso directo</string>
+    <string name="settings_photo_drawer_overlay_subtitle">Aumenta la intensidad de la atenuación de pantalla completa detrás del cajón de aplicaciones.</string>
+    <string name="media_previous_track">Pista anterior</string>
+    <string name="settings_show_home_screen_time">Mostrar tiempo de pantalla</string>
 </resources>
