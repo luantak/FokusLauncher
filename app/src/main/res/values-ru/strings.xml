@@ -370,4 +370,6 @@
     <string name="media_previous_track">Предыдущий трек</string>
     <string name="settings_show_home_screen_time">Показывать время использования экрана</string>
     <string name="settings_visual_style_subtitle">Неоновые или классические цвета текста и значков</string>
+    <string name="edit_home_section_all_apps" translatable="false"></string>
+    <string name="app_name" translatable="false"></string>
 </resources>
