@@ -110,6 +110,8 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         private val HOME_DATE_FORMAT_STYLE_KEY = stringPreferencesKey("home_date_format_style")
         private val TEMPERATURE_UNIT_KEY = stringPreferencesKey("temperature_unit")
         private val SHOW_HOME_WEATHER_KEY = booleanPreferencesKey("show_home_weather")
+        /** Opt-in AQI next to the home weather temperature; off by default. */
+        private val SHOW_HOME_AIR_QUALITY_KEY = booleanPreferencesKey("show_home_air_quality")
         /** Show current weather next to each world-clock city on home. */
         private val SHOW_WORLD_CLOCK_WEATHER_KEY =
                 booleanPreferencesKey("show_world_clock_weather")
@@ -417,6 +419,9 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
 
     val showHomeWeatherFlow: Flow<Boolean> = prefFlow(SHOW_HOME_WEATHER_KEY, true)
     suspend fun setShowHomeWeather(show: Boolean) = setPref(SHOW_HOME_WEATHER_KEY, show)
+
+    val showHomeAirQualityFlow: Flow<Boolean> = prefFlow(SHOW_HOME_AIR_QUALITY_KEY, false)
+    suspend fun setShowHomeAirQuality(show: Boolean) = setPref(SHOW_HOME_AIR_QUALITY_KEY, show)
 
     val showWorldClockWeatherFlow: Flow<Boolean> = prefFlow(SHOW_WORLD_CLOCK_WEATHER_KEY, false)
     suspend fun setShowWorldClockWeather(show: Boolean) =

@@ -253,6 +253,36 @@ class HomeScreenTest {
     }
 
     @Test
+    fun homeScreen_weatherWidget_showsAqiNextToTemperature() {
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                HomeScreenContent(
+                        uiState = HomeUiState(showHomeWeather = true),
+                        clockUiState = clock(),
+                        weatherUiState =
+                                HomeWeatherUiState(
+                                        weather =
+                                                WeatherData(
+                                                        temperature = 22,
+                                                        iconCode = "01d",
+                                                        aqi = 29,
+                                                ),
+                                        showWeatherWidget = true,
+                                ),
+                        favorites = testFavorites,
+                        rightSideShortcuts = testRightSideShortcuts,
+                        onLabelClick = {},
+                        onLabelLongPress = {},
+                        onIconClick = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("weather_widget").assertIsDisplayed()
+        composeTestRule.onNodeWithText("22°C · AQI 29").assertIsDisplayed()
+    }
+
+    @Test
     fun homeScreen_screenTimeWidget_showsLast24HoursTotal() {
         composeTestRule.setContent {
             FokusLauncherTheme {

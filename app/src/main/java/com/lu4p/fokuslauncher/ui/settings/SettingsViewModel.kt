@@ -100,6 +100,7 @@ data class SettingsUiState(
         val showHomeClock: Boolean = true,
         val showHomeDate: Boolean = true,
         val showHomeWeather: Boolean = true,
+        val showHomeAirQuality: Boolean = false,
         val showWorldClockWeather: Boolean = false,
         val showHomeBattery: Boolean = true,
         val showHomeMedia: Boolean = false,
@@ -302,14 +303,20 @@ constructor(
                             preferencesManager.preferredCalendarTapFlow,
                             preferencesManager.homeDateFormatStyleFlow,
                             preferencesManager.temperatureUnitFlow,
-                            preferencesManager.showWorldClockWeatherFlow,
-                    ) { clk, cal, fmt, tempUnit, showWorldClockWeather ->
+                            combine(
+                                    preferencesManager.showWorldClockWeatherFlow,
+                                    preferencesManager.showHomeAirQualityFlow,
+                            ) { showWorldClockWeather, showHomeAirQuality ->
+                                showWorldClockWeather to showHomeAirQuality
+                            },
+                    ) { clk, cal, fmt, tempUnit, weatherExtras ->
                         HomeWidgetTapsAndFormat(
                                 clk,
                                 cal,
                                 fmt,
                                 tempUnit,
-                                showWorldClockWeather,
+                                weatherExtras.first,
+                                weatherExtras.second,
                         )
                     }
             val homeWidgetItemsFlow =
@@ -340,6 +347,7 @@ constructor(
                                 homeDateFormatStyle = taps.homeDateFormatStyle,
                                 temperatureUnit = taps.temperatureUnit,
                                 showWorldClockWeather = taps.showWorldClockWeather,
+                                showHomeAirQuality = taps.showHomeAirQuality,
                         )
                     }
             val drawerPrefsFlow =
@@ -532,6 +540,7 @@ constructor(
                         showHomeClock = homeWidgetItems.showClock,
                         showHomeDate = homeWidgetItems.showDate,
                         showHomeWeather = homeWidgetItems.showWeather,
+                        showHomeAirQuality = homeWidgetItems.showHomeAirQuality,
                         showWorldClockWeather = homeWidgetItems.showWorldClockWeather,
                         showHomeBattery = homeWidgetItems.showBattery,
                         showHomeMedia = homeWidgetItems.showMedia,
@@ -589,6 +598,7 @@ constructor(
             val homeDateFormatStyle: HomeDateFormatStyle,
             val temperatureUnit: TemperatureUnit,
             val showWorldClockWeather: Boolean,
+            val showHomeAirQuality: Boolean,
     )
 
     private data class HomeWidgetItemSettings(
@@ -609,6 +619,7 @@ constructor(
             val homeDateFormatStyle: HomeDateFormatStyle,
             val temperatureUnit: TemperatureUnit,
             val showWorldClockWeather: Boolean,
+            val showHomeAirQuality: Boolean,
     )
 
     private data class FavoritesBase(
@@ -948,6 +959,8 @@ constructor(
     fun setShowHomeDate(show: Boolean) = launchPreferences { setShowHomeDate(show) }
 
     fun setShowHomeWeather(show: Boolean) = launchPreferences { setShowHomeWeather(show) }
+
+    fun setShowHomeAirQuality(show: Boolean) = launchPreferences { setShowHomeAirQuality(show) }
 
     fun setShowWorldClockWeather(show: Boolean) =
             launchPreferences { setShowWorldClockWeather(show) }

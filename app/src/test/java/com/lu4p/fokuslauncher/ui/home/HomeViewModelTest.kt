@@ -131,6 +131,7 @@ class HomeViewModelTest {
         every { preferencesManager.showHomeClockFlow } returns flowOf(true)
         every { preferencesManager.showHomeDateFlow } returns flowOf(true)
         every { preferencesManager.showHomeWeatherFlow } returns flowOf(true)
+        every { preferencesManager.showHomeAirQualityFlow } returns flowOf(false)
         every { preferencesManager.showWorldClockWeatherFlow } returns flowOf(false)
         every { preferencesManager.showHomeBatteryFlow } returns flowOf(true)
         every { preferencesManager.showHomeMediaFlow } returns flowOf(false)
