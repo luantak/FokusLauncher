@@ -19,7 +19,15 @@ enum class DrawerAppSortMode(@param:StringRes val labelRes: Int) {
 
 /** Stable profile segment for [userHandle]: owner user is `"0"`. */
 fun appProfileKey(userHandle: UserHandle?): String {
-    if (userHandle == null || userHandle == Process.myUserHandle()) return "0"
+    if (userHandle == null) return "0"
+    // Process.myUserHandle() throws on the plain JVM unit-test classpath (not Robolectric).
+    val myUser =
+            try {
+                Process.myUserHandle()
+            } catch (_: RuntimeException) {
+                null
+            }
+    if (myUser != null && userHandle == myUser) return "0"
     return userHandle.hashCode().toString()
 }
 

@@ -649,8 +649,7 @@ constructor(
         return userManagerOrNull()?.userProfiles?.find { appProfileKey(it) == profileKey }
     }
 
-    fun profileKeyForUser(user: UserHandle): String =
-            if (user == Process.myUserHandle()) "0" else appProfileKey(user)
+    fun profileKeyForUser(user: UserHandle): String = appProfileKey(user)
 
     fun getInstalledAppsVersion(): StateFlow<Long> = installedAppsVersion
     fun getRemovedPackages(): SharedFlow<RemovedApp> = removedPackages.asSharedFlow()
