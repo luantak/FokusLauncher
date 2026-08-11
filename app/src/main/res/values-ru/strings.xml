@@ -195,7 +195,7 @@
     <string name="settings_dot_search_subtitle">Введите `.условия` или `&lt;слово в нижнем регистре&gt; условия` в строке поиска меню приложений</string>
     <string name="settings_dot_search_screen_title">Поиск и быстрые команды</string>
     <string name="settings_dot_search_default_label">Стандартное приложение поиска</string>
-    <string name="action_set_category">Установить категорию</string>
+    <string name="action_set_category">Заменить категорию</string>
     <string name="home_alignment_middle">Центр экрана</string>
     <string name="settings_section_hidden_apps">Скрытые приложения</string>
     <string name="settings_look_locked_image_wallpaper">Недоступно с фоновым изображением. Установите чёрный фон ниже, чтобы использовать цвета и свечение.</string>
