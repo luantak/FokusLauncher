@@ -1,0 +1,5 @@
+Home Pomodoro timer widget with persistent alerts (mutually exclusive with media controls).
+
+Easier to close the widget page.
+
+Fix shortcut edits resetting when opening the icon picker.
