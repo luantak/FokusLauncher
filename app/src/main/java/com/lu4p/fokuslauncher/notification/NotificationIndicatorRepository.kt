@@ -97,8 +97,24 @@ constructor(@param:ApplicationContext private val context: Context) {
                 } catch (_: RuntimeException) {
                     null
                 }
+        val rankingMap =
+                try {
+                    service.currentRanking
+                } catch (_: SecurityException) {
+                    null
+                } catch (_: RuntimeException) {
+                    null
+                }
+        val ranking = NotificationListenerService.Ranking()
         _appsWithNotifications.value =
-                appsWithNotificationsFrom(active, context.packageName)
+                appsWithNotificationsFrom(active, context.packageName) { notificationKey ->
+                    // Fall back to flag filters alone when ranking is unavailable.
+                    if (rankingMap == null || !rankingMap.getRanking(notificationKey, ranking)) {
+                        true
+                    } else {
+                        ranking.canShowBadge()
+                    }
+                }
     }
 
     companion object {

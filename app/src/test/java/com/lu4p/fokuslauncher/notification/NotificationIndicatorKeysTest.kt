@@ -26,6 +26,43 @@ class NotificationIndicatorKeysTest {
     }
 
     @Test
+    fun `notificationAppKeyOrNull ignores ongoing keep-alives`() {
+        assertNull(
+                notificationAppKeyOrNull(
+                        packageName = "com.example.mail",
+                        flags = Notification.FLAG_ONGOING_EVENT,
+                        userHandle = null,
+                        ownPackageName = "com.lu4p.fokuslauncher",
+                )
+        )
+    }
+
+    @Test
+    fun `notificationAppKeyOrNull ignores foreground service notifications`() {
+        assertNull(
+                notificationAppKeyOrNull(
+                        packageName = "com.example.chat",
+                        flags = Notification.FLAG_FOREGROUND_SERVICE,
+                        userHandle = null,
+                        ownPackageName = "com.lu4p.fokuslauncher",
+                )
+        )
+    }
+
+    @Test
+    fun `notificationAppKeyOrNull ignores suppressed badges`() {
+        assertNull(
+                notificationAppKeyOrNull(
+                        packageName = "com.example.mail",
+                        flags = 0,
+                        userHandle = null,
+                        ownPackageName = "com.lu4p.fokuslauncher",
+                        canShowBadge = false,
+                )
+        )
+    }
+
+    @Test
     fun `notificationAppKeyOrNull ignores own package`() {
         assertNull(
                 notificationAppKeyOrNull(
@@ -58,6 +95,12 @@ class NotificationIndicatorKeysTest {
                         listOf(
                                 Triple("com.example.mail", 0, null),
                                 Triple("com.example.mail", Notification.FLAG_GROUP_SUMMARY, null),
+                                Triple("com.example.mail", Notification.FLAG_ONGOING_EVENT, null),
+                                Triple(
+                                        "com.example.push",
+                                        Notification.FLAG_FOREGROUND_SERVICE,
+                                        null,
+                                ),
                                 Triple(own, 0, null),
                                 Triple("com.example.chat", 0, null),
                         ),
