@@ -48,11 +48,26 @@ fun metadataSettingsStableKey(
 ): String {
     val base = appMetadataKey(packageName, profileKey)
     return when (launcherShortcutId) {
+        // Host and legacy package-wide rows intentionally share lookup keys so
+        // favorites/home resolution can find either via [appMetadataKey].
         LEGACY_PACKAGE_WIDE_METADATA,
         HOST_APP_METADATA_SENTINEL -> base
         else -> "$base#shortcut:$launcherShortcutId"
     }
 }
+
+/**
+ * Unique LazyColumn / list identity for metadata rows.
+ *
+ * Unlike [metadataSettingsStableKey], this keeps legacy (`""`) and host
+ * (`[HOST_APP_METADATA_SENTINEL]`) rows distinct so Compose never sees
+ * duplicate keys when both briefly coexist after a rename.
+ */
+fun metadataListItemKey(
+        packageName: String,
+        profileKey: String,
+        launcherShortcutId: String,
+): String = "${appMetadataKey(packageName, profileKey)}#meta:$launcherShortcutId"
 
 fun isAppHiddenByMetadata(app: AppInfo, hiddenApps: List<com.lu4p.fokuslauncher.data.database.entity.HiddenAppEntity>): Boolean {
     if (hiddenApps.isEmpty()) return false

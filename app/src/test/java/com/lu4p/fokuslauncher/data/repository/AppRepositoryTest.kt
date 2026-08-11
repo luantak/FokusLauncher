@@ -22,6 +22,7 @@ import com.lu4p.fokuslauncher.data.database.entity.SuppressedCategoryDefinitionE
 import com.lu4p.fokuslauncher.data.model.AddCategoryResult
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.HOST_APP_METADATA_SENTINEL
+import com.lu4p.fokuslauncher.data.model.LEGACY_PACKAGE_WIDE_METADATA
 import com.lu4p.fokuslauncher.data.model.AppShortcutAction
 import com.lu4p.fokuslauncher.data.model.SystemCategoryKeys
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
@@ -618,6 +619,9 @@ class AppRepositoryTest {
             appDao.hideApp(
                     HiddenAppEntity("com.lu4p.app1", "0", HOST_APP_METADATA_SENTINEL)
             )
+            appDao.unhideApp(
+                    HiddenAppEntity("com.lu4p.app1", "0", LEGACY_PACKAGE_WIDE_METADATA)
+            )
         }
     }
 
@@ -654,6 +658,7 @@ class AppRepositoryTest {
                             HOST_APP_METADATA_SENTINEL,
                     )
             )
+            appDao.removeRename("com.lu4p.app1", "0", LEGACY_PACKAGE_WIDE_METADATA)
         }
     }
 
@@ -672,6 +677,7 @@ class AppRepositoryTest {
                             HOST_APP_METADATA_SENTINEL,
                     )
             )
+            appDao.removeAppCategory("com.lu4p.app1", "0", LEGACY_PACKAGE_WIDE_METADATA)
         }
     }
 

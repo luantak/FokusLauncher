@@ -90,6 +90,43 @@ object AppModule {
             }
         }
 
+    /**
+     * Coalesce pre-v5 package-wide metadata (`launcherShortcutId = ''`) into host rows
+     * (`'__host__'`). Leaving both caused duplicate LazyColumn keys in Settings because
+     * [com.lu4p.fokuslauncher.data.model.metadataSettingsStableKey] maps them to the same
+     * lookup key (see #184).
+     */
+    val migration6To7 =
+        object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                coalesceLegacyPackageWideMetadata(db, "hidden_apps")
+                coalesceLegacyPackageWideMetadata(db, "renamed_apps")
+                coalesceLegacyPackageWideMetadata(db, "app_categories")
+            }
+        }
+
+    private fun coalesceLegacyPackageWideMetadata(db: SupportSQLiteDatabase, table: String) {
+        db.query(
+                        "SELECT packageName, profileKey FROM `$table` WHERE launcherShortcutId = '__host__'"
+                )
+                .use { cursor ->
+                    val packageIndex = cursor.getColumnIndexOrThrow("packageName")
+                    val profileIndex = cursor.getColumnIndexOrThrow("profileKey")
+                    while (cursor.moveToNext()) {
+                        db.execSQL(
+                                "DELETE FROM `$table` WHERE packageName = ? AND profileKey = ? AND launcherShortcutId = ''",
+                                arrayOf(
+                                        cursor.getString(packageIndex),
+                                        cursor.getString(profileIndex),
+                                ),
+                        )
+                    }
+                }
+        db.execSQL(
+                "UPDATE `$table` SET launcherShortcutId = '__host__' WHERE launcherShortcutId = ''"
+        )
+    }
+
     val migration4To5 =
         object : Migration(4, 5) {
             override fun migrate(db: SupportSQLiteDatabase) {
@@ -256,7 +293,14 @@ object AppModule {
         context,
         AppDatabase::class.java,
         "fokus_launcher_db"
-    ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, migration3To4(context), migration4To5, migration5To6).build()
+    ).addMigrations(
+            MIGRATION_1_2,
+            MIGRATION_2_3,
+            migration3To4(context),
+            migration4To5,
+            migration5To6,
+            migration6To7,
+    ).build()
 
     @Provides
     @Singleton

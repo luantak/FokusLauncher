@@ -237,4 +237,109 @@ class AppDatabaseMigrationTest {
             }
         }
     }
+
+    @Test
+    fun migrate6To7_coalescesLegacyPackageWideMetadataIntoHostRows() {
+        val dbName = "migration-test-v6-to-v7"
+        helper.createDatabase(dbName, 6).apply {
+            execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `hidden_apps` (
+                        `packageName` TEXT NOT NULL,
+                        `profileKey` TEXT NOT NULL,
+                        `launcherShortcutId` TEXT NOT NULL DEFAULT '',
+                        PRIMARY KEY(`packageName`, `profileKey`, `launcherShortcutId`)
+                    )
+                    """.trimIndent()
+            )
+            execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `renamed_apps` (
+                        `packageName` TEXT NOT NULL,
+                        `profileKey` TEXT NOT NULL,
+                        `customName` TEXT NOT NULL,
+                        `launcherShortcutId` TEXT NOT NULL DEFAULT '',
+                        PRIMARY KEY(`packageName`, `profileKey`, `launcherShortcutId`)
+                    )
+                    """.trimIndent()
+            )
+            execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `app_categories` (
+                        `packageName` TEXT NOT NULL,
+                        `profileKey` TEXT NOT NULL,
+                        `category` TEXT NOT NULL,
+                        `launcherShortcutId` TEXT NOT NULL DEFAULT '',
+                        PRIMARY KEY(`packageName`, `profileKey`, `launcherShortcutId`)
+                    )
+                    """.trimIndent()
+            )
+            execSQL(
+                    "CREATE TABLE IF NOT EXISTS `app_category_definitions` (`name` TEXT NOT NULL, `position` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`name`))"
+            )
+            execSQL(
+                    "CREATE TABLE IF NOT EXISTS `suppressed_category_definitions` (`name` TEXT NOT NULL, PRIMARY KEY(`name`))"
+            )
+            execSQL(
+                    "INSERT INTO `renamed_apps` (`packageName`, `profileKey`, `customName`, `launcherShortcutId`) VALUES ('net.thunderbird.android', '0', 'Legacy Mail', '')"
+            )
+            execSQL(
+                    "INSERT INTO `renamed_apps` (`packageName`, `profileKey`, `customName`, `launcherShortcutId`) VALUES ('net.thunderbird.android', '0', 'Host Mail', '__host__')"
+            )
+            execSQL(
+                    "INSERT INTO `renamed_apps` (`packageName`, `profileKey`, `customName`, `launcherShortcutId`) VALUES ('org.mozilla.firefox', '0', 'My Browser', '')"
+            )
+            execSQL(
+                    "INSERT INTO `hidden_apps` (`packageName`, `profileKey`, `launcherShortcutId`) VALUES ('com.example.hidden', '0', '')"
+            )
+            execSQL(
+                    "INSERT INTO `app_categories` (`packageName`, `profileKey`, `category`, `launcherShortcutId`) VALUES ('com.example.cat', '0', 'Social', '')"
+            )
+            close()
+        }
+
+        val migratedDb =
+                helper.runMigrationsAndValidate(
+                        dbName,
+                        7,
+                        true,
+                        AppModule.migration6To7,
+                )
+
+        migratedDb.use { db ->
+            db.query(
+                            "SELECT packageName, profileKey, customName, launcherShortcutId FROM renamed_apps ORDER BY packageName"
+                    )
+                    .use { cursor ->
+                        assertEquals(2, cursor.count)
+                        cursor.moveToFirst()
+                        assertEquals("net.thunderbird.android", cursor.getString(0))
+                        assertEquals("Host Mail", cursor.getString(2))
+                        assertEquals("__host__", cursor.getString(3))
+                        cursor.moveToNext()
+                        assertEquals("org.mozilla.firefox", cursor.getString(0))
+                        assertEquals("My Browser", cursor.getString(2))
+                        assertEquals("__host__", cursor.getString(3))
+                    }
+            db.query(
+                            "SELECT packageName, launcherShortcutId FROM hidden_apps"
+                    )
+                    .use { cursor ->
+                        assertEquals(1, cursor.count)
+                        cursor.moveToFirst()
+                        assertEquals("com.example.hidden", cursor.getString(0))
+                        assertEquals("__host__", cursor.getString(1))
+                    }
+            db.query(
+                            "SELECT packageName, category, launcherShortcutId FROM app_categories"
+                    )
+                    .use { cursor ->
+                        assertEquals(1, cursor.count)
+                        cursor.moveToFirst()
+                        assertEquals("com.example.cat", cursor.getString(0))
+                        assertEquals("Social", cursor.getString(1))
+                        assertEquals("__host__", cursor.getString(2))
+                    }
+        }
+    }
 }
