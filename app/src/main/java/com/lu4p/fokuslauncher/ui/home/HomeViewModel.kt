@@ -856,16 +856,21 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun refreshNextAlarm() {
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val nextAlarm = alarmManager.nextAlarmClock
-        val alarmText = if (nextAlarm != null) {
-            formatNextAlarm(nextAlarm.triggerTime)
-        } else {
-            null
-        }
-        val current = _clockUiState.value
-        if (current.nextAlarm != alarmText) {
-            _clockUiState.value = current.copy(nextAlarm = alarmText)
+        try {
+            val alarmManager =
+                    context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
+            val nextAlarm = alarmManager.nextAlarmClock
+            val alarmText = if (nextAlarm != null) {
+                formatNextAlarm(nextAlarm.triggerTime)
+            } else {
+                null
+            }
+            val current = _clockUiState.value
+            if (current.nextAlarm != alarmText) {
+                _clockUiState.value = current.copy(nextAlarm = alarmText)
+            }
+        } catch (_: Exception) {
+            // Ignore; mocked/restricted contexts may not expose AlarmManager.
         }
     }
 

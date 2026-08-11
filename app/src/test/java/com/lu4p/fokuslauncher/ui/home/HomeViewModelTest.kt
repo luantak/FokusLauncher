@@ -105,6 +105,9 @@ class HomeViewModelTest {
         every { screenTimeRepository.queryLast24HoursTotalMs() } returns 0L
         removedPackages = MutableSharedFlow(extraBufferCapacity = 1)
 
+        // AlarmManager is unavailable on the relaxed mock context; HomeViewModel must tolerate that.
+        every { context.getSystemService(Context.ALARM_SERVICE) } returns null
+
         // Mock battery intent
         val batteryIntent = mockk<Intent>(relaxed = true)
         every { batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) } returns 75
