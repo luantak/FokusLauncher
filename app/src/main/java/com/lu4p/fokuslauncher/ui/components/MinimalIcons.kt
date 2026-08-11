@@ -73,8 +73,9 @@ import java.util.Locale
  * icon allowed in pickers plus [legacyAliases] Outlined targets, so R8 can strip unused library
  * icons. Regenerate that file with `scripts/gen_shipped_outlined_icons.py` when the full index or
  * picker rules change. Picker **sections** use [MaterialOutlinedIconCategories] (Google metadata).
- * Unknown keys still resolve to [Icons.Outlined.Circle]. Legacy `send` uses
- * [Icons.AutoMirrored.Outlined.Send].
+ * Pickers omit status-bar / editor-chrome noise (see [isOmittedFromIconPickers]) while keeping
+ * everyday Actions/Text glyphs (calendar, language/globe, notes). Unknown keys still resolve to
+ * [Icons.Outlined.Circle]. Legacy `send` uses [Icons.AutoMirrored.Outlined.Send].
  */
 object MinimalIcons {
 
@@ -91,13 +92,111 @@ object MinimalIcons {
     /**
      * Icons whose Google Symbols metadata category is one of these are omitted from [names] /
      * pickers (see [isOmittedFromIconPickers]). Icons with **no** metadata row are omitted as well.
+     *
+     * **Actions** and **Text** stay available: they hold everyday launcher glyphs (calendar,
+     * language/globe, notes, web). **Android** is omitted because it is mostly status-bar noise
+     * (wifi/cellular/battery bar variants).
      */
     private val pickerOmittedGoogleCategories: Set<String> =
             setOf(
-                    "Text",
                     "Android",
-                    "Actions",
                     "Home",
+            )
+
+    /**
+     * Name prefixes omitted from pickers even when their Google category is allowed. Targets
+     * document-editor chrome and near-duplicate navigation arrows that drown out useful glyphs.
+     */
+    private val pickerOmittedNamePrefixes: List<String> =
+            listOf(
+                    "Format",
+                    "Border",
+                    "TextRotation",
+                    "AlignHorizontal",
+                    "AlignVertical",
+                    "VerticalAlign",
+                    "KeyboardDoubleArrow",
+                    "ArrowBackIos",
+                    "ArrowForwardIos",
+                    "ArrowCircle",
+                    "ArrowDrop",
+                    "SubdirectoryArrow",
+                    "SignalCellular",
+                    "SignalWifi",
+                    "NetworkWifi",
+                    "Wifi1Bar",
+                    "Wifi2Bar",
+                    "Battery",
+            )
+
+    /** Exact names omitted in addition to [pickerOmittedNamePrefixes]. */
+    private val pickerOmittedExactNames: Set<String> =
+            setOf(
+                    "CompareArrows",
+                    "DoubleArrow",
+                    "HorizontalDistribute",
+                    "VerticalDistribute",
+                    "HorizontalRule",
+                    "HorizontalSplit",
+                    "VerticalSplit",
+                    "SpaceBar",
+                    "Subscript",
+                    "Superscript",
+                    "Spellcheck",
+                    "LineStyle",
+                    "LineWeight",
+                    "LineAxis",
+                    "JoinInner",
+                    "JoinLeft",
+                    "JoinRight",
+                    "DataArray",
+                    "DataObject",
+                    "TypeSpecimen",
+                    "FontDownload",
+                    "FontDownloadOff",
+                    "TextDecrease",
+                    "TextIncrease",
+                    "TextFields",
+                    "TextFormat",
+                    "WrapText",
+                    "ShortText",
+                    "Margin",
+                    "Padding",
+                    // Near-duplicate device shells — keep Computer / Tablet / Headphones / Earbuds.
+                    "LaptopChromebook",
+                    "LaptopMac",
+                    "LaptopWindows",
+                    "DesktopMac",
+                    "DesktopWindows",
+                    "DesktopAccessDisabled",
+                    "TabletAndroid",
+                    "TabletMac",
+                    "EarbudsBattery",
+                    "HeadphonesBattery",
+            )
+
+    /**
+     * Extra search tokens so common intents hit the right Material glyph (e.g. "globe" → Language)
+     * without shipping emoji or app icons.
+     */
+    private val pickerSearchAliases: Map<String, String> =
+            mapOf(
+                    "Language" to "globe world browser internet web",
+                    "Public" to "globe world earth",
+                    "TravelExplore" to "globe world explore",
+                    "Web" to "browser internet",
+                    "OpenInBrowser" to "browser internet",
+                    "CalendarMonth" to "calendar date schedule agenda",
+                    "CalendarToday" to "calendar date today",
+                    "Event" to "calendar date schedule",
+                    "EditNote" to "pen pencil note write notepad",
+                    "Draw" to "pen pencil write sketch",
+                    "StickyNote2" to "note sticky notepad",
+                    "Notes" to "note notepad write",
+                    "NoteAlt" to "note notepad write",
+                    "NoteAdd" to "note notepad write",
+                    "Description" to "document file text note",
+                    "Article" to "document file text news",
             )
 
     /**
@@ -127,9 +226,11 @@ object MinimalIcons {
     /** Display order for [MaterialOutlinedIconCategories] labels (aligned roughly with fonts.google.com). */
     private val googleCategorySectionOrder: List<String> =
             listOf(
+                    "Actions",
                     "UI actions",
                     "Communicate",
                     "Social",
+                    "Text",
                     "Maps",
                     "Travel",
                     "Transit",
@@ -141,8 +242,14 @@ object MinimalIcons {
                     "Images",
                     "Audio&Video",
             )
- 
+
+    private fun isOmittedByName(name: String): Boolean {
+        if (name in pickerOmittedExactNames) return true
+        return pickerOmittedNamePrefixes.any { prefix -> name.startsWith(prefix) }
+    }
+
     private fun isOmittedFromIconPickers(name: String): Boolean {
+        if (isOmittedByName(name)) return true
         val cat =
                 pickerCategoryOverrides[name]
                         ?: MaterialOutlinedIconCategories.GOOGLE_CATEGORY_BY_ICON_NAME[name]
@@ -357,6 +464,10 @@ object MinimalIcons {
                                 .replace(Regex("([A-Za-z])([0-9])"), "$1 $2")
                                 .lowercase(Locale.getDefault())
                 )
+                pickerSearchAliases[propertyName]?.let { aliases ->
+                    append(' ')
+                    append(aliases)
+                }
             }
 
     private fun snakeToPascalCase(snake: String): String {
