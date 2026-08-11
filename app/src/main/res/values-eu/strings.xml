@@ -360,6 +360,4 @@
     <string name="media_unsave">Kendu liburutegitik</string>
     <string name="media_previous_track">Aurreko pista</string>
     <string name="settings_show_home_screen_time">Erakutsi pantailako denbora</string>
-    <string name="edit_home_section_all_apps" translatable="false"></string>
-    <string name="app_name" translatable="false"></string>
 </resources>

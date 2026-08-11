@@ -335,37 +335,4 @@
     <string name="settings_accessibility">Control del dispositiu</string>
     <string name="settings_long_lock_duration">Durada del bloqueig llarg</string>
     <string name="settings_visual_style_subtitle">Colors de text i icones clàssics o neon</string>
-    <string name="settings_show_home_media"></string>
-    <string name="media_play"></string>
-    <string name="toast_digital_wellbeing_launch_failed"></string>
-    <string name="media_pause"></string>
-    <string name="settings_show_home_media_subtitle_grant_access"></string>
-    <string name="edit_home_section_all_apps" translatable="false"></string>
-    <string name="media_unlike"></string>
-    <string name="settings_show_home_screen_time_subtitle"></string>
-    <string name="settings_font_import_ttf"></string>
-    <string name="settings_show_home_screen_time_subtitle_grant_access"></string>
-    <string name="visual_style_gold"></string>
-    <string name="settings_font_import_failed_io"></string>
-    <string name="settings_font_import_ttf_subtitle"></string>
-    <string name="media_like"></string>
-    <string name="media_notification_listener_label"></string>
-    <string name="media_save"></string>
-    <string name="settings_font_clear_custom"></string>
-    <string name="settings_section_archived_apps"></string>
-    <string name="home_alignment_middle"></string>
-    <string name="media_buffering"></string>
-    <string name="settings_font_import_failed_extension"></string>
-    <string name="cd_restore_archived_app"></string>
-    <string name="settings_font_import_failed_unreadable"></string>
-    <string name="media_next_track"></string>
-    <string name="settings_font_import_failed_invalid"></string>
-    <string name="settings_no_archived_apps"></string>
-    <string name="settings_font_custom_imported"></string>
-    <string name="settings_show_home_media_subtitle"></string>
-    <string name="media_unsave"></string>
-    <string name="app_name" translatable="false"></string>
-    <string name="action_remove_shortcut"></string>
-    <string name="media_previous_track"></string>
-    <string name="settings_show_home_screen_time"></string>
 </resources>

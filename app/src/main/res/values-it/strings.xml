@@ -365,6 +365,4 @@
     <string name="media_save">Salva nella libreria</string>
     <string name="media_unsave">Rimuovi dalla libreria</string>
     <string name="settings_show_home_media_subtitle">In riproduzione con controlli di trasporto quando l\'audio è attivo</string>
-    <string name="edit_home_section_all_apps" translatable="false"></string>
-    <string name="app_name" translatable="false"></string>
 </resources>
