@@ -16,7 +16,76 @@ from __future__ import annotations
 import re
 import sys
 
-PICKER_OMITTED = frozenset({"Text", "Android", "Actions", "Home"})
+# Keep in sync with MinimalIcons.pickerOmittedGoogleCategories.
+PICKER_OMITTED = frozenset({"Android", "Home"})
+
+# Keep in sync with MinimalIcons.pickerOmittedNamePrefixes.
+PICKER_OMITTED_NAME_PREFIXES = (
+    "Format",
+    "Border",
+    "TextRotation",
+    "AlignHorizontal",
+    "AlignVertical",
+    "VerticalAlign",
+    "KeyboardDoubleArrow",
+    "ArrowBackIos",
+    "ArrowForwardIos",
+    "ArrowCircle",
+    "ArrowDrop",
+    "SubdirectoryArrow",
+    "SignalCellular",
+    "SignalWifi",
+    "NetworkWifi",
+    "Wifi1Bar",
+    "Wifi2Bar",
+    "Battery",
+)
+
+# Keep in sync with MinimalIcons.pickerOmittedExactNames.
+PICKER_OMITTED_EXACT = frozenset(
+    {
+        "CompareArrows",
+        "DoubleArrow",
+        "HorizontalDistribute",
+        "VerticalDistribute",
+        "HorizontalRule",
+        "HorizontalSplit",
+        "VerticalSplit",
+        "SpaceBar",
+        "Subscript",
+        "Superscript",
+        "Spellcheck",
+        "LineStyle",
+        "LineWeight",
+        "LineAxis",
+        "JoinInner",
+        "JoinLeft",
+        "JoinRight",
+        "DataArray",
+        "DataObject",
+        "TypeSpecimen",
+        "FontDownload",
+        "FontDownloadOff",
+        "TextDecrease",
+        "TextIncrease",
+        "TextFields",
+        "TextFormat",
+        "WrapText",
+        "ShortText",
+        "Margin",
+        "Padding",
+        "LaptopChromebook",
+        "LaptopMac",
+        "LaptopWindows",
+        "DesktopMac",
+        "DesktopWindows",
+        "DesktopAccessDisabled",
+        "TabletAndroid",
+        "TabletMac",
+        "EarbudsBattery",
+        "HeadphonesBattery",
+    }
+)
 
 # Icons.Outlined.* basenames from legacyAliases in MinimalIcons.kt (send uses AutoMirrored — skip).
 LEGACY_OUTLINED = frozenset(
@@ -100,7 +169,15 @@ def load_categories(categories_path: str) -> dict[str, str]:
     return dict(pairs)
 
 
+def is_omitted_by_name(name: str) -> bool:
+    if name in PICKER_OMITTED_EXACT:
+        return True
+    return any(name.startswith(prefix) for prefix in PICKER_OMITTED_NAME_PREFIXES)
+
+
 def is_omitted_from_picker(name: str, google: dict[str, str]) -> bool:
+    if is_omitted_by_name(name):
+        return True
     cat = google.get(name)
     if cat is None:
         return True

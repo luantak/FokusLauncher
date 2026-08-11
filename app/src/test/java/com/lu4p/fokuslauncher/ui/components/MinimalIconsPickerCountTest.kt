@@ -40,8 +40,62 @@ class MinimalIconsPickerCountTest {
         assertTrue(MinimalIcons.names.size >= 100)
     }
 
+    @Test
+    fun minimalIconPicker_includesEverydayShortcutIcons() {
+        val names = MinimalIcons.names.toSet()
+        // Issue #175: common intents should resolve without emoji / app icons.
+        for (name in
+                listOf(
+                        "Language",
+                        "Public",
+                        "Web",
+                        "CalendarMonth",
+                        "Event",
+                        "EditNote",
+                        "Draw",
+                        "StickyNote2",
+                        "Notes",
+                        "Article",
+                        "Description",
+                )) {
+            assertTrue("$name should be offered in the icon picker", name in names)
+        }
+    }
+
+    @Test
+    fun minimalIconPicker_searchAliasesMatchCommonIntents() {
+        fun matches(query: String): List<String> =
+                MinimalIcons.names.filter { name ->
+                    name.contains(query, ignoreCase = true) ||
+                            MinimalIcons.materialOutlinedSearchHaystack(name)
+                                    .contains(query, ignoreCase = true)
+                }
+
+        assertTrue(matches("globe").any { it == "Language" || it == "Public" })
+        assertTrue(matches("calendar").contains("CalendarMonth"))
+        assertTrue(matches("pencil").any { it == "EditNote" || it == "Draw" })
+        assertTrue(matches("browser").any { it == "Language" || it == "Web" || it == "OpenInBrowser" })
+    }
+
+    @Test
+    fun minimalIconPicker_omitsEditorChromeAndStatusBarNoise() {
+        val names = MinimalIcons.names.toSet()
+        for (name in
+                listOf(
+                        "FormatBold",
+                        "BorderLeft",
+                        "Wifi1Bar",
+                        "SignalWifi4Bar",
+                        "LaptopMac",
+                        "ArrowBackIos",
+                        "KeyboardDoubleArrowDown",
+                )) {
+            assertTrue("$name should stay out of the picker", name !in names)
+        }
+    }
+
     companion object {
         /** Distinct [MinimalIcons.names] entries offered in pickers (baseline; bump when catalog changes). */
-        const val EXPECTED_PICKER_ICON_COUNT: Int = 1333
+        const val EXPECTED_PICKER_ICON_COUNT: Int = 1578
     }
 }
