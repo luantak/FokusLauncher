@@ -9,6 +9,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 
@@ -22,6 +24,7 @@ class WeatherRepository @Inject constructor() {
     companion object {
         var OPEN_METEO_BASE_URL = "https://api.open-meteo.com/v1/forecast"
         var OPEN_METEO_GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
+        var OPEN_METEO_AIR_QUALITY_URL = "https://air-quality-api.open-meteo.com/v1/air-quality"
         private const val CACHE_DURATION_MS = 30 * 60 * 1000L // 30 minutes
     }
 
@@ -29,6 +32,7 @@ class WeatherRepository @Inject constructor() {
             val latE2: Int,
             val lonE2: Int,
             val useFahrenheit: Boolean,
+            val includeAqi: Boolean,
     )
 
     private val weatherCache = mutableMapOf<WeatherCacheKey, WeatherData>()
@@ -36,15 +40,22 @@ class WeatherRepository @Inject constructor() {
 
     /**
      * Fetches weather data for the given coordinates. Returns cached data if less than 30 minutes
-     * old and the requested temperature unit matches the cache for those coordinates.
+     * old and the requested temperature unit / AQI option matches the cache for those coordinates.
      *
      * @param lat Latitude
      * @param lon Longitude
      * @param useFahrenheit When true, requests and parses values in Fahrenheit per Open-Meteo.
-     * @return WeatherData or null if the fetch fails
+     * Also selects US AQI instead of European AQI when [includeAqi] is true.
+     * @param includeAqi When true, also fetches current AQI from the Open-Meteo air-quality API.
+     * @return WeatherData or null if the forecast fetch fails
      */
-    suspend fun getWeather(lat: Double, lon: Double, useFahrenheit: Boolean = false): WeatherData? {
-        val key = weatherCacheKey(lat, lon, useFahrenheit)
+    suspend fun getWeather(
+            lat: Double,
+            lon: Double,
+            useFahrenheit: Boolean = false,
+            includeAqi: Boolean = false,
+    ): WeatherData? {
+        val key = weatherCacheKey(lat, lon, useFahrenheit, includeAqi)
         synchronized(weatherCache) {
             weatherCache[key]?.let { cached ->
                 if (System.currentTimeMillis() - cached.lastUpdated < CACHE_DURATION_MS) {
@@ -53,30 +64,27 @@ class WeatherRepository @Inject constructor() {
             }
         }
 
-        val temperatureUnit = if (useFahrenheit) "fahrenheit" else "celsius"
-
         return withContext(Dispatchers.IO) {
             try {
-                val url =
-                        URL(
-                                OPEN_METEO_BASE_URL +
-                                        "?latitude=$lat" +
-                                        "&longitude=$lon" +
-                                        "&current=temperature_2m,weather_code" +
-                                        "&temperature_unit=$temperatureUnit"
-                        )
-                val connection = url.openConnection() as HttpURLConnection
-                connection.requestMethod = "GET"
-                connection.connectTimeout = 10_000
-                connection.readTimeout = 10_000
-
-                if (connection.responseCode == 200) {
-                    val response = connection.inputStream.bufferedReader().readText()
-                    val weather = parseOpenMeteoResponse(response)
-                    synchronized(weatherCache) { weatherCache[key] = weather }
-                    weather
-                } else {
-                    synchronized(weatherCache) { weatherCache[key] }
+                coroutineScope {
+                    val forecastDeferred = async { fetchCurrentForecast(lat, lon, useFahrenheit) }
+                    val aqiDeferred =
+                            if (includeAqi) {
+                                async { fetchCurrentAqi(lat, lon, useUsAqi = useFahrenheit) }
+                            } else {
+                                null
+                            }
+                    val forecast = forecastDeferred.await()
+                    if (forecast == null) {
+                        synchronized(weatherCache) { weatherCache[key] }
+                    } else {
+                        val weather =
+                                forecast.copy(
+                                        aqi = if (includeAqi) aqiDeferred?.await() else null,
+                                )
+                        synchronized(weatherCache) { weatherCache[key] = weather }
+                        weather
+                    }
                 }
             } catch (_: Exception) {
                 synchronized(weatherCache) { weatherCache[key] }
@@ -90,9 +98,10 @@ class WeatherRepository @Inject constructor() {
     suspend fun getWeatherForPlace(
             placeName: String,
             useFahrenheit: Boolean = false,
+            includeAqi: Boolean = false,
     ): WeatherData? {
         val coords = geocode(placeName) ?: return null
-        return getWeather(coords.first, coords.second, useFahrenheit)
+        return getWeather(coords.first, coords.second, useFahrenheit, includeAqi)
     }
 
     /**
@@ -132,12 +141,59 @@ class WeatherRepository @Inject constructor() {
         synchronized(geocodeCache) { geocodeCache.clear() }
     }
 
-    private fun weatherCacheKey(lat: Double, lon: Double, useFahrenheit: Boolean): WeatherCacheKey =
+    private fun weatherCacheKey(
+            lat: Double,
+            lon: Double,
+            useFahrenheit: Boolean,
+            includeAqi: Boolean,
+    ): WeatherCacheKey =
             WeatherCacheKey(
                     latE2 = (lat * 100.0).roundToInt(),
                     lonE2 = (lon * 100.0).roundToInt(),
                     useFahrenheit = useFahrenheit,
+                    includeAqi = includeAqi,
             )
+
+    private fun fetchCurrentForecast(
+            lat: Double,
+            lon: Double,
+            useFahrenheit: Boolean,
+    ): WeatherData? {
+        val temperatureUnit = if (useFahrenheit) "fahrenheit" else "celsius"
+        val url =
+                URL(
+                        OPEN_METEO_BASE_URL +
+                                "?latitude=$lat" +
+                                "&longitude=$lon" +
+                                "&current=temperature_2m,weather_code" +
+                                "&temperature_unit=$temperatureUnit"
+                )
+        val connection = url.openConnection() as HttpURLConnection
+        connection.requestMethod = "GET"
+        connection.connectTimeout = 10_000
+        connection.readTimeout = 10_000
+        if (connection.responseCode != 200) return null
+        val response = connection.inputStream.bufferedReader().readText()
+        return parseOpenMeteoResponse(response)
+    }
+
+    private fun fetchCurrentAqi(lat: Double, lon: Double, useUsAqi: Boolean): Int? {
+        val aqiField = if (useUsAqi) "us_aqi" else "european_aqi"
+        val url =
+                URL(
+                        OPEN_METEO_AIR_QUALITY_URL +
+                                "?latitude=$lat" +
+                                "&longitude=$lon" +
+                                "&current=$aqiField"
+                )
+        val connection = url.openConnection() as HttpURLConnection
+        connection.requestMethod = "GET"
+        connection.connectTimeout = 10_000
+        connection.readTimeout = 10_000
+        if (connection.responseCode != 200) return null
+        val response = connection.inputStream.bufferedReader().readText()
+        return parseAirQualityResponse(response, aqiField)
+    }
 
     private fun parseOpenMeteoResponse(json: String): WeatherData {
         val obj = JSONObject(json)
@@ -152,6 +208,12 @@ class WeatherRepository @Inject constructor() {
                 iconCode = openMeteo.iconCode,
                 lastUpdated = System.currentTimeMillis()
         )
+    }
+
+    private fun parseAirQualityResponse(json: String, aqiField: String): Int? {
+        val current = JSONObject(json).optJSONObject("current") ?: return null
+        if (!current.has(aqiField) || current.isNull(aqiField)) return null
+        return current.getDouble(aqiField).roundToInt()
     }
 
     private fun parseGeocodeResponse(json: String): Pair<Double, Double>? {

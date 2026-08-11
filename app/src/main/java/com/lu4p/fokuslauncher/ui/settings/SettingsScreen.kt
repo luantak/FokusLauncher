@@ -1008,6 +1008,16 @@ fun HomeWidgetsSettingsScreen(
             }
             item {
                 SettingsToggleRow(
+                        label = stringResource(R.string.settings_show_home_air_quality),
+                        subtitle =
+                                stringResource(R.string.settings_show_home_air_quality_subtitle),
+                        checked = uiState.showHomeAirQuality,
+                        enabled = uiState.showHomeWeather,
+                        onCheckedChange = viewModel::setShowHomeAirQuality,
+                )
+            }
+            item {
+                SettingsToggleRow(
                         label = stringResource(R.string.settings_show_world_clock_weather),
                         subtitle =
                                 stringResource(R.string.settings_show_world_clock_weather_subtitle),

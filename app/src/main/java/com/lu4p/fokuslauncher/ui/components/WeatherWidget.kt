@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -21,6 +22,7 @@ import com.lu4p.fokuslauncher.ui.theme.LocalPhotoWallpaperOutlineWidthDp
 
 /**
  * Compact weather widget showing temperature and a Material Symbols weather glyph.
+ * When [WeatherData.aqi] is present, the air quality index is shown next to the temperature.
  * [prominent] uses [bodyLarge] for the icon and temperature so the chip reads larger while staying
  * one line (matches [DateBatteryRow] when not prominent: both use [titleMedium]).
  */
@@ -35,6 +37,13 @@ fun WeatherWidget(
 ) {
     val suffix = if (useFahrenheit) "\u00B0F" else "\u00B0C"
     val temperatureText = weather?.let { "${it.temperature}$suffix" } ?: "--$suffix"
+    val aqi = weather?.aqi
+    val displayText =
+            if (aqi != null) {
+                stringResource(R.string.weather_with_aqi_format, temperatureText, aqi)
+            } else {
+                temperatureText
+            }
     val tempStyle =
             (if (prominent) MaterialTheme.typography.bodyLarge else MaterialTheme.typography.titleMedium)
                     .copy(fontWeight = FontWeight.SemiBold)
@@ -73,7 +82,7 @@ fun WeatherWidget(
         Spacer(modifier = Modifier.width(if (prominent) 8.dp else 4.dp))
         if (outlined && !useSharedBackdrop) {
             OutlinedText(
-                    text = temperatureText,
+                    text = displayText,
                     style = tempStyle,
                     color = textColor,
                     maxLines = 1,
@@ -81,7 +90,7 @@ fun WeatherWidget(
             )
         } else {
             Text(
-                text = temperatureText,
+                text = displayText,
                 style = tempStyle,
                 color = textColor,
                 maxLines = 1,

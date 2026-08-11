@@ -219,6 +219,7 @@ class HomeViewModel @Inject constructor(
     private var worldClockCities: List<WorldClockCity> = emptyList()
     private var countdownEvents: List<CountdownEvent> = emptyList()
     private var showWorldClockWeather: Boolean = false
+    private var showHomeAirQuality: Boolean = false
     private var worldClockWeatherTexts: Map<String, String> = emptyMap()
     private var worldClockWeatherFetchJob: Job? = null
 
@@ -1007,6 +1008,12 @@ class HomeViewModel @Inject constructor(
             }
             syncWeatherTicker()
         }
+        observeFlow(preferencesManager.showHomeAirQualityFlow.distinctUntilChanged()) { showAqi ->
+            showHomeAirQuality = showAqi
+            if (_uiState.value.showHomeWeather) {
+                refreshWeather()
+            }
+        }
     }
 
     private fun observeWorldClockWeatherPreference() {
@@ -1557,7 +1564,8 @@ class HomeViewModel @Inject constructor(
                                         weatherRepository.getWeather(
                                                 lat,
                                                 lon,
-                                                useFahrenheit = useFahrenheit
+                                                useFahrenheit = useFahrenheit,
+                                                includeAqi = showHomeAirQuality,
                                         )
                                     },
                             weatherUseFahrenheit = useFahrenheit,

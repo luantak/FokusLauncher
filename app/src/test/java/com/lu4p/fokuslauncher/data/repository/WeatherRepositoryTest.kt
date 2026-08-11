@@ -3,8 +3,10 @@ package com.lu4p.fokuslauncher.data.repository
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.ui.components.weatherMaterialSymbolDrawableRes
 import kotlinx.coroutines.test.runTest
+import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.RecordedRequest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -21,6 +23,7 @@ class WeatherRepositoryTest {
     private lateinit var repository: WeatherRepository
     private lateinit var mockWebServer: MockWebServer
     private lateinit var originalBaseUrl: String
+    private lateinit var originalAirQualityUrl: String
 
     @Before
     fun setup() {
@@ -28,7 +31,10 @@ class WeatherRepositoryTest {
         mockWebServer.start()
 
         originalBaseUrl = WeatherRepository.OPEN_METEO_BASE_URL
-        WeatherRepository.OPEN_METEO_BASE_URL = mockWebServer.url("/").toString()
+        originalAirQualityUrl = WeatherRepository.OPEN_METEO_AIR_QUALITY_URL
+        WeatherRepository.OPEN_METEO_BASE_URL = mockWebServer.url("/forecast").toString()
+        WeatherRepository.OPEN_METEO_AIR_QUALITY_URL =
+                mockWebServer.url("/air-quality").toString()
 
         repository = WeatherRepository()
     }
@@ -36,6 +42,7 @@ class WeatherRepositoryTest {
     @After
     fun tearDown() {
         WeatherRepository.OPEN_METEO_BASE_URL = originalBaseUrl
+        WeatherRepository.OPEN_METEO_AIR_QUALITY_URL = originalAirQualityUrl
         mockWebServer.shutdown()
     }
 
@@ -237,6 +244,162 @@ class WeatherRepositoryTest {
         assertEquals(22, berlinWeather?.temperature)
         assertEquals(30, tokyoWeather?.temperature)
         assertEquals(2, mockWebServer.requestCount)
+    }
+
+    @Test
+    fun `getWeather includes european aqi when requested`() = runTest {
+        val forecast =
+                """
+            {
+              "current": {
+                "temperature_2m": 22.5,
+                "weather_code": 3
+              }
+            }
+        """
+                        .trimIndent()
+        val airQuality =
+                """
+            {
+              "current": {
+                "european_aqi": 29
+              }
+            }
+        """
+                        .trimIndent()
+        mockWebServer.dispatcher =
+                object : Dispatcher() {
+                    override fun dispatch(request: RecordedRequest): MockResponse {
+                        return when {
+                            request.path?.startsWith("/air-quality") == true ->
+                                    MockResponse().setResponseCode(200).setBody(airQuality)
+                            else -> MockResponse().setResponseCode(200).setBody(forecast)
+                        }
+                    }
+                }
+
+        val weather = repository.getWeather(52.52, 13.41, includeAqi = true)
+
+        assertNotNull(weather)
+        assertEquals(22, weather?.temperature)
+        assertEquals(29, weather?.aqi)
+        val aqiRequest =
+                (0 until mockWebServer.requestCount)
+                        .map { mockWebServer.takeRequest() }
+                        .first { it.path?.startsWith("/air-quality") == true }
+        assertTrue(aqiRequest.requestUrl!!.queryParameter("current") == "european_aqi")
+    }
+
+    @Test
+    fun `getWeather requests us aqi when fahrenheit and includeAqi`() = runTest {
+        val forecast =
+                """
+            {
+              "current": {
+                "temperature_2m": 72.0,
+                "weather_code": 0
+              }
+            }
+        """
+                        .trimIndent()
+        val airQuality =
+                """
+            {
+              "current": {
+                "us_aqi": 42
+              }
+            }
+        """
+                        .trimIndent()
+        mockWebServer.dispatcher =
+                object : Dispatcher() {
+                    override fun dispatch(request: RecordedRequest): MockResponse {
+                        return when {
+                            request.path?.startsWith("/air-quality") == true ->
+                                    MockResponse().setResponseCode(200).setBody(airQuality)
+                            else -> MockResponse().setResponseCode(200).setBody(forecast)
+                        }
+                    }
+                }
+
+        val weather =
+                repository.getWeather(52.52, 13.41, useFahrenheit = true, includeAqi = true)
+
+        assertEquals(42, weather?.aqi)
+        val aqiRequest =
+                (0 until mockWebServer.requestCount)
+                        .map { mockWebServer.takeRequest() }
+                        .first { it.path?.startsWith("/air-quality") == true }
+        assertTrue(aqiRequest.requestUrl!!.queryParameter("current") == "us_aqi")
+    }
+
+    @Test
+    fun `getWeather keeps temperature when air quality request fails`() = runTest {
+        val forecast =
+                """
+            {
+              "current": {
+                "temperature_2m": 18.0,
+                "weather_code": 0
+              }
+            }
+        """
+                        .trimIndent()
+        mockWebServer.dispatcher =
+                object : Dispatcher() {
+                    override fun dispatch(request: RecordedRequest): MockResponse {
+                        return when {
+                            request.path?.startsWith("/air-quality") == true ->
+                                    MockResponse().setResponseCode(500)
+                            else -> MockResponse().setResponseCode(200).setBody(forecast)
+                        }
+                    }
+                }
+
+        val weather = repository.getWeather(52.52, 13.41, includeAqi = true)
+
+        assertEquals(18, weather?.temperature)
+        assertNull(weather?.aqi)
+    }
+
+    @Test
+    fun `getWeather does not use aqi-less cache when includeAqi becomes true`() = runTest {
+        val forecast =
+                """
+            {
+              "current": {
+                "temperature_2m": 22.5,
+                "weather_code": 3
+              }
+            }
+        """
+                        .trimIndent()
+        val airQuality =
+                """
+            {
+              "current": {
+                "european_aqi": 55
+              }
+            }
+        """
+                        .trimIndent()
+        mockWebServer.dispatcher =
+                object : Dispatcher() {
+                    override fun dispatch(request: RecordedRequest): MockResponse {
+                        return when {
+                            request.path?.startsWith("/air-quality") == true ->
+                                    MockResponse().setResponseCode(200).setBody(airQuality)
+                            else -> MockResponse().setResponseCode(200).setBody(forecast)
+                        }
+                    }
+                }
+
+        val withoutAqi = repository.getWeather(52.52, 13.41, includeAqi = false)
+        val withAqi = repository.getWeather(52.52, 13.41, includeAqi = true)
+
+        assertNull(withoutAqi?.aqi)
+        assertEquals(55, withAqi?.aqi)
+        assertTrue(mockWebServer.requestCount >= 2)
     }
 
     @Test
