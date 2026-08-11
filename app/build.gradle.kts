@@ -209,7 +209,6 @@ dependencies {
     // Core
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
-    implementation(libs.androidx.media)
     implementation(libs.google.material)
 
     // Compose

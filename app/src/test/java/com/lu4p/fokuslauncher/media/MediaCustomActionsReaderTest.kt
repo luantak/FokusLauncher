@@ -1,9 +1,9 @@
 package com.lu4p.fokuslauncher.media
 
+import android.media.MediaMetadata
+import android.media.Rating
+import android.media.session.PlaybackState
 import android.os.Bundle
-import android.support.v4.media.MediaMetadataCompat
-import android.support.v4.media.RatingCompat
-import android.support.v4.media.session.PlaybackStateCompat
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -18,7 +18,8 @@ class MediaCustomActionsReaderTest {
     @Test
     fun likeButtonMatchesHeartAction() {
         val state =
-                PlaybackStateCompat.Builder()
+                PlaybackState.Builder()
+                        .setState(PlaybackState.STATE_PLAYING, 0L, 1f)
                         .addCustomAction("com.spotify.heart", "Like", 0)
                         .build()
 
@@ -30,7 +31,8 @@ class MediaCustomActionsReaderTest {
     @Test
     fun saveButtonMatchesLibraryAction() {
         val state =
-                PlaybackStateCompat.Builder()
+                PlaybackState.Builder()
+                        .setState(PlaybackState.STATE_PLAYING, 0L, 1f)
                         .addCustomAction("ADD_TO_LIBRARY", "Add to library", 0)
                         .build()
 
@@ -42,7 +44,8 @@ class MediaCustomActionsReaderTest {
     @Test
     fun likedSongsActionMapsToLikeNotSave() {
         val state =
-                PlaybackStateCompat.Builder()
+                PlaybackState.Builder()
+                        .setState(PlaybackState.STATE_PLAYING, 0L, 1f)
                         .addCustomAction("add_to_liked_songs", "Add to Liked Songs", 0)
                         .build()
 
@@ -55,7 +58,8 @@ class MediaCustomActionsReaderTest {
     @Test
     fun removeFromLikedSongsIsActiveLike() {
         val state =
-                PlaybackStateCompat.Builder()
+                PlaybackState.Builder()
+                        .setState(PlaybackState.STATE_PLAYING, 0L, 1f)
                         .addCustomAction("remove_from_liked_songs", "Remove from Liked Songs", 0)
                         .build()
 
@@ -66,7 +70,8 @@ class MediaCustomActionsReaderTest {
     @Test
     fun activeSaveDetectedFromRemoveLabel() {
         val state =
-                PlaybackStateCompat.Builder()
+                PlaybackState.Builder()
+                        .setState(PlaybackState.STATE_PLAYING, 0L, 1f)
                         .addCustomAction("REMOVE_FROM_LIBRARY", "Remove from library", 0)
                         .build()
 
@@ -78,11 +83,14 @@ class MediaCustomActionsReaderTest {
     fun activeLikeDetectedFromExtras() {
         val extras = Bundle().apply { putBoolean("liked", true) }
         val customAction =
-                PlaybackStateCompat.CustomAction.Builder("heart", "Like", android.R.drawable.btn_star)
+                PlaybackState.CustomAction.Builder("heart", "Like", android.R.drawable.btn_star)
                         .setExtras(extras)
                         .build()
         val state =
-                PlaybackStateCompat.Builder().addCustomAction(customAction).build()
+                PlaybackState.Builder()
+                        .setState(PlaybackState.STATE_PLAYING, 0L, 1f)
+                        .addCustomAction(customAction)
+                        .build()
 
         assertTrue(MediaCustomActionsReader.likeButton(state)?.active == true)
     }
@@ -90,14 +98,15 @@ class MediaCustomActionsReaderTest {
     @Test
     fun likedStateFromMetadataRating() {
         val metadata =
-                MediaMetadataCompat.Builder()
+                MediaMetadata.Builder()
                         .putRating(
-                                MediaMetadataCompat.METADATA_KEY_USER_RATING,
-                                RatingCompat.newHeartRating(true),
+                                MediaMetadata.METADATA_KEY_USER_RATING,
+                                Rating.newHeartRating(true),
                         )
                         .build()
         val state =
-                PlaybackStateCompat.Builder()
+                PlaybackState.Builder()
+                        .setState(PlaybackState.STATE_PLAYING, 0L, 1f)
                         .addCustomAction("heart", "Like", 0)
                         .build()
 

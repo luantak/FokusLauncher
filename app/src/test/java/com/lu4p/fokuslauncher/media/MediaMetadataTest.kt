@@ -1,6 +1,6 @@
 package com.lu4p.fokuslauncher.media
 
-import android.support.v4.media.MediaMetadataCompat
+import android.media.MediaMetadata
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -13,9 +13,9 @@ class MediaMetadataTest {
     @Test
     fun artistNamePrefersArtistKey() {
         val metadata =
-                MediaMetadataCompat.Builder()
-                        .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, "Artist A")
-                        .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, "Subtitle B")
+                MediaMetadata.Builder()
+                        .putString(MediaMetadata.METADATA_KEY_ARTIST, "Artist A")
+                        .putString(MediaMetadata.METADATA_KEY_DISPLAY_SUBTITLE, "Subtitle B")
                         .build()
 
         assertEquals("Artist A", MediaMetadataReader.artistName(metadata))
@@ -24,8 +24,8 @@ class MediaMetadataTest {
     @Test
     fun artistNameFallsBackToDisplaySubtitle() {
         val metadata =
-                MediaMetadataCompat.Builder()
-                        .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, "Artist B")
+                MediaMetadata.Builder()
+                        .putString(MediaMetadata.METADATA_KEY_DISPLAY_SUBTITLE, "Artist B")
                         .build()
 
         assertEquals("Artist B", MediaMetadataReader.artistName(metadata))
@@ -34,9 +34,9 @@ class MediaMetadataTest {
     @Test
     fun artistNameReadsCharSequenceMetadata() {
         val metadata =
-                MediaMetadataCompat.Builder()
-                        .putText(MediaMetadataCompat.METADATA_KEY_TITLE, "Song Title")
-                        .putText(MediaMetadataCompat.METADATA_KEY_ARTIST, "Spotify Artist")
+                MediaMetadata.Builder()
+                        .putText(MediaMetadata.METADATA_KEY_TITLE, "Song Title")
+                        .putText(MediaMetadata.METADATA_KEY_ARTIST, "Spotify Artist")
                         .build()
 
         assertEquals("Song Title", MediaMetadataReader.trackTitle(metadata))
@@ -46,9 +46,9 @@ class MediaMetadataTest {
     @Test
     fun artistNameUsesDescriptionSubtitle() {
         val metadata =
-                MediaMetadataCompat.Builder()
-                        .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, "Song Title")
-                        .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, "Artist Name")
+                MediaMetadata.Builder()
+                        .putString(MediaMetadata.METADATA_KEY_DISPLAY_TITLE, "Song Title")
+                        .putString(MediaMetadata.METADATA_KEY_DISPLAY_SUBTITLE, "Artist Name")
                         .build()
 
         assertEquals("Song Title", MediaMetadataReader.trackTitle(metadata))
@@ -57,6 +57,6 @@ class MediaMetadataTest {
 
     @Test
     fun artistNameReturnsNullWhenMissing() {
-        assertNull(MediaMetadataReader.artistName(MediaMetadataCompat.Builder().build()))
+        assertNull(MediaMetadataReader.artistName(MediaMetadata.Builder().build()))
     }
 }

@@ -1,11 +1,11 @@
 package com.lu4p.fokuslauncher.media
 
+import android.media.MediaMetadata
+import android.media.Rating
+import android.media.session.PlaybackState
 import android.os.Bundle
-import android.support.v4.media.MediaMetadataCompat
-import android.support.v4.media.RatingCompat
-import android.support.v4.media.session.PlaybackStateCompat
 
-/** A like or save control advertised by the active app through [PlaybackStateCompat] custom actions. */
+/** A like or save control advertised by the active app through [PlaybackState] custom actions. */
 data class MediaCustomActionButton(
         val actionId: String,
         val label: String,
@@ -17,14 +17,14 @@ data class MediaCustomActionButton(
 object MediaCustomActionsReader {
 
     fun likeButton(
-            state: PlaybackStateCompat?,
-            metadata: MediaMetadataCompat? = null,
+            state: PlaybackState?,
+            metadata: MediaMetadata? = null,
     ): MediaCustomActionButton? =
             bestMatch(state?.customActions.orEmpty(), ActionKind.LIKE, metadata)
 
     fun saveButton(
-            state: PlaybackStateCompat?,
-            metadata: MediaMetadataCompat? = null,
+            state: PlaybackState?,
+            metadata: MediaMetadata? = null,
     ): MediaCustomActionButton? =
             bestMatch(state?.customActions.orEmpty(), ActionKind.SAVE, metadata)
 
@@ -34,9 +34,9 @@ object MediaCustomActionsReader {
     }
 
     private fun bestMatch(
-            actions: List<PlaybackStateCompat.CustomAction>,
+            actions: List<PlaybackState.CustomAction>,
             kind: ActionKind,
-            metadata: MediaMetadataCompat?,
+            metadata: MediaMetadata?,
     ): MediaCustomActionButton? =
             actions
                     .mapNotNull { action -> score(action, kind, metadata) }
@@ -44,9 +44,9 @@ object MediaCustomActionsReader {
                     ?.first
 
     private fun score(
-            action: PlaybackStateCompat.CustomAction,
+            action: PlaybackState.CustomAction,
             kind: ActionKind,
-            metadata: MediaMetadataCompat?,
+            metadata: MediaMetadata?,
     ): Pair<MediaCustomActionButton, Int>? {
         val actionId = action.action.orEmpty()
         val label = action.name?.toString().orEmpty()
@@ -71,7 +71,7 @@ object MediaCustomActionsReader {
     private fun resolveActive(
             haystack: String,
             extras: Bundle?,
-            metadata: MediaMetadataCompat?,
+            metadata: MediaMetadata?,
             kind: ActionKind,
     ): Boolean {
         extrasIndicateActive(extras)?.let { return it }
@@ -111,12 +111,12 @@ object MediaCustomActionsReader {
         return null
     }
 
-    private fun metadataIndicatesLiked(metadata: MediaMetadataCompat?): Boolean? {
-        val rating = metadata?.getRating(MediaMetadataCompat.METADATA_KEY_USER_RATING) ?: return null
+    private fun metadataIndicatesLiked(metadata: MediaMetadata?): Boolean? {
+        val rating = metadata?.getRating(MediaMetadata.METADATA_KEY_USER_RATING) ?: return null
         if (!rating.isRated) return false
         return when (rating.ratingStyle) {
-            RatingCompat.RATING_HEART -> rating.hasHeart()
-            RatingCompat.RATING_THUMB_UP_DOWN -> rating.isThumbUp
+            Rating.RATING_HEART -> rating.hasHeart()
+            Rating.RATING_THUMB_UP_DOWN -> rating.isThumbUp
             else -> null
         }
     }

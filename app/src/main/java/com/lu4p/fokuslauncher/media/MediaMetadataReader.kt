@@ -1,18 +1,18 @@
 package com.lu4p.fokuslauncher.media
 
-import android.support.v4.media.MediaMetadataCompat
+import android.media.MediaMetadata
 
 /** Reads now-playing fields the way Android media notifications do (getText + description). */
 object MediaMetadataReader {
 
-    fun trackTitle(metadata: MediaMetadataCompat?): String? {
+    fun trackTitle(metadata: MediaMetadata?): String? {
         metadata ?: return null
-        return metadata.readText(MediaMetadataCompat.METADATA_KEY_TITLE)
-                ?: metadata.readText(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE)
+        return metadata.readText(MediaMetadata.METADATA_KEY_TITLE)
+                ?: metadata.readText(MediaMetadata.METADATA_KEY_DISPLAY_TITLE)
                 ?: metadata.description.title?.toString()?.trim()?.takeIf { it.isNotBlank() }
     }
 
-    fun artistName(metadata: MediaMetadataCompat?, title: String? = trackTitle(metadata)): String? {
+    fun artistName(metadata: MediaMetadata?, title: String? = trackTitle(metadata)): String? {
         metadata ?: return null
         val normalizedTitle = title?.trim()?.takeIf { it.isNotBlank() }
 
@@ -36,20 +36,20 @@ object MediaMetadataReader {
         return null
     }
 
-    private fun MediaMetadataCompat.readText(key: String): String? =
+    private fun MediaMetadata.readText(key: String): String? =
             getString(key)?.trim()?.takeIf { it.isNotBlank() }
                     ?: getText(key)?.toString()?.trim()?.takeIf { it.isNotBlank() }
 
     private val PRIMARY_ARTIST_KEYS =
             listOf(
-                    MediaMetadataCompat.METADATA_KEY_ARTIST,
-                    MediaMetadataCompat.METADATA_KEY_ALBUM_ARTIST,
-                    MediaMetadataCompat.METADATA_KEY_AUTHOR,
+                    MediaMetadata.METADATA_KEY_ARTIST,
+                    MediaMetadata.METADATA_KEY_ALBUM_ARTIST,
+                    MediaMetadata.METADATA_KEY_AUTHOR,
             )
 
     private val SECONDARY_ARTIST_KEYS =
             listOf(
-                    MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE,
-                    MediaMetadataCompat.METADATA_KEY_DISPLAY_DESCRIPTION,
+                    MediaMetadata.METADATA_KEY_DISPLAY_SUBTITLE,
+                    MediaMetadata.METADATA_KEY_DISPLAY_DESCRIPTION,
             )
 }

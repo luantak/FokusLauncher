@@ -7,13 +7,11 @@ import android.content.Context
 import android.content.Intent
 import android.media.session.MediaController
 import android.media.session.MediaSessionManager
+import android.media.session.PlaybackState
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.support.v4.media.session.MediaControllerCompat
-import android.support.v4.media.session.MediaSessionCompat
-import android.support.v4.media.session.PlaybackStateCompat
 import androidx.annotation.MainThread
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -26,12 +24,12 @@ import kotlinx.coroutines.flow.asStateFlow
 data class MediaPlaybackUiState(
         val title: String,
         val artist: String?,
-        /** True for [PlaybackStateCompat.STATE_PLAYING] and [PlaybackStateCompat.STATE_BUFFERING]. */
+        /** True for [PlaybackState.STATE_PLAYING] and [PlaybackState.STATE_BUFFERING]. */
         val isPlaying: Boolean,
         val isBuffering: Boolean = false,
-        /** False when the active app does not advertise [PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS]. */
+        /** False when the active app does not advertise [PlaybackState.ACTION_SKIP_TO_PREVIOUS]. */
         val canSkipToPrevious: Boolean,
-        /** False when the active app does not advertise [PlaybackStateCompat.ACTION_SKIP_TO_NEXT]. */
+        /** False when the active app does not advertise [PlaybackState.ACTION_SKIP_TO_NEXT]. */
         val canSkipToNext: Boolean,
         val like: MediaCustomActionButton? = null,
         val save: MediaCustomActionButton? = null,
@@ -53,7 +51,7 @@ class MediaRepository @Inject constructor(@param:ApplicationContext private val 
     val state: StateFlow<MediaPlaybackUiState?> = _state.asStateFlow()
 
     /** Session controllers from notification access, keyed by package name. */
-    private val sessionControllers = LinkedHashMap<String, MediaControllerCompat>()
+    private val sessionControllers = LinkedHashMap<String, MediaController>()
 
     private var widgetEnabled = false
     private var listenerComponent: ComponentName? = null
@@ -71,10 +69,10 @@ class MediaRepository @Inject constructor(@param:ApplicationContext private val 
     }
 
     private val sessionCallback =
-            object : MediaControllerCompat.Callback() {
-                override fun onPlaybackStateChanged(state: PlaybackStateCompat?) = publishState()
+            object : MediaController.Callback() {
+                override fun onPlaybackStateChanged(state: PlaybackState?) = publishState()
 
-                override fun onMetadataChanged(metadata: android.support.v4.media.MediaMetadataCompat?) =
+                override fun onMetadataChanged(metadata: android.media.MediaMetadata?) =
                         publishState()
 
                 override fun onSessionDestroyed() {
@@ -156,7 +154,7 @@ class MediaRepository @Inject constructor(@param:ApplicationContext private val 
         }
     }
 
-    /** Opens the playing app — its now-playing screen via [MediaControllerCompat.getSessionActivity]
+    /** Opens the playing app — its now-playing screen via [MediaController.getSessionActivity]
      *  when offered, otherwise the app's launcher entry. */
     @MainThread fun openMediaApp() {
         val playback = resolveActivePlayback() ?: return
@@ -191,7 +189,7 @@ class MediaRepository @Inject constructor(@param:ApplicationContext private val 
     fun skipToPrevious() {
         val controller = activeController() ?: return
         val actions = controller.playbackState?.actions ?: return
-        if (actions and PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS == 0L) return
+        if (actions and PlaybackState.ACTION_SKIP_TO_PREVIOUS == 0L) return
         controller.transportControls.skipToPrevious()
     }
 
@@ -199,7 +197,7 @@ class MediaRepository @Inject constructor(@param:ApplicationContext private val 
     fun skipToNext() {
         val controller = activeController() ?: return
         val actions = controller.playbackState?.actions ?: return
-        if (actions and PlaybackStateCompat.ACTION_SKIP_TO_NEXT == 0L) return
+        if (actions and PlaybackState.ACTION_SKIP_TO_NEXT == 0L) return
         controller.transportControls.skipToNext()
     }
 
@@ -251,23 +249,23 @@ class MediaRepository @Inject constructor(@param:ApplicationContext private val 
 
         for (frameworkController in incoming) {
             val packageName = frameworkController.packageName
-            val compatToken = MediaSessionCompat.Token.fromToken(frameworkController.sessionToken)
             val existing = sessionControllers[packageName]
-            if (existing != null && existing.sessionToken == compatToken) continue
+            if (existing != null && existing.sessionToken == frameworkController.sessionToken) {
+                continue
+            }
             existing?.unregisterCallback(sessionCallback)
-            val compat = MediaControllerCompat(context, compatToken)
-            compat.registerCallback(sessionCallback, mainHandler)
-            sessionControllers[packageName] = compat
+            frameworkController.registerCallback(sessionCallback, mainHandler)
+            sessionControllers[packageName] = frameworkController
         }
         publishState()
     }
 
-    private fun allShowableControllers(): List<MediaControllerCompat> =
+    private fun allShowableControllers(): List<MediaController> =
             sessionControllers.values.filter {
                 MediaPlaybackState.isShowable(it.playbackState?.state)
             }
 
-    private fun activeController(): MediaControllerCompat? {
+    private fun activeController(): MediaController? {
         val controllers = allShowableControllers()
         val active =
                 controllers.filter {
@@ -341,9 +339,9 @@ class MediaRepository @Inject constructor(@param:ApplicationContext private val 
                         isPlaying = playback.isPlaying,
                         isBuffering = playback.isBuffering,
                         canSkipToPrevious =
-                                actions and PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS != 0L,
+                                actions and PlaybackState.ACTION_SKIP_TO_PREVIOUS != 0L,
                         canSkipToNext =
-                                actions and PlaybackStateCompat.ACTION_SKIP_TO_NEXT != 0L,
+                                actions and PlaybackState.ACTION_SKIP_TO_NEXT != 0L,
                         like = like,
                         save = save,
                 )
@@ -407,7 +405,7 @@ class MediaRepository @Inject constructor(@param:ApplicationContext private val 
             val artist: String?,
             val isPlaying: Boolean,
             val isBuffering: Boolean,
-            val controller: MediaControllerCompat,
+            val controller: MediaController,
             val packageName: String,
     )
 

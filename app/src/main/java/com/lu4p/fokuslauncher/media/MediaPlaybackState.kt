@@ -1,23 +1,22 @@
 package com.lu4p.fokuslauncher.media
 
-import android.support.v4.media.session.PlaybackStateCompat
+import android.media.session.PlaybackState
 
-/** Helpers for interpreting [PlaybackStateCompat] session states in the media widget. */
+/** Helpers for interpreting [PlaybackState] session states in the media widget. */
 object MediaPlaybackState {
 
     /** True for playing or buffering — session is actively engaged with media. */
     fun isActivelyPlaying(state: Int?): Boolean =
-            state == PlaybackStateCompat.STATE_PLAYING ||
-                    state == PlaybackStateCompat.STATE_BUFFERING
+            state == PlaybackState.STATE_PLAYING || state == PlaybackState.STATE_BUFFERING
 
-    fun isBuffering(state: Int?): Boolean = state == PlaybackStateCompat.STATE_BUFFERING
+    fun isBuffering(state: Int?): Boolean = state == PlaybackState.STATE_BUFFERING
 
     fun isShowable(state: Int?): Boolean =
             when (state) {
                 null,
-                PlaybackStateCompat.STATE_NONE,
-                PlaybackStateCompat.STATE_STOPPED,
-                PlaybackStateCompat.STATE_ERROR -> false
+                PlaybackState.STATE_NONE,
+                PlaybackState.STATE_STOPPED,
+                PlaybackState.STATE_ERROR -> false
                 else -> true
             }
 }
