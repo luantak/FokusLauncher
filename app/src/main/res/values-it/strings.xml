@@ -344,7 +344,7 @@
     <string name="settings_font_import_failed_unreadable">Impossibile leggere il file</string>
     <string name="settings_font_import_failed_extension">Sono supportati solo i file .ttf</string>
     <string name="settings_font_import_failed_invalid">Il file non è un carattere TrueType valido</string>
-    <string name="cd_restore_archived_app">Ripristina app archiviate</string>
+    <string name="cd_restore_archived_app">Ripristina app archiviata</string>
     <string name="toast_digital_wellbeing_launch_failed">Impossibile avviare Benessere digitale</string>
     <string name="settings_show_home_media">Mostra controlli multimediali</string>
     <string name="settings_show_home_screen_time_subtitle_grant_access">Richiede l\'accesso all\'utlizzo: concedilo nelle impostazioni di sistema</string>

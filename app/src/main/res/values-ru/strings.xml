@@ -337,7 +337,7 @@
     <string name="visual_style_emerald">Изумрудный</string>
     <string name="settings_weather_location_disabled_subtitle">Нажмите, чтобы разрешить доступ к местоположению</string>
     <string name="media_unlike">Не нравится</string>
-    <string name="settings_show_home_screen_time_subtitle">Время использывания экрана на последние 24 часа</string>
+    <string name="settings_show_home_screen_time_subtitle">Время использования экрана на последние 24 часа</string>
     <string name="settings_show_home_screen_time_subtitle_grant_access">Требуется доступ к статистике использования — включите его в системных настройках</string>
     <string name="visual_style_gold">Золотой</string>
     <string name="settings_font_import_failed_io">Не удалось сохранить файл шрифта</string>
@@ -347,7 +347,7 @@
     <string name="media_like">Нравится</string>
     <string name="media_notification_listener_label">Fokus: Сейчас воспроизводится</string>
     <string name="media_save">Сохранить в библиотеке</string>
-    <string name="settings_section_archived_apps">Архивированые приложения</string>
+    <string name="settings_section_archived_apps">Архивированные приложения</string>
     <string name="visual_style_lavender">Лавандовый</string>
     <string name="visual_style_neon_magenta">Фиолетовый космос</string>
     <string name="media_buffering">Буферизация</string>
