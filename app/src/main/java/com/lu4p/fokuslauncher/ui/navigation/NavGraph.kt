@@ -69,11 +69,14 @@ import com.lu4p.fokuslauncher.ui.drawer.AppDrawerViewModel
 import com.lu4p.fokuslauncher.ui.home.HomeScreen
 import com.lu4p.fokuslauncher.ui.home.HomeViewModel
 import com.lu4p.fokuslauncher.ui.onboarding.OnboardingScreen
+import com.lu4p.fokuslauncher.ui.settings.AppearanceSettingsScreen
+import com.lu4p.fokuslauncher.ui.settings.AppsManagementSettingsScreen
 import com.lu4p.fokuslauncher.ui.settings.CategoryAppsScreen
 import com.lu4p.fokuslauncher.ui.settings.CategorySettingsScreen
 import com.lu4p.fokuslauncher.ui.settings.EditHomeAppsScreen
 import com.lu4p.fokuslauncher.ui.settings.EditShortcutsScreen
 import com.lu4p.fokuslauncher.ui.settings.DeviceControlSettingsScreen
+import com.lu4p.fokuslauncher.ui.settings.DrawerBehaviorSettingsScreen
 import com.lu4p.fokuslauncher.ui.settings.DrawerDotSearchSettingsScreen
 import com.lu4p.fokuslauncher.ui.settings.HomeWidgetsSettingsScreen
 import com.lu4p.fokuslauncher.ui.settings.ProfileNamesSettingsScreen
@@ -97,6 +100,9 @@ object Routes {
     const val SETTINGS_HOME_WIDGETS = "settings_home_widgets"
     const val SETTINGS_DRAWER_DOT_SEARCH = "settings_drawer_dot_search"
     const val SETTINGS_PROFILE_NAMES = "settings_profile_names"
+    const val SETTINGS_APPEARANCE = "settings_appearance"
+    const val SETTINGS_DRAWER_BEHAVIOR = "settings_drawer_behavior"
+    const val SETTINGS_APPS_MANAGEMENT = "settings_apps_management"
 }
 
 private const val SWIPE_THRESHOLD = 100f
@@ -666,11 +672,6 @@ fun FokusNavGraph(
                 SettingsScreen(
                     viewModel = settingsVm,
                     onNavigateBack = { navController.popBackStack() },
-                    onNavigateToHome = {
-                        keyboardController?.hide()
-                        showDrawer = false
-                        navController.popBackStack(Routes.HOME, inclusive = false)
-                    },
                     onEditHomeScreen = {
                         navController.navigateSingleTop(Routes.SETTINGS_EDIT_HOME_APPS)
                     },
@@ -689,7 +690,45 @@ fun FokusNavGraph(
                     onOpenHomeWidgetsSettings = {
                         navController.navigateSingleTop(Routes.SETTINGS_HOME_WIDGETS)
                     },
+                    onOpenAppearanceSettings = {
+                        navController.navigateSingleTop(Routes.SETTINGS_APPEARANCE)
+                    },
+                    onOpenDrawerBehaviorSettings = {
+                        navController.navigateSingleTop(Routes.SETTINGS_DRAWER_BEHAVIOR)
+                    },
+                    onOpenAppsManagementSettings = {
+                        navController.navigateSingleTop(Routes.SETTINGS_APPS_MANAGEMENT)
+                    },
                     backgroundScrim = Color.Black
+                )
+            }
+
+            fokusSettingsComposable(Routes.SETTINGS_APPEARANCE) {
+                AppearanceSettingsScreen(
+                        viewModel = settingsViewModel(componentActivity),
+                        onNavigateBack = { navController.popBackStack() },
+                        onNavigateToHome = {
+                            keyboardController?.hide()
+                            showDrawer = false
+                            navController.popBackStack(Routes.HOME, inclusive = false)
+                        },
+                        backgroundScrim = Color.Black,
+                )
+            }
+
+            fokusSettingsComposable(Routes.SETTINGS_DRAWER_BEHAVIOR) {
+                DrawerBehaviorSettingsScreen(
+                        viewModel = settingsViewModel(componentActivity),
+                        onNavigateBack = { navController.popBackStack() },
+                        backgroundScrim = Color.Black,
+                )
+            }
+
+            fokusSettingsComposable(Routes.SETTINGS_APPS_MANAGEMENT) {
+                AppsManagementSettingsScreen(
+                        viewModel = settingsViewModel(componentActivity),
+                        onNavigateBack = { navController.popBackStack() },
+                        backgroundScrim = Color.Black,
                 )
             }
 
