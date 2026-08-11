@@ -117,6 +117,20 @@ class PreferencesManagerTest {
         assertEquals(fav.label, fav.categoryLabel)
     }
 
+    @Test
+    fun `parseFavorites keeps intent iconPackage that contains semicolons`() {
+        val intentUri = "intent:#Intent;action=android.intent.action.VIEW;end"
+        val raw = "Maps;com.lu4p.maps;map;$intentUri;0"
+        val result = parseFavorites(raw)
+
+        assertEquals(1, result.size)
+        assertEquals("Maps", result[0].label)
+        assertEquals("com.lu4p.maps", result[0].packageName)
+        assertEquals("map", result[0].iconName)
+        assertEquals(intentUri, result[0].iconPackage)
+        assertEquals("0", result[0].profileKey)
+    }
+
     /**
      * Mirrors the parsing logic in PreferencesManager for testability.
      */
@@ -125,12 +139,23 @@ class PreferencesManagerTest {
         return raw.split("|").mapNotNull { entry ->
             val semiParts = entry.split(";")
             if (semiParts.size >= 3) {
+                val label = semiParts[0]
+                val packageName = semiParts[1]
+                val iconName = semiParts[2]
+                val (iconPackage, profileKey) =
+                        when {
+                            semiParts.size == 3 -> "" to "0"
+                            semiParts.size == 4 -> semiParts[3] to "0"
+                            else ->
+                                    semiParts.subList(3, semiParts.lastIndex).joinToString(";") to
+                                            semiParts.last().ifBlank { "0" }
+                        }
                 FavoriteApp(
-                    label = semiParts[0],
-                    packageName = semiParts[1],
-                    iconName = semiParts[2],
-                    iconPackage = semiParts.getOrElse(3) { "" },
-                    profileKey = semiParts.getOrElse(4) { "0" },
+                        label = label,
+                        packageName = packageName,
+                        iconName = iconName,
+                        iconPackage = iconPackage,
+                        profileKey = profileKey,
                 )
             } else {
                 val colonParts = entry.split(":", limit = 2)
