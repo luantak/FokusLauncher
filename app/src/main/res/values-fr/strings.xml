@@ -365,4 +365,6 @@
     <string name="media_buffering">Tampon</string>
     <string name="media_like">Aimer</string>
     <string name="media_unlike">Ne plus aimer</string>
+    <string name="edit_home_section_all_apps" translatable="false"></string>
+    <string name="app_name" translatable="false"></string>
 </resources>
