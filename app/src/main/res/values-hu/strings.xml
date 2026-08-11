@@ -360,4 +360,6 @@
     <string name="media_unsave">Törlés a könyvtárból</string>
     <string name="media_previous_track">Előző</string>
     <string name="settings_show_home_screen_time">Képernyőhasználat megjelenítése</string>
+    <string name="edit_home_section_all_apps" translatable="false"></string>
+    <string name="app_name" translatable="false"></string>
 </resources>
