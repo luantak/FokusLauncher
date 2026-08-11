@@ -61,6 +61,7 @@ import androidx.compose.material.icons.outlined.Work
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.ui.components.generated.MaterialOutlinedIconCategories
+import com.lu4p.fokuslauncher.ui.components.generated.MaterialPickerAllowlist
 import com.lu4p.fokuslauncher.ui.components.generated.MaterialShippedOutlinedIcons
 import java.util.Locale
 
@@ -69,13 +70,12 @@ import java.util.Locale
  * [Google Fonts Material Symbols](https://fonts.google.com/icons) “outlined” style), exposed
  * as Compose vectors via `material-icons-extended`.
  *
- * Only a **subset** of extended outlined glyphs is shipped ([MaterialShippedOutlinedIcons]): every
- * icon allowed in pickers plus [legacyAliases] Outlined targets, so R8 can strip unused library
- * icons. Regenerate that file with `scripts/gen_shipped_outlined_icons.py` when the full index or
- * picker rules change. Picker **sections** use [MaterialOutlinedIconCategories] (Google metadata).
- * Pickers omit status-bar / editor-chrome noise (see [isOmittedFromIconPickers]) while keeping
- * everyday Actions/Text glyphs (calendar, language/globe, notes). Unknown keys still resolve to
- * [Icons.Outlined.Circle]. Legacy `send` uses [Icons.AutoMirrored.Outlined.Send].
+ * Pickers use a **curated allowlist** ([MaterialPickerAllowlist] /
+ * `scripts/icon_picker_allowlist.txt`), not the full Material catalog. Only those glyphs plus
+ * [legacyAliases] Outlined targets are shipped ([MaterialShippedOutlinedIcons]) so R8 can strip
+ * unused library icons. Regenerate with `scripts/gen_shipped_outlined_icons.py` when the allowlist
+ * changes. Picker **sections** use [MaterialOutlinedIconCategories] (Google metadata). Unknown keys
+ * still resolve to [Icons.Outlined.Circle]. Legacy `send` uses [Icons.AutoMirrored.Outlined.Send].
  */
 object MinimalIcons {
 
@@ -88,116 +88,6 @@ object MinimalIcons {
             val titleLiteral: String? = null,
             val names: List<String>,
     )
-
-    /**
-     * Icons whose Google Symbols metadata category is one of these are omitted from [names] /
-     * pickers (see [isOmittedFromIconPickers]). Icons with **no** metadata row are omitted as well.
-     *
-     * **Actions** and **Text** stay available: they hold everyday launcher glyphs (calendar,
-     * language/globe, notes, web). **Android** is omitted because it is mostly status-bar noise
-     * (wifi/cellular/battery bar variants).
-     */
-    private val pickerOmittedGoogleCategories: Set<String> =
-            setOf(
-                    "Android",
-                    "Home",
-            )
-
-    /**
-     * Name prefixes omitted from pickers even when their Google category is allowed. Targets
-     * document-editor chrome and near-duplicate navigation arrows that drown out useful glyphs.
-     */
-    private val pickerOmittedNamePrefixes: List<String> =
-            listOf(
-                    "Format",
-                    "Border",
-                    "TextRotation",
-                    "AlignHorizontal",
-                    "AlignVertical",
-                    "VerticalAlign",
-                    "KeyboardDoubleArrow",
-                    "ArrowBackIos",
-                    "ArrowForwardIos",
-                    "ArrowCircle",
-                    "ArrowDrop",
-                    "SubdirectoryArrow",
-                    "SignalCellular",
-                    "SignalWifi",
-                    "NetworkWifi",
-                    "Wifi1Bar",
-                    "Wifi2Bar",
-                    "Battery",
-            )
-
-    /** Exact names omitted in addition to [pickerOmittedNamePrefixes]. */
-    private val pickerOmittedExactNames: Set<String> =
-            setOf(
-                    "CompareArrows",
-                    "DoubleArrow",
-                    "HorizontalDistribute",
-                    "VerticalDistribute",
-                    "HorizontalRule",
-                    "HorizontalSplit",
-                    "VerticalSplit",
-                    "SpaceBar",
-                    "Subscript",
-                    "Superscript",
-                    "Spellcheck",
-                    "LineStyle",
-                    "LineWeight",
-                    "LineAxis",
-                    "JoinInner",
-                    "JoinLeft",
-                    "JoinRight",
-                    "DataArray",
-                    "DataObject",
-                    "TypeSpecimen",
-                    "FontDownload",
-                    "FontDownloadOff",
-                    "TextDecrease",
-                    "TextIncrease",
-                    "TextFields",
-                    "TextFormat",
-                    "WrapText",
-                    "ShortText",
-                    "Margin",
-                    "Padding",
-                    // Near-duplicate device shells — keep Computer / Tablet / Headphones / Earbuds.
-                    "LaptopChromebook",
-                    "LaptopMac",
-                    "LaptopWindows",
-                    "DesktopMac",
-                    "DesktopWindows",
-                    "DesktopAccessDisabled",
-                    "TabletAndroid",
-                    "TabletMac",
-                    "EarbudsBattery",
-                    "HeadphonesBattery",
-            )
-
-    /**
-     * Extra search tokens so common intents hit the right Material glyph (e.g. "globe" → Language)
-     * without shipping emoji or app icons.
-     */
-    private val pickerSearchAliases: Map<String, String> =
-            mapOf(
-                    "Language" to "globe world browser internet web",
-                    "Public" to "globe world earth",
-                    "TravelExplore" to "globe world explore",
-                    "Web" to "browser internet",
-                    "OpenInBrowser" to "browser internet",
-                    "CalendarMonth" to "calendar date schedule agenda",
-                    "CalendarToday" to "calendar date today",
-                    "Event" to "calendar date schedule",
-                    "EditNote" to "pen pencil note write notepad",
-                    "Draw" to "pen pencil write sketch",
-                    "StickyNote2" to "note sticky notepad",
-                    "Notes" to "note notepad write",
-                    "NoteAlt" to "note notepad write",
-                    "NoteAdd" to "note notepad write",
-                    "Description" to "document file text note",
-                    "Article" to "document file text news",
-            )
 
     /**
      * Outlined glyphs in [MaterialShippedOutlinedIcons] / [legacyAliases] that have no row in
@@ -213,14 +103,32 @@ object MinimalIcons {
                     "Settings" to "UI actions",
                     "CheckCircle" to "UI actions",
                     "Favorite" to "UI actions",
+                    "FavoriteBorder" to "UI actions",
                     "Add" to "UI actions",
                     "Delete" to "UI actions",
                     "ArrowBack" to "UI actions",
                     "Star" to "UI actions",
+                    "StarBorder" to "UI actions",
                     "ArrowForward" to "UI actions",
                     "ChevronRight" to "UI actions",
                     "Logout" to "UI actions",
                     "Cancel" to "UI actions",
+                    "Circle" to "UI actions",
+                    "Apps" to "UI actions",
+                    "BookmarkBorder" to "UI actions",
+                    "Call" to "Communicate",
+                    "Phone" to "Communicate",
+                    "Email" to "Communicate",
+                    "Share" to "Communicate",
+                    "CameraAlt" to "Images",
+                    "Headset" to "Audio&Video",
+                    "PlayArrow" to "Audio&Video",
+                    "LocationOn" to "Maps",
+                    "Place" to "Maps",
+                    "Lock" to "Privacy",
+                    "Notifications" to "Social",
+                    "Person" to "Social",
+                    "ShoppingCart" to "Business",
             )
 
     /** Display order for [MaterialOutlinedIconCategories] labels (aligned roughly with fonts.google.com). */
@@ -243,19 +151,8 @@ object MinimalIcons {
                     "Audio&Video",
             )
 
-    private fun isOmittedByName(name: String): Boolean {
-        if (name in pickerOmittedExactNames) return true
-        return pickerOmittedNamePrefixes.any { prefix -> name.startsWith(prefix) }
-    }
-
-    private fun isOmittedFromIconPickers(name: String): Boolean {
-        if (isOmittedByName(name)) return true
-        val cat =
-                pickerCategoryOverrides[name]
-                        ?: MaterialOutlinedIconCategories.GOOGLE_CATEGORY_BY_ICON_NAME[name]
-                                ?: return true
-        return cat in pickerOmittedGoogleCategories
-    }
+    private fun isOmittedFromIconPickers(name: String): Boolean =
+            name !in MaterialPickerAllowlist.NAMES
 
     /** Picker section bucket: Google category, or Communicate for legacy `send` (not in metadata). */
     private fun pickerSectionCategoryForName(name: String): String? {
@@ -351,8 +248,7 @@ object MinimalIcons {
     /**
      * Keys for icon pickers: **one entry per distinct** [ImageVector]. Outlined glyph names (e.g.
      * `Call`) win over legacy aliases (`call`) for the same shape. Order is A–Z (case-insensitive,
-     * then exact spelling). Glyphs catalogued under [pickerOmittedGoogleCategories], or with no
-     * metadata row, are excluded.
+     * then exact spelling). Only [MaterialPickerAllowlist] names are included.
      */
     val names: List<String> by lazy {
         val iconByVector = LinkedHashMap<ImageVector, String>()
@@ -453,7 +349,10 @@ object MinimalIcons {
     fun iconKeyMatchesStoredIcon(pickerKey: String, storedKey: String): Boolean =
             iconFor(pickerKey) == iconFor(storedKey)
 
-    /** Text used when filtering icons in a picker (glyph name + split words, e.g. `WifiCalling3`). */
+    /**
+     * Text used when filtering icons in a picker: glyph name, PascalCase word split, Google
+     * category label, and [IconPickerSearchAliases] keywords (e.g. "message" → `send`).
+     */
     fun materialOutlinedSearchHaystack(propertyName: String): String =
             buildString {
                 append(propertyName)
@@ -462,9 +361,13 @@ object MinimalIcons {
                         propertyName
                                 .replace(Regex("([a-z])([A-Z])"), "$1 $2")
                                 .replace(Regex("([A-Za-z])([0-9])"), "$1 $2")
-                                .lowercase(Locale.getDefault())
+                                .lowercase(Locale.ROOT)
                 )
-                pickerSearchAliases[propertyName]?.let { aliases ->
+                pickerSectionCategoryForName(propertyName)?.let { cat ->
+                    append(' ')
+                    append(cat.lowercase(Locale.ROOT).replace('&', ' '))
+                }
+                IconPickerSearchAliases.byIconName[propertyName]?.let { aliases ->
                     append(' ')
                     append(aliases)
                 }

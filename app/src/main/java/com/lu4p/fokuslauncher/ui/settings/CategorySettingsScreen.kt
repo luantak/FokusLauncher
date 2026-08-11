@@ -60,7 +60,6 @@ import com.lu4p.fokuslauncher.ui.drawer.groupAppsIntoProfileSections
 import com.lu4p.fokuslauncher.ui.drawer.profileGroupedAppItems
 import com.lu4p.fokuslauncher.ui.drawer.sortAppsAlphabeticallyByProfileSection
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.lu4p.fokuslauncher.ui.components.CategoryIconPickerDialog
 import com.lu4p.fokuslauncher.ui.components.EditorScreenScaffold
 import com.lu4p.fokuslauncher.ui.components.MinimalIcons
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
@@ -75,6 +74,7 @@ fun CategorySettingsScreen(
         viewModel: SettingsViewModel = hiltViewModel(),
         onNavigateBack: () -> Unit,
         onEditCategoryApps: (String) -> Unit,
+        onOpenCategoryIconPicker: (String) -> Unit,
         onOpenProfileNamesSettings: () -> Unit = {},
         backgroundScrim: Color = FokusBackdrop.ScrimColorWithoutBlur
 ) {
@@ -93,7 +93,6 @@ fun CategorySettingsScreen(
             }
     val localCategories = rememberLocallyReorderedList(categories)
     val appCounts = remember(uiState.allApps) { buildCategoryCounts(uiState) }
-    var categoryIconPickerFor by remember { mutableStateOf<String?>(null) }
 
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(viewModel) {
@@ -175,7 +174,7 @@ fun CategorySettingsScreen(
                         counts = appCounts,
                         showDrawerCategoryIcons = uiState.drawerSidebarCategories,
                         categoryDrawerIconOverrides = uiState.categoryDrawerIconOverrides,
-                        onOpenCategoryIconPicker = { categoryIconPickerFor = it },
+                        onOpenCategoryIconPicker = onOpenCategoryIconPicker,
                         onDragGestureStart = localCategories::onDragStart,
                         onReorder = localCategories::reorder,
                         onReorderFinished = { viewModel.reorderCategories(it) },
@@ -184,21 +183,6 @@ fun CategorySettingsScreen(
                 )
             }
         }
-    }
-
-    val pickerCategory = categoryIconPickerFor
-    if (pickerCategory != null) {
-        CategoryIconPickerDialog(
-                category = pickerCategory,
-                iconOverrides = uiState.categoryDrawerIconOverrides,
-                onSelect = { name ->
-                    viewModel.setCategoryDrawerIcon(pickerCategory, name)
-                    categoryIconPickerFor = null
-                },
-                onDismiss = {
-                    categoryIconPickerFor = null
-                },
-        )
     }
 }
 

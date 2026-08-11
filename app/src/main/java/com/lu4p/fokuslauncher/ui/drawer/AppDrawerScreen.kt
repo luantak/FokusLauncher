@@ -95,7 +95,6 @@ import com.lu4p.fokuslauncher.data.model.appMetadataKey
 import com.lu4p.fokuslauncher.data.model.drawerOpenCountKey
 import com.lu4p.fokuslauncher.utils.DotSearchSyntax
 import com.lu4p.fokuslauncher.ui.components.CategoryChips
-import com.lu4p.fokuslauncher.ui.components.CategoryIconPickerDialog
 import com.lu4p.fokuslauncher.ui.components.DrawerCategorySidebar
 import com.lu4p.fokuslauncher.ui.components.FokusBottomSheet
 import com.lu4p.fokuslauncher.ui.components.FokusIconButton
@@ -105,6 +104,8 @@ import com.lu4p.fokuslauncher.ui.components.MinimalIcons
 import com.lu4p.fokuslauncher.ui.components.SearchBar
 import com.lu4p.fokuslauncher.ui.components.SheetActionRow
 import com.lu4p.fokuslauncher.ui.components.SheetInlineRenameTitleRow
+import com.lu4p.fokuslauncher.ui.settings.CategoryIconPickerScreen
+import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
 import com.lu4p.fokuslauncher.ui.util.categoryChipDisplayLabel
 import com.lu4p.fokuslauncher.ui.util.clickableWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.combinedClickableWithSystemSound
@@ -767,21 +768,39 @@ fun AppDrawerScreen(
         )
     }
 
+    var categoryIconPickerFor by remember { mutableStateOf<String?>(null) }
+
     uiState.selectedCategoryForActions?.let { category ->
-        CategoryActionSheet(
+        if (categoryIconPickerFor == null) {
+            CategoryActionSheet(
+                    category = category,
+                    categoryDrawerIconOverrides = uiState.categoryDrawerIconOverrides,
+                    onDismiss = viewModel::dismissCategoryActionSheet,
+                    onRename = { newName: String -> viewModel.renameCategory(category, newName) },
+                    onEditApps = {
+                        viewModel.dismissCategoryActionSheet()
+                        onEditCategoryApps(category)
+                    },
+                    onDelete = { viewModel.deleteCategory(category) },
+                    onOpenIconPicker = {
+                        categoryIconPickerFor = category
+                        viewModel.dismissCategoryActionSheet()
+                    },
+                    onResetCategoryIcon = { viewModel.clearCategoryDrawerIcon(category) }
+            )
+        }
+    }
+
+    categoryIconPickerFor?.let { category ->
+        CategoryIconPickerScreen(
                 category = category,
-                categoryDrawerIconOverrides = uiState.categoryDrawerIconOverrides,
-                onDismiss = viewModel::dismissCategoryActionSheet,
-                onRename = { newName: String -> viewModel.renameCategory(category, newName) },
-                onEditApps = {
-                    viewModel.dismissCategoryActionSheet()
-                    onEditCategoryApps(category)
-                },
-                onDelete = { viewModel.deleteCategory(category) },
-                onSetCategoryIcon = { iconName ->
+                iconOverrides = uiState.categoryDrawerIconOverrides,
+                onSelect = { iconName ->
                     viewModel.setCategoryDrawerIcon(category, iconName)
+                    categoryIconPickerFor = null
                 },
-                onResetCategoryIcon = { viewModel.clearCategoryDrawerIcon(category) }
+                onNavigateBack = { categoryIconPickerFor = null },
+                backgroundScrim = FokusBackdrop.ScrimColorWithoutBlur,
         )
     }
 }
@@ -1184,11 +1203,10 @@ fun CategoryActionSheet(
         onRename: (String) -> Unit,
         onEditApps: () -> Unit,
         onDelete: () -> Unit,
-        onSetCategoryIcon: (String) -> Unit,
+        onOpenIconPicker: () -> Unit,
         onResetCategoryIcon: () -> Unit
 ) {
     val context = LocalContext.current
-    var showIconPickerDialog by remember(category) { mutableStateOf(false) }
     var renameMode by remember(category) { mutableStateOf(false) }
     var renameValue by remember(category) {
         mutableStateOf(categoryChipDisplayLabel(context, category))
@@ -1237,7 +1255,7 @@ fun CategoryActionSheet(
 
             SheetActionRow(
                     label = stringResource(R.string.category_icon_picker_title),
-                    onClick = { showIconPickerDialog = true },
+                    onClick = onOpenIconPicker,
                     testTag = "category_action_choose_icon",
                     leadingContent = {
                         LauncherIcon(
@@ -1266,20 +1284,6 @@ fun CategoryActionSheet(
                         destructive = true,
                 )
             }
-    }
-
-    if (showIconPickerDialog) {
-        CategoryIconPickerDialog(
-                category = category,
-                iconOverrides = categoryDrawerIconOverrides,
-                onSelect = { name ->
-                    onSetCategoryIcon(name)
-                    showIconPickerDialog = false
-                },
-                onDismiss = {
-                    showIconPickerDialog = false
-                },
-        )
     }
 }
 
