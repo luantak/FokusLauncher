@@ -49,12 +49,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
@@ -242,6 +244,7 @@ private fun LazyItemScope.ReorderableDrawerAppListItem(
         notificationIndicatorStyle: NotificationIndicatorStyle = NotificationIndicatorStyle.DOT,
         notificationIndicatorColor: Int = NotificationIndicatorColorPreset.DEFAULT.argb,
         appsWithNotifications: Set<String> = emptySet(),
+        useArcticonsDrawerIcons: Boolean = false,
 ) {
     ReorderableDrawerAppRow(
             allowCustomDragReorder = allowCustomDragReorder,
@@ -267,6 +270,7 @@ private fun LazyItemScope.ReorderableDrawerAppListItem(
                 notificationIndicatorColor = notificationIndicatorColor,
                 reserveNotificationDotSlot = showNotificationIndicators &&
                         notificationIndicatorStyle == NotificationIndicatorStyle.DOT,
+                useArcticonsDrawerIcons = useArcticonsDrawerIcons,
         )
     }
 }
@@ -540,6 +544,7 @@ private fun DrawerAppListColumn(
                             notificationIndicatorStyle = uiState.notificationIndicatorStyle,
                             notificationIndicatorColor = uiState.notificationIndicatorColor,
                             appsWithNotifications = uiState.appsWithNotifications,
+                            useArcticonsDrawerIcons = uiState.useArcticonsDrawerIcons,
                     )
                 }
             }
@@ -631,6 +636,7 @@ private fun DrawerAppListColumn(
                         notificationIndicatorStyle = uiState.notificationIndicatorStyle,
                         notificationIndicatorColor = uiState.notificationIndicatorColor,
                         appsWithNotifications = uiState.appsWithNotifications,
+                        useArcticonsDrawerIcons = uiState.useArcticonsDrawerIcons,
                 )
             }
         }
@@ -713,6 +719,19 @@ fun AppDrawerScreen(
         }
     }
 
+    LaunchedEffect(uiState.useArcticonsDrawerIcons) {
+        if (uiState.useArcticonsDrawerIcons) {
+            // Warm caches only — do not invalidate (that caused continuous icon reloads).
+            viewModel.warmArcticonsPack()
+        }
+    }
+
+    val arcticonsIconLoader: suspend (AppInfo) -> android.graphics.drawable.Drawable? =
+            remember(viewModel) { { app -> viewModel.loadArcticonsIcon(app) } }
+
+    CompositionLocalProvider(
+            LocalArcticonsIconLoader provides arcticonsIconLoader,
+    ) {
     AppDrawerContent(
             uiState = uiState,
             onSearchQueryChanged = viewModel::onSearchQueryChanged,
@@ -799,6 +818,7 @@ fun AppDrawerScreen(
                 onNavigateBack = { categoryIconPickerFor = null },
                 backgroundScrim = FokusBackdrop.ScrimColorWithoutBlur,
         )
+    }
     }
 }
 
@@ -1295,6 +1315,7 @@ fun AppListItem(
         notificationIndicatorStyle: NotificationIndicatorStyle = NotificationIndicatorStyle.DOT,
         notificationIndicatorColor: Int = NotificationIndicatorColorPreset.DEFAULT.argb,
         reserveNotificationDotSlot: Boolean = false,
+        useArcticonsDrawerIcons: Boolean = false,
 ) {
     val textColor = MaterialTheme.colorScheme.onBackground
     val indicatorColor = Color(notificationIndicatorColor)
@@ -1330,10 +1351,58 @@ fun AppListItem(
             )
             Spacer(modifier = Modifier.width(8.dp))
         }
+        if (useArcticonsDrawerIcons) {
+            ArcticonsDrawerAppIcon(app = app, tint = textColor)
+            Spacer(modifier = Modifier.width(12.dp))
+        }
         Text(
                 text = app.label,
                 style = MaterialTheme.typography.bodyLarge,
                 color = labelColor,
         )
+    }
+}
+
+/** Drawer Arcticons slot — sized so fine line-art stays readable beside bodyLarge labels. */
+private val ArcticonsDrawerIconSlotSize = 34.dp
+private val ArcticonsDrawerIconSize = 32.dp
+private val ArcticonsDrawerIconPlaceholderSize = 24.dp
+
+@Composable
+private fun ArcticonsDrawerAppIcon(app: AppInfo, tint: Color) {
+    val loadIcon = LocalArcticonsIconLoader.current
+    val iconKey = appListStableKey(app)
+    val loadedIcon by
+            produceState<android.graphics.drawable.Drawable?>(
+                    initialValue = null,
+                    key1 = iconKey,
+                    key2 = loadIcon,
+            ) {
+                value = loadIcon(app)
+            }
+    Box(
+            modifier = Modifier.size(ArcticonsDrawerIconSlotSize).testTag("app_icon_${app.packageName}"),
+            contentAlignment = Alignment.Center,
+    ) {
+        val drawable = loadedIcon
+        if (drawable != null) {
+            LauncherIcon(
+                    drawable = drawable,
+                    contentDescription = stringResource(R.string.cd_app_icon),
+                    tint = tint,
+                    iconSize = ArcticonsDrawerIconSize,
+                    forceTint = true,
+            )
+        } else {
+            // Brief load / last-resort only — unmapped apps use Arcticons' outlined `circle`.
+            Box(
+                    modifier =
+                            Modifier.size(ArcticonsDrawerIconPlaceholderSize)
+                                    .background(
+                                            color = tint.copy(alpha = 0.28f),
+                                            shape = CircleShape,
+                                    ),
+            )
+        }
     }
 }

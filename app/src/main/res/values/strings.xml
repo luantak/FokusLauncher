@@ -160,6 +160,12 @@
     <string name="settings_title">Settings</string>
     <string name="settings_look_and_feel_title">Look &amp; feel</string>
     <string name="settings_look_and_feel_subtitle">Language, fonts, colors, glow, wallpaper, and notification indicators</string>
+    <string name="settings_look_section_display">Display</string>
+    <string name="settings_look_section_text">Text</string>
+    <string name="settings_look_section_colors">Colors</string>
+    <string name="settings_look_section_icons">Icons</string>
+    <string name="settings_look_section_wallpaper">Wallpaper</string>
+    <string name="settings_look_section_notifications">Notifications</string>
     <string name="settings_drawer_behavior_title">Drawer behavior</string>
     <string name="settings_drawer_behavior_subtitle">Sidebar, app order, auto launch, and search keyboard</string>
     <string name="settings_section_apps">Apps</string>
@@ -416,6 +422,14 @@
     <string name="settings_look_locked_image_wallpaper">Not available with an image wallpaper. Set a black background below to use colors and glow.</string>
     <string name="settings_glow_label">Glow</string>
     <string name="settings_glow_subtitle">Soft halo on text and icons</string>
+    <string name="settings_arcticons_drawer_icons">Arcticons app icons</string>
+    <string name="settings_arcticons_drawer_icons_subtitle">Show Arcticons icons beside app names in the drawer</string>
+    <string name="settings_arcticons_drawer_icons_subtitle_missing">Requires Arcticons — turn on to install</string>
+    <string name="settings_arcticons_install_title">Install Arcticons?</string>
+    <string name="settings_arcticons_install_message">Fokus Launcher uses the Arcticons icon pack for simplified drawer icons. Install Arcticons from F-Droid or the Play Store, then enable this option again.</string>
+    <string name="settings_arcticons_install_fdroid">Open F-Droid</string>
+    <string name="settings_arcticons_install_play">Open Play Store</string>
+    <string name="cd_app_icon">App icon</string>
     <string name="visual_style_classic">Classic</string>
     <string name="visual_style_neon_magenta">Cosmic Violet</string>
     <string name="visual_style_neon_lime">Terminal Green</string>

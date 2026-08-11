@@ -75,17 +75,22 @@ fun LauncherIcon(
     iconSize: Dp = 24.dp,
     suppressGlow: Boolean = false,
     outlined: Boolean = false,
+    /**
+     * When true, always apply [tint] (used for Arcticons line icons whose alpha defines the
+     * glyph). When false, only monochrome/vector adaptive layers are tinted.
+     */
+    forceTint: Boolean = false,
 ) {
     if (drawable == null) return
     val density = LocalDensity.current
 
     val (painter, canTint) =
-        remember(drawable, density, iconSize) {
-            val sizePx = with(density) { iconSize.toPx() }.toInt()
+        remember(drawable, density, iconSize, forceTint) {
+            val sizePx = with(density) { iconSize.toPx() }.toInt().coerceAtLeast(1)
 
             var finalDrawable: Drawable = drawable
             var isAdaptive = false
-            var monochrome = false
+            var monochrome = forceTint
 
             if (drawable is android.graphics.drawable.AdaptiveIconDrawable) {
                 isAdaptive = true

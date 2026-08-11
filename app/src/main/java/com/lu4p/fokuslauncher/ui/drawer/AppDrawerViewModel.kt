@@ -27,6 +27,7 @@ import com.lu4p.fokuslauncher.data.model.dynamicCategoryExtras
 import com.lu4p.fokuslauncher.data.model.appProfileKey
 import com.lu4p.fokuslauncher.data.model.drawerOpenCountKey
 import com.lu4p.fokuslauncher.data.model.favoriteAppStableKey
+import com.lu4p.fokuslauncher.data.iconpack.ArcticonsIconPackRepository
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.media.MediaNotificationHelper
 import com.lu4p.fokuslauncher.notification.NotificationIndicatorRepository
@@ -48,6 +49,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
@@ -100,6 +102,8 @@ data class AppDrawerUiState(
                 NotificationIndicatorStyle.DOT,
         val notificationIndicatorColor: Int = NotificationIndicatorColorPreset.DEFAULT.argb,
         val appsWithNotifications: Set<String> = emptySet(),
+        /** Opt-in Arcticons icons beside drawer app labels (requires pack installed). */
+        val useArcticonsDrawerIcons: Boolean = false,
 )
 
 sealed interface DrawerEvent {
@@ -252,6 +256,7 @@ constructor(
         private val privateSpaceManager: PrivateSpaceManager,
         private val preferencesManager: PreferencesManager,
         private val notificationIndicatorRepository: NotificationIndicatorRepository,
+        private val arcticonsIconPackRepository: ArcticonsIconPackRepository,
         @param:Named("DrawerComputation") private val drawerComputationDispatcher: CoroutineDispatcher
 ) : ViewModel() {
 
@@ -324,6 +329,7 @@ constructor(
         observeLauncherAppearance()
         observeDrawerSearchAutoLaunch()
         observeNotificationIndicators()
+        observeArcticonsDrawerIcons()
         refreshPrivateSpaceState()
         observePrivateSpaceChanges()
         scheduleDrawerCachePrewarm()
@@ -383,6 +389,27 @@ constructor(
                 _uiState.update { it.copy(usesPhotoWallpaper = appearance.usesPhotoWallpaper) }
             }
         }
+    }
+
+    private fun observeArcticonsDrawerIcons() {
+        viewModelScope.launch {
+            combine(
+                            preferencesManager.useArcticonsDrawerIconsFlow,
+                            arcticonsIconPackRepository.installedPackage.map { it != null },
+                    ) { enabled, installed ->
+                        enabled && installed
+                    }
+                    .collect { showIcons ->
+                        _uiState.update { it.copy(useArcticonsDrawerIcons = showIcons) }
+                    }
+        }
+    }
+
+    suspend fun loadArcticonsIcon(app: AppInfo) = arcticonsIconPackRepository.getIcon(app)
+
+    /** Ensures the Arcticons appfilter is loaded without wiping icon caches. */
+    fun warmArcticonsPack() {
+        viewModelScope.launch { arcticonsIconPackRepository.warmUp() }
     }
 
     private fun observeDrawerDotSearchPreferences() {
