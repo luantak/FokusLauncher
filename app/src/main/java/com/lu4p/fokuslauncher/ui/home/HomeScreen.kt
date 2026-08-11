@@ -32,7 +32,6 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -974,11 +973,7 @@ private fun HomeScreenLongPressSheet(
     onEditShortcuts: () -> Unit,
     onOpenSettings: () -> Unit
 ) {
-    val sheetState = rememberModalBottomSheetState()
-    FokusBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-    ) {
+    FokusBottomSheet(onDismissRequest = onDismiss) {
         SheetActionRow(
             label = stringResource(R.string.settings_edit_home_screen),
             onClick = onEditHomeScreen,

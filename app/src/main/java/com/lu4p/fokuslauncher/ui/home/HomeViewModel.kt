@@ -550,7 +550,8 @@ class HomeViewModel @Inject constructor(
 
         viewModelScope.launch {
             val user = appRepository.getUserHandleForProfile(fav.profileKey) ?: Process.myUserHandle()
-            _appMenuShortcuts.value = appRepository.getShortcutsForApp(fav.packageName, user)
+            _appMenuShortcuts.value =
+                    appRepository.getShortcutsForApp(fav.packageName, user).take(MAX_APP_MENU_SHORTCUTS)
         }
     }
 
@@ -1695,6 +1696,9 @@ class HomeViewModel @Inject constructor(
             category.equals(ReservedCategoryNames.UNCATEGORIZED, ignoreCase = true)
 
     private companion object {
+        /** Max launcher shortcuts shown in the home long-press app menu. */
+        private const val MAX_APP_MENU_SHORTCUTS = 5
+
         private val shortcutActionIconKeywordHints =
             listOf(
                 "music" to "music",

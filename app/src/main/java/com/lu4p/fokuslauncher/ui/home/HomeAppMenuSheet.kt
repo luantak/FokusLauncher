@@ -35,11 +35,18 @@ import com.lu4p.fokuslauncher.ui.components.SheetActionRow
 import com.lu4p.fokuslauncher.ui.util.categoryChipDisplayLabel
 
 /**
+ * Peek height for the home app long-press menu. Matches Material3's partially-expanded
+ * anchor (~half screen) so open height stays consistent when the sheet can expand.
+ */
+private const val APP_MENU_SHEET_HEIGHT_FRACTION = 0.5f
+
+/**
  * Bottom sheet "App menu" opened directly on long-pressing a home-screen app.
- * Occupies roughly the lower third to half of the screen.
+ * Opens at a fixed partial height; swipe up for full height when content overflows.
  *
  * Contents:
  *  - App name (with pencil icon to rename)
+ *  - App shortcuts (when available)
  *  - Remove from home screen
  *  - Home screen (edit icon) → opens the edit overlay
  *  - App info           → Android system settings
@@ -71,6 +78,7 @@ fun HomeAppMenuSheet(
         onDismiss = onDismiss,
         onRename = onRename,
         editIconContentDescription = stringResource(R.string.action_rename),
+        contentHeightFraction = APP_MENU_SHEET_HEIGHT_FRACTION,
     ) {
         if (showingCategoryPicker) {
             val options =

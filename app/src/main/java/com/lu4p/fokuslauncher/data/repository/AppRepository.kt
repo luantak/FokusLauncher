@@ -1044,6 +1044,7 @@ constructor(
             .asSequence()
             .filter { it.isEnabled }
             .distinctBy { it.id }
+            .sortedBy { it.rank }
             .map { info ->
                 val shortcutLabel =
                     info.shortLabel?.toString()?.trim().takeUnless { it.isNullOrEmpty() }

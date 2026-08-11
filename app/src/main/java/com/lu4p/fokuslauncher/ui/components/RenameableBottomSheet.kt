@@ -21,11 +21,16 @@ fun RenameableBottomSheet(
         onRename: (String) -> Unit,
         editIconContentDescription: String,
         modifier: Modifier = Modifier,
+        contentHeightFraction: Float? = null,
         textFieldTestTag: String? = null,
         editButtonTestTag: String? = null,
         content: @Composable ColumnScope.() -> Unit,
 ) {
-    FokusBottomSheet(onDismissRequest = onDismiss, modifier = modifier) {
+    FokusBottomSheet(
+            onDismissRequest = onDismiss,
+            modifier = modifier,
+            contentHeightFraction = contentHeightFraction,
+    ) {
         var renameMode by remember(renameKey) { mutableStateOf(false) }
         var renameValue by remember(renameKey) { mutableStateOf(initialLabel) }
 
