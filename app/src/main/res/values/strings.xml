@@ -158,6 +158,17 @@
 
     <!-- Settings -->
     <string name="settings_title">Settings</string>
+    <string name="settings_look_and_feel_title">Look &amp; feel</string>
+    <string name="settings_look_and_feel_subtitle">Language, fonts, colors, glow, wallpaper, and notification indicators</string>
+    <string name="settings_drawer_behavior_title">Drawer behavior</string>
+    <string name="settings_drawer_behavior_subtitle">Sidebar, app order, auto launch, and search keyboard</string>
+    <string name="settings_section_apps">Apps</string>
+    <string name="settings_apps_management_title">Hidden, renamed &amp; archived</string>
+    <string name="settings_apps_management_subtitle_empty">No managed apps yet</string>
+    <plurals name="settings_apps_management_count">
+        <item quantity="one">%d managed app</item>
+        <item quantity="other">%d managed apps</item>
+    </plurals>
     <string name="settings_section_appearance">Appearance</string>
     <string name="settings_show_status_bar">Show status bar</string>
     <string name="settings_allow_landscape_rotation">Allow landscape</string>

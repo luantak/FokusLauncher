@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.NavigateNext
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -30,10 +31,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.model.LauncherFontScale
 import com.lu4p.fokuslauncher.ui.components.LauncherIcon
 import com.lu4p.fokuslauncher.ui.theme.LocalLauncherFontScale
@@ -372,4 +377,38 @@ fun SettingsDivider() {
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.16f),
     )
     Spacer(Modifier.height(10.dp))
+}
+
+@Composable
+internal fun SectionHeader(title: String) {
+    Text(
+            text = title,
+            style =
+                    MaterialTheme.typography.labelLarge.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            letterSpacing = 0.8.sp,
+                    ),
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(start = 24.dp, top = 20.dp, end = 24.dp, bottom = 8.dp),
+    )
+}
+
+@Composable
+internal fun SubpageChevron() {
+    LauncherIcon(
+            imageVector = Icons.AutoMirrored.Filled.NavigateNext,
+            contentDescription = stringResource(R.string.cd_open_subpage),
+            tint = MaterialTheme.colorScheme.secondary,
+            iconSize = 22.dp,
+    )
+}
+
+@Composable
+internal fun EmptySettingsStateText(text: String) {
+    Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.secondary,
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+    )
 }
