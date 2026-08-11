@@ -801,7 +801,8 @@ class HomeViewModelTest {
         viewModel.refreshInstalledApps()
         testDispatcher.scheduler.advanceUntilIdle()
 
-        coVerify {
+        // refreshInstalledApps launches on Dispatchers.IO; wait for the prune write.
+        coVerify(timeout = 2_000) {
             preferencesManager.setFavorites(
                 match { favorites ->
                     favorites.size == 1 &&

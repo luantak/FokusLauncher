@@ -486,13 +486,16 @@ class HomeViewModel @Inject constructor(
         }
         val apps = appRepository.getInstalledApps()
         val archivedApps = appRepository.getArchivedApps()
+        // Read DataStore directly: refresh runs on Dispatchers.IO and can race ahead of
+        // rawFavorites' Main-thread stateIn collector during ViewModel init.
+        val currentFavorites = preferencesManager.favoritesFlow.first()
         if (apps.isEmpty()) {
             if (archivedApps.isNotEmpty()) {
                 applyInstalledAppsSnapshot(apps)
                 return false
             }
             if (_allInstalledApps.value.isNotEmpty() ||
-                            rawFavorites.value.any { !it.isPhoneFavoriteSentinel() }
+                            currentFavorites.any { !it.isPhoneFavoriteSentinel() }
             ) {
                 return false
             }
@@ -502,7 +505,6 @@ class HomeViewModel @Inject constructor(
         applyInstalledAppsSnapshot(apps)
         val installedAppKeys = apps.map { appMetadataKey(it) }.toSet()
         val archivedAppKeys = _archivedAppKeys.value
-        val currentFavorites = rawFavorites.value
         val nonSentinel = currentFavorites.filterNot { it.isPhoneFavoriteSentinel() }
         val missingFavoriteKeys =
                 nonSentinel
