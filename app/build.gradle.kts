@@ -101,7 +101,7 @@ if (requiresReleaseApkSigning && requiresReleaseBundleSigning && apkAndBundleUse
 
 android {
     namespace = "com.lu4p.fokuslauncher"
-    compileSdk { version = release(36) }
+    compileSdk { version = release(37) }
 
     // Disable dependency metadata in APK signing block (required for F-Droid)
     dependenciesInfo {
@@ -112,7 +112,7 @@ android {
     defaultConfig {
         applicationId = "io.github.luantak.fokuslauncher"
         minSdk = 26
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 46
         versionName = "1.9.0"
 
