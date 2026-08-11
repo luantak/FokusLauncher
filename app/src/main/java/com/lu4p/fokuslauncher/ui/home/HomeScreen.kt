@@ -32,7 +32,6 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -103,7 +102,7 @@ fun HomeScreen(
     val countdownUiState by viewModel.countdownUiState.collectAsStateWithLifecycle()
     val homeExtraWidgets by viewModel.homeExtraWidgets.collectAsStateWithLifecycle()
     val notificationIndicatorUiState by
-            viewModel.notificationIndicatorUiState.collectAsStateWithLifecycle()
+        viewModel.notificationIndicatorUiState.collectAsStateWithLifecycle()
     val favorites by viewModel.favorites.collectAsStateWithLifecycle()
     val rightSideShortcuts by viewModel.rightSideShortcuts.collectAsStateWithLifecycle()
     val allInstalledApps by viewModel.allInstalledApps.collectAsStateWithLifecycle()
@@ -112,6 +111,7 @@ fun HomeScreen(
     val categoryOptions by viewModel.categoryOptions.collectAsStateWithLifecycle()
     val showWeatherAppPicker by viewModel.showWeatherAppPicker.collectAsStateWithLifecycle()
     val appMenuTarget by viewModel.appMenuTarget.collectAsStateWithLifecycle()
+    val appMenuShortcuts by viewModel.appMenuShortcuts.collectAsStateWithLifecycle()
     val showHomeScreenMenu by viewModel.showHomeScreenMenu.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val onFavoriteClick = viewModel::launchFavorite
@@ -179,18 +179,12 @@ fun HomeScreen(
 
     // App menu bottom sheet (opened directly on long-press)
     appMenuTarget?.let { fav ->
-        val currentCategory =
-                allInstalledApps
-                        .firstOrNull {
-                            it.packageName == fav.packageName &&
-                                    appProfileKey(it.userHandle) == fav.profileKey
-                        }
-                        ?.category
-                        .orEmpty()
+        val currentCategory = viewModel.getCategoryForFavorite(fav)
         HomeAppMenuSheet(
             fav = fav,
             currentCategory = currentCategory,
             categoryOptions = categoryOptions,
+            shortcuts = appMenuShortcuts,
             onDismiss = { viewModel.dismissAppMenu() },
             onRename = { newName -> viewModel.renameApp(fav, newName) },
             onSetCategory = { category -> viewModel.setFavoriteCategory(fav, category) },
@@ -201,7 +195,8 @@ fun HomeScreen(
             },
             onAppInfo = { viewModel.openAppInfo(fav) },
             onHide = { viewModel.hideApp(fav) },
-            onUninstall = { viewModel.uninstallApp(fav) }
+            onUninstall = { viewModel.uninstallApp(fav) },
+            onShortcutClick = { viewModel.launchAppShortcutAction(it) }
         )
     }
 
@@ -253,7 +248,7 @@ fun HomeScreenContent(
     countdownUiState: HomeCountdownUiState = HomeCountdownUiState(),
     homeExtraWidgets: List<HomeExtraWidgetEntry> = emptyList(),
     notificationIndicatorUiState: HomeNotificationIndicatorUiState =
-            HomeNotificationIndicatorUiState(),
+        HomeNotificationIndicatorUiState(),
     installedApps: List<AppInfo> = emptyList(),
     onLabelLongPress: (FavoriteApp) -> Unit = {},
     onHomeScreenLongPress: () -> Unit = {},
@@ -274,12 +269,12 @@ fun HomeScreenContent(
     val play = LocalSystemClickSound.current
     val noIndication = remember { MutableInteractionSource() }
     val outlineWidthDp =
-            if (uiState.usesPhotoWallpaper) uiState.photoWallpaperOutlineWidthDp else 0f
+        if (uiState.usesPhotoWallpaper) uiState.photoWallpaperOutlineWidthDp else 0f
     Box(
         modifier = modifier
-                .fillMaxSize()
-                .background(Color.Transparent)
-                .combinedClickable(
+            .fillMaxSize()
+            .background(Color.Transparent)
+            .combinedClickable(
                 indication = null,
                 interactionSource = noIndication,
                 onClick = { },
@@ -294,64 +289,64 @@ fun HomeScreenContent(
             .testTag("home_screen")
     ) {
         CompositionLocalProvider(LocalPhotoWallpaperOutlineWidthDp provides outlineWidthDp) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 32.dp)
-                .windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility)
-                .padding(top = 48.dp)
-                .navigationBarsPadding()
-                .padding(bottom = 48.dp)
-        ) {
-            HomeWidgetsSection(
-                uiState = uiState,
-                clockUiState = clockUiState,
-            weatherUiState = weatherUiState,
-            mediaUiState = mediaUiState,
-            screenTimeUiState = screenTimeUiState,
-            worldClockUiState = worldClockUiState,
-            countdownUiState = countdownUiState,
-            homeExtraWidgets = homeExtraWidgets,
-            onClockClick = onClockClick,
-                onDateClick = onDateClick,
-                onWeatherClick = onWeatherClick,
-                onScreenTimeClick = onScreenTimeClick,
-                onMediaOpenApp = onMediaOpenApp,
-                onMediaPrevious = onMediaPrevious,
-                onMediaPlayPause = onMediaPlayPause,
-                onMediaNext = onMediaNext,
-                onMediaLike = onMediaLike,
-                onMediaSave = onMediaSave,
-                outlined = uiState.usesPhotoWallpaper,
-            )
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 32.dp)
+                    .windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility)
+                    .padding(top = 48.dp)
+                    .navigationBarsPadding()
+                    .padding(bottom = 48.dp)
+            ) {
+                HomeWidgetsSection(
+                    uiState = uiState,
+                    clockUiState = clockUiState,
+                    weatherUiState = weatherUiState,
+                    mediaUiState = mediaUiState,
+                    screenTimeUiState = screenTimeUiState,
+                    worldClockUiState = worldClockUiState,
+                    countdownUiState = countdownUiState,
+                    homeExtraWidgets = homeExtraWidgets,
+                    onClockClick = onClockClick,
+                    onDateClick = onDateClick,
+                    onWeatherClick = onWeatherClick,
+                    onScreenTimeClick = onScreenTimeClick,
+                    onMediaOpenApp = onMediaOpenApp,
+                    onMediaPrevious = onMediaPrevious,
+                    onMediaPlayPause = onMediaPlayPause,
+                    onMediaNext = onMediaNext,
+                    onMediaLike = onMediaLike,
+                    onMediaSave = onMediaSave,
+                    outlined = uiState.usesPhotoWallpaper,
+                )
 
-            Spacer(modifier = Modifier.weight(1f))
-
-            HomeFavoritesSection(
-                homeAlignment = uiState.homeAlignment,
-                favorites = favorites,
-                installedApps = installedApps,
-                rightSideShortcuts = rightSideShortcuts,
-                profileDisplayNameOverrides = profileDisplayNameOverrides,
-                launcherFontScale = uiState.launcherFontScale,
-                outlined = uiState.usesPhotoWallpaper,
-                notificationIndicatorUiState = notificationIndicatorUiState,
-                onLabelClick = onLabelClick,
-                onLabelLongPress = onLabelLongPress,
-                onIconClick = onIconClick
-            )
-
-            if (uiState.homeAlignment == HomeAlignment.MIDDLE) {
                 Spacer(modifier = Modifier.weight(1f))
-            } else {
-                Spacer(modifier = Modifier.height(4.dp))
-            }
-        }
 
-        HomeDefaultLauncherBanner(
-            isDefaultLauncher = uiState.isDefaultLauncher,
-            onSetDefaultLauncher = onSetDefaultLauncher
-        )
+                HomeFavoritesSection(
+                    homeAlignment = uiState.homeAlignment,
+                    favorites = favorites,
+                    installedApps = installedApps,
+                    rightSideShortcuts = rightSideShortcuts,
+                    profileDisplayNameOverrides = profileDisplayNameOverrides,
+                    launcherFontScale = uiState.launcherFontScale,
+                    outlined = uiState.usesPhotoWallpaper,
+                    notificationIndicatorUiState = notificationIndicatorUiState,
+                    onLabelClick = onLabelClick,
+                    onLabelLongPress = onLabelLongPress,
+                    onIconClick = onIconClick
+                )
+
+                if (uiState.homeAlignment == HomeAlignment.MIDDLE) {
+                    Spacer(modifier = Modifier.weight(1f))
+                } else {
+                    Spacer(modifier = Modifier.height(4.dp))
+                }
+            }
+
+            HomeDefaultLauncherBanner(
+                isDefaultLauncher = uiState.isDefaultLauncher,
+                onSetDefaultLauncher = onSetDefaultLauncher
+            )
         }
     }
 }
@@ -371,97 +366,97 @@ private fun rememberTitleMediumRowHeight(extra: Dp = 8.dp): Dp {
  */
 @Composable
 private fun HomeClockWeatherHeader(
-        clockUiState: HomeClockUiState,
-        weatherUiState: HomeWeatherUiState,
-        screenTimeUiState: HomeScreenTimeUiState,
-        showWeather: Boolean,
-        onClockClick: () -> Unit,
-        onWeatherClick: () -> Unit,
-        onScreenTimeClick: () -> Unit,
-        outlined: Boolean,
+    clockUiState: HomeClockUiState,
+    weatherUiState: HomeWeatherUiState,
+    screenTimeUiState: HomeScreenTimeUiState,
+    showWeather: Boolean,
+    onClockClick: () -> Unit,
+    onWeatherClick: () -> Unit,
+    onScreenTimeClick: () -> Unit,
+    outlined: Boolean,
 ) {
     val density = LocalDensity.current
     val clockStyle = MaterialTheme.typography.displayLarge
     val weatherTopPad =
-            remember(clockStyle, density.density, density.fontScale) {
-                val lead =
-                        ((clockStyle.lineHeight.value - clockStyle.fontSize.value) / 2f)
-                                .coerceAtLeast(0f)
-                with(density) { lead.sp.toDp() }
-            }
+        remember(clockStyle, density.density, density.fontScale) {
+            val lead =
+                ((clockStyle.lineHeight.value - clockStyle.fontSize.value) / 2f)
+                    .coerceAtLeast(0f)
+            with(density) { lead.sp.toDp() }
+        }
     val launcherScale =
-            LocalLauncherFontScale.current.coerceIn(LauncherFontScale.MIN, LauncherFontScale.MAX)
+        LocalLauncherFontScale.current.coerceIn(LauncherFontScale.MIN, LauncherFontScale.MAX)
     // Use padding (not offset): offset does not change layout height, so the header Box and
     // parents can clip or resolve hits as if the weather were still at y=0.
     val weatherLowerInset =
-            remember(density.density, density.fontScale, launcherScale) {
-                with(density) { (10f * launcherScale).sp.toDp() } + 8.dp
-            }
+        remember(density.density, density.fontScale, launcherScale) {
+            with(density) { (10f * launcherScale).sp.toDp() } + 8.dp
+        }
     val weatherRowHeight = rememberTitleMediumRowHeight()
     val weatherTop = weatherTopPad + weatherLowerInset
     val screenTimeTop =
-            weatherTop + if (showWeather) weatherRowHeight + 4.dp else 0.dp
+        weatherTop + if (showWeather) weatherRowHeight + 4.dp else 0.dp
     Box(modifier = Modifier.fillMaxWidth()) {
         if (showWeather) {
             WeatherWidget(
-                    weather = weatherUiState.weather,
-                    useFahrenheit = weatherUiState.weatherUseFahrenheit,
-                    prominent = false,
-                    outlined = outlined,
-                    onClick = onWeatherClick,
-                    modifier =
-                            Modifier.align(Alignment.TopEnd)
-                                    .padding(top = weatherTop),
+                weather = weatherUiState.weather,
+                useFahrenheit = weatherUiState.weatherUseFahrenheit,
+                prominent = false,
+                outlined = outlined,
+                onClick = onWeatherClick,
+                modifier =
+                    Modifier.align(Alignment.TopEnd)
+                        .padding(top = weatherTop),
             )
         }
         if (screenTimeUiState.showWidget) {
             ScreenTimeWidget(
-                    durationText = screenTimeUiState.durationText.orEmpty(),
-                    outlined = outlined,
-                    onClick = onScreenTimeClick,
-                    modifier =
-                            Modifier.align(Alignment.TopEnd)
-                                    .offset(y = screenTimeTop),
+                durationText = screenTimeUiState.durationText.orEmpty(),
+                outlined = outlined,
+                onClick = onScreenTimeClick,
+                modifier =
+                    Modifier.align(Alignment.TopEnd)
+                        .offset(y = screenTimeTop),
             )
         }
         Column(
-                modifier = Modifier.align(Alignment.TopStart),
+            modifier = Modifier.align(Alignment.TopStart),
         ) {
             ClockWidget(
-                    time = clockUiState.currentTime,
-                    is24HourFormat = clockUiState.is24HourFormat,
-                    outlined = outlined,
-                    onClick = onClockClick,
-                    modifier = Modifier.testTag("clock_widget"),
+                time = clockUiState.currentTime,
+                is24HourFormat = clockUiState.is24HourFormat,
+                outlined = outlined,
+                onClick = onClockClick,
+                modifier = Modifier.testTag("clock_widget"),
             )
             clockUiState.nextAlarm?.let { alarm ->
                 Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier =
-                                Modifier.padding(top = 4.dp)
-                                        .clickableNoRippleWithSystemSound(onClick = onClockClick)
-                                        .testTag("next_alarm_widget"),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier =
+                        Modifier.padding(top = 4.dp)
+                            .clickableNoRippleWithSystemSound(onClick = onClockClick)
+                            .testTag("next_alarm_widget"),
                 ) {
                     LauncherIcon(
-                            imageVector = MinimalIcons.iconFor("alarm"),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onBackground,
-                            iconSize = 14.dp,
-                            outlined = outlined,
+                        imageVector = MinimalIcons.iconFor("alarm"),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onBackground,
+                        iconSize = 14.dp,
+                        outlined = outlined,
                     )
                     Spacer(Modifier.width(6.dp))
                     if (outlined) {
                         OutlinedText(
-                                text = alarm,
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onBackground,
-                                outlineWidth = 1.5f,
+                            text = alarm,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            outlineWidth = 1.5f,
                         )
                     } else {
                         Text(
-                                text = alarm,
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onBackground,
+                            text = alarm,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onBackground,
                         )
                     }
                 }
@@ -500,43 +495,43 @@ private fun HomeWidgetsSection(
     when {
         showClock -> {
             HomeClockWeatherHeader(
-                    clockUiState = clockUiState,
-                    weatherUiState = weatherUiState,
-                    screenTimeUiState = screenTimeUiState,
-                    showWeather = showWeather,
-                    onClockClick = onClockClick,
-                    onWeatherClick = onWeatherClick,
-                    onScreenTimeClick = onScreenTimeClick,
-                    outlined = outlined,
+                clockUiState = clockUiState,
+                weatherUiState = weatherUiState,
+                screenTimeUiState = screenTimeUiState,
+                showWeather = showWeather,
+                onClockClick = onClockClick,
+                onWeatherClick = onWeatherClick,
+                onScreenTimeClick = onScreenTimeClick,
+                outlined = outlined,
             )
         }
         showWeather || screenTimeUiState.showWidget -> {
             Box(modifier = Modifier.fillMaxWidth()) {
                 if (showWeather) {
                     WeatherWidget(
-                            weather = weatherUiState.weather,
-                            useFahrenheit = weatherUiState.weatherUseFahrenheit,
-                            prominent = false,
-                            outlined = outlined,
-                            onClick = onWeatherClick,
-                            modifier = Modifier.align(Alignment.TopEnd),
+                        weather = weatherUiState.weather,
+                        useFahrenheit = weatherUiState.weatherUseFahrenheit,
+                        prominent = false,
+                        outlined = outlined,
+                        onClick = onWeatherClick,
+                        modifier = Modifier.align(Alignment.TopEnd),
                     )
                 }
                 if (screenTimeUiState.showWidget) {
                     ScreenTimeWidget(
-                            durationText = screenTimeUiState.durationText.orEmpty(),
-                            outlined = outlined,
-                            onClick = onScreenTimeClick,
-                            modifier =
-                                    Modifier.align(Alignment.TopEnd)
-                                            .offset(
-                                                    y =
-                                                            if (showWeather) {
-                                                                weatherRowHeight + 4.dp
-                                                            } else {
-                                                                0.dp
-                                                            },
-                                            ),
+                        durationText = screenTimeUiState.durationText.orEmpty(),
+                        outlined = outlined,
+                        onClick = onScreenTimeClick,
+                        modifier =
+                            Modifier.align(Alignment.TopEnd)
+                                .offset(
+                                    y =
+                                        if (showWeather) {
+                                            weatherRowHeight + 4.dp
+                                        } else {
+                                            0.dp
+                                        },
+                                ),
                     )
                 }
             }
@@ -545,59 +540,59 @@ private fun HomeWidgetsSection(
 
     if (showDateOrBattery) {
         DateBatteryRow(
-                date = clockUiState.currentDate,
-                batteryPercent = clockUiState.batteryPercent,
-                isCharging = clockUiState.isCharging,
-                showDate = uiState.showHomeDate,
-                showBattery = uiState.showHomeBattery,
-                outlined = outlined,
-                onDateClick = onDateClick,
-                modifier =
-                        Modifier.fillMaxWidth()
-                                .padding(top = if (showClock) 8.dp else 0.dp)
-                                .testTag("date_battery_row"),
+            date = clockUiState.currentDate,
+            batteryPercent = clockUiState.batteryPercent,
+            isCharging = clockUiState.isCharging,
+            showDate = uiState.showHomeDate,
+            showBattery = uiState.showHomeBattery,
+            outlined = outlined,
+            onDateClick = onDateClick,
+            modifier =
+                Modifier.fillMaxWidth()
+                    .padding(top = if (showClock) 8.dp else 0.dp)
+                    .testTag("date_battery_row"),
         )
     }
 
     val belowHeaderTopPad =
-            if (showDateOrBattery || showClock || showWeather || screenTimeUiState.showWidget) {
-                8.dp
-            } else {
-                0.dp
-            }
+        if (showDateOrBattery || showClock || showWeather || screenTimeUiState.showWidget) {
+            8.dp
+        } else {
+            0.dp
+        }
     // A bit of air under the date line so extras don't sit flush against it.
     val extrasTopPad = if (showDateOrBattery) 8.dp else belowHeaderTopPad
     var nextTopPad = belowHeaderTopPad
 
     val extraChips =
-            remember(homeExtraWidgets, worldClockUiState, countdownUiState) {
-                homeExtraWidgets.mapNotNull { entry ->
-                    when (entry) {
-                        is HomeExtraWidgetEntry.WorldClock ->
-                                worldClockUiState.citiesById[entry.cityId]?.let {
-                                    HomeExtraChipUi.WorldClock(it)
-                                }
-                        is HomeExtraWidgetEntry.Countdown ->
-                                countdownUiState.eventsById[entry.eventId]?.let { event ->
-                                    if (event.title.isNotBlank() &&
-                                                    event.remainingText.isNotBlank()
-                                    ) {
-                                        HomeExtraChipUi.Countdown(
-                                                event.title,
-                                                event.remainingText,
-                                        )
-                                    } else {
-                                        null
-                                    }
-                                }
-                    }
+        remember(homeExtraWidgets, worldClockUiState, countdownUiState) {
+            homeExtraWidgets.mapNotNull { entry ->
+                when (entry) {
+                    is HomeExtraWidgetEntry.WorldClock ->
+                        worldClockUiState.citiesById[entry.cityId]?.let {
+                            HomeExtraChipUi.WorldClock(it)
+                        }
+                    is HomeExtraWidgetEntry.Countdown ->
+                        countdownUiState.eventsById[entry.eventId]?.let { event ->
+                            if (event.title.isNotBlank() &&
+                                event.remainingText.isNotBlank()
+                            ) {
+                                HomeExtraChipUi.Countdown(
+                                    event.title,
+                                    event.remainingText,
+                                )
+                            } else {
+                                null
+                            }
+                        }
                 }
             }
+        }
     if (extraChips.isNotEmpty()) {
         HomeExtraChipsRow(
-                chips = extraChips,
-                outlined = outlined,
-                modifier = Modifier.fillMaxWidth().padding(top = extrasTopPad),
+            chips = extraChips,
+            outlined = outlined,
+            modifier = Modifier.fillMaxWidth().padding(top = extrasTopPad),
         )
         nextTopPad = 8.dp
     } else {
@@ -607,22 +602,22 @@ private fun HomeWidgetsSection(
     val playback = mediaUiState.playback
     if (mediaUiState.showWidget && playback != null) {
         MediaWidget(
-                title = playback.title,
-                artist = playback.artist,
-                isPlaying = playback.isPlaying,
-                isBuffering = playback.isBuffering,
-                canSkipToPrevious = playback.canSkipToPrevious,
-                canSkipToNext = playback.canSkipToNext,
-                like = playback.like,
-                save = playback.save,
-                outlined = outlined,
-                onOpenApp = onMediaOpenApp,
-                onLike = onMediaLike,
-                onPrevious = onMediaPrevious,
-                onPlayPause = onMediaPlayPause,
-                onNext = onMediaNext,
-                onSave = onMediaSave,
-                modifier = Modifier.fillMaxWidth().padding(top = nextTopPad),
+            title = playback.title,
+            artist = playback.artist,
+            isPlaying = playback.isPlaying,
+            isBuffering = playback.isBuffering,
+            canSkipToPrevious = playback.canSkipToPrevious,
+            canSkipToNext = playback.canSkipToNext,
+            like = playback.like,
+            save = playback.save,
+            outlined = outlined,
+            onOpenApp = onMediaOpenApp,
+            onLike = onMediaLike,
+            onPrevious = onMediaPrevious,
+            onPlayPause = onMediaPlayPause,
+            onNext = onMediaNext,
+            onSave = onMediaSave,
+            modifier = Modifier.fillMaxWidth().padding(top = nextTopPad),
         )
     }
 }
@@ -638,7 +633,7 @@ private fun FavoritesList(
     modifier: Modifier = Modifier,
     outlined: Boolean = false,
     notificationIndicatorUiState: HomeNotificationIndicatorUiState =
-            HomeNotificationIndicatorUiState(),
+        HomeNotificationIndicatorUiState(),
 ) {
     Column(
         modifier = modifier,
@@ -677,12 +672,12 @@ private fun ShortcutIconsColumn(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         RightShortcutIcons(
-                shortcuts = shortcuts,
-                onIconClick = onIconClick,
-                iconSize = iconSize,
-                touchTargetSize = touchTargetSize,
-                iconAlignment = iconAlignment,
-                outlined = outlined,
+            shortcuts = shortcuts,
+            onIconClick = onIconClick,
+            iconSize = iconSize,
+            touchTargetSize = touchTargetSize,
+            iconAlignment = iconAlignment,
+            outlined = outlined,
         )
     }
 }
@@ -697,22 +692,22 @@ private fun HomeFavoritesSection(
     launcherFontScale: Float,
     outlined: Boolean,
     notificationIndicatorUiState: HomeNotificationIndicatorUiState =
-            HomeNotificationIndicatorUiState(),
+        HomeNotificationIndicatorUiState(),
     onLabelClick: (FavoriteApp) -> Unit,
     onLabelLongPress: (FavoriteApp) -> Unit,
     onIconClick: (HomeShortcut) -> Unit,
 ) {
     val sc =
-            launcherFontScale.coerceIn(LauncherFontScale.MIN, LauncherFontScale.MAX)
+        launcherFontScale.coerceIn(LauncherFontScale.MIN, LauncherFontScale.MAX)
     // Base dp only: [LauncherIcon] applies [launcherIconDp] so shortcut size tracks font scale once.
     val shortcutIconSize = 24.dp
     val shortcutTouchTargetSize = (48f * sc).dp
     val backdropStrength =
-            if (outlined) {
-                (LocalPhotoWallpaperOutlineWidthDp.current / 100f).coerceIn(0f, 1f)
-            } else {
-                0f
-            }
+        if (outlined) {
+            (LocalPhotoWallpaperOutlineWidthDp.current / 100f).coerceIn(0f, 1f)
+        } else {
+            0f
+        }
     val shortcutIconSpacing = ((8f + 16f * backdropStrength) * sc).dp
     val shortcutGutter = (24f * sc).dp
     val shortcutRowTopSpacer = (20f * sc).dp
@@ -743,12 +738,12 @@ private fun HomeFavoritesSection(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         RightShortcutIcons(
-                                shortcuts = rightSideShortcuts,
-                                onIconClick = onIconClick,
-                                iconSize = shortcutIconSize,
-                                touchTargetSize = shortcutTouchTargetSize,
-                                iconAlignment = Alignment.Center,
-                                outlined = outlined,
+                            shortcuts = rightSideShortcuts,
+                            onIconClick = onIconClick,
+                            iconSize = shortcutIconSize,
+                            touchTargetSize = shortcutTouchTargetSize,
+                            iconAlignment = Alignment.Center,
+                            outlined = outlined,
                         )
                     }
                 }
@@ -756,41 +751,41 @@ private fun HomeFavoritesSection(
 
         HomeAlignment.LEFT, HomeAlignment.RIGHT -> {
             val favAlign =
-                    if (homeAlignment == HomeAlignment.LEFT) Alignment.Start else Alignment.End
+                if (homeAlignment == HomeAlignment.LEFT) Alignment.Start else Alignment.End
             Row(
-                    modifier = listModifier,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Bottom,
+                modifier = listModifier,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom,
             ) {
                 val favs: @Composable () -> Unit = {
                     FavoritesList(
-                            favorites = favorites,
-                            installedApps = installedApps,
-                            profileDisplayNameOverrides = profileDisplayNameOverrides,
-                            horizontalAlignment = favAlign,
-                            onLabelClick = onLabelClick,
-                            onLabelLongPress = onLabelLongPress,
-                            modifier = Modifier.weight(1f),
-                            outlined = outlined,
-                            notificationIndicatorUiState = notificationIndicatorUiState,
+                        favorites = favorites,
+                        installedApps = installedApps,
+                        profileDisplayNameOverrides = profileDisplayNameOverrides,
+                        horizontalAlignment = favAlign,
+                        onLabelClick = onLabelClick,
+                        onLabelLongPress = onLabelLongPress,
+                        modifier = Modifier.weight(1f),
+                        outlined = outlined,
+                        notificationIndicatorUiState = notificationIndicatorUiState,
                     )
                 }
                 val icons: @Composable () -> Unit = {
                     val iconAlignment =
-                            if (homeAlignment == HomeAlignment.LEFT) {
-                                Alignment.CenterEnd
-                            } else {
-                                Alignment.CenterStart
-                            }
+                        if (homeAlignment == HomeAlignment.LEFT) {
+                            Alignment.CenterEnd
+                        } else {
+                            Alignment.CenterStart
+                        }
                     ShortcutIconsColumn(
-                            shortcuts = rightSideShortcuts,
-                            onIconClick = onIconClick,
-                            iconSize = shortcutIconSize,
-                            touchTargetSize = shortcutTouchTargetSize,
-                            iconAlignment = iconAlignment,
-                            verticalSpacing = shortcutIconSpacing,
-                            modifier = Modifier.offset(y = (-8).dp),
-                            outlined = outlined,
+                        shortcuts = rightSideShortcuts,
+                        onIconClick = onIconClick,
+                        iconSize = shortcutIconSize,
+                        touchTargetSize = shortcutTouchTargetSize,
+                        iconAlignment = iconAlignment,
+                        verticalSpacing = shortcutIconSpacing,
+                        modifier = Modifier.offset(y = (-8).dp),
+                        outlined = outlined,
                     )
                 }
                 if (homeAlignment == HomeAlignment.LEFT) {
@@ -818,18 +813,18 @@ private fun RightShortcutIcons(
 ) {
     shortcuts.reversed().forEachIndexed { index, shortcut ->
         Box(
-                modifier =
-                        Modifier.size(touchTargetSize)
-                                .clickableNoRippleWithSystemSound { onIconClick(shortcut) }
-                                .testTag("right_shortcut_icon_$index"),
-                contentAlignment = iconAlignment,
+            modifier =
+                Modifier.size(touchTargetSize)
+                    .clickableNoRippleWithSystemSound { onIconClick(shortcut) }
+                    .testTag("right_shortcut_icon_$index"),
+            contentAlignment = iconAlignment,
         ) {
             LauncherIcon(
-                    imageVector = MinimalIcons.iconFor(shortcut.iconName),
-                    contentDescription = stringResource(R.string.cd_shortcut_icon),
-                    tint = MaterialTheme.colorScheme.onBackground,
-                    iconSize = iconSize,
-                    outlined = outlined,
+                imageVector = MinimalIcons.iconFor(shortcut.iconName),
+                contentDescription = stringResource(R.string.cd_shortcut_icon),
+                tint = MaterialTheme.colorScheme.onBackground,
+                iconSize = iconSize,
+                outlined = outlined,
             )
         }
     }
@@ -863,98 +858,98 @@ private fun BoxScope.HomeDefaultLauncherBanner(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun FavoriteAppItem(
-        fav: FavoriteApp,
-        installedApps: List<AppInfo>,
-        profileDisplayNameOverrides: Map<String, String>,
-        onClick: () -> Unit,
-        onLongPress: () -> Unit,
-        horizontalAlignment: Alignment.Horizontal,
-        outlined: Boolean,
-        notificationIndicatorUiState: HomeNotificationIndicatorUiState =
-                HomeNotificationIndicatorUiState(),
+    fav: FavoriteApp,
+    installedApps: List<AppInfo>,
+    profileDisplayNameOverrides: Map<String, String>,
+    onClick: () -> Unit,
+    onLongPress: () -> Unit,
+    horizontalAlignment: Alignment.Horizontal,
+    outlined: Boolean,
+    notificationIndicatorUiState: HomeNotificationIndicatorUiState =
+        HomeNotificationIndicatorUiState(),
 ) {
     val context = LocalContext.current
     val badge =
-            remember(fav, installedApps, profileDisplayNameOverrides, context) {
-                val match =
-                        installedApps.find {
-                            it.packageName == fav.packageName &&
-                                    appProfileKey(it.userHandle) == fav.profileKey
-                        }
-                profileOriginLabelForFavorite(context, fav, match, profileDisplayNameOverrides)
-            }
+        remember(fav, installedApps, profileDisplayNameOverrides, context) {
+            val match =
+                installedApps.find {
+                    it.packageName == fav.packageName &&
+                        appProfileKey(it.userHandle) == fav.profileKey
+                }
+            profileOriginLabelForFavorite(context, fav, match, profileDisplayNameOverrides)
+        }
     val appKey = drawerOpenCountKey(fav.packageName, fav.profileKey)
     val hasNotification =
-            notificationIndicatorUiState.enabled &&
-                    appKey in notificationIndicatorUiState.appsWithNotifications
+        notificationIndicatorUiState.enabled &&
+            appKey in notificationIndicatorUiState.appsWithNotifications
     val textColor = MaterialTheme.colorScheme.onBackground
     val indicatorColor = Color(notificationIndicatorUiState.colorArgb)
     val labelColor =
-            if (hasNotification &&
-                            notificationIndicatorUiState.style ==
-                                    NotificationIndicatorStyle.COLORED_LABEL
-            ) {
-                indicatorColor
-            } else {
-                textColor
-            }
+        if (hasNotification &&
+            notificationIndicatorUiState.style ==
+                NotificationIndicatorStyle.COLORED_LABEL
+        ) {
+            indicatorColor
+        } else {
+            textColor
+        }
     val showDot =
-            hasNotification &&
-                    notificationIndicatorUiState.style == NotificationIndicatorStyle.DOT
+        hasNotification &&
+            notificationIndicatorUiState.style == NotificationIndicatorStyle.DOT
     val dotLeading = horizontalAlignment == Alignment.Start
     Column(
-            horizontalAlignment = horizontalAlignment,
-            modifier =
-                    Modifier.fillMaxWidth()
-                            .combinedClickableWithSystemSound(
-                                    indication = LocalIndication.current,
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    onClick = onClick,
-                                    onLongClick = onLongPress,
-                            )
-                            .testTag("favorite_${fav.label}"),
+        horizontalAlignment = horizontalAlignment,
+        modifier =
+            Modifier.fillMaxWidth()
+                .combinedClickableWithSystemSound(
+                    indication = LocalIndication.current,
+                    interactionSource = remember { MutableInteractionSource() },
+                    onClick = onClick,
+                    onLongClick = onLongPress,
+                )
+                .testTag("favorite_${fav.label}"),
     ) {
         Box {
             if (outlined) {
                 OutlinedText(
-                        text = fav.label,
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = labelColor,
+                    text = fav.label,
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = labelColor,
                 )
             } else {
                 Text(
-                        text = fav.label,
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = labelColor,
+                    text = fav.label,
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = labelColor,
                 )
             }
             if (showDot) {
                 NotificationIndicatorDot(
-                        color = textColor,
-                        modifier =
-                                Modifier.align(
-                                                if (dotLeading) Alignment.CenterStart
-                                                else Alignment.CenterEnd
-                                        )
-                                        .offset(x = if (dotLeading) (-16).dp else 16.dp),
+                    color = textColor,
+                    modifier =
+                        Modifier.align(
+                            if (dotLeading) Alignment.CenterStart
+                            else Alignment.CenterEnd
+                        )
+                        .offset(x = if (dotLeading) (-16).dp else 16.dp),
                 )
             }
         }
         if (badge != null) {
             if (outlined) {
                 OutlinedText(
-                        text = badge,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 4.dp),
-                        outlineWidth = 1.5f,
+                    text = badge,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp),
+                    outlineWidth = 1.5f,
                 )
             } else {
                 Text(
-                        text = badge,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 4.dp),
+                    text = badge,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp),
                 )
             }
         }
@@ -964,9 +959,9 @@ private fun FavoriteAppItem(
 @Composable
 private fun NotificationIndicatorDot(color: Color, modifier: Modifier = Modifier) {
     Box(
-            modifier =
-                    modifier.size(8.dp)
-                            .background(color = color, shape = CircleShape),
+        modifier =
+            modifier.size(8.dp)
+                .background(color = color, shape = CircleShape),
     )
 }
 
@@ -978,28 +973,24 @@ private fun HomeScreenLongPressSheet(
     onEditShortcuts: () -> Unit,
     onOpenSettings: () -> Unit
 ) {
-    val sheetState = rememberModalBottomSheetState()
-    FokusBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-    ) {
-            SheetActionRow(
-                label = stringResource(R.string.settings_edit_home_screen),
-                onClick = onEditHomeScreen,
-                icon = Icons.Default.Home,
-                iconContentDescription = stringResource(R.string.cd_edit_home_screen),
-            )
-            SheetActionRow(
-                label = stringResource(R.string.settings_edit_shortcuts),
-                onClick = onEditShortcuts,
-                icon = Icons.Filled.TouchApp,
-                iconContentDescription = stringResource(R.string.settings_edit_shortcuts),
-            )
-            SheetActionRow(
-                label = stringResource(R.string.settings_title),
-                onClick = onOpenSettings,
-                icon = Icons.Default.Settings,
-                iconContentDescription = stringResource(R.string.cd_settings),
-            )
+    FokusBottomSheet(onDismissRequest = onDismiss) {
+        SheetActionRow(
+            label = stringResource(R.string.settings_edit_home_screen),
+            onClick = onEditHomeScreen,
+            icon = Icons.Default.Home,
+            iconContentDescription = stringResource(R.string.cd_edit_home_screen),
+        )
+        SheetActionRow(
+            label = stringResource(R.string.settings_edit_shortcuts),
+            onClick = onEditShortcuts,
+            icon = Icons.Filled.TouchApp,
+            iconContentDescription = stringResource(R.string.settings_edit_shortcuts),
+        )
+        SheetActionRow(
+            label = stringResource(R.string.settings_title),
+            onClick = onOpenSettings,
+            icon = Icons.Default.Settings,
+            iconContentDescription = stringResource(R.string.cd_settings),
+        )
     }
 }

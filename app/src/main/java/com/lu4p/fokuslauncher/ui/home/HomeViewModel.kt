@@ -266,6 +266,9 @@ class HomeViewModel @Inject constructor(
     private val _appMenuTarget = MutableStateFlow<FavoriteApp?>(null)
     val appMenuTarget: StateFlow<FavoriteApp?> = _appMenuTarget.asStateFlow()
 
+    private val _appMenuShortcuts = MutableStateFlow<List<AppShortcutAction>>(emptyList())
+    val appMenuShortcuts: StateFlow<List<AppShortcutAction>> = _appMenuShortcuts.asStateFlow()
+
     private val _showHomeScreenMenu = MutableStateFlow(false)
     val showHomeScreenMenu: StateFlow<Boolean> = _showHomeScreenMenu.asStateFlow()
 
@@ -544,6 +547,12 @@ class HomeViewModel @Inject constructor(
 
     fun onFavoriteLongPress(fav: FavoriteApp) {
         _appMenuTarget.value = fav
+
+        viewModelScope.launch {
+            val user = appRepository.getUserHandleForProfile(fav.profileKey) ?: Process.myUserHandle()
+            _appMenuShortcuts.value =
+                    appRepository.getShortcutsForApp(fav.packageName, user).take(MAX_APP_MENU_SHORTCUTS)
+        }
     }
 
     fun onHomeScreenLongPress() {
@@ -672,6 +681,7 @@ class HomeViewModel @Inject constructor(
 
     fun dismissAppMenu() {
         _appMenuTarget.value = null
+        _appMenuShortcuts.value = emptyList()
     }
 
     fun openWeatherAppPicker() {
@@ -713,6 +723,10 @@ class HomeViewModel @Inject constructor(
             }
             dismissAppMenu()
         }
+    }
+
+    fun getCategoryForFavorite(fav: FavoriteApp): String {
+        return installedAppFor(fav.packageName, fav.profileKey)?.category.orEmpty()
     }
 
     fun setFavoriteCategory(favorite: FavoriteApp, category: String) {
@@ -1627,10 +1641,12 @@ class HomeViewModel @Inject constructor(
         return true
     }
 
-    private fun installedAppFor(packageName: String, profileKey: String): AppInfo? =
-            _allInstalledApps.value.firstOrNull {
-                it.packageName == packageName && appProfileKey(it.userHandle) == profileKey
-            }
+    private fun installedAppFor(packageName: String, profileKey: String): AppInfo? {
+        val user = appRepository.getUserHandleForProfile(profileKey)
+        return _allInstalledApps.value.firstOrNull {
+            it.packageName == packageName && it.userHandle == user
+        }
+    }
 
     private fun shortcutArchivedKey(shortcut: HomeShortcut): String? =
             when (val target = shortcut.target) {
@@ -1665,31 +1681,42 @@ class HomeViewModel @Inject constructor(
     private fun FavoriteApp.isPhoneFavoriteSentinel(): Boolean =
             packageName == ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE
 
+    fun launchAppShortcutAction(action: AppShortcutAction) {
+        val target = action.target as? ShortcutTarget.LauncherShortcut ?: return
+        val user = appRepository.getUserHandleForProfile(action.profileKey)
+        appRepository.launchLauncherShortcut(target.packageName, target.shortcutId, user)
+    }
+
+    fun getShortcutIcon(action: AppShortcutAction) = appRepository.getShortcutIcon(action)
+
     private fun isHomeCategoryPickerReserved(category: String): Boolean =
-            category.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true) ||
-                    category.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true) ||
-                    category.equals(ReservedCategoryNames.WORK, ignoreCase = true) ||
-                    category.equals(ReservedCategoryNames.UNCATEGORIZED, ignoreCase = true)
+        category.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true) ||
+            category.equals(ReservedCategoryNames.PRIVATE, ignoreCase = true) ||
+            category.equals(ReservedCategoryNames.WORK, ignoreCase = true) ||
+            category.equals(ReservedCategoryNames.UNCATEGORIZED, ignoreCase = true)
 
     private companion object {
+        /** Max launcher shortcuts shown in the home long-press app menu. */
+        private const val MAX_APP_MENU_SHORTCUTS = 5
+
         private val shortcutActionIconKeywordHints =
-                listOf(
-                        "music" to "music",
-                        "work" to "work",
-                        "mail" to "work",
-                        "chat" to "chat",
-                        "message" to "chat",
-                        "call" to "call",
-                        "dial" to "call",
-                        "dialer" to "call",
-                        "phone" to "call",
-                        "camera" to "camera",
-                        "photo" to "gallery",
-                        "gallery" to "gallery",
-                        "video" to "video",
-                        "map" to "map",
-                        "direction" to "map",
-                )
+            listOf(
+                "music" to "music",
+                "work" to "work",
+                "mail" to "work",
+                "chat" to "chat",
+                "message" to "chat",
+                "call" to "call",
+                "dial" to "call",
+                "dialer" to "call",
+                "phone" to "call",
+                "camera" to "camera",
+                "photo" to "gallery",
+                "gallery" to "gallery",
+                "video" to "video",
+                "map" to "map",
+                "direction" to "map",
+            )
 
         /**
          * [Intent.EXTRA_TIMEZONE] documents this key but the constant is not inlined below API 30;

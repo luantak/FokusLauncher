@@ -1,8 +1,12 @@
 package com.lu4p.fokuslauncher.ui.home
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Launch
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
@@ -11,6 +15,7 @@ import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -22,17 +27,26 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.lu4p.fokuslauncher.R
+import com.lu4p.fokuslauncher.data.model.AppShortcutAction
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
+import com.lu4p.fokuslauncher.ui.components.LauncherIcon
 import com.lu4p.fokuslauncher.ui.components.RenameableBottomSheet
 import com.lu4p.fokuslauncher.ui.components.SheetActionRow
 import com.lu4p.fokuslauncher.ui.util.categoryChipDisplayLabel
 
 /**
+ * Peek height for the home app long-press menu. Matches Material3's partially-expanded
+ * anchor (~half screen) so open height stays consistent when the sheet can expand.
+ */
+private const val APP_MENU_SHEET_HEIGHT_FRACTION = 0.5f
+
+/**
  * Bottom sheet "App menu" opened directly on long-pressing a home-screen app.
- * Occupies roughly the lower third to half of the screen.
+ * Opens at a fixed partial height; swipe up for full height when content overflows.
  *
  * Contents:
  *  - App name (with pencil icon to rename)
+ *  - App shortcuts (when available)
  *  - Remove from home screen
  *  - Home screen (edit icon) → opens the edit overlay
  *  - App info           → Android system settings
@@ -45,6 +59,7 @@ fun HomeAppMenuSheet(
     fav: FavoriteApp,
     currentCategory: String,
     categoryOptions: List<String>,
+    shortcuts: List<AppShortcutAction>,
     onDismiss: () -> Unit,
     onRename: (String) -> Unit,
     onSetCategory: (String) -> Unit,
@@ -52,76 +67,131 @@ fun HomeAppMenuSheet(
     onEditHomeScreen: () -> Unit,
     onAppInfo: () -> Unit,
     onHide: () -> Unit,
-    onUninstall: () -> Unit
+    onUninstall: () -> Unit,
+    onShortcutClick: (AppShortcutAction) -> Unit,
 ) {
     var showingCategoryPicker by remember(fav.packageName, fav.profileKey) { mutableStateOf(false) }
     val context = LocalContext.current
     RenameableBottomSheet(
-            initialLabel = fav.label,
-            renameKey = fav.packageName,
-            onDismiss = onDismiss,
-            onRename = onRename,
-            editIconContentDescription = stringResource(R.string.action_rename),
+        initialLabel = fav.label,
+        renameKey = fav.packageName,
+        onDismiss = onDismiss,
+        onRename = onRename,
+        editIconContentDescription = stringResource(R.string.action_rename),
+        contentHeightFraction = APP_MENU_SHEET_HEIGHT_FRACTION,
     ) {
         if (showingCategoryPicker) {
             val options =
-                    remember(categoryOptions, currentCategory) {
-                        (listOf("") + categoryOptions + currentCategory)
-                                .map { it.trim() }
-                                .distinctBy { it.lowercase() }
-                    }
+                remember(categoryOptions, currentCategory) {
+                    (listOf("") + categoryOptions + currentCategory)
+                        .map { it.trim() }
+                        .distinctBy { it.lowercase() }
+                }
             options.forEach { category ->
                 val selected = currentCategory.equals(category, ignoreCase = true)
                 val label =
-                        if (category.isBlank()) {
-                            stringResource(R.string.category_no_category)
-                        } else {
-                            categoryChipDisplayLabel(context, category)
-                        }
+                    if (category.isBlank()) {
+                        stringResource(R.string.category_no_category)
+                    } else {
+                        categoryChipDisplayLabel(context, category)
+                    }
                 SheetActionRow(
-                        label = label,
-                        onClick = { onSetCategory(category) },
-                        icon = if (selected) Icons.Default.Check else null,
-                        iconContentDescription = label,
-                        leadingContent =
-                                if (selected) {
-                                    null
-                                } else {
-                                    { Spacer(modifier = Modifier.width(24.dp)) }
-                                },
-                        testTag = "action_set_category_${category.ifBlank { "none" }}",
+                    label = label,
+                    onClick = { onSetCategory(category) },
+                    icon = if (selected) Icons.Default.Check else null,
+                    iconContentDescription = label,
+                    leadingContent =
+                        if (selected) {
+                            null
+                        } else {
+                            { Spacer(modifier = Modifier.width(24.dp)) }
+                        },
+                    testTag = "action_set_category_${category.ifBlank { "none" }}",
                 )
             }
             return@RenameableBottomSheet
         }
 
+        shortcuts.forEach { action ->
+            SheetActionRow(
+                label = action.actionLabel,
+                onClick = {
+                    onShortcutClick(action)
+                    onDismiss()
+                },
+                leadingContent = {
+                    val icon = action.icon
+                    androidx.compose.foundation.layout.Box(
+                        contentAlignment = androidx.compose.ui.Alignment.Center,
+                        modifier =
+                            Modifier.size(32.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.secondaryContainer,
+                                    androidx.compose.foundation.shape.CircleShape
+                                )
+                    ) {
+                        if (icon != null) {
+                            LauncherIcon(
+                                drawable = icon,
+                                contentDescription = action.actionLabel,
+                                iconSize = 26.dp,
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                            )
+                        } else {
+                            LauncherIcon(
+                                imageVector = Icons.AutoMirrored.Filled.Launch,
+                                contentDescription = action.actionLabel,
+                                iconSize = 20.dp,
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                            )
+                        }
+                    }
+                },
+                testTag = "shortcut_${action.id}",
+            )
+        }
+
+        if (shortcuts.isNotEmpty()) {
+            androidx.compose.material3.HorizontalDivider(
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+        }
+
         val actions: List<Triple<Int, ImageVector, () -> Unit>> =
-                listOf(
-                        Triple(
-                                R.string.action_set_category,
-                                Icons.Default.Category,
-                                { showingCategoryPicker = true },
-                        ),
-                        Triple(R.string.action_remove_from_home, Icons.Default.Close, onRemoveFromHome),
-                        Triple(R.string.settings_nav_home_screen, Icons.Outlined.Edit, onEditHomeScreen),
-                        Triple(R.string.action_app_info, Icons.Default.Info, onAppInfo),
-                        Triple(R.string.action_hide, Icons.Default.VisibilityOff, onHide),
-                        Triple(R.string.action_uninstall, Icons.Default.Delete, onUninstall),
-                )
+            listOf(
+                Triple(
+                    R.string.action_set_category,
+                    Icons.Default.Category,
+                    { showingCategoryPicker = true },
+                ),
+                Triple(
+                    R.string.action_remove_from_home,
+                    Icons.Default.Close,
+                    onRemoveFromHome
+                ),
+                Triple(
+                    R.string.settings_nav_home_screen,
+                    Icons.Outlined.Edit,
+                    onEditHomeScreen
+                ),
+                Triple(R.string.action_app_info, Icons.Default.Info, onAppInfo),
+                Triple(R.string.action_hide, Icons.Default.VisibilityOff, onHide),
+                Triple(R.string.action_uninstall, Icons.Default.Delete, onUninstall),
+            )
         actions.forEach { (labelRes, icon, action) ->
             val iconCdRes =
-                    when (labelRes) {
-                        R.string.settings_nav_home_screen -> R.string.cd_edit_home_screen
-                        else -> labelRes
-                    }
+                when (labelRes) {
+                    R.string.settings_nav_home_screen -> R.string.cd_edit_home_screen
+                    else -> labelRes
+                }
             SheetActionRow(
-                    label = stringResource(labelRes),
-                    onClick = {
-                        action()
-                        if (labelRes != R.string.action_set_category) onDismiss()
-                    },
-                    icon = icon,
-                    iconContentDescription = stringResource(iconCdRes),
+                label = stringResource(labelRes),
+                onClick = {
+                    action()
+                    if (labelRes != R.string.action_set_category) onDismiss()
+                },
+                icon = icon,
+                iconContentDescription = stringResource(iconCdRes),
             )
         }
     }

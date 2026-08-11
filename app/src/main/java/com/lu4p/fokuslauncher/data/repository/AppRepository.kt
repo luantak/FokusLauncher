@@ -644,8 +644,12 @@ constructor(
         mainHandler.postDelayed(delayedInstalledAppsRefresh, INSTALLED_APPS_REFRESH_RETRY_DELAY_MS)
     }
 
-    private fun profileKeyForUser(user: UserHandle): String =
-            if (user == Process.myUserHandle()) "0" else appProfileKey(user)
+    fun getUserHandleForProfile(profileKey: String): UserHandle? {
+        if (profileKey == "0") return Process.myUserHandle()
+        return userManagerOrNull()?.userProfiles?.find { appProfileKey(it) == profileKey }
+    }
+
+    fun profileKeyForUser(user: UserHandle): String = appProfileKey(user)
 
     fun getInstalledAppsVersion(): StateFlow<Long> = installedAppsVersion
     fun getRemovedPackages(): SharedFlow<RemovedApp> = removedPackages.asSharedFlow()
@@ -973,16 +977,13 @@ constructor(
         val apps = getInstalledApps()
         val actions = mutableListOf<AppShortcutAction>()
 
-        val launcherApps = launcherAppsOrNull()
-
-        val myUser = Process.myUserHandle()
         actions.add(
-                AppShortcutAction(
-                        appLabel = context.getString(R.string.shortcut_target_phone),
-                        actionLabel = context.getString(R.string.shortcut_open_dialer),
-                        target = ShortcutTarget.PhoneDial,
-                        profileKey = "0",
-                )
+            AppShortcutAction(
+                appLabel = context.getString(R.string.shortcut_target_phone),
+                actionLabel = context.getString(R.string.shortcut_open_dialer),
+                target = ShortcutTarget.PhoneDial,
+                profileKey = "0",
+            )
         )
         apps.filter { it.launcherShortcutId == null }.forEach { app ->
             val profileKey = appProfileKey(app.userHandle)
@@ -992,52 +993,13 @@ constructor(
                     actionLabel = AppShortcutAction.OPEN_APP_LABEL,
                     target = ShortcutTarget.App(app.packageName),
                     profileKey = profileKey,
+                    icon = app.icon,
                 )
             )
 
-            if (launcherApps == null) return@forEach
-
-            val shortcutUser = app.userHandle ?: myUser
-            val shortcuts = try {
-                val queryFlags =
-                        LauncherApps.ShortcutQuery.FLAG_MATCH_DYNAMIC or
-                                LauncherApps.ShortcutQuery.FLAG_MATCH_MANIFEST or
-                                LauncherApps.ShortcutQuery.FLAG_MATCH_PINNED or
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                                    LauncherApps.ShortcutQuery.FLAG_MATCH_CACHED
-                                } else {
-                                    0
-                                }
-                val query =
-                        LauncherApps.ShortcutQuery()
-                                .setPackage(app.packageName)
-                                .setQueryFlags(queryFlags)
-                launcherApps.getShortcuts(query, shortcutUser).orEmpty()
-            } catch (_: Exception) {
-                emptyList()
+            if (app.userHandle != null) {
+                actions.addAll(getShortcutsForApp(app.packageName, app.userHandle))
             }
-
-            shortcuts
-                .asSequence()
-                .filter { it.isEnabled }
-                .distinctBy { it.id }
-                .forEach { info ->
-                    val shortcutLabel =
-                        info.shortLabel?.toString()?.trim().takeUnless { it.isNullOrEmpty() }
-                            ?: info.longLabel?.toString()?.trim().takeUnless { it.isNullOrEmpty() }
-                            ?: context.getString(R.string.shortcut_generic_label)
-                    actions.add(
-                        AppShortcutAction(
-                            appLabel = app.label,
-                            actionLabel = shortcutLabel,
-                            target = ShortcutTarget.LauncherShortcut(
-                                packageName = app.packageName,
-                                shortcutId = info.id
-                            ),
-                            profileKey = profileKey,
-                        )
-                    )
-                }
         }
 
         return actions.distinctBy { it.id }.sortedWith(
@@ -1046,6 +1008,109 @@ constructor(
                 .thenBy { it.actionLabel.lowercase() }
         )
     }
+
+    /**
+     * Returns all launcher shortcut actions published by a specific app.
+     */
+    fun getShortcutsForApp(packageName: String, user: UserHandle): List<AppShortcutAction> {
+        val launcherApps = launcherAppsOrNull() ?: return emptyList()
+        val profileKey = profileKeyForUser(user)
+
+        // Find the app label
+        val appLabel =
+            getInstalledApps().find { it.packageName == packageName && it.userHandle == user }?.label
+                ?: packageName
+
+        val shortcuts =
+            try {
+                val queryFlags =
+                    LauncherApps.ShortcutQuery.FLAG_MATCH_DYNAMIC or
+                        LauncherApps.ShortcutQuery.FLAG_MATCH_MANIFEST or
+                        LauncherApps.ShortcutQuery.FLAG_MATCH_PINNED or
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                            LauncherApps.ShortcutQuery.FLAG_MATCH_CACHED
+                        } else {
+                            0
+                        }
+                val query =
+                    LauncherApps.ShortcutQuery().setPackage(packageName).setQueryFlags(queryFlags)
+                launcherApps.getShortcuts(query, user).orEmpty()
+            } catch (_: Exception) {
+                emptyList()
+            }
+
+        return shortcuts
+            .asSequence()
+            .filter { it.isEnabled }
+            .distinctBy { it.id }
+            .sortedBy { it.rank }
+            .map { info ->
+                val shortcutLabel =
+                    info.shortLabel?.toString()?.trim().takeUnless { it.isNullOrEmpty() }
+                        ?: info.longLabel?.toString()?.trim().takeUnless { it.isNullOrEmpty() }
+                        ?: context.getString(R.string.shortcut_generic_label)
+                val shortcutIcon =
+                    try {
+                        launcherApps.getShortcutIconDrawable(
+                            info,
+                            context.resources.displayMetrics.densityDpi
+                        )
+                    } catch (_: Exception) {
+                        null
+                    }
+                AppShortcutAction(
+                    appLabel = appLabel,
+                    actionLabel = shortcutLabel,
+                    target =
+                        ShortcutTarget.LauncherShortcut(
+                            packageName = packageName,
+                            shortcutId = info.id,
+                        ),
+                    profileKey = profileKey,
+                    icon = shortcutIcon,
+                )
+            }
+            .toList()
+    }
+
+    /**
+     * Fetches the icon for a specific launcher shortcut.
+     */
+    fun getShortcutIcon(action: AppShortcutAction): Drawable? {
+        val target = action.target as? ShortcutTarget.LauncherShortcut ?: return null
+        val launcherApps = launcherAppsOrNull() ?: return null
+
+        val user =
+            userManagerOrNull()
+                ?.userProfiles
+                ?.find { appProfileKey(it) == action.profileKey }
+                ?: Process.myUserHandle()
+
+        val query =
+            LauncherApps.ShortcutQuery()
+                .setPackage(target.packageName)
+                .setShortcutIds(listOf(target.shortcutId))
+                .setQueryFlags(
+                    LauncherApps.ShortcutQuery.FLAG_MATCH_DYNAMIC or
+                        LauncherApps.ShortcutQuery.FLAG_MATCH_MANIFEST or
+                        LauncherApps.ShortcutQuery.FLAG_MATCH_PINNED,
+                )
+
+        val shortcuts =
+            try {
+                launcherApps.getShortcuts(query, user).orEmpty()
+            } catch (_: Exception) {
+                emptyList()
+            }
+
+        val info = shortcuts.firstOrNull() ?: return null
+        return try {
+            launcherApps.getShortcutIconDrawable(info, context.resources.displayMetrics.densityDpi)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
 
     suspend fun getAllShortcutActionsOnBackground(): List<AppShortcutAction> =
             withContext(Dispatchers.IO) { getAllShortcutActions() }
