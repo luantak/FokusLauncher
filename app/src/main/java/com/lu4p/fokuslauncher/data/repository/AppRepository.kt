@@ -997,9 +997,9 @@ constructor(
                 )
             )
 
-            if (app.userHandle != null) {
-                actions.addAll(getShortcutsForApp(app.packageName, app.userHandle))
-            }
+            // Owner-profile apps store userHandle as null; resolve to myUser for ShortcutQuery.
+            val shortcutUser = app.userHandle ?: Process.myUserHandle()
+            actions.addAll(getShortcutsForApp(app.packageName, shortcutUser))
         }
 
         return actions.distinctBy { it.id }.sortedWith(
@@ -1016,9 +1016,18 @@ constructor(
         val launcherApps = launcherAppsOrNull() ?: return emptyList()
         val profileKey = profileKeyForUser(user)
 
-        // Find the app label
+        // Owner-profile apps store userHandle as null even when queried with myUserHandle.
+        // Prefer the host app row over pinned-shortcut siblings that share packageName.
+        val myUser = Process.myUserHandle()
         val appLabel =
-            getInstalledApps().find { it.packageName == packageName && it.userHandle == user }?.label
+            getInstalledApps()
+                .firstOrNull {
+                    it.packageName == packageName &&
+                        it.launcherShortcutId == null &&
+                        (it.userHandle == user ||
+                            (user == myUser && it.userHandle == null))
+                }
+                ?.label
                 ?: packageName
 
         val shortcuts =

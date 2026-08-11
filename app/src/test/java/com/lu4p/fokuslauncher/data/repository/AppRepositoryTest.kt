@@ -609,6 +609,30 @@ class AppRepositoryTest {
         assertEquals(result.size, result.distinctBy { it.id }.size)
     }
 
+    @Test
+    fun `getAllShortcutActions includes owner-profile in-app shortcuts`() {
+        every {
+            launcherApps.getActivityList(null, myUser)
+        } returns listOf(createMockLauncherActivity("com.google.android.gm", "Gmail"))
+        every { launcherApps.getShortcuts(any(), myUser) } returns
+                listOf(
+                        createMockShortcut("compose", "Compose"),
+                        createMockShortcut("search", "Search"),
+                )
+
+        val result = repository.getAllShortcutActions()
+        val gmailActions =
+                result.filter {
+                    it.target is com.lu4p.fokuslauncher.data.model.ShortcutTarget.LauncherShortcut &&
+                            (it.target as com.lu4p.fokuslauncher.data.model.ShortcutTarget.LauncherShortcut)
+                                    .packageName == "com.google.android.gm"
+                }
+
+        assertEquals(2, gmailActions.size)
+        assertTrue(gmailActions.any { it.actionLabel == "Compose" && it.appLabel == "Gmail" })
+        assertTrue(gmailActions.any { it.actionLabel == "Search" && it.appLabel == "Gmail" })
+    }
+
     // --- Hidden Apps Tests ---
 
     @Test
