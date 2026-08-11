@@ -1363,10 +1363,10 @@ fun AppListItem(
     }
 }
 
-/** Drawer Arcticons slot — slightly larger than before so fine line-art stays readable. */
-private val ArcticonsDrawerIconSlotSize = 30.dp
-private val ArcticonsDrawerIconSize = 28.dp
-private val ArcticonsDrawerIconPlaceholderSize = 22.dp
+/** Drawer Arcticons slot — sized so fine line-art stays readable beside bodyLarge labels. */
+private val ArcticonsDrawerIconSlotSize = 34.dp
+private val ArcticonsDrawerIconSize = 32.dp
+private val ArcticonsDrawerIconPlaceholderSize = 24.dp
 
 @Composable
 private fun ArcticonsDrawerAppIcon(app: AppInfo, tint: Color) {
