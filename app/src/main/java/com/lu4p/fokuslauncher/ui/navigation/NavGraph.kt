@@ -549,27 +549,28 @@ fun FokusNavGraph(
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
-                                        .pointerInput(widgetPageSide, systemAnimationsEnabled) {
+                                        .pointerInput(
+                                            widgetPageSide,
+                                            systemAnimationsEnabled,
+                                            pageWidthPx,
+                                            triggerPx,
+                                        ) {
                                             fun settleWidgetPageClose() {
                                                 val currentSide = widgetPageSide ?: return
-                                                val halfway =
+                                                val openOffset =
                                                     if (currentSide == SwipeSide.RIGHT) {
-                                                        pageWidthPx * 0.275f
+                                                        pageWidthPx
                                                     } else {
-                                                        -pageWidthPx * 0.275f
+                                                        -pageWidthPx
                                                     }
+                                                // Same travel as opening: drag ~triggerPx toward home.
                                                 val shouldClose =
-                                                    if (currentSide == SwipeSide.RIGHT) {
-                                                        horizontalOffsetPx < halfway
-                                                    } else {
-                                                        horizontalOffsetPx > halfway
-                                                    }
+                                                    abs(openOffset - horizontalOffsetPx) >= triggerPx
                                                 coroutineScope.launch {
                                                     val targetValue =
                                                         when {
                                                             shouldClose -> 0f
-                                                            currentSide == SwipeSide.RIGHT -> pageWidthPx
-                                                            else -> -pageWidthPx
+                                                            else -> openOffset
                                                         }
                                                     animateHorizontalOffset(
                                                         from = horizontalOffsetPx,
@@ -594,9 +595,16 @@ fun FokusNavGraph(
                                                                 (currentSide == SwipeSide.LEFT && dragAmount > 0f)
                                                     if (!closes) return@detectHorizontalDragGestures
                                                     change.consume()
+                                                    val next =
+                                                        horizontalOffsetPx +
+                                                            (dragAmount * HORIZONTAL_DRAG_GAIN)
                                                     horizontalOffsetPx =
-                                                        (horizontalOffsetPx + dragAmount)
-                                                            .coerceIn(-pageWidthPx, pageWidthPx)
+                                                        when (currentSide) {
+                                                            SwipeSide.RIGHT ->
+                                                                next.coerceIn(0f, pageWidthPx)
+                                                            SwipeSide.LEFT ->
+                                                                next.coerceIn(-pageWidthPx, 0f)
+                                                        }
                                                 },
                                                 onDragEnd = { settleWidgetPageClose() },
                                                 onDragCancel = { settleWidgetPageClose() },
