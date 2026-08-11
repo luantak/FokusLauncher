@@ -279,7 +279,7 @@ class HomeScreenTest {
         }
 
         composeTestRule.onNodeWithTag("weather_widget").assertIsDisplayed()
-        composeTestRule.onNodeWithText("22°C · AQI 29").assertIsDisplayed()
+        composeTestRule.onNodeWithText("22°C · 29").assertIsDisplayed()
     }
 
     @Test
