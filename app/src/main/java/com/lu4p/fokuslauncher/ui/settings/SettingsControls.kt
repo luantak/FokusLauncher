@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.LocalCafe
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Translate
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -157,6 +158,12 @@ internal val communityLinks =
                         R.string.settings_matrix_title,
                         R.string.settings_matrix_subtitle,
                         "https://matrix.to/#/#fokus:matrix.org",
+                ),
+                CommunityLink(
+                        Icons.Outlined.LocalCafe,
+                        R.string.settings_paypal_title,
+                        R.string.settings_paypal_subtitle,
+                        "https://paypal.me/PScheduikat",
                 ),
         )
 

@@ -462,6 +462,8 @@
     <string name="settings_weblate_subtitle">Contribute translations on Weblate</string>
     <string name="settings_matrix_title">Join the discussion</string>
     <string name="settings_matrix_subtitle">Get help and share feedback</string>
+    <string name="settings_paypal_title">Buy me a focus break</string>
+    <string name="settings_paypal_subtitle">Tip via PayPal — caffeine funds welcome</string>
 
     <!-- Settings - App drawer -->
     <string name="settings_drawer_scroll_to_top_auto_keyboard">Keyboard on scroll to top</string>
