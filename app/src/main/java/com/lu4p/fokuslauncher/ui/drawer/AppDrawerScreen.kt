@@ -49,6 +49,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -59,8 +60,6 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -95,7 +94,6 @@ import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import com.lu4p.fokuslauncher.data.model.appListStableKey
 import com.lu4p.fokuslauncher.data.model.appMetadataKey
 import com.lu4p.fokuslauncher.data.model.drawerOpenCountKey
-import com.lu4p.fokuslauncher.utils.AppIconLoader
 import com.lu4p.fokuslauncher.utils.DotSearchSyntax
 import com.lu4p.fokuslauncher.ui.components.CategoryChips
 import com.lu4p.fokuslauncher.ui.components.DrawerCategorySidebar
@@ -246,7 +244,7 @@ private fun LazyItemScope.ReorderableDrawerAppListItem(
         notificationIndicatorStyle: NotificationIndicatorStyle = NotificationIndicatorStyle.DOT,
         notificationIndicatorColor: Int = NotificationIndicatorColorPreset.DEFAULT.argb,
         appsWithNotifications: Set<String> = emptySet(),
-        showSimplifiedAppIcons: Boolean = false,
+        useArcticonsDrawerIcons: Boolean = false,
 ) {
     ReorderableDrawerAppRow(
             allowCustomDragReorder = allowCustomDragReorder,
@@ -272,7 +270,7 @@ private fun LazyItemScope.ReorderableDrawerAppListItem(
                 notificationIndicatorColor = notificationIndicatorColor,
                 reserveNotificationDotSlot = showNotificationIndicators &&
                         notificationIndicatorStyle == NotificationIndicatorStyle.DOT,
-                showSimplifiedAppIcons = showSimplifiedAppIcons,
+                useArcticonsDrawerIcons = useArcticonsDrawerIcons,
         )
     }
 }
@@ -546,7 +544,7 @@ private fun DrawerAppListColumn(
                             notificationIndicatorStyle = uiState.notificationIndicatorStyle,
                             notificationIndicatorColor = uiState.notificationIndicatorColor,
                             appsWithNotifications = uiState.appsWithNotifications,
-                            showSimplifiedAppIcons = uiState.showSimplifiedAppIcons,
+                            useArcticonsDrawerIcons = uiState.useArcticonsDrawerIcons,
                     )
                 }
             }
@@ -638,7 +636,7 @@ private fun DrawerAppListColumn(
                         notificationIndicatorStyle = uiState.notificationIndicatorStyle,
                         notificationIndicatorColor = uiState.notificationIndicatorColor,
                         appsWithNotifications = uiState.appsWithNotifications,
-                        showSimplifiedAppIcons = uiState.showSimplifiedAppIcons,
+                        useArcticonsDrawerIcons = uiState.useArcticonsDrawerIcons,
                 )
             }
         }
@@ -721,6 +719,15 @@ fun AppDrawerScreen(
         }
     }
 
+    LaunchedEffect(uiState.useArcticonsDrawerIcons) {
+        if (uiState.useArcticonsDrawerIcons) {
+            viewModel.refreshArcticonsPack()
+        }
+    }
+
+    CompositionLocalProvider(
+            LocalArcticonsIconLoader provides { app -> viewModel.loadArcticonsIcon(app) },
+    ) {
     AppDrawerContent(
             uiState = uiState,
             onSearchQueryChanged = viewModel::onSearchQueryChanged,
@@ -807,6 +814,7 @@ fun AppDrawerScreen(
                 onNavigateBack = { categoryIconPickerFor = null },
                 backgroundScrim = FokusBackdrop.ScrimColorWithoutBlur,
         )
+    }
     }
 }
 
@@ -1303,7 +1311,7 @@ fun AppListItem(
         notificationIndicatorStyle: NotificationIndicatorStyle = NotificationIndicatorStyle.DOT,
         notificationIndicatorColor: Int = NotificationIndicatorColorPreset.DEFAULT.argb,
         reserveNotificationDotSlot: Boolean = false,
-        showSimplifiedAppIcons: Boolean = false,
+        useArcticonsDrawerIcons: Boolean = false,
 ) {
     val textColor = MaterialTheme.colorScheme.onBackground
     val indicatorColor = Color(notificationIndicatorColor)
@@ -1339,8 +1347,8 @@ fun AppListItem(
             )
             Spacer(modifier = Modifier.width(8.dp))
         }
-        if (showSimplifiedAppIcons) {
-            SimplifiedDrawerAppIcon(app = app, tint = textColor)
+        if (useArcticonsDrawerIcons) {
+            ArcticonsDrawerAppIcon(app = app, tint = textColor)
             Spacer(modifier = Modifier.width(12.dp))
         }
         Text(
@@ -1352,22 +1360,15 @@ fun AppListItem(
 }
 
 @Composable
-private fun SimplifiedDrawerAppIcon(app: AppInfo, tint: Color) {
-    val context = LocalContext.current
+private fun ArcticonsDrawerAppIcon(app: AppInfo, tint: Color) {
+    val loadIcon = LocalArcticonsIconLoader.current
     val iconKey = appListStableKey(app)
     val loadedIcon by
             produceState<android.graphics.drawable.Drawable?>(
-                    initialValue = app.icon,
+                    initialValue = null,
                     key1 = iconKey,
             ) {
-                if (app.icon != null) {
-                    value = app.icon
-                    return@produceState
-                }
-                value =
-                        withContext(Dispatchers.IO) {
-                            AppIconLoader.load(context.applicationContext, app)
-                        }
+                value = loadIcon(app)
             }
     Box(
             modifier = Modifier.size(24.dp).testTag("app_icon_${app.packageName}"),
@@ -1380,10 +1381,10 @@ private fun SimplifiedDrawerAppIcon(app: AppInfo, tint: Color) {
                     contentDescription = stringResource(R.string.cd_app_icon),
                     tint = tint,
                     iconSize = 22.dp,
-                    simplifiedMonochrome = true,
+                    forceTint = true,
             )
         } else {
-            // Graceful placeholder while loading / if the package has no icon.
+            // Placeholder while loading or when Arcticons has no mapping for this app.
             Box(
                     modifier =
                             Modifier.size(18.dp)

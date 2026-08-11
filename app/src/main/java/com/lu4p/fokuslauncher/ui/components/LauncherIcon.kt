@@ -76,26 +76,21 @@ fun LauncherIcon(
     suppressGlow: Boolean = false,
     outlined: Boolean = false,
     /**
-     * When true, prefer the adaptive monochrome layer (API 33+) and fall back to a luminance
-     * alpha mask of the foreground/full icon so the glyph can be tinted like launcher text.
+     * When true, always apply [tint] (used for Arcticons line icons whose alpha defines the
+     * glyph). When false, only monochrome/vector adaptive layers are tinted.
      */
-    simplifiedMonochrome: Boolean = false,
+    forceTint: Boolean = false,
 ) {
     if (drawable == null) return
     val density = LocalDensity.current
 
     val (painter, canTint) =
-        remember(drawable, density, iconSize, simplifiedMonochrome) {
+        remember(drawable, density, iconSize, forceTint) {
             val sizePx = with(density) { iconSize.toPx() }.toInt().coerceAtLeast(1)
-
-            if (simplifiedMonochrome) {
-                val bitmap = buildSimplifiedAppIconBitmap(drawable, sizePx)
-                return@remember BitmapPainter(bitmap.asImageBitmap()) to true
-            }
 
             var finalDrawable: Drawable = drawable
             var isAdaptive = false
-            var monochrome = false
+            var monochrome = forceTint
 
             if (drawable is android.graphics.drawable.AdaptiveIconDrawable) {
                 isAdaptive = true

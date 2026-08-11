@@ -50,6 +50,8 @@ import com.lu4p.fokuslauncher.data.model.WidgetTapTarget
 import java.util.Calendar
 import java.util.UUID
 import java.util.TimeZone
+import com.lu4p.fokuslauncher.data.iconpack.ArcticonsIconPackRepository
+import com.lu4p.fokuslauncher.data.iconpack.ArcticonsPackages
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.data.util.AppLocaleHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -71,6 +73,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -143,10 +146,12 @@ data class SettingsUiState(
         /** Text shadow + icon halo; independent of [launcherVisualStyle]. */
         val launcherGlowEnabled: Boolean = false,
         /**
-         * Opt-in simplified monochrome app icons beside drawer labels. Off by default to keep the
-         * text-first drawer.
+         * Opt-in Arcticons drawer icons. Off by default to keep the text-first drawer. Requires a
+         * whitelisted Arcticons package to be installed.
          */
-        val showSimplifiedAppIcons: Boolean = false,
+        val useArcticonsDrawerIcons: Boolean = false,
+        /** True when any whitelisted Arcticons package is installed. */
+        val arcticonsInstalled: Boolean = false,
         /** True when the home wallpaper is not solid black (image or busy wallpaper). */
         val homeUsesPhotoWallpaper: Boolean = false,
         /** Uniform outline stroke in dp on image wallpaper; 0 = launcher defaults per widget. */
@@ -205,6 +210,7 @@ constructor(
         private val preferencesManager: PreferencesManager,
         private val privateSpaceManager: PrivateSpaceManager,
         private val customFontStore: CustomFontStore,
+        private val arcticonsIconPackRepository: ArcticonsIconPackRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -447,13 +453,16 @@ constructor(
                             preferencesManager.homeAlignmentFlow,
                             combine(
                                     preferencesManager.allowLandscapeRotationFlow,
-                                    preferencesManager.showSimplifiedAppIconsFlow,
-                            ) { allowLandscape, showSimplifiedIcons ->
-                                allowLandscape to showSimplifiedIcons
+                                    preferencesManager.useArcticonsDrawerIconsFlow,
+                                    arcticonsIconPackRepository.installedPackage.map {
+                                        it != null
+                                    },
+                            ) { allowLandscape, useArcticons, arcticonsInstalled ->
+                                Triple(allowLandscape, useArcticons, arcticonsInstalled)
                             },
                     ) { fontOutlineDrawer, localeTag, homeAlignment, landscapeAndIcons ->
                         val (fontVisual, outlineWidthDp, drawerOverlayIntensity) = fontOutlineDrawer
-                        val (allowLandscape, showSimplifiedIcons) = landscapeAndIcons
+                        val (allowLandscape, useArcticons, arcticonsInstalled) = landscapeAndIcons
                         LookPrefs(
                                 launcherFontFamilyName = fontVisual.family,
                                 hasCustomFontFile = customFontStore.hasStoredFont(),
@@ -461,7 +470,8 @@ constructor(
                                 launcherFontScale = fontVisual.scale,
                                 launcherVisualStyle = fontVisual.visualStyle,
                                 launcherGlowEnabled = fontVisual.glowEnabled,
-                                showSimplifiedAppIcons = showSimplifiedIcons,
+                                useArcticonsDrawerIcons = useArcticons,
+                                arcticonsInstalled = arcticonsInstalled,
                                 homeUsesPhotoWallpaper = fontVisual.usesPhotoWallpaper,
                                 photoWallpaperOutlineWidthDp = outlineWidthDp,
                                 photoWallpaperDrawerOverlayIntensity = drawerOverlayIntensity,
@@ -609,7 +619,8 @@ constructor(
                         launcherFontScale = look.launcherFontScale,
                         launcherVisualStyle = look.launcherVisualStyle,
                         launcherGlowEnabled = look.launcherGlowEnabled,
-                        showSimplifiedAppIcons = look.showSimplifiedAppIcons,
+                        useArcticonsDrawerIcons = look.useArcticonsDrawerIcons,
+                        arcticonsInstalled = look.arcticonsInstalled,
                         homeUsesPhotoWallpaper = look.homeUsesPhotoWallpaper,
                         photoWallpaperOutlineWidthDp = look.photoWallpaperOutlineWidthDp,
                         photoWallpaperDrawerOverlayIntensity =
@@ -719,7 +730,8 @@ constructor(
             val launcherFontScale: Float,
             val launcherVisualStyle: LauncherVisualStyle,
             val launcherGlowEnabled: Boolean,
-            val showSimplifiedAppIcons: Boolean,
+            val useArcticonsDrawerIcons: Boolean,
+            val arcticonsInstalled: Boolean,
             val homeUsesPhotoWallpaper: Boolean,
             val photoWallpaperOutlineWidthDp: Float,
             val photoWallpaperDrawerOverlayIntensity: Float,
@@ -1126,8 +1138,52 @@ constructor(
         return true
     }
 
-    fun setShowSimplifiedAppIcons(show: Boolean) =
-            launchPreferences { setShowSimplifiedAppIcons(show) }
+    /**
+     * Enables Arcticons drawer icons only when a whitelisted Arcticons package is installed.
+     * Returns false when the caller should prompt the user to install Arcticons.
+     */
+    fun setUseArcticonsDrawerIcons(enabled: Boolean): Boolean {
+        if (enabled) {
+            arcticonsIconPackRepository.refreshInstalledPackage()
+            if (!arcticonsIconPackRepository.isArcticonsInstalled()) {
+                return false
+            }
+        }
+        launchPreferences { setUseArcticonsDrawerIcons(enabled) }
+        return true
+    }
+
+    fun refreshArcticonsInstallState() {
+        arcticonsIconPackRepository.invalidate()
+    }
+
+    fun openArcticonsFdroidInstall() {
+        openExternalUrl(ArcticonsPackages.FDROID_INSTALL_URL)
+    }
+
+    fun openArcticonsPlayStoreInstall() {
+        val market =
+                Intent(Intent.ACTION_VIEW, Uri.parse(ArcticonsPackages.PLAY_STORE_DETAILS_URI)).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+        try {
+            context.startActivity(market)
+        } catch (_: Exception) {
+            openExternalUrl(ArcticonsPackages.PLAY_STORE_WEB_URL)
+        }
+    }
+
+    private fun openExternalUrl(url: String) {
+        try {
+            context.startActivity(
+                    Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+            )
+        } catch (_: Exception) {
+            // No browser / handler available.
+        }
+    }
 
     fun setShowNotificationIndicators(show: Boolean) =
             launchPreferences { setShowNotificationIndicators(show) }

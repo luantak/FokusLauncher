@@ -64,11 +64,11 @@ class AppDrawerScreenTest {
     }
 
     @Test
-    fun appDrawer_showsSimplifiedIconSlotsWhenEnabled() {
+    fun appDrawer_showsArcticonsIconSlotsWhenEnabled() {
         composeTestRule.setContent {
             FokusLauncherTheme {
                 AppDrawerContent(
-                    uiState = singleProfileState(testApps).copy(showSimplifiedAppIcons = true),
+                    uiState = singleProfileState(testApps).copy(useArcticonsDrawerIcons = true),
                     onSearchQueryChanged = {},
                     onCategorySelected = {},
                     onAppClick = {},
@@ -83,7 +83,7 @@ class AppDrawerScreenTest {
     }
 
     @Test
-    fun appDrawer_hidesSimplifiedIconSlotsByDefault() {
+    fun appDrawer_hidesArcticonsIconSlotsByDefault() {
         composeTestRule.setContent {
             FokusLauncherTheme {
                 AppDrawerContent(

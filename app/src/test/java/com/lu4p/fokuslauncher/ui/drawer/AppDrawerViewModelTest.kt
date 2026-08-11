@@ -20,6 +20,7 @@ import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.model.HOST_APP_METADATA_SENTINEL
 import com.lu4p.fokuslauncher.data.model.favoriteAppStableKey
+import com.lu4p.fokuslauncher.data.iconpack.ArcticonsIconPackRepository
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.data.repository.RemovedApp
 import com.lu4p.fokuslauncher.notification.NotificationIndicatorRepository
@@ -57,6 +58,7 @@ class AppDrawerViewModelTest {
     private lateinit var privateSpaceManager: PrivateSpaceManager
     private lateinit var preferencesManager: PreferencesManager
     private lateinit var notificationIndicatorRepository: NotificationIndicatorRepository
+    private lateinit var arcticonsIconPackRepository: ArcticonsIconPackRepository
     private lateinit var viewModel: AppDrawerViewModel
     private val testDispatcher = UnconfinedTestDispatcher()
 
@@ -74,6 +76,8 @@ class AppDrawerViewModelTest {
     private val drawerDotSearchDefaultFlow = MutableStateFlow(DotSearchTargetPreference())
     private val drawerDotSearchAliasesFlow =
             MutableStateFlow<Map<Char, DotSearchTargetPreference>>(emptyMap())
+    private val useArcticonsDrawerIconsFlow = MutableStateFlow(false)
+    private val arcticonsInstalledPackageFlow = MutableStateFlow<String?>(null)
     private val privateProfileChanges = MutableSharedFlow<Unit>()
     private val removedPackages = MutableSharedFlow<RemovedApp>(extraBufferCapacity = 1)
     private val installedAppsVersion = MutableStateFlow(0L)
@@ -109,8 +113,11 @@ class AppDrawerViewModelTest {
         privateSpaceManager = mockk(relaxed = true)
         preferencesManager = mockk(relaxed = true)
         notificationIndicatorRepository = mockk(relaxed = true)
+        arcticonsIconPackRepository = mockk(relaxed = true)
         every { notificationIndicatorRepository.appsWithNotifications } returns
                 MutableStateFlow(emptySet())
+        every { arcticonsIconPackRepository.installedPackage } returns arcticonsInstalledPackageFlow
+        every { preferencesManager.useArcticonsDrawerIconsFlow } returns useArcticonsDrawerIconsFlow
         installedAppsVersion.value = 0L
         every { appRepository.getInstalledAppsVersion() } returns installedAppsVersion.asStateFlow()
         every { appRepository.getRemovedPackages() } returns removedPackages
@@ -161,6 +168,7 @@ class AppDrawerViewModelTest {
                         privateSpaceManager,
                         preferencesManager,
                         notificationIndicatorRepository,
+                        arcticonsIconPackRepository,
                         Dispatchers.Unconfined
                 )
         awaitState("apps to load") { it.allApps.isNotEmpty() }

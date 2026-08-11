@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -32,6 +33,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.font.CustomFontImportFailure
 import com.lu4p.fokuslauncher.media.MediaNotificationHelper
+import com.lu4p.fokuslauncher.ui.components.FokusAlertDialog
+import com.lu4p.fokuslauncher.ui.components.FokusTextButton
 import com.lu4p.fokuslauncher.ui.settings.components.SectionHeader
 import com.lu4p.fokuslauncher.ui.settings.components.SettingsDivider
 import com.lu4p.fokuslauncher.ui.settings.components.SettingsRow
@@ -53,7 +56,11 @@ fun AppearanceSettingsScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
     var mediaNotificationAccessTick by remember { mutableIntStateOf(0) }
     var pendingNotificationIndicatorsEnable by remember { mutableStateOf(false) }
-    OnResumeEffect(lifecycleOwner) { mediaNotificationAccessTick++ }
+    var showArcticonsInstallDialog by remember { mutableStateOf(false) }
+    OnResumeEffect(lifecycleOwner) {
+        mediaNotificationAccessTick++
+        viewModel.refreshArcticonsInstallState()
+    }
     val mediaNotificationAccessEnabled =
             remember(mediaNotificationAccessTick) {
                 MediaNotificationHelper.isListenerEnabled(context)
@@ -217,10 +224,25 @@ fun AppearanceSettingsScreen(
             }
             item {
                 SettingsToggleRow(
-                        label = stringResource(R.string.settings_simplified_app_icons),
-                        checked = uiState.showSimplifiedAppIcons,
-                        onCheckedChange = viewModel::setShowSimplifiedAppIcons,
-                        subtitle = stringResource(R.string.settings_simplified_app_icons_subtitle),
+                        label = stringResource(R.string.settings_arcticons_drawer_icons),
+                        checked = uiState.useArcticonsDrawerIcons && uiState.arcticonsInstalled,
+                        onCheckedChange = { checked ->
+                            if (checked) {
+                                if (!viewModel.setUseArcticonsDrawerIcons(true)) {
+                                    showArcticonsInstallDialog = true
+                                }
+                            } else {
+                                viewModel.setUseArcticonsDrawerIcons(false)
+                            }
+                        },
+                        subtitle =
+                                stringResource(
+                                        if (uiState.arcticonsInstalled) {
+                                            R.string.settings_arcticons_drawer_icons_subtitle
+                                        } else {
+                                            R.string.settings_arcticons_drawer_icons_subtitle_missing
+                                        }
+                                ),
                 )
             }
             item {
@@ -302,7 +324,51 @@ fun AppearanceSettingsScreen(
                     )
                 }
             }
-            item { Spacer(Modifier.height(32.dp)) }
+            item { Spacer(modifier = Modifier.height(32.dp)) }
         }
+    }
+
+    if (showArcticonsInstallDialog) {
+        FokusAlertDialog(
+                onDismissRequest = { showArcticonsInstallDialog = false },
+                title = {
+                    Text(
+                            stringResource(R.string.settings_arcticons_install_title),
+                            color = MaterialTheme.colorScheme.onBackground,
+                    )
+                },
+                text = {
+                    Text(
+                            stringResource(R.string.settings_arcticons_install_message),
+                            color = MaterialTheme.colorScheme.onBackground,
+                    )
+                },
+                confirmButton = {
+                    FokusTextButton(
+                            onClick = {
+                                showArcticonsInstallDialog = false
+                                viewModel.openArcticonsFdroidInstall()
+                            }
+                    ) {
+                        Text(
+                                stringResource(R.string.settings_arcticons_install_fdroid),
+                                color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                },
+                dismissButton = {
+                    FokusTextButton(
+                            onClick = {
+                                showArcticonsInstallDialog = false
+                                viewModel.openArcticonsPlayStoreInstall()
+                            }
+                    ) {
+                        Text(
+                                stringResource(R.string.settings_arcticons_install_play),
+                                color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                },
+        )
     }
 }

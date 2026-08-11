@@ -182,11 +182,11 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         private val LAUNCHER_VISUAL_STYLE_KEY = stringPreferencesKey("launcher_visual_style")
         private val LAUNCHER_GLOW_ENABLED_KEY = booleanPreferencesKey("launcher_glow_enabled")
         /**
-         * Opt-in simplified (monochrome) app icons beside drawer list labels. Off by default so
-         * the launcher stays text-first.
+         * Opt-in Arcticons icon-pack icons beside drawer list labels. Off by default so the
+         * launcher stays text-first. Requires a whitelisted Arcticons package to be installed.
          */
-        private val SHOW_SIMPLIFIED_APP_ICONS_KEY =
-                booleanPreferencesKey("show_simplified_app_icons")
+        private val USE_ARCTICONS_DRAWER_ICONS_KEY =
+                booleanPreferencesKey("use_arcticons_drawer_icons")
         /**
          * True after the user keeps or sets an image wallpaper; false after setting black wallpaper
          * from the app. Default false so existing installs behave as before until they change
@@ -921,12 +921,12 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         setPref(LAUNCHER_GLOW_ENABLED_KEY, enabled)
     }
 
-    /** When true, the app drawer shows simplified monochrome icons beside labels. */
-    val showSimplifiedAppIconsFlow: Flow<Boolean> =
-            prefFlow(SHOW_SIMPLIFIED_APP_ICONS_KEY, false)
+    /** When true, the app drawer shows Arcticons icons beside labels (if pack installed). */
+    val useArcticonsDrawerIconsFlow: Flow<Boolean> =
+            prefFlow(USE_ARCTICONS_DRAWER_ICONS_KEY, false)
 
-    suspend fun setShowSimplifiedAppIcons(show: Boolean) =
-            setPref(SHOW_SIMPLIFIED_APP_ICONS_KEY, show)
+    suspend fun setUseArcticonsDrawerIcons(enabled: Boolean) =
+            setPref(USE_ARCTICONS_DRAWER_ICONS_KEY, enabled)
 
     suspend fun setHomeUsesPhotoWallpaper(usesPhoto: Boolean) {
         context.fokusLauncherPreferencesDataStore.edit { prefs ->
