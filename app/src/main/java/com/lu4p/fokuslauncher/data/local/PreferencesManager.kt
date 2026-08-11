@@ -22,6 +22,10 @@ import com.lu4p.fokuslauncher.data.model.HomeDateFormatStyle
 import com.lu4p.fokuslauncher.data.model.CountdownEvent
 import com.lu4p.fokuslauncher.data.model.HomeExtraWidgetEntry
 import com.lu4p.fokuslauncher.data.model.HostedWidget
+import com.lu4p.fokuslauncher.data.model.PomodoroConfig
+import com.lu4p.fokuslauncher.data.model.PomodoroMode
+import com.lu4p.fokuslauncher.data.model.PomodoroPhase
+import com.lu4p.fokuslauncher.data.model.PomodoroRuntimeState
 import com.lu4p.fokuslauncher.data.model.WorldClockCity
 import com.lu4p.fokuslauncher.data.model.clampWorldClockCities
 import com.lu4p.fokuslauncher.data.model.decodeWidgetTapTarget
@@ -38,15 +42,21 @@ import com.lu4p.fokuslauncher.data.model.DotSearchTargetPreference
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.homeExtraHasCountdown
 import com.lu4p.fokuslauncher.data.model.homeExtraWorldClockCount
+import com.lu4p.fokuslauncher.data.model.idleRuntimeFor
 import com.lu4p.fokuslauncher.data.model.moveHomeExtraWidget
 import com.lu4p.fokuslauncher.data.model.normalizeCountdownEvents
+import com.lu4p.fokuslauncher.data.model.normalizePomodoroConfig
 import com.lu4p.fokuslauncher.data.model.parseCountdownEvents
 import com.lu4p.fokuslauncher.data.model.parseHomeExtraWidgets
 import com.lu4p.fokuslauncher.data.model.parseHostedWidgets
+import com.lu4p.fokuslauncher.data.model.parsePomodoroConfig
+import com.lu4p.fokuslauncher.data.model.parsePomodoroRuntime
 import com.lu4p.fokuslauncher.data.model.parseWorldClockCities
 import com.lu4p.fokuslauncher.data.model.serializeCountdownEvents
 import com.lu4p.fokuslauncher.data.model.serializeHomeExtraWidgets
 import com.lu4p.fokuslauncher.data.model.serializeHostedWidgets
+import com.lu4p.fokuslauncher.data.model.serializePomodoroConfig
+import com.lu4p.fokuslauncher.data.model.serializePomodoroRuntime
 import com.lu4p.fokuslauncher.data.model.serializeWorldClockCities
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.utils.WallpaperHelper
@@ -118,6 +128,13 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         private val SHOW_HOME_BATTERY_KEY = booleanPreferencesKey("show_home_battery")
         /** Opt-in media widget; off by default since no apps are registered yet. */
         private val SHOW_HOME_MEDIA_KEY = booleanPreferencesKey("show_home_media")
+        /**
+         * Opt-in Pomodoro widget; mutually exclusive with [SHOW_HOME_MEDIA_KEY] (media OR
+         * pomodoro on the home media slot).
+         */
+        private val SHOW_HOME_POMODORO_KEY = booleanPreferencesKey("show_home_pomodoro")
+        private val POMODORO_CONFIG_KEY = stringPreferencesKey("pomodoro_config")
+        private val POMODORO_RUNTIME_KEY = stringPreferencesKey("pomodoro_runtime")
         private val SHOW_HOME_SCREEN_TIME_KEY = booleanPreferencesKey("show_home_screen_time")
         /** Opt-in notification status indicators on home favorites and the app drawer. */
         private val SHOW_NOTIFICATION_INDICATORS_KEY =
@@ -431,7 +448,70 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
     suspend fun setShowHomeBattery(show: Boolean) = setPref(SHOW_HOME_BATTERY_KEY, show)
 
     val showHomeMediaFlow: Flow<Boolean> = prefFlow(SHOW_HOME_MEDIA_KEY, false)
-    suspend fun setShowHomeMedia(show: Boolean) = setPref(SHOW_HOME_MEDIA_KEY, show)
+
+    /** Enabling media turns Pomodoro off (shared home slot). */
+    suspend fun setShowHomeMedia(show: Boolean) {
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            prefs[SHOW_HOME_MEDIA_KEY] = show
+            if (show) prefs[SHOW_HOME_POMODORO_KEY] = false
+        }
+    }
+
+    val showHomePomodoroFlow: Flow<Boolean> = prefFlow(SHOW_HOME_POMODORO_KEY, false)
+
+    /** Enabling Pomodoro turns media off (shared home slot). */
+    suspend fun setShowHomePomodoro(show: Boolean) {
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            prefs[SHOW_HOME_POMODORO_KEY] = show
+            if (show) prefs[SHOW_HOME_MEDIA_KEY] = false
+        }
+    }
+
+    val pomodoroConfigFlow: Flow<PomodoroConfig> =
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
+                parsePomodoroConfig(prefs[POMODORO_CONFIG_KEY] ?: "")
+            }
+
+    suspend fun setPomodoroConfig(config: PomodoroConfig) {
+        val normalized = normalizePomodoroConfig(config)
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            prefs[POMODORO_CONFIG_KEY] = serializePomodoroConfig(normalized)
+            // Keep idle sessions aligned with the new defaults for the active mode.
+            val runtime = parsePomodoroRuntime(prefs[POMODORO_RUNTIME_KEY] ?: "", normalized)
+            if (runtime.phase == PomodoroPhase.IDLE) {
+                prefs[POMODORO_RUNTIME_KEY] =
+                        serializePomodoroRuntime(idleRuntimeFor(normalized, runtime.mode))
+            }
+        }
+    }
+
+    val pomodoroRuntimeFlow: Flow<PomodoroRuntimeState> =
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
+                val config = parsePomodoroConfig(prefs[POMODORO_CONFIG_KEY] ?: "")
+                parsePomodoroRuntime(prefs[POMODORO_RUNTIME_KEY] ?: "", config)
+            }
+
+    suspend fun getPomodoroConfig(): PomodoroConfig =
+            parsePomodoroConfig(
+                    context.fokusLauncherPreferencesDataStore.data.first()[POMODORO_CONFIG_KEY]
+                            ?: "",
+            )
+
+    suspend fun getPomodoroRuntime(): PomodoroRuntimeState {
+        val prefs = context.fokusLauncherPreferencesDataStore.data.first()
+        val config = parsePomodoroConfig(prefs[POMODORO_CONFIG_KEY] ?: "")
+        return parsePomodoroRuntime(prefs[POMODORO_RUNTIME_KEY] ?: "", config)
+    }
+
+    suspend fun setPomodoroRuntime(state: PomodoroRuntimeState) {
+        setPref(POMODORO_RUNTIME_KEY, serializePomodoroRuntime(state))
+    }
+
+    suspend fun resetPomodoroRuntimeToIdle(mode: PomodoroMode? = null) {
+        val config = getPomodoroConfig()
+        val current = getPomodoroRuntime()
+        setPomodoroRuntime(idleRuntimeFor(config, mode ?: current.mode))
+    }
 
     val showHomeScreenTimeFlow: Flow<Boolean> = prefFlow(SHOW_HOME_SCREEN_TIME_KEY, false)
     suspend fun setShowHomeScreenTime(show: Boolean) = setPref(SHOW_HOME_SCREEN_TIME_KEY, show)
@@ -1041,15 +1121,27 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
     private fun parseFavorites(raw: String): List<FavoriteApp> {
         if (raw.isBlank()) return emptyList()
         return raw.split("|").mapNotNull { entry ->
-            // New format: "label;packageName;iconName;iconPackage"
+            // Format: label;packageName;iconName;iconPackage;profileKey
+            // iconPackage may contain ';' (e.g. intent URIs), so only split fixed prefix/suffix.
             val semiParts = entry.split(";")
             if (semiParts.size >= 3) {
+                val label = semiParts[0]
+                val packageName = semiParts[1]
+                val iconName = semiParts[2]
+                val (iconPackage, profileKey) =
+                        when {
+                            semiParts.size == 3 -> "" to "0"
+                            semiParts.size == 4 -> semiParts[3] to "0"
+                            else ->
+                                    semiParts.subList(3, semiParts.lastIndex).joinToString(";") to
+                                            semiParts.last().ifBlank { "0" }
+                        }
                 FavoriteApp(
-                        label = semiParts[0],
-                        packageName = semiParts[1],
-                        iconName = semiParts[2],
-                        iconPackage = semiParts.getOrElse(3) { "" },
-                        profileKey = semiParts.getOrElse(4) { "0" },
+                        label = label,
+                        packageName = packageName,
+                        iconName = iconName,
+                        iconPackage = iconPackage,
+                        profileKey = profileKey,
                 )
             } else {
                 // Legacy format: "label:packageName"

@@ -61,6 +61,7 @@ import com.lu4p.fokuslauncher.usage.UsageStatsHelper
 fun HomeWidgetsSettingsScreen(
         viewModel: SettingsViewModel = hiltViewModel(),
         onNavigateBack: () -> Unit = {},
+        onOpenPomodoroSettings: () -> Unit = {},
         backgroundScrim: Color = FokusBackdrop.ScrimColorWithoutBlur
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -231,10 +232,19 @@ fun HomeWidgetsSettingsScreen(
                 SettingsToggleRow(
                         label = stringResource(R.string.settings_show_home_media),
                         subtitle =
-                                if (mediaNotificationAccessEnabled) {
-                                    stringResource(R.string.settings_show_home_media_subtitle)
-                                } else {
-                                    stringResource(R.string.settings_show_home_media_subtitle_grant_access)
+                                when {
+                                    !mediaNotificationAccessEnabled ->
+                                            stringResource(
+                                                    R.string
+                                                            .settings_show_home_media_subtitle_grant_access
+                                            )
+                                    uiState.showHomePomodoro ->
+                                            stringResource(
+                                                    R.string
+                                                            .settings_show_home_media_or_pomodoro_exclusive
+                                            )
+                                    else ->
+                                            stringResource(R.string.settings_show_home_media_subtitle)
                                 },
                         checked = uiState.showHomeMedia,
                         onCheckedChange = { checked ->
@@ -250,6 +260,17 @@ fun HomeWidgetsSettingsScreen(
                                 viewModel.setShowHomeMedia(false)
                             }
                         },
+                )
+            }
+            item {
+                SettingsRow(
+                        label = stringResource(R.string.settings_pomodoro_title),
+                        subtitle =
+                                stringResource(
+                                        R.string.settings_pomodoro_configure_subtitle,
+                                        stringResource(R.string.pomodoro_mode_focus),
+                                ),
+                        onClick = onOpenPomodoroSettings,
                 )
             }
             item { SettingsDivider() }

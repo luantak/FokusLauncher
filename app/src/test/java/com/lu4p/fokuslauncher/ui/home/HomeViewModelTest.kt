@@ -31,6 +31,8 @@ import com.lu4p.fokuslauncher.data.repository.RemovedApp
 import com.lu4p.fokuslauncher.data.repository.WeatherRepository
 import com.lu4p.fokuslauncher.media.MediaRepository
 import com.lu4p.fokuslauncher.notification.NotificationIndicatorRepository
+import com.lu4p.fokuslauncher.pomodoro.PomodoroRepository
+import com.lu4p.fokuslauncher.pomodoro.PomodoroUiState
 import com.lu4p.fokuslauncher.usage.ScreenTimeRepository
 import com.lu4p.fokuslauncher.utils.LockScreenHelper
 import io.mockk.coEvery
@@ -77,6 +79,7 @@ class HomeViewModelTest {
     private lateinit var mediaRepository: MediaRepository
     private lateinit var screenTimeRepository: ScreenTimeRepository
     private lateinit var notificationIndicatorRepository: NotificationIndicatorRepository
+    private lateinit var pomodoroRepository: PomodoroRepository
     private lateinit var removedPackages: MutableSharedFlow<RemovedApp>
     private val testDispatcher = StandardTestDispatcher()
     private var originalLocale: Locale = Locale.getDefault()
@@ -101,9 +104,11 @@ class HomeViewModelTest {
         mediaRepository = mockk(relaxed = true)
         screenTimeRepository = mockk(relaxed = true)
         notificationIndicatorRepository = mockk(relaxed = true)
+        pomodoroRepository = mockk(relaxed = true)
         every { mediaRepository.state } returns MutableStateFlow(null)
         every { notificationIndicatorRepository.appsWithNotifications } returns
                 MutableStateFlow(emptySet())
+        every { pomodoroRepository.uiState } returns MutableStateFlow(PomodoroUiState())
         every { screenTimeRepository.queryLast24HoursTotalMs() } returns 0L
         removedPackages = MutableSharedFlow(extraBufferCapacity = 1)
 
@@ -137,6 +142,16 @@ class HomeViewModelTest {
         every { preferencesManager.showWorldClockWeatherFlow } returns flowOf(false)
         every { preferencesManager.showHomeBatteryFlow } returns flowOf(true)
         every { preferencesManager.showHomeMediaFlow } returns flowOf(false)
+        every { preferencesManager.showHomePomodoroFlow } returns flowOf(false)
+        every { preferencesManager.pomodoroConfigFlow } returns
+                flowOf(com.lu4p.fokuslauncher.data.model.PomodoroConfig())
+        every { preferencesManager.pomodoroRuntimeFlow } returns
+                flowOf(
+                        com.lu4p.fokuslauncher.data.model.idleRuntimeFor(
+                                com.lu4p.fokuslauncher.data.model.PomodoroConfig(),
+                                com.lu4p.fokuslauncher.data.model.PomodoroMode.FOCUS,
+                        ),
+                )
         every { preferencesManager.showHomeScreenTimeFlow } returns flowOf(false)
         every { preferencesManager.homeExtraWidgetsFlow } returns flowOf(emptyList())
         every { preferencesManager.worldClockCitiesFlow } returns flowOf(emptyList())
@@ -175,6 +190,7 @@ class HomeViewModelTest {
         mediaRepository,
         screenTimeRepository,
         notificationIndicatorRepository,
+        pomodoroRepository,
     )
 
     private fun createViewModel(withContext: Context) = HomeViewModel(
@@ -185,6 +201,7 @@ class HomeViewModelTest {
         mediaRepository,
         screenTimeRepository,
         notificationIndicatorRepository,
+        pomodoroRepository,
     )
 
     /**
@@ -830,6 +847,46 @@ class HomeViewModelTest {
         viewModel.launchShortcut(HomeShortcut(target = ShortcutTarget.App("com.lu4p.music")))
 
         verify { appRepository.launchApp("com.lu4p.music") }
+    }
+
+    @Test
+    fun `startEditingHomeApps seeds from prefs without favorites collectors`() {
+        // Edit Home Apps is often opened from Settings while Home is not collecting
+        // [favorites] (WhileSubscribed). Seeding must use eager rawFavorites instead.
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // WhileSubscribed UI flow stays at its initial empty value without collectors.
+        assertTrue(viewModel.favorites.value.isEmpty())
+
+        viewModel.startEditingHomeApps()
+
+        assertEquals(testFavorites.size, viewModel.editFavorites.value.size)
+        assertEquals(
+                testFavorites.map { favoriteAppStableKey(it) }.toSet(),
+                viewModel.editFavorites.value.map { favoriteAppStableKey(it) }.toSet(),
+        )
+    }
+
+    @Test
+    fun `startEditingHomeApps does not reset in-progress edits when re-entered`() {
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.startEditingHomeApps()
+        val added =
+                AppInfo(packageName = "com.lu4p.extra", label = "Extra", icon = null)
+        viewModel.toggleAppOnHomeScreen(added)
+
+        // Simulates composition re-entry (e.g. config change) re-running startEditingHomeApps.
+        viewModel.startEditingHomeApps()
+
+        assertTrue(
+                viewModel.editFavorites.value.any {
+                    favoriteAppStableKey(it) == appMetadataKey(added)
+                }
+        )
+        assertEquals(testFavorites.size + 1, viewModel.editFavorites.value.size)
     }
 
     @Test

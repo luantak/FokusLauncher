@@ -80,6 +80,7 @@ import com.lu4p.fokuslauncher.ui.settings.DeviceControlSettingsScreen
 import com.lu4p.fokuslauncher.ui.settings.DrawerBehaviorSettingsScreen
 import com.lu4p.fokuslauncher.ui.settings.DrawerDotSearchSettingsScreen
 import com.lu4p.fokuslauncher.ui.settings.HomeWidgetsSettingsScreen
+import com.lu4p.fokuslauncher.ui.settings.PomodoroSettingsScreen
 import com.lu4p.fokuslauncher.ui.settings.IconPickerScreen
 import com.lu4p.fokuslauncher.ui.settings.ProfileNamesSettingsScreen
 import com.lu4p.fokuslauncher.ui.settings.SettingsScreen
@@ -104,6 +105,7 @@ object Routes {
     const val SETTINGS_ICON_PICKER_SHORTCUT = "settings_icon_picker/shortcut/{index}"
     const val SETTINGS_ICON_PICKER_CATEGORY = "settings_icon_picker/category/{category}"
     const val SETTINGS_HOME_WIDGETS = "settings_home_widgets"
+    const val SETTINGS_POMODORO = "settings_pomodoro"
     const val SETTINGS_DRAWER_DOT_SEARCH = "settings_drawer_dot_search"
     const val SETTINGS_PROFILE_NAMES = "settings_profile_names"
     const val SETTINGS_APPEARANCE = "settings_appearance"
@@ -747,7 +749,18 @@ fun FokusNavGraph(
                 HomeWidgetsSettingsScreen(
                         viewModel = settingsViewModel(componentActivity),
                         onNavigateBack = { navController.popBackStack() },
+                        onOpenPomodoroSettings = {
+                            navController.navigateSingleTop(Routes.SETTINGS_POMODORO)
+                        },
                         backgroundScrim = Color.Black
+                )
+            }
+
+            fokusSettingsComposable(Routes.SETTINGS_POMODORO) {
+                PomodoroSettingsScreen(
+                        viewModel = settingsViewModel(componentActivity),
+                        onNavigateBack = { navController.popBackStack() },
+                        backgroundScrim = Color.Black,
                 )
             }
 

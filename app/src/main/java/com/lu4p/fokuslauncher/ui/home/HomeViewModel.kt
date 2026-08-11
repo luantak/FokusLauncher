@@ -54,6 +54,9 @@ import com.lu4p.fokuslauncher.media.MediaNotificationHelper
 import com.lu4p.fokuslauncher.media.MediaPlaybackUiState
 import com.lu4p.fokuslauncher.media.MediaRepository
 import com.lu4p.fokuslauncher.notification.NotificationIndicatorRepository
+import com.lu4p.fokuslauncher.pomodoro.PomodoroRepository
+import com.lu4p.fokuslauncher.pomodoro.PomodoroUiState
+import com.lu4p.fokuslauncher.data.model.PomodoroMode
 import com.lu4p.fokuslauncher.usage.DigitalWellbeingHelper
 import com.lu4p.fokuslauncher.usage.ScreenTimeRepository
 import com.lu4p.fokuslauncher.usage.UsageStatsHelper
@@ -185,6 +188,7 @@ class HomeViewModel @Inject constructor(
     private val mediaRepository: MediaRepository,
     private val screenTimeRepository: ScreenTimeRepository,
     private val notificationIndicatorRepository: NotificationIndicatorRepository,
+    private val pomodoroRepository: PomodoroRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -202,6 +206,8 @@ class HomeViewModel @Inject constructor(
 
     private val _mediaUiState = MutableStateFlow(HomeMediaUiState())
     val mediaUiState: StateFlow<HomeMediaUiState> = _mediaUiState.asStateFlow()
+
+    val pomodoroUiState: StateFlow<PomodoroUiState> = pomodoroRepository.uiState
 
     private val _screenTimeUiState = MutableStateFlow(HomeScreenTimeUiState())
     val screenTimeUiState: StateFlow<HomeScreenTimeUiState> = _screenTimeUiState.asStateFlow()
@@ -234,6 +240,10 @@ class HomeViewModel @Inject constructor(
     private val rawFavorites: StateFlow<List<FavoriteApp>> =
             preferencesManager.favoritesFlow.stateEagerlyIn(viewModelScope, emptyList())
 
+    /** Eager prefs mirror so edit sessions can seed even when UI is not collecting [rightSideShortcuts]. */
+    private val rawRightSideShortcuts: StateFlow<List<HomeShortcut>> =
+            preferencesManager.rightSideShortcutsFlow.stateEagerlyIn(viewModelScope, emptyList())
+
     // Renames from Room
     private val _renameMap = MutableStateFlow<Map<String, String>>(emptyMap())
 
@@ -251,15 +261,7 @@ class HomeViewModel @Inject constructor(
         _appNameMap,
         _archivedAppKeys
     ) { favs, renames, appNames, archivedKeys ->
-        favs.filterNot { favoriteAppStableKey(it) in archivedKeys }.map { fav ->
-            val appKey = favoriteAppStableKey(fav)
-            val resolvedName = renames[appKey]
-                ?: renames[appMetadataKey(fav.packageName, fav.profileKey)]
-                ?: appNames[appKey]
-                ?: appNames[appMetadataKey(fav.packageName, fav.profileKey)]
-                ?: fav.label
-            fav.copy(label = resolvedName)
-        }
+        resolveFavoritesSnapshot(favs, renames, appNames, archivedKeys)
     }.stateWhileSubscribedIn(viewModelScope, emptyList())
 
     // ── Dialog state ────────────────────────────────────────────────
@@ -394,6 +396,7 @@ class HomeViewModel @Inject constructor(
         observeWeatherRefreshTriggers()
         observeWorldClockWeatherPreference()
         observeMedia()
+        pomodoroRepository.start()
         observeNotificationIndicators()
         observeScreenTime()
         observeHomeExtraWidgets()
@@ -591,16 +594,50 @@ class HomeViewModel @Inject constructor(
         if (includeShortcutActions) {
             if (!isEditingRightShortcuts) {
                 isEditingRightShortcuts = true
-                _editRightShortcuts.value = rightSideShortcuts.value
+                // Use eager prefs — [rightSideShortcuts] is WhileSubscribed and may still be
+                // emptyList() when Edit Shortcuts opens from Settings (Home not collecting).
+                _editRightShortcuts.value = rightSideShortcutsSnapshotForEdit()
             }
         } else if (!isEditingHomeApps) {
             isEditingHomeApps = true
-            _editFavorites.value = favorites.value
+            // Use eager [rawFavorites] — [favorites] is WhileSubscribed and may still be
+            // emptyList() when Edit Home Apps opens from Settings (Home not collecting).
+            _editFavorites.value = favoritesSnapshotForEdit()
         }
         viewModelScope.launch(Dispatchers.IO) {
             loadInstalledAppsForEditing(includeShortcutActions)
         }
     }
+
+    private fun favoritesSnapshotForEdit(): List<FavoriteApp> =
+            resolveFavoritesSnapshot(
+                    rawFavorites.value,
+                    _renameMap.value,
+                    _appNameMap.value,
+                    _archivedAppKeys.value,
+            )
+
+    private fun rightSideShortcutsSnapshotForEdit(): List<HomeShortcut> {
+        val archivedKeys = _archivedAppKeys.value
+        return rawRightSideShortcuts.value.filterNot { shortcutArchivedKey(it) in archivedKeys }
+    }
+
+    private fun resolveFavoritesSnapshot(
+            favs: List<FavoriteApp>,
+            renames: Map<String, String>,
+            appNames: Map<String, String>,
+            archivedKeys: Set<String>,
+    ): List<FavoriteApp> =
+            favs.filterNot { favoriteAppStableKey(it) in archivedKeys }.map { fav ->
+                val appKey = favoriteAppStableKey(fav)
+                val resolvedName =
+                        renames[appKey]
+                                ?: renames[appMetadataKey(fav.packageName, fav.profileKey)]
+                                ?: appNames[appKey]
+                                ?: appNames[appMetadataKey(fav.packageName, fav.profileKey)]
+                                ?: fav.label
+                fav.copy(label = resolvedName)
+            }
 
     fun toggleAppOnHomeScreen(app: AppInfo) {
         val current = _editFavorites.value.toMutableList()
@@ -651,9 +688,14 @@ class HomeViewModel @Inject constructor(
     }
 
     fun saveEditedFavorites() {
-        isEditingHomeApps = false
+        val toSave = _editFavorites.value
         viewModelScope.launch {
-            preferencesManager.setFavorites(_editFavorites.value)
+            try {
+                preferencesManager.setFavorites(toSave)
+            } finally {
+                // Keep the session until persist finishes so a quick re-entry cannot reload stale prefs.
+                isEditingHomeApps = false
+            }
         }
     }
 
@@ -685,9 +727,14 @@ class HomeViewModel @Inject constructor(
     }
 
     fun saveEditedRightShortcuts() {
-        isEditingRightShortcuts = false
+        val toSave = _editRightShortcuts.value
         viewModelScope.launch {
-            preferencesManager.setRightSideShortcuts(_editRightShortcuts.value)
+            try {
+                preferencesManager.setRightSideShortcuts(toSave)
+            } finally {
+                // Keep the session until persist finishes so a quick re-entry cannot reload stale prefs.
+                isEditingRightShortcuts = false
+            }
         }
     }
 
@@ -1087,6 +1134,14 @@ class HomeViewModel @Inject constructor(
     fun mediaLike() = mediaRepository.invokeLikeAction()
 
     fun mediaSave() = mediaRepository.invokeSaveAction()
+
+    // ── Pomodoro widget ─────────────────────────────────────────────
+
+    fun pomodoroTogglePlayPause() = pomodoroRepository.togglePlayPause()
+
+    fun pomodoroAdjustMinutes(deltaMinutes: Int) = pomodoroRepository.adjustMinutes(deltaMinutes)
+
+    fun pomodoroSelectMode(mode: PomodoroMode) = pomodoroRepository.selectMode(mode)
 
     // ── Notification indicators ─────────────────────────────────────
 

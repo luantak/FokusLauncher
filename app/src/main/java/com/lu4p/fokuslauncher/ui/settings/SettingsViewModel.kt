@@ -14,16 +14,20 @@ import com.lu4p.fokuslauncher.data.model.AppShortcutAction
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.model.CountdownEvent
 import com.lu4p.fokuslauncher.data.model.COUNTDOWN_TITLE_MAX_LENGTH
+import com.lu4p.fokuslauncher.data.model.DEFAULT_BREAK_MINUTES
+import com.lu4p.fokuslauncher.data.model.DEFAULT_FOCUS_MINUTES
 import com.lu4p.fokuslauncher.data.model.HomeDateFormatStyle
 import com.lu4p.fokuslauncher.data.model.HomeExtraWidgetAddType
 import com.lu4p.fokuslauncher.data.model.HomeExtraWidgetEntry
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.NotificationIndicatorColorPreset
 import com.lu4p.fokuslauncher.data.model.NotificationIndicatorStyle
+import com.lu4p.fokuslauncher.data.model.PomodoroConfig
 import com.lu4p.fokuslauncher.data.model.TemperatureUnit
 import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import com.lu4p.fokuslauncher.data.model.WORLD_CLOCK_LABEL_MAX_LENGTH
 import com.lu4p.fokuslauncher.data.model.WorldClockCity
+import com.lu4p.fokuslauncher.data.model.clampPomodoroMinutes
 import com.lu4p.fokuslauncher.data.model.defaultLabelForTimeZoneId
 import com.lu4p.fokuslauncher.data.model.HOST_APP_METADATA_SENTINEL
 import com.lu4p.fokuslauncher.data.model.LEGACY_PACKAGE_WIDE_METADATA
@@ -104,6 +108,10 @@ data class SettingsUiState(
         val showWorldClockWeather: Boolean = false,
         val showHomeBattery: Boolean = true,
         val showHomeMedia: Boolean = false,
+        val showHomePomodoro: Boolean = false,
+        val pomodoroFocusMinutes: Int = DEFAULT_FOCUS_MINUTES,
+        val pomodoroBreakMinutes: Int = DEFAULT_BREAK_MINUTES,
+        val pomodoroAlarmSoundUri: String = "",
         val showHomeScreenTime: Boolean = false,
         val homeExtraWidgets: List<HomeExtraWidgetEntry> = emptyList(),
         val worldClockCities: List<WorldClockCity> = emptyList(),
@@ -268,14 +276,30 @@ constructor(
                     }
             val mediaAndIndicatorsFlow =
                     combine(
-                            preferencesManager.showHomeMediaFlow,
+                            combine(
+                                    preferencesManager.showHomeMediaFlow,
+                                    preferencesManager.showHomePomodoroFlow,
+                                    preferencesManager.pomodoroConfigFlow,
+                            ) { showMedia, showPomodoro, pomodoroConfig ->
+                                Triple(showMedia, showPomodoro, pomodoroConfig)
+                            },
                             preferencesManager.showHomeScreenTimeFlow,
                             preferencesManager.showNotificationIndicatorsFlow,
                             preferencesManager.notificationIndicatorStyleFlow,
                             preferencesManager.notificationIndicatorColorFlow,
-                    ) { showMedia, showScreenTime, showIndicators, indicatorStyle, indicatorColor ->
+                    ) {
+                            mediaPomodoro,
+                            showScreenTime,
+                            showIndicators,
+                            indicatorStyle,
+                            indicatorColor ->
+                        val (showMedia, showPomodoro, pomodoroConfig) = mediaPomodoro
                         MediaAndIndicatorPrefs(
                                 showMedia = showMedia,
+                                showPomodoro = showPomodoro,
+                                pomodoroFocusMinutes = pomodoroConfig.focusMinutes,
+                                pomodoroBreakMinutes = pomodoroConfig.breakMinutes,
+                                pomodoroAlarmSoundUri = pomodoroConfig.alarmSoundUri,
                                 showScreenTime = showScreenTime,
                                 showNotificationIndicators = showIndicators,
                                 notificationIndicatorStyle = indicatorStyle,
@@ -332,6 +356,10 @@ constructor(
                                 showWeather = vis.showWeather,
                                 showBattery = vis.showBattery,
                                 showMedia = mediaAndIndicators.showMedia,
+                                showPomodoro = mediaAndIndicators.showPomodoro,
+                                pomodoroFocusMinutes = mediaAndIndicators.pomodoroFocusMinutes,
+                                pomodoroBreakMinutes = mediaAndIndicators.pomodoroBreakMinutes,
+                                pomodoroAlarmSoundUri = mediaAndIndicators.pomodoroAlarmSoundUri,
                                 showScreenTime = mediaAndIndicators.showScreenTime,
                                 showNotificationIndicators =
                                         mediaAndIndicators.showNotificationIndicators,
@@ -544,6 +572,10 @@ constructor(
                         showWorldClockWeather = homeWidgetItems.showWorldClockWeather,
                         showHomeBattery = homeWidgetItems.showBattery,
                         showHomeMedia = homeWidgetItems.showMedia,
+                        showHomePomodoro = homeWidgetItems.showPomodoro,
+                        pomodoroFocusMinutes = homeWidgetItems.pomodoroFocusMinutes,
+                        pomodoroBreakMinutes = homeWidgetItems.pomodoroBreakMinutes,
+                        pomodoroAlarmSoundUri = homeWidgetItems.pomodoroAlarmSoundUri,
                         showHomeScreenTime = homeWidgetItems.showScreenTime,
                         homeExtraWidgets = homeWidgetItems.homeExtraWidgets,
                         worldClockCities = homeWidgetItems.worldClockCities,
@@ -586,6 +618,10 @@ constructor(
 
     private data class MediaAndIndicatorPrefs(
             val showMedia: Boolean,
+            val showPomodoro: Boolean,
+            val pomodoroFocusMinutes: Int,
+            val pomodoroBreakMinutes: Int,
+            val pomodoroAlarmSoundUri: String,
             val showScreenTime: Boolean,
             val showNotificationIndicators: Boolean,
             val notificationIndicatorStyle: NotificationIndicatorStyle,
@@ -607,6 +643,10 @@ constructor(
             val showWeather: Boolean,
             val showBattery: Boolean,
             val showMedia: Boolean,
+            val showPomodoro: Boolean,
+            val pomodoroFocusMinutes: Int,
+            val pomodoroBreakMinutes: Int,
+            val pomodoroAlarmSoundUri: String,
             val showScreenTime: Boolean,
             val showNotificationIndicators: Boolean,
             val notificationIndicatorStyle: NotificationIndicatorStyle,
@@ -968,6 +1008,35 @@ constructor(
     fun setShowHomeBattery(show: Boolean) = launchPreferences { setShowHomeBattery(show) }
 
     fun setShowHomeMedia(show: Boolean) = launchPreferences { setShowHomeMedia(show) }
+
+    fun setShowHomePomodoro(show: Boolean) = launchPreferences { setShowHomePomodoro(show) }
+
+    fun setPomodoroFocusMinutes(minutes: Int) {
+        viewModelScope.launch {
+            val current = preferencesManager.getPomodoroConfig()
+            preferencesManager.setPomodoroConfig(
+                    current.copy(focusMinutes = clampPomodoroMinutes(minutes)),
+            )
+        }
+    }
+
+    fun setPomodoroBreakMinutes(minutes: Int) {
+        viewModelScope.launch {
+            val current = preferencesManager.getPomodoroConfig()
+            preferencesManager.setPomodoroConfig(
+                    current.copy(breakMinutes = clampPomodoroMinutes(minutes)),
+            )
+        }
+    }
+
+    fun setPomodoroAlarmSoundUri(uri: String?) {
+        viewModelScope.launch {
+            val current = preferencesManager.getPomodoroConfig()
+            preferencesManager.setPomodoroConfig(
+                    current.copy(alarmSoundUri = uri?.trim().orEmpty()),
+            )
+        }
+    }
 
     fun setShowHomeScreenTime(show: Boolean) = launchPreferences { setShowHomeScreenTime(show) }
 

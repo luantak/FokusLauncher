@@ -69,6 +69,9 @@ import com.lu4p.fokuslauncher.ui.components.ClockWidget
 import com.lu4p.fokuslauncher.ui.components.DateBatteryRow
 import com.lu4p.fokuslauncher.ui.components.FokusBottomSheet
 import com.lu4p.fokuslauncher.ui.components.MediaWidget
+import com.lu4p.fokuslauncher.ui.components.PomodoroWidget
+import com.lu4p.fokuslauncher.pomodoro.PomodoroUiState
+import com.lu4p.fokuslauncher.data.model.PomodoroMode
 import com.lu4p.fokuslauncher.ui.components.ScreenTimeWidget
 import com.lu4p.fokuslauncher.ui.components.FokusOutlinedButton
 import com.lu4p.fokuslauncher.ui.components.LauncherIcon
@@ -97,6 +100,7 @@ fun HomeScreen(
     val clockUiState by viewModel.clockUiState.collectAsStateWithLifecycle()
     val weatherUiState by viewModel.weatherUiState.collectAsStateWithLifecycle()
     val mediaUiState by viewModel.mediaUiState.collectAsStateWithLifecycle()
+    val pomodoroUiState by viewModel.pomodoroUiState.collectAsStateWithLifecycle()
     val screenTimeUiState by viewModel.screenTimeUiState.collectAsStateWithLifecycle()
     val worldClockUiState by viewModel.worldClockUiState.collectAsStateWithLifecycle()
     val countdownUiState by viewModel.countdownUiState.collectAsStateWithLifecycle()
@@ -146,6 +150,7 @@ fun HomeScreen(
             clockUiState = clockUiState,
             weatherUiState = weatherUiState,
             mediaUiState = mediaUiState,
+            pomodoroUiState = pomodoroUiState,
             screenTimeUiState = screenTimeUiState,
             worldClockUiState = worldClockUiState,
             countdownUiState = countdownUiState,
@@ -170,6 +175,10 @@ fun HomeScreen(
             onMediaNext = viewModel::mediaSkipToNext,
             onMediaLike = viewModel::mediaLike,
             onMediaSave = viewModel::mediaSave,
+            onPomodoroPlayPause = viewModel::pomodoroTogglePlayPause,
+            onPomodoroDecrease = { viewModel.pomodoroAdjustMinutes(-1) },
+            onPomodoroIncrease = { viewModel.pomodoroAdjustMinutes(1) },
+            onPomodoroSelectMode = viewModel::pomodoroSelectMode,
             doubleTapEmptyLockEnabled = uiState.doubleTapEmptyLockEnabled,
             onDoubleTapEmptyLock = onDoubleTapEmptyLock,
         )
@@ -243,6 +252,7 @@ fun HomeScreenContent(
     onIconClick: (HomeShortcut) -> Unit,
     modifier: Modifier = Modifier,
     mediaUiState: HomeMediaUiState = HomeMediaUiState(),
+    pomodoroUiState: PomodoroUiState = PomodoroUiState(),
     screenTimeUiState: HomeScreenTimeUiState = HomeScreenTimeUiState(),
     worldClockUiState: HomeWorldClockUiState = HomeWorldClockUiState(),
     countdownUiState: HomeCountdownUiState = HomeCountdownUiState(),
@@ -263,6 +273,10 @@ fun HomeScreenContent(
     onMediaNext: () -> Unit = {},
     onMediaLike: () -> Unit = {},
     onMediaSave: () -> Unit = {},
+    onPomodoroPlayPause: () -> Unit = {},
+    onPomodoroDecrease: () -> Unit = {},
+    onPomodoroIncrease: () -> Unit = {},
+    onPomodoroSelectMode: (PomodoroMode) -> Unit = {},
     doubleTapEmptyLockEnabled: Boolean = false,
     onDoubleTapEmptyLock: () -> Unit = {},
 ) {
@@ -303,6 +317,7 @@ fun HomeScreenContent(
                     clockUiState = clockUiState,
                     weatherUiState = weatherUiState,
                     mediaUiState = mediaUiState,
+                    pomodoroUiState = pomodoroUiState,
                     screenTimeUiState = screenTimeUiState,
                     worldClockUiState = worldClockUiState,
                     countdownUiState = countdownUiState,
@@ -317,6 +332,10 @@ fun HomeScreenContent(
                     onMediaNext = onMediaNext,
                     onMediaLike = onMediaLike,
                     onMediaSave = onMediaSave,
+                    onPomodoroPlayPause = onPomodoroPlayPause,
+                    onPomodoroDecrease = onPomodoroDecrease,
+                    onPomodoroIncrease = onPomodoroIncrease,
+                    onPomodoroSelectMode = onPomodoroSelectMode,
                     outlined = uiState.usesPhotoWallpaper,
                 )
 
@@ -471,6 +490,7 @@ private fun HomeWidgetsSection(
     clockUiState: HomeClockUiState,
     weatherUiState: HomeWeatherUiState,
     mediaUiState: HomeMediaUiState,
+    pomodoroUiState: PomodoroUiState,
     screenTimeUiState: HomeScreenTimeUiState,
     worldClockUiState: HomeWorldClockUiState,
     countdownUiState: HomeCountdownUiState,
@@ -485,6 +505,10 @@ private fun HomeWidgetsSection(
     onMediaNext: () -> Unit,
     onMediaLike: () -> Unit,
     onMediaSave: () -> Unit,
+    onPomodoroPlayPause: () -> Unit,
+    onPomodoroDecrease: () -> Unit,
+    onPomodoroIncrease: () -> Unit,
+    onPomodoroSelectMode: (PomodoroMode) -> Unit,
     outlined: Boolean,
 ) {
     val showClock = uiState.showHomeClock
@@ -599,26 +623,44 @@ private fun HomeWidgetsSection(
         nextTopPad = belowHeaderTopPad
     }
 
-    val playback = mediaUiState.playback
-    if (mediaUiState.showWidget && playback != null) {
-        MediaWidget(
-            title = playback.title,
-            artist = playback.artist,
-            isPlaying = playback.isPlaying,
-            isBuffering = playback.isBuffering,
-            canSkipToPrevious = playback.canSkipToPrevious,
-            canSkipToNext = playback.canSkipToNext,
-            like = playback.like,
-            save = playback.save,
-            outlined = outlined,
-            onOpenApp = onMediaOpenApp,
-            onLike = onMediaLike,
-            onPrevious = onMediaPrevious,
-            onPlayPause = onMediaPlayPause,
-            onNext = onMediaNext,
-            onSave = onMediaSave,
-            modifier = Modifier.fillMaxWidth().padding(top = nextTopPad),
-        )
+    when {
+        pomodoroUiState.showWidget -> {
+            PomodoroWidget(
+                remainingText = pomodoroUiState.remainingText,
+                isRunning = pomodoroUiState.isRunning,
+                awaitingDismiss = pomodoroUiState.awaitingDismiss,
+                mode = pomodoroUiState.mode,
+                outlined = outlined,
+                onPlayPause = onPomodoroPlayPause,
+                onDecrease = onPomodoroDecrease,
+                onIncrease = onPomodoroIncrease,
+                onSelectMode = onPomodoroSelectMode,
+                modifier = Modifier.fillMaxWidth().padding(top = nextTopPad),
+            )
+        }
+        mediaUiState.showWidget -> {
+            val playback = mediaUiState.playback
+            if (playback != null) {
+                MediaWidget(
+                    title = playback.title,
+                    artist = playback.artist,
+                    isPlaying = playback.isPlaying,
+                    isBuffering = playback.isBuffering,
+                    canSkipToPrevious = playback.canSkipToPrevious,
+                    canSkipToNext = playback.canSkipToNext,
+                    like = playback.like,
+                    save = playback.save,
+                    outlined = outlined,
+                    onOpenApp = onMediaOpenApp,
+                    onLike = onMediaLike,
+                    onPrevious = onMediaPrevious,
+                    onPlayPause = onMediaPlayPause,
+                    onNext = onMediaNext,
+                    onSave = onMediaSave,
+                    modifier = Modifier.fillMaxWidth().padding(top = nextTopPad),
+                )
+            }
+        }
     }
 }
 

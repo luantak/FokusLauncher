@@ -8,6 +8,7 @@
     <uses-permission android:name="android.permission.ACCESS_HIDDEN_PROFILES" />
     <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
     <uses-permission android:name="android.permission.SET_WALLPAPER" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission
         android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
@@ -72,6 +73,18 @@
 
         <receiver
             android:name=".accessibility.LongLockAlarmReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".pomodoro.PomodoroAlarmReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".pomodoro.PomodoroDismissReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".pomodoro.PomodoroActionReceiver"
             android:exported="false" />
 
         <provider
