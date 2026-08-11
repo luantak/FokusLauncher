@@ -75,13 +75,23 @@ fun LauncherIcon(
     iconSize: Dp = 24.dp,
     suppressGlow: Boolean = false,
     outlined: Boolean = false,
+    /**
+     * When true, prefer the adaptive monochrome layer (API 33+) and fall back to a luminance
+     * alpha mask of the foreground/full icon so the glyph can be tinted like launcher text.
+     */
+    simplifiedMonochrome: Boolean = false,
 ) {
     if (drawable == null) return
     val density = LocalDensity.current
 
     val (painter, canTint) =
-        remember(drawable, density, iconSize) {
-            val sizePx = with(density) { iconSize.toPx() }.toInt()
+        remember(drawable, density, iconSize, simplifiedMonochrome) {
+            val sizePx = with(density) { iconSize.toPx() }.toInt().coerceAtLeast(1)
+
+            if (simplifiedMonochrome) {
+                val bitmap = buildSimplifiedAppIconBitmap(drawable, sizePx)
+                return@remember BitmapPainter(bitmap.asImageBitmap()) to true
+            }
 
             var finalDrawable: Drawable = drawable
             var isAdaptive = false

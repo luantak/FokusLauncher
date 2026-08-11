@@ -142,6 +142,11 @@ data class SettingsUiState(
         val launcherVisualStyle: LauncherVisualStyle = LauncherVisualStyle.CLASSIC,
         /** Text shadow + icon halo; independent of [launcherVisualStyle]. */
         val launcherGlowEnabled: Boolean = false,
+        /**
+         * Opt-in simplified monochrome app icons beside drawer labels. Off by default to keep the
+         * text-first drawer.
+         */
+        val showSimplifiedAppIcons: Boolean = false,
         /** True when the home wallpaper is not solid black (image or busy wallpaper). */
         val homeUsesPhotoWallpaper: Boolean = false,
         /** Uniform outline stroke in dp on image wallpaper; 0 = launcher defaults per widget. */
@@ -440,9 +445,15 @@ constructor(
                             },
                             preferencesManager.appLocaleTagFlow,
                             preferencesManager.homeAlignmentFlow,
-                            preferencesManager.allowLandscapeRotationFlow,
-                    ) { fontOutlineDrawer, localeTag, homeAlignment, allowLandscape ->
+                            combine(
+                                    preferencesManager.allowLandscapeRotationFlow,
+                                    preferencesManager.showSimplifiedAppIconsFlow,
+                            ) { allowLandscape, showSimplifiedIcons ->
+                                allowLandscape to showSimplifiedIcons
+                            },
+                    ) { fontOutlineDrawer, localeTag, homeAlignment, landscapeAndIcons ->
                         val (fontVisual, outlineWidthDp, drawerOverlayIntensity) = fontOutlineDrawer
+                        val (allowLandscape, showSimplifiedIcons) = landscapeAndIcons
                         LookPrefs(
                                 launcherFontFamilyName = fontVisual.family,
                                 hasCustomFontFile = customFontStore.hasStoredFont(),
@@ -450,6 +461,7 @@ constructor(
                                 launcherFontScale = fontVisual.scale,
                                 launcherVisualStyle = fontVisual.visualStyle,
                                 launcherGlowEnabled = fontVisual.glowEnabled,
+                                showSimplifiedAppIcons = showSimplifiedIcons,
                                 homeUsesPhotoWallpaper = fontVisual.usesPhotoWallpaper,
                                 photoWallpaperOutlineWidthDp = outlineWidthDp,
                                 photoWallpaperDrawerOverlayIntensity = drawerOverlayIntensity,
@@ -597,6 +609,7 @@ constructor(
                         launcherFontScale = look.launcherFontScale,
                         launcherVisualStyle = look.launcherVisualStyle,
                         launcherGlowEnabled = look.launcherGlowEnabled,
+                        showSimplifiedAppIcons = look.showSimplifiedAppIcons,
                         homeUsesPhotoWallpaper = look.homeUsesPhotoWallpaper,
                         photoWallpaperOutlineWidthDp = look.photoWallpaperOutlineWidthDp,
                         photoWallpaperDrawerOverlayIntensity =
@@ -706,6 +719,7 @@ constructor(
             val launcherFontScale: Float,
             val launcherVisualStyle: LauncherVisualStyle,
             val launcherGlowEnabled: Boolean,
+            val showSimplifiedAppIcons: Boolean,
             val homeUsesPhotoWallpaper: Boolean,
             val photoWallpaperOutlineWidthDp: Float,
             val photoWallpaperDrawerOverlayIntensity: Float,
@@ -1111,6 +1125,9 @@ constructor(
         viewModelScope.launch { preferencesManager.setCountdownEvents(updated) }
         return true
     }
+
+    fun setShowSimplifiedAppIcons(show: Boolean) =
+            launchPreferences { setShowSimplifiedAppIcons(show) }
 
     fun setShowNotificationIndicators(show: Boolean) =
             launchPreferences { setShowNotificationIndicators(show) }

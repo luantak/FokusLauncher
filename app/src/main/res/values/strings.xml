@@ -416,6 +416,9 @@
     <string name="settings_look_locked_image_wallpaper">Not available with an image wallpaper. Set a black background below to use colors and glow.</string>
     <string name="settings_glow_label">Glow</string>
     <string name="settings_glow_subtitle">Soft halo on text and icons</string>
+    <string name="settings_simplified_app_icons">Simplified app icons</string>
+    <string name="settings_simplified_app_icons_subtitle">Monochrome icons beside app names in the drawer</string>
+    <string name="cd_app_icon">App icon</string>
     <string name="visual_style_classic">Classic</string>
     <string name="visual_style_neon_magenta">Cosmic Violet</string>
     <string name="visual_style_neon_lime">Terminal Green</string>

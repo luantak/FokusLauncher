@@ -64,6 +64,44 @@ class AppDrawerScreenTest {
     }
 
     @Test
+    fun appDrawer_showsSimplifiedIconSlotsWhenEnabled() {
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                AppDrawerContent(
+                    uiState = singleProfileState(testApps).copy(showSimplifiedAppIcons = true),
+                    onSearchQueryChanged = {},
+                    onCategorySelected = {},
+                    onAppClick = {},
+                    onSettingsClick = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("app_icon_com.lu4p.atom").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("app_icon_com.lu4p.chrome").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Atom").assertIsDisplayed()
+    }
+
+    @Test
+    fun appDrawer_hidesSimplifiedIconSlotsByDefault() {
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                AppDrawerContent(
+                    uiState = singleProfileState(testApps),
+                    onSearchQueryChanged = {},
+                    onCategorySelected = {},
+                    onAppClick = {},
+                    onSettingsClick = {}
+                )
+            }
+        }
+
+        composeTestRule.onAllNodesWithTag("app_icon_com.lu4p.atom").fetchSemanticsNodes().also {
+            assertEquals(0, it.size)
+        }
+    }
+
+    @Test
     fun appDrawer_displaysSearchBar() {
         composeTestRule.setContent {
             FokusLauncherTheme {

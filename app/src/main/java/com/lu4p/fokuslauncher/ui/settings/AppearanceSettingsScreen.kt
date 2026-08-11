@@ -216,6 +216,14 @@ fun AppearanceSettingsScreen(
                 )
             }
             item {
+                SettingsToggleRow(
+                        label = stringResource(R.string.settings_simplified_app_icons),
+                        checked = uiState.showSimplifiedAppIcons,
+                        onCheckedChange = viewModel::setShowSimplifiedAppIcons,
+                        subtitle = stringResource(R.string.settings_simplified_app_icons_subtitle),
+                )
+            }
+            item {
                 SettingsRow(
                         label = stringResource(R.string.settings_set_background_image),
                         verticalPadding = 14.dp,

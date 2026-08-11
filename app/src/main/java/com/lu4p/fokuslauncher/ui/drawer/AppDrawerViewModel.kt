@@ -100,6 +100,8 @@ data class AppDrawerUiState(
                 NotificationIndicatorStyle.DOT,
         val notificationIndicatorColor: Int = NotificationIndicatorColorPreset.DEFAULT.argb,
         val appsWithNotifications: Set<String> = emptySet(),
+        /** Opt-in simplified monochrome icons beside drawer app labels. */
+        val showSimplifiedAppIcons: Boolean = false,
 )
 
 sealed interface DrawerEvent {
@@ -324,6 +326,7 @@ constructor(
         observeLauncherAppearance()
         observeDrawerSearchAutoLaunch()
         observeNotificationIndicators()
+        observeSimplifiedAppIcons()
         refreshPrivateSpaceState()
         observePrivateSpaceChanges()
         scheduleDrawerCachePrewarm()
@@ -381,6 +384,14 @@ constructor(
         viewModelScope.launch {
             preferencesManager.launcherAppearanceFlow.collect { appearance ->
                 _uiState.update { it.copy(usesPhotoWallpaper = appearance.usesPhotoWallpaper) }
+            }
+        }
+    }
+
+    private fun observeSimplifiedAppIcons() {
+        viewModelScope.launch {
+            preferencesManager.showSimplifiedAppIconsFlow.collect { enabled ->
+                _uiState.update { it.copy(showSimplifiedAppIcons = enabled) }
             }
         }
     }
