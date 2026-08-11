@@ -57,7 +57,7 @@
     <string name="accessibility_lock_service_label">Fokus gailuaren kontrola</string>
     <string name="action_change">Aldatu</string>
     <string name="inferred_category_media">Media</string>
-    <string name="settings_dot_search_url_template_help">HTTPS bilaketarako esteka bat edo aplikazio sakoneko esteka bat erabil daiteke (adibidez, intent://). Jarri %1$s bilaketa-hitzak joan behar diren lekuan. Abiarazleak ordezkatu egiten du `. search` edo `.x search` ondoren idazten duzunarekin. Adibidea: https://example.com/search?q=%1$s</string>
+    <string name="settings_dot_search_url_template_help">HTTPS bilaketarako esteka bat edo aplikazio sakoneko esteka bat erabil daiteke (adibidez, intent://). Jarri %1$s galdera joan behar diren lekuan. Abiarazleak ordezkatu egiten du `. galdera` edo `.x galdera` ondoren idazten duzunarekin. Adibidea: https://example.com/search?q=%1$s</string>
     <string name="drawer_reorder">Birordenatu</string>
     <string name="icon_cat_hardware">Hardware</string>
     <string name="settings_home_date_format">Dataren formatua</string>
@@ -197,7 +197,7 @@
     <string name="toast_weather_app_launch_failed">Aukeratutako eguraldi aplikazioa ezin izan da ireki</string>
     <string name="onboarding_welcome_subtitle">Hasierako pantaila minimoa</string>
     <string name="onboarding_tip_swipe">Irristatu gorantz aplikazioen tiradera irekitzeko</string>
-    <string name="settings_dot_search_url_template_error">Sartu %1$s bilaketa-testuaren lekuan (adibidez: https://example.com/search?q=%1$s).</string>
+    <string name="settings_dot_search_url_template_error">Sartu %1$s galdera lekuan (adibidez: https://example.com/search?q=%1$s).</string>
     <string name="settings_reset_confirm_message">Honek ezabatuko ditu gustukoenak, lasterbideak, aplikazio ezkutuak, berrizendatutako aplikazioak eta gainerako ezarpenak. Aplikazioa hasierako egoerara itzuliko da.</string>
     <string name="onboarding_done">Eginda</string>
     <string name="category_add_error_blank">Sartu kategoriaren izena. Izen hutsak ez dira gordetzen.</string>
@@ -218,16 +218,16 @@
     <string name="onboarding_background_black">Beltza gustukoa dut</string>
     <string name="settings_dot_search_url_template">URL txantiloi</string>
     <string name="category_add_error_reserved_private">\"Pribatua\" Gune Pribaturako erreserbatuta dago. Aukeratu beste izen bat.</string>
-    <string name="settings_dot_search_explanation">Aplikazioen tiraderan, idatzi puntu bat eta espazio bat, eta gero zure bilaketa-hitzak. Lasterbide baterako, erabili puntu bat, letra xehe bat, espazio bat, gero zure bilaketa (adibidez, `.a kafe bat`). Aplikazioen zerrendan web bilaketa edo aplikazio estandarra erakusten duten aplikazioak baino ez daude. Beste gune edo aplikazio batzuetarako, gehitu HTTPS URL edo esteka sakoneko txantiloi bat eta jarri %1$s non dagoen bilaketa-testua (adibidez https://example.com/search? q =%1$s).</string>
+    <string name="settings_dot_search_explanation">Erabili puntuen bilaketa kontsultak eta lasterbideak berehalako ekintzetarako. Idatzi `. galdera` helburu lehenetsia kontsultatzeko. Gehitu bilaketa-helburu bat edo URL txantiloi bat .`x galdera`, edo gehitu Open lasterbide-helburu bat `.x` -rako. URL txantiloiek %1$s erabiltzen dute kontsulta egiteko (adibidez: https://example.com/search? q = %1$s).</string>
     <string name="action_rename">Izena aldatu</string>
-    <string name="settings_dot_search_subtitle">Idatzi `. terminoak` edo `.‹letra xehea›terminoak` tiraderaren bilaketa-barran</string>
+    <string name="settings_dot_search_subtitle">Idatzi `.galdera` bilatzeko, `.x galdear` bilaketa helburu baterako, edo `.x` berehalako lasterbide baterako</string>
     <string name="cd_delete_category">Ezabatu kategoria</string>
     <string name="icon_cat_actions">Ekintzak</string>
     <string name="settings_set_background_image">Ezarri atzeko irudia</string>
     <string name="edit_shortcuts_section_all_actions">Aplikazio guztien ekintzak</string>
     <string name="settings_home_widgets">Trepetak konfiguratu</string>
     <string name="search_apps">Bilatu aplikazioak</string>
-    <string name="settings_dot_search_add_shortcut_app">Aplikazioa (bilaketa-asmoa)</string>
+    <string name="settings_dot_search_add_shortcut_app">Ireki lasterbidea</string>
     <string name="inferred_category_social">Soziala</string>
     <string name="settings_accessibility_page_title">Gailuen Kontrola</string>
     <string name="shortcut_open_app">Ireki aplikazioa</string>
@@ -235,7 +235,7 @@
     <string name="settings_drawer_category_rail_side">Kategoriaren alboko-barraren posizioa</string>
     <string name="icon_cat_activities">Jarduerak</string>
     <string name="settings_allow_landscape_rotation">Baimendu ikuspegi horizontala</string>
-    <string name="settings_dot_search_screen_title">Tiraderan puntuekin bilatu</string>
+    <string name="settings_dot_search_screen_title">Puntuekin bilatu eta lasterbideak</string>
     <string name="icon_cat_text">Testua</string>
     <string name="action_remove_from_home">Kendu hasierako pantailatik</string>
     <string name="onboarding_swipe_not_set">Ez dago</string>
@@ -244,7 +244,7 @@
     <string name="settings_home_date_format_month_long">Hilabetea DD, YYYY</string>
     <string name="category_action_reset_icon">Jatorrizko ikonoa</string>
     <string name="settings_connect_section">Konektatu</string>
-    <string name="settings_dot_search_pick_default_app">Aukeratu aplikazioa `. search` erabiltzeko</string>
+    <string name="settings_dot_search_pick_default_app">Aukeratu aplikazioa `. galdera` erabiltzeko</string>
     <string name="settings_set_black_wallpaper">Ezarri atzeko kolore beltza</string>
     <string name="category_name_label">Kategoriaren izena</string>
     <string name="icon_cat_search_results">Ikonoak bilatzen</string>
@@ -315,4 +315,49 @@
     <string name="settings_photo_outline_width_dp_value">%1$d. maila</string>
     <string name="settings_photo_drawer_overlay_label">Aplikazioen tiraderak iluntze indarra</string>
     <string name="settings_photo_drawer_overlay_subtitle">Handitu egiten du pantaila osoaren iluntasuna aplikazioen tiraderaren atzean.</string>
+    <string name="settings_show_home_media">Mediarako kontrolak erakutsi</string>
+    <string name="settings_profile_names_subtitle">Berrizendatu profil pertsonala, lanekoa edo beste batzuk tiraderan eta hasierako pantailan</string>
+    <string name="media_play">Jo</string>
+    <string name="toast_digital_wellbeing_launch_failed">Ongizate digitala ezin izan da ireki</string>
+    <string name="settings_profile_names_title">Profilen izenak</string>
+    <string name="media_pause">Pausa</string>
+    <string name="settings_show_home_media_subtitle_grant_access">Jakinarazpenetarako baimena behar da - aktibatu sistemako ezarpenetan</string>
+    <string name="settings_profile_names_default_label">Lehenetsia: %1$s</string>
+    <string name="settings_drawer_scroll_to_top_auto_keyboard">Goraino korritzean teklatua</string>
+    <string name="settings_profile_names_help">Utzi eremua hutsik eta sakatu Gorde lehenetsitako izena berrezartzeko. Izenak tiradera-buruei, taldekatutako bilatzaileei eta profil-bereizgarriei aplikatzen zaizkie, gogokoen ondoan.</string>
+    <string name="media_unlike">Ez gustukoa</string>
+    <string name="settings_show_home_screen_time_subtitle">Pantaila erabilitako denbora azkenengo 24 orduetan</string>
+    <string name="settings_profile_names_field_label">Erakutsi izena</string>
+    <string name="settings_drawer_scroll_to_top_auto_keyboard_subtitle">Aplikazioen zerrendan goraino korritzean automatikoki ireki teklatua eta bilaketa</string>
+    <string name="settings_font_import_ttf">Letra-tipoa inportatu (.ttf)</string>
+    <string name="settings_dot_search_add_search_target_help">Idatzi `.x galdera` bilaketa erakusten duen aplikazio batera kontsulta bat bidaltzeko.</string>
+    <string name="settings_show_home_screen_time_subtitle_grant_access">Erabilerarako baimena behar da - aktibatu sistemako ezarpenetan</string>
+    <string name="visual_style_gold">Urrea</string>
+    <string name="settings_font_import_failed_io">Ezin izan da letra-tipo fitxategia gorde</string>
+    <string name="settings_font_import_ttf_subtitle">Erabili gailuan dagoen TrueType letra-tipo fitxategia</string>
+    <string name="settings_dot_search_add_search_target_app">Bilaketa helburua</string>
+    <string name="settings_dot_search_search_mode_label">Bilaketa helburua</string>
+    <string name="settings_profile_names_reset">Berrezarri</string>
+    <string name="media_like">Gustukoa</string>
+    <string name="settings_dot_search_shortcut_mode_label">Ireki berehala</string>
+    <string name="media_notification_listener_label">Fokus orain media jotzen</string>
+    <string name="media_save">Gorde liburutegian</string>
+    <string name="settings_font_clear_custom">Inportatutako letra-tipoa ezabatu</string>
+    <string name="settings_section_archived_apps">Aplikazio artxibatutak</string>
+    <string name="media_buffering">Kargatzen</string>
+    <string name="settings_dot_search_pick_alias_search_app">Aukeratu bilatzeko aplikazioa lasterbide honetarako</string>
+    <string name="settings_font_import_failed_extension">Soilik .ttf artxiboak onartzen dira</string>
+    <string name="settings_profile_names_save">Gorde</string>
+    <string name="cd_restore_archived_app">Berrezarri artxibatutako aplikazioa</string>
+    <string name="settings_font_import_failed_unreadable">Ezin da fitxategia irakurri</string>
+    <string name="media_next_track">Hurrengo pista</string>
+    <string name="settings_dot_search_add_url_template_help">Idatzi `.x galdera` URL edo esteka sakon bat galdera txertatuta irekitzeko.</string>
+    <string name="settings_font_import_failed_invalid">FItxategi hori ez da TrueType letra-tipo balioduna</string>
+    <string name="settings_no_archived_apps">Ez dago aplikazio artxibaturik</string>
+    <string name="settings_dot_search_add_shortcut_help">Idatzi `.x` aplikazio bat, telefono ekintza bat edo abiarazlearen lasterbide bat irekitzeko.</string>
+    <string name="settings_font_custom_imported">Inportatutako letra-tipoa</string>
+    <string name="settings_show_home_media_subtitle">Orain garraio kontrolekin aritzen, audioa aktibo dagoenean</string>
+    <string name="media_unsave">Kendu liburutegitik</string>
+    <string name="media_previous_track">Aurreko pista</string>
+    <string name="settings_show_home_screen_time">Erakutsi pantailako denbora</string>
 </resources>
