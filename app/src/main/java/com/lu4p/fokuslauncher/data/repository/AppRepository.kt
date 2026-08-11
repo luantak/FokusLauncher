@@ -40,6 +40,7 @@ import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.model.appMetadataKey
 import com.lu4p.fokuslauncher.data.model.appProfileKey
 import com.lu4p.fokuslauncher.data.model.HOST_APP_METADATA_SENTINEL
+import com.lu4p.fokuslauncher.data.model.LEGACY_PACKAGE_WIDE_METADATA
 import com.lu4p.fokuslauncher.data.model.launcherShortcutIdForMetadata
 import com.lu4p.fokuslauncher.data.model.overlayCategory
 import com.lu4p.fokuslauncher.data.model.SystemCategoryKeys
@@ -1062,6 +1063,13 @@ constructor(
             launcherShortcutId: String = HOST_APP_METADATA_SENTINEL,
     ) {
         appDao.hideApp(HiddenAppEntity(packageName, profileKey, launcherShortcutId))
+        // Host rows supersede pre-v5 package-wide rows; drop the legacy sibling to avoid
+        // duplicate Settings list keys (legacy + host share metadataSettingsStableKey).
+        if (launcherShortcutId == HOST_APP_METADATA_SENTINEL) {
+            appDao.unhideApp(
+                    HiddenAppEntity(packageName, profileKey, LEGACY_PACKAGE_WIDE_METADATA)
+            )
+        }
     }
 
     /** Unhides an app row matching the persisted shortcut id. */
@@ -1134,6 +1142,11 @@ constructor(
                         launcherShortcutId,
                 )
         )
+        // Host rows supersede pre-v5 package-wide rows; drop the legacy sibling to avoid
+        // duplicate Settings list keys (legacy + host share metadataSettingsStableKey).
+        if (launcherShortcutId == HOST_APP_METADATA_SENTINEL) {
+            appDao.removeRename(packageName, profileKey, LEGACY_PACKAGE_WIDE_METADATA)
+        }
     }
 
     /** Renames the given installed app row (host or PWA). */
@@ -1180,6 +1193,10 @@ constructor(
                         launcherShortcutId,
                 )
         )
+        // Host rows supersede pre-v5 package-wide rows; drop the legacy sibling.
+        if (launcherShortcutId == HOST_APP_METADATA_SENTINEL) {
+            appDao.removeAppCategory(packageName, profileKey, LEGACY_PACKAGE_WIDE_METADATA)
+        }
     }
 
     /** Assigns a category to the given installed app row (host or PWA). */

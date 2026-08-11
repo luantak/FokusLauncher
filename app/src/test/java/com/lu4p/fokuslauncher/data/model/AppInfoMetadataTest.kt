@@ -2,12 +2,29 @@ package com.lu4p.fokuslauncher.data.model
 
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryEntity
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
 class AppInfoMetadataTest {
 
     private val browserPackage = "com.vivaldi.browser"
+
+    @Test
+    fun `metadataSettingsStableKey collapses host and legacy for lookups`() {
+        assertEquals(
+                metadataSettingsStableKey(browserPackage, "0", HOST_APP_METADATA_SENTINEL),
+                metadataSettingsStableKey(browserPackage, "0", LEGACY_PACKAGE_WIDE_METADATA),
+        )
+    }
+
+    @Test
+    fun `metadataListItemKey keeps host and legacy distinct for LazyColumn`() {
+        assertNotEquals(
+                metadataListItemKey(browserPackage, "0", HOST_APP_METADATA_SENTINEL),
+                metadataListItemKey(browserPackage, "0", LEGACY_PACKAGE_WIDE_METADATA),
+        )
+    }
 
     private fun browserHost() = AppInfo(browserPackage, "Vivaldi", null)
 

@@ -25,6 +25,9 @@ import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import com.lu4p.fokuslauncher.data.model.WORLD_CLOCK_LABEL_MAX_LENGTH
 import com.lu4p.fokuslauncher.data.model.WorldClockCity
 import com.lu4p.fokuslauncher.data.model.defaultLabelForTimeZoneId
+import com.lu4p.fokuslauncher.data.model.HOST_APP_METADATA_SENTINEL
+import com.lu4p.fokuslauncher.data.model.LEGACY_PACKAGE_WIDE_METADATA
+import com.lu4p.fokuslauncher.data.model.metadataListItemKey
 import com.lu4p.fokuslauncher.data.model.metadataSettingsStableKey
 import com.lu4p.fokuslauncher.data.model.appListStableKey
 import com.lu4p.fokuslauncher.data.model.appProfileKey
@@ -158,7 +161,7 @@ data class HiddenAppInfo(
         val profileLabel: String?,
 ) {
     val stableKey: String
-        get() = metadataSettingsStableKey(packageName, profileKey, launcherShortcutId)
+        get() = metadataListItemKey(packageName, profileKey, launcherShortcutId)
 }
 
 data class RenamedAppInfo(
@@ -169,7 +172,7 @@ data class RenamedAppInfo(
         val profileLabel: String?,
 ) {
     val stableKey: String
-        get() = metadataSettingsStableKey(packageName, profileKey, launcherShortcutId)
+        get() = metadataListItemKey(packageName, profileKey, launcherShortcutId)
 }
 
 data class ArchivedAppInfo(
@@ -675,24 +678,32 @@ constructor(
             privateSpaceUnlocked: Boolean,
             privateProfileKey: String?,
             profileDisplayNameOverrides: Map<String, String>,
-            packageName: (T) -> String,
-            profileKey: (T) -> String,
-            launcherShortcutId: (T) -> String,
+            crossinline packageName: (T) -> String,
+            crossinline profileKey: (T) -> String,
+            crossinline launcherShortcutId: (T) -> String,
             transform: (T, AppInfo?, String?) -> R,
-    ): List<R> =
-            entities.mapNotNull { entity ->
+    ): List<R> {
+            // Prefer host rows when a superseded legacy package-wide row still exists.
+            val hostKeys =
+                    entities
+                            .asSequence()
+                            .filter { launcherShortcutId(it) == HOST_APP_METADATA_SENTINEL }
+                            .mapTo(HashSet()) { "${packageName(it)}|${profileKey(it)}" }
+            return entities.mapNotNull { entity ->
                 val pkg = packageName(entity)
                 val prof = profileKey(entity)
                 val shortcutId = launcherShortcutId(entity)
+                if (shortcutId == LEGACY_PACKAGE_WIDE_METADATA && "$pkg|$prof" in hostKeys) {
+                    return@mapNotNull null
+                }
                 val matchingApp =
                         installedApps.find { app ->
                             app.packageName == pkg &&
                                     appProfileKey(app.userHandle) == prof &&
                                     when (shortcutId) {
-                                        com.lu4p.fokuslauncher.data.model.HOST_APP_METADATA_SENTINEL ->
+                                        HOST_APP_METADATA_SENTINEL ->
                                                 app.launcherShortcutId == null
-                                        com.lu4p.fokuslauncher.data.model.LEGACY_PACKAGE_WIDE_METADATA ->
-                                                true
+                                        LEGACY_PACKAGE_WIDE_METADATA -> true
                                         else -> app.launcherShortcutId == shortcutId
                                     }
                         }
@@ -709,6 +720,7 @@ constructor(
                                 ),
                         )
             }
+    }
 
     private fun hiddenInfosForSettings(
             hiddenApps: List<HiddenAppEntity>,
