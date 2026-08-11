@@ -112,7 +112,7 @@ android {
     defaultConfig {
         applicationId = "io.github.luantak.fokuslauncher"
         minSdk = 26
-        targetSdk = 37
+        targetSdk = 36
         versionCode = 46
         versionName = "1.9.0"
 
