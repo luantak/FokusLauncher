@@ -53,6 +53,7 @@ import androidx.compose.animation.AnimatedContentScope
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.ui.util.OnResumeEffect
+import com.lu4p.fokuslauncher.ui.util.rememberSystemAnimationsEnabled
 import androidx.navigation.NamedNavArgument
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDeepLink
@@ -112,6 +113,25 @@ private fun snapBackAnimationSpec() = spring<Float>(
     dampingRatio = Spring.DampingRatioNoBouncy,
     stiffness = Spring.StiffnessHigh
 )
+
+/** Animates [from] → [to], or snaps instantly when system animations are disabled. */
+private suspend fun animateHorizontalOffset(
+    from: Float,
+    to: Float,
+    animationsEnabled: Boolean,
+    onValue: (Float) -> Unit,
+) {
+    if (!animationsEnabled || from == to) {
+        onValue(to)
+        return
+    }
+    Animatable(from).animateTo(
+        targetValue = to,
+        animationSpec = snapBackAnimationSpec(),
+    ) {
+        onValue(value)
+    }
+}
 
 @Composable
 private fun settingsViewModel(activity: ComponentActivity): SettingsViewModel =
@@ -272,6 +292,7 @@ fun FokusNavGraph(
 
                 val swipeLeftTarget by homeViewModel.swipeLeftTarget.collectAsStateWithLifecycle()
                 val swipeRightTarget by homeViewModel.swipeRightTarget.collectAsStateWithLifecycle()
+                val systemAnimationsEnabled = rememberSystemAnimationsEnabled()
 
                 BoxWithConstraints(
                     modifier = Modifier
@@ -284,10 +305,19 @@ fun FokusNavGraph(
                     var horizontalOffsetPx by remember { mutableFloatStateOf(0f) }
                     var widgetDragSide by remember { mutableStateOf<SwipeSide?>(null) }
                     val coroutineScope = rememberCoroutineScope()
-                    val snapBackSpec = snapBackAnimationSpec()
                     var launchTriggered by remember { mutableStateOf(false) }
+                    // With animations off, only show settled positions (no finger-follow slide).
+                    val displayedHorizontalOffsetPx =
+                        when {
+                            systemAnimationsEnabled -> horizontalOffsetPx
+                            widgetPageSide == SwipeSide.RIGHT -> pageWidthPx
+                            widgetPageSide == SwipeSide.LEFT -> -pageWidthPx
+                            else -> 0f
+                        }
                     val isHorizontalGestureActive =
-                        abs(horizontalOffsetPx) > 0.5f || launchTriggered || widgetPageSide != null
+                        abs(displayedHorizontalOffsetPx) > 0.5f ||
+                            launchTriggered ||
+                            widgetPageSide != null
 
                     LaunchedEffect(isHorizontalGestureActive) {
                         horizontalSwipeActive.value = isHorizontalGestureActive
@@ -305,17 +335,22 @@ fun FokusNavGraph(
                         launchTriggered = false
                     }
 
-                    LaunchedEffect(launchTriggered) {
+                    LaunchedEffect(launchTriggered, systemAnimationsEnabled) {
                         if (launchTriggered) {
+                            if (!systemAnimationsEnabled) {
+                                horizontalOffsetPx = 0f
+                                return@LaunchedEffect
+                            }
                             // Launch in a separate job we can track and cancel
                             snapBackJob = coroutineScope.launch {
                                 // Keep the panel at the swiped position briefly so launch feels continuous.
                                 delay(SWIPE_LAUNCH_HOLD_MS)
-                                Animatable(horizontalOffsetPx).animateTo(
-                                    targetValue = 0f,
-                                    animationSpec = snapBackSpec
+                                animateHorizontalOffset(
+                                    from = horizontalOffsetPx,
+                                    to = 0f,
+                                    animationsEnabled = true,
                                 ) {
-                                    horizontalOffsetPx = value
+                                    horizontalOffsetPx = it
                                 }
                                 launchTriggered = false
                                 snapBackJob = null
@@ -380,7 +415,8 @@ fun FokusNavGraph(
                                                 maxSlidePx,
                                                 triggerPx,
                                                 minSlidePx,
-                                                maxSlidePxVal
+                                                maxSlidePxVal,
+                                                systemAnimationsEnabled,
                                             ) {
                                                 val settleHorizontalDrag: () -> Unit = {
                                                     if (!launchTriggered) {
@@ -390,19 +426,21 @@ fun FokusNavGraph(
                                                                 val targetValue =
                                                                     if (side == SwipeSide.RIGHT) pageWidthPx
                                                                     else -pageWidthPx
-                                                                Animatable(horizontalOffsetPx).animateTo(
-                                                                        targetValue = targetValue,
-                                                                        animationSpec = snapBackSpec
+                                                                animateHorizontalOffset(
+                                                                        from = horizontalOffsetPx,
+                                                                        to = targetValue,
+                                                                        animationsEnabled = systemAnimationsEnabled,
                                                                 ) {
-                                                                    horizontalOffsetPx = value
+                                                                    horizontalOffsetPx = it
                                                                 }
                                                                 widgetPageSide = side
                                                             } else {
-                                                                Animatable(horizontalOffsetPx).animateTo(
-                                                                        targetValue = 0f,
-                                                                        animationSpec = snapBackSpec
+                                                                animateHorizontalOffset(
+                                                                        from = horizontalOffsetPx,
+                                                                        to = 0f,
+                                                                        animationsEnabled = systemAnimationsEnabled,
                                                                 ) {
-                                                                    horizontalOffsetPx = value
+                                                                    horizontalOffsetPx = it
                                                                 }
                                                             }
                                                             widgetDragSide = null
@@ -435,7 +473,11 @@ fun FokusNavGraph(
                                                             if (target != null) {
                                                                 launchTriggered = true
                                                                 horizontalOffsetPx =
-                                                                    if (horizontalOffsetPx > 0f) maxSlidePx else -maxSlidePx
+                                                                    if (systemAnimationsEnabled) {
+                                                                        if (horizontalOffsetPx > 0f) maxSlidePx else -maxSlidePx
+                                                                    } else {
+                                                                        0f
+                                                                    }
                                                                 activity?.launchWithBottomReveal(target)
                                                             }
                                                         }
@@ -448,7 +490,8 @@ fun FokusNavGraph(
                                     )
                             
                     ) {
-                        if (widgetDragSide != null || widgetPageSide != null) {
+                        // Preview the widget page only while animating a drag, or once settled open.
+                        if ((systemAnimationsEnabled && widgetDragSide != null) || widgetPageSide != null) {
                             val side = widgetPageSide ?: widgetDragSide
                             Box(
                                 modifier = Modifier
@@ -456,8 +499,8 @@ fun FokusNavGraph(
                                     .graphicsLayer {
                                         translationX =
                                             when (side) {
-                                                SwipeSide.RIGHT -> horizontalOffsetPx - pageWidthPx
-                                                SwipeSide.LEFT -> horizontalOffsetPx + pageWidthPx
+                                                SwipeSide.RIGHT -> displayedHorizontalOffsetPx - pageWidthPx
+                                                SwipeSide.LEFT -> displayedHorizontalOffsetPx + pageWidthPx
                                                 null -> pageWidthPx
                                             }
                                     }
@@ -465,11 +508,12 @@ fun FokusNavGraph(
                                 WidgetPageScreen(
                                     onClose = {
                                         coroutineScope.launch {
-                                            Animatable(horizontalOffsetPx).animateTo(
-                                                targetValue = 0f,
-                                                animationSpec = snapBackSpec
+                                            animateHorizontalOffset(
+                                                from = horizontalOffsetPx,
+                                                to = 0f,
+                                                animationsEnabled = systemAnimationsEnabled,
                                             ) {
-                                                horizontalOffsetPx = value
+                                                horizontalOffsetPx = it
                                             }
                                             widgetPageSide = null
                                             widgetDragSide = null
@@ -477,7 +521,7 @@ fun FokusNavGraph(
                                     },
                                     modifier = Modifier
                                         .fillMaxSize()
-                                        .pointerInput(widgetPageSide) {
+                                        .pointerInput(widgetPageSide, systemAnimationsEnabled) {
                                             fun settleWidgetPageClose() {
                                                 val currentSide = widgetPageSide ?: return
                                                 val halfway =
@@ -499,11 +543,12 @@ fun FokusNavGraph(
                                                             currentSide == SwipeSide.RIGHT -> pageWidthPx
                                                             else -> -pageWidthPx
                                                         }
-                                                    Animatable(horizontalOffsetPx).animateTo(
-                                                        targetValue = targetValue,
-                                                        animationSpec = snapBackSpec
+                                                    animateHorizontalOffset(
+                                                        from = horizontalOffsetPx,
+                                                        to = targetValue,
+                                                        animationsEnabled = systemAnimationsEnabled,
                                                     ) {
-                                                        horizontalOffsetPx = value
+                                                        horizontalOffsetPx = it
                                                     }
                                                     if (shouldClose) {
                                                         widgetPageSide = null
@@ -536,7 +581,7 @@ fun FokusNavGraph(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .graphicsLayer {
-                                    translationX = horizontalOffsetPx
+                                    translationX = displayedHorizontalOffsetPx
                                     alpha = if (showDrawer) 0f else 1f
                                 }
                         ) {
