@@ -160,6 +160,12 @@
     <string name="settings_title">Settings</string>
     <string name="settings_look_and_feel_title">Look &amp; feel</string>
     <string name="settings_look_and_feel_subtitle">Language, fonts, colors, glow, wallpaper, and notification indicators</string>
+    <string name="settings_look_section_display">Display</string>
+    <string name="settings_look_section_text">Text</string>
+    <string name="settings_look_section_colors">Colors</string>
+    <string name="settings_look_section_icons">Icons</string>
+    <string name="settings_look_section_wallpaper">Wallpaper</string>
+    <string name="settings_look_section_notifications">Notifications</string>
     <string name="settings_drawer_behavior_title">Drawer behavior</string>
     <string name="settings_drawer_behavior_subtitle">Sidebar, app order, auto launch, and search keyboard</string>
     <string name="settings_section_apps">Apps</string>

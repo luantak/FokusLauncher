@@ -1394,7 +1394,7 @@ private fun ArcticonsDrawerAppIcon(app: AppInfo, tint: Color) {
                     forceTint = true,
             )
         } else {
-            // Placeholder while loading or when Arcticons has no mapping for this app.
+            // Brief load / last-resort only — unmapped apps use Arcticons' outlined `circle`.
             Box(
                     modifier =
                             Modifier.size(ArcticonsDrawerIconPlaceholderSize)

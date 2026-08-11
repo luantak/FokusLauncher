@@ -129,6 +129,9 @@ fun AppearanceSettingsScreen(
         )
 
         LazyColumn(modifier = Modifier.fillMaxSize()) {
+            item {
+                SectionHeader(stringResource(R.string.settings_look_section_display))
+            }
             items(
                     listOf(
                             Triple(
@@ -156,6 +159,9 @@ fun AppearanceSettingsScreen(
                         onTagSelected = viewModel::setAppLocaleTag,
                 )
             }
+
+            item { SettingsDivider() }
+            item { SectionHeader(stringResource(R.string.settings_look_section_text)) }
             item {
                 LauncherFontFamilyDropdown(
                         currentFamilyName = uiState.launcherFontFamilyName,
@@ -198,6 +204,9 @@ fun AppearanceSettingsScreen(
                         onScaleChange = viewModel::setLauncherFontScale,
                 )
             }
+
+            item { SettingsDivider() }
+            item { SectionHeader(stringResource(R.string.settings_look_section_colors)) }
             item {
                 LauncherVisualStyleDropdown(
                         currentStyle = uiState.launcherVisualStyle,
@@ -222,6 +231,9 @@ fun AppearanceSettingsScreen(
                         enabled = !uiState.homeUsesPhotoWallpaper,
                 )
             }
+
+            item { SettingsDivider() }
+            item { SectionHeader(stringResource(R.string.settings_look_section_icons)) }
             item {
                 SettingsToggleRow(
                         label = stringResource(R.string.settings_arcticons_drawer_icons),
@@ -245,6 +257,9 @@ fun AppearanceSettingsScreen(
                                 ),
                 )
             }
+
+            item { SettingsDivider() }
+            item { SectionHeader(stringResource(R.string.settings_look_section_wallpaper)) }
             item {
                 SettingsRow(
                         label = stringResource(R.string.settings_set_background_image),
@@ -281,7 +296,11 @@ fun AppearanceSettingsScreen(
                     )
                 }
             }
+
             item { SettingsDivider() }
+            item {
+                SectionHeader(stringResource(R.string.settings_look_section_notifications))
+            }
             item {
                 SettingsToggleRow(
                         label = stringResource(R.string.settings_notification_indicators),

@@ -59,7 +59,35 @@ class ArcticonsIconPackRepositoryTest {
     }
 
     @Test
-    fun getIcon_cachesMissesWithoutRepeatedLookups() = runBlocking {
+    fun getIcon_unmappedApp_usesArcticonsOutlinedCirclePlaceholder() = runBlocking {
+        val placeholder = ColorDrawable(Color.WHITE)
+        repository.seedLoadedPackForTest(
+                packageName = "com.donnnno.arcticons",
+                componentToDrawable = emptyMap(),
+                drawableByName =
+                        mapOf(ArcticonsIconPackRepository.PLACEHOLDER_DRAWABLE_NAME to placeholder),
+        )
+        repository.resetCountersForTest()
+
+        val app =
+                AppInfo(
+                        packageName = "com.missing.app",
+                        label = "Missing",
+                        icon = null,
+                        componentName = ComponentName("com.missing.app", "com.missing.app.Main"),
+                )
+
+        val first = repository.getIcon(app)
+        val second = repository.getIcon(app)
+
+        assertNotNull(first)
+        assertNotNull(second)
+        assertEquals(0, repository.appfilterParseCountForTest())
+        assertEquals(0, repository.drawableDecodeCountForTest())
+    }
+
+    @Test
+    fun getIcon_returnsNullWhenPlaceholderAlsoMissing() = runBlocking {
         repository.seedLoadedPackForTest(
                 packageName = "com.donnnno.arcticons",
                 componentToDrawable = emptyMap(),
@@ -145,5 +173,10 @@ class ArcticonsIconPackRepositoryTest {
 
         // After invalidate with no installed Arcticons package, icons resolve to null.
         assertNull(repository.getIcon(app))
+    }
+
+    @Test
+    fun placeholderDrawableName_isArcticonsOutlinedCircle() {
+        assertEquals("circle", ArcticonsIconPackRepository.PLACEHOLDER_DRAWABLE_NAME)
     }
 }

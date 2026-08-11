@@ -44,9 +44,13 @@ constructor(@param:ApplicationContext private val context: Context) {
     /** appListStableKey → resolved component (or [COMPONENT_MISS] sentinel). */
     private val componentCache = ConcurrentHashMap<String, ComponentName>()
 
-    /** appListStableKey → drawable ConstantState, or absent after confirmed miss. */
+    /** appListStableKey → drawable ConstantState (mapped icon or pack placeholder). */
     private val iconConstantStateCache = ConcurrentHashMap<String, Drawable.ConstantState>()
+    /** Apps that cannot resolve even the pack placeholder (pack missing / placeholder missing). */
     private val iconMissCache = ConcurrentHashMap.newKeySet<String>()
+
+    /** Cached Arcticons outlined-circle placeholder ConstantState for the current pack. */
+    private val cachedPlaceholderConstantState = AtomicReference<Drawable.ConstantState?>(null)
 
     private val appfilterParseCount = AtomicInteger(0)
     private val drawableDecodeCount = AtomicInteger(0)
@@ -100,25 +104,23 @@ constructor(@param:ApplicationContext private val context: Context) {
                 }
 
                 val component = resolveComponentNameCached(app, appKey)
-                if (component == null) {
-                    iconMissCache.add(appKey)
-                    return@withContext null
-                }
-
-                val componentKey =
-                        ArcticonsAppfilterParser.componentKey(
-                                component.packageName,
-                                component.className,
-                        )
                 val drawableName =
-                        pack.componentToDrawable[componentKey]
-                                ?: pack.packageToDrawable[component.packageName]
-                if (drawableName == null) {
-                    iconMissCache.add(appKey)
-                    return@withContext null
-                }
+                        if (component != null) {
+                            val componentKey =
+                                    ArcticonsAppfilterParser.componentKey(
+                                            component.packageName,
+                                            component.className,
+                                    )
+                            pack.componentToDrawable[componentKey]
+                                    ?: pack.packageToDrawable[component.packageName]
+                        } else {
+                            null
+                        }
 
-                val constantState = pack.constantStateFor(drawableName)
+                val mappedState =
+                        if (drawableName != null) pack.constantStateFor(drawableName) else null
+                // Unmapped / decode-failed apps use Arcticons' outlined circle drawable.
+                val constantState = mappedState ?: resolvePlaceholderConstantState(pack)
                 if (constantState == null) {
                     iconMissCache.add(appKey)
                     return@withContext null
@@ -126,6 +128,17 @@ constructor(@param:ApplicationContext private val context: Context) {
                 iconConstantStateCache[appKey] = constantState
                 constantState.newDrawable().mutate()
             }
+
+    /**
+     * Arcticons ships [PLACEHOLDER_DRAWABLE_NAME] as a stroke-only outlined circle (also referenced
+     * from appfilter for a few apps). Used when an installed app has no pack mapping.
+     */
+    private fun resolvePlaceholderConstantState(pack: LoadedPack): Drawable.ConstantState? {
+        cachedPlaceholderConstantState.get()?.let { return it }
+        val resolved = pack.constantStateFor(PLACEHOLDER_DRAWABLE_NAME) ?: return null
+        cachedPlaceholderConstantState.compareAndSet(null, resolved)
+        return cachedPlaceholderConstantState.get() ?: resolved
+    }
 
     private suspend fun ensureLoaded(): LoadedPack? {
         loadedPack.get()?.let { return it }
@@ -242,6 +255,7 @@ constructor(@param:ApplicationContext private val context: Context) {
         componentCache.clear()
         iconConstantStateCache.clear()
         iconMissCache.clear()
+        cachedPlaceholderConstantState.set(null)
     }
 
     private fun clearCachesLocked() {
@@ -304,6 +318,12 @@ constructor(@param:ApplicationContext private val context: Context) {
 
     companion object {
         private const val TAG = "ArcticonsIconPack"
+
+        /**
+         * Verified in Arcticons APK resources (`com.donnnno.arcticons:drawable/circle`): a 48×48
+         * stroke-only circle (`fill:none`, `r=21.5`). Source: `icons/white/circle.svg`.
+         */
+        internal const val PLACEHOLDER_DRAWABLE_NAME = "circle"
 
         /** Sentinel stored in [componentCache] when resolution failed. */
         private val COMPONENT_MISS = ComponentName("\u0000.miss", "\u0000.miss")
