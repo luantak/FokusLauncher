@@ -52,6 +52,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -842,5 +843,27 @@ class HomeViewModelTest {
 
         verify { LockScreenHelper.lockScreenIfPossible() }
         unmockkObject(LockScreenHelper)
+    }
+
+    @Test
+    fun `dismissHomeOverlays closes home screen long-press menu`() {
+        val viewModel = createViewModel()
+        viewModel.onHomeScreenLongPress()
+        assertTrue(viewModel.showHomeScreenMenu.value)
+
+        viewModel.dismissHomeOverlays()
+
+        assertFalse(viewModel.showHomeScreenMenu.value)
+    }
+
+    @Test
+    fun `dismissHomeOverlays closes app menu`() {
+        val viewModel = createViewModel()
+        viewModel.onFavoriteLongPress(testFavorites.first())
+        assertEquals(testFavorites.first(), viewModel.appMenuTarget.value)
+
+        viewModel.dismissHomeOverlays()
+
+        assertNull(viewModel.appMenuTarget.value)
     }
 }
