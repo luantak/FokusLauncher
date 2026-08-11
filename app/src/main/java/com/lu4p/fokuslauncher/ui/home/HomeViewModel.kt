@@ -563,6 +563,12 @@ class HomeViewModel @Inject constructor(
         _showHomeScreenMenu.value = false
     }
 
+    /** Dismiss home long-press sheets when the system home button is pressed. */
+    fun dismissHomeOverlays() {
+        dismissHomeScreenMenu()
+        dismissAppMenu()
+    }
+
     // ── Edit flows ──────────────────────────────────────────────────
 
     fun startEditingHomeApps() = startEditingHome(includeShortcutActions = false)

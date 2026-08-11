@@ -290,6 +290,13 @@ fun FokusNavGraph(
                 val homeViewModel: HomeViewModel = hiltViewModel()
                 val lifecycleOwner = LocalLifecycleOwner.current
 
+                // Home / middle nav button: dismiss empty-space long-press menu (and app menu).
+                LaunchedEffect(launcherHomeCoordinator, homeViewModel) {
+                    launcherHomeCoordinator.goHomeRequests.collect {
+                        homeViewModel.dismissHomeOverlays()
+                    }
+                }
+
                 val swipeLeftTarget by homeViewModel.swipeLeftTarget.collectAsStateWithLifecycle()
                 val swipeRightTarget by homeViewModel.swipeRightTarget.collectAsStateWithLifecycle()
                 val systemAnimationsEnabled = rememberSystemAnimationsEnabled()
