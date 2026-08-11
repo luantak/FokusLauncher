@@ -355,4 +355,6 @@
     <string name="media_unsave">Hapus dari pustaka</string>
     <string name="media_previous_track">Trek sebelumnya</string>
     <string name="settings_show_home_screen_time">Tampilkan waktu layar</string>
+    <string name="edit_home_section_all_apps" translatable="false"></string>
+    <string name="app_name" translatable="false"></string>
 </resources>
