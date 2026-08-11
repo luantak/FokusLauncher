@@ -296,6 +296,14 @@ class HomeViewModel @Inject constructor(
     private val _editRightShortcuts = MutableStateFlow<List<HomeShortcut>>(emptyList())
     val editRightShortcuts: StateFlow<List<HomeShortcut>> = _editRightShortcuts.asStateFlow()
 
+    /**
+     * Edit screens call [startEditingShortcuts] / [startEditingHomeApps] from `remember`, which
+     * re-runs when returning from a child route (e.g. icon picker). Keep a session flag so we do
+     * not clobber in-progress edits by reloading from persisted preferences.
+     */
+    private var isEditingRightShortcuts = false
+    private var isEditingHomeApps = false
+
     // ── Swipe gestures ──────────────────────────────────────────────
 
     val swipeLeftTarget: StateFlow<ShortcutTarget?> =
@@ -581,8 +589,12 @@ class HomeViewModel @Inject constructor(
     private fun startEditingHome(includeShortcutActions: Boolean) {
         dismissAppMenu()
         if (includeShortcutActions) {
-            _editRightShortcuts.value = rightSideShortcuts.value
-        } else {
+            if (!isEditingRightShortcuts) {
+                isEditingRightShortcuts = true
+                _editRightShortcuts.value = rightSideShortcuts.value
+            }
+        } else if (!isEditingHomeApps) {
+            isEditingHomeApps = true
             _editFavorites.value = favorites.value
         }
         viewModelScope.launch(Dispatchers.IO) {
@@ -639,6 +651,7 @@ class HomeViewModel @Inject constructor(
     }
 
     fun saveEditedFavorites() {
+        isEditingHomeApps = false
         viewModelScope.launch {
             preferencesManager.setFavorites(_editFavorites.value)
         }
@@ -672,6 +685,7 @@ class HomeViewModel @Inject constructor(
     }
 
     fun saveEditedRightShortcuts() {
+        isEditingRightShortcuts = false
         viewModelScope.launch {
             preferencesManager.setRightSideShortcuts(_editRightShortcuts.value)
         }

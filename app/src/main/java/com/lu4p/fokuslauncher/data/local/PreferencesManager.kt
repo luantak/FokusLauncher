@@ -1068,11 +1068,23 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
     private fun parseRightSideShortcuts(raw: String): List<HomeShortcut> {
         if (raw.isBlank() || raw == RIGHT_SIDE_SHORTCUTS_EMPTY_MARKER) return emptyList()
         return raw.split("|").mapNotNull { entry ->
-            val parts = entry.split(";")
-            if (parts.size < 2) return@mapNotNull null
-            val iconName = parts[0].ifBlank { "circle" }
-            val target = ShortcutTarget.decode(parts[1]) ?: return@mapNotNull null
-            val profileKey = parts.getOrElse(2) { "0" }.ifBlank { "0" }
+            // Targets (especially intent URIs) may contain ';', so only treat the first and last
+            // semicolons as field separators: iconName ; target ; profileKey
+            val firstSemi = entry.indexOf(';')
+            if (firstSemi < 0) return@mapNotNull null
+            val lastSemi = entry.lastIndexOf(';')
+            val iconName = entry.substring(0, firstSemi).ifBlank { "circle" }
+            val targetRaw: String
+            val profileKey: String
+            if (lastSemi == firstSemi) {
+                targetRaw = entry.substring(firstSemi + 1)
+                profileKey = "0"
+            } else {
+                targetRaw = entry.substring(firstSemi + 1, lastSemi)
+                profileKey = entry.substring(lastSemi + 1).ifBlank { "0" }
+            }
+            if (targetRaw.isBlank()) return@mapNotNull null
+            val target = ShortcutTarget.decode(targetRaw) ?: return@mapNotNull null
             HomeShortcut(iconName = iconName, target = target, profileKey = profileKey)
         }
     }

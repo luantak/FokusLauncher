@@ -17,6 +17,7 @@ import com.lu4p.fokuslauncher.data.local.HomeWidgetVisibility
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.model.AppInfo
+import com.lu4p.fokuslauncher.data.model.AppShortcutAction
 import com.lu4p.fokuslauncher.data.model.HomeDateFormatStyle
 import com.lu4p.fokuslauncher.data.model.LauncherFontScale
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
@@ -829,6 +830,85 @@ class HomeViewModelTest {
         viewModel.launchShortcut(HomeShortcut(target = ShortcutTarget.App("com.lu4p.music")))
 
         verify { appRepository.launchApp("com.lu4p.music") }
+    }
+
+    @Test
+    fun `startEditingShortcuts does not reset in-progress edits when re-entered`() {
+        every { preferencesManager.rightSideShortcutsFlow } returns
+                flowOf(
+                        listOf(
+                                HomeShortcut(
+                                        iconName = "call",
+                                        target = ShortcutTarget.PhoneDial,
+                                )
+                        )
+                )
+
+        val viewModel = createViewModel()
+        val collectJob =
+                CoroutineScope(testDispatcher).launch { viewModel.rightSideShortcuts.collect { } }
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.startEditingShortcuts()
+        viewModel.toggleRightShortcut(
+                AppShortcutAction(
+                        appLabel = "Music",
+                        actionLabel = AppShortcutAction.OPEN_APP_LABEL,
+                        target = ShortcutTarget.App("com.lu4p.music"),
+                )
+        )
+        viewModel.updateShortcutIcon(1, "music")
+
+        // Simulates returning from the icon picker, which re-runs startEditingShortcuts via remember.
+        viewModel.startEditingShortcuts()
+
+        assertEquals(2, viewModel.editRightShortcuts.value.size)
+        assertEquals("music", viewModel.editRightShortcuts.value[1].iconName)
+        assertEquals(
+                ShortcutTarget.App("com.lu4p.music"),
+                viewModel.editRightShortcuts.value[1].target,
+        )
+        collectJob.cancel()
+    }
+
+    @Test
+    fun `saveEditedRightShortcuts persists icons and allows a fresh edit session`() {
+        every { preferencesManager.rightSideShortcutsFlow } returns
+                flowOf(
+                        listOf(
+                                HomeShortcut(
+                                        iconName = "call",
+                                        target = ShortcutTarget.PhoneDial,
+                                )
+                        )
+                )
+        coEvery { preferencesManager.setRightSideShortcuts(any()) } returns Unit
+
+        val viewModel = createViewModel()
+        val collectJob =
+                CoroutineScope(testDispatcher).launch { viewModel.rightSideShortcuts.collect { } }
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.startEditingShortcuts()
+        viewModel.updateShortcutIcon(0, "phone")
+        viewModel.saveEditedRightShortcuts()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify {
+            preferencesManager.setRightSideShortcuts(
+                    listOf(
+                            HomeShortcut(
+                                    iconName = "phone",
+                                    target = ShortcutTarget.PhoneDial,
+                            )
+                    )
+            )
+        }
+
+        // After save, a new edit session should load from persisted preferences again.
+        viewModel.startEditingShortcuts()
+        assertEquals("call", viewModel.editRightShortcuts.value.single().iconName)
+        collectJob.cancel()
     }
 
     @Test
