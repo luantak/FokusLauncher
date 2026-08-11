@@ -1,0 +1,13 @@
+App shortcuts in the home screen long-press menu.
+
+Upcoming alarm under the home clock and a charging indicator on battery percentage.
+
+Optional air quality index on home weather.
+
+Settings reorganized into category screens; clearer icon picker search and selection.
+
+Fix frozen home after screen wake, quieter notification indicators, and overlay cleanup when returning home.
+
+Updated translations via Weblate. 
+
+Thanks to everyone who contributed.
