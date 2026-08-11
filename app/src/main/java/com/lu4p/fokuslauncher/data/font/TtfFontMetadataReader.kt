@@ -133,7 +133,7 @@ object TtfFontMetadataReader {
             0 -> decodeUtf16Be(bytes)
             else ->
                     decodeUtf16Be(bytes)
-                            ?: String(bytes, Charsets.US_ASCII).trim { it <= ' ' || it == '\u0000' }
+                            ?: String(bytes, Charsets.US_ASCII).trim { it <= ' ' }
                                     .takeIf { it.isNotEmpty() }
         }
     }
@@ -146,12 +146,13 @@ object TtfFontMetadataReader {
             val lo = bytes[i * 2 + 1].toInt() and 0xFF
             chars[i] = ((hi shl 8) or lo).toChar()
         }
-        return String(chars).trim { it <= ' ' || it == '\u0000' }.takeIf { it.isNotEmpty() }
+        // '\u0000' is already covered by `it <= ' '`.
+        return String(chars).trim { it <= ' ' }.takeIf { it.isNotEmpty() }
     }
 
     private fun decodeMacRoman(bytes: ByteArray): String {
         val charset = Charset.forName("US-ASCII")
-        return String(bytes, charset).trim { it <= ' ' || it == '\u0000' }
+        return String(bytes, charset).trim { it <= ' ' }
     }
 
     private data class NameRecord(

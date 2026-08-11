@@ -22,9 +22,6 @@ object FokusBackdrop {
     const val WINDOW_DIM_AMOUNT_WITH_BLUR = OVERLAY_STRENGTH_WITH_BLUR * WINDOW_DIM_SCALE_WITH_BLUR
     const val WINDOW_DIM_AMOUNT_WITHOUT_BLUR = OVERLAY_STRENGTH_WITHOUT_BLUR * WINDOW_DIM_SCALE_WITHOUT_BLUR
 
-    fun scrimColor(blurEnabled: Boolean): Color =
-        if (blurEnabled) ScrimColorWithBlur else ScrimColorWithoutBlur
-
     /**
      * @param intensityMultiplier User preference, 1x = default; only values above 1 add dimming.
      *     Clamped using [PhotoWallpaperDrawerOverlayIntensity] bounds so alpha stays in range.

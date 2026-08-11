@@ -20,7 +20,6 @@ import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.model.HOST_APP_METADATA_SENTINEL
 import com.lu4p.fokuslauncher.data.model.favoriteAppStableKey
-import com.lu4p.fokuslauncher.data.model.appProfileKey
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.data.repository.RemovedApp
 import com.lu4p.fokuslauncher.notification.NotificationIndicatorRepository

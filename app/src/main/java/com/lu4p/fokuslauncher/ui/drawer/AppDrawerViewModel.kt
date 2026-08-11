@@ -39,7 +39,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Named
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -922,16 +921,6 @@ constructor(
                 optimisticallyRemovedKeys.add(drawerOpenCountKey(packageName, profileKey))
             }
             val stateSnapshot = _uiState.value
-            val removedSnapshot =
-                    synchronized(optimisticallyRemovedKeys) { optimisticallyRemovedKeys.toSet() }
-            val metadata =
-                    DrawerMetadataSnapshot(
-                            latestHiddenApps,
-                            latestRenamedApps,
-                            latestCategoryEntities,
-                            latestDefinedCategories,
-                            latestSuppressedCategories,
-                    )
             val visible =
                     stateSnapshot.allApps.filterNot {
                         it.packageName == packageName && appProfileKey(it.userHandle) == profileKey

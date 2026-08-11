@@ -1,5 +1,6 @@
 package com.lu4p.fokuslauncher.pomodoro
 
+import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -69,6 +70,7 @@ constructor(
     }
 
     /** @return true when a completion notification was posted. */
+    @SuppressLint("MissingPermission") // Gated by [canPostNotifications] above.
     private fun showNotification(mode: PomodoroMode): Boolean {
         if (!canPostNotifications(context)) return false
 
@@ -125,7 +127,6 @@ constructor(
     }
 
     private fun ensureChannel() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
         val existing = manager.getNotificationChannel(CHANNEL_ID)
         if (existing != null) return

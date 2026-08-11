@@ -146,19 +146,6 @@ data class CountdownLocalParts(
         get() = localDatePartsToEpochDay(year, monthZeroBased, dayOfMonth)
 }
 
-fun localEpochDay(
-        nowMillis: Long = System.currentTimeMillis(),
-        timeZone: TimeZone = TimeZone.getDefault(),
-): Long {
-    val cal = Calendar.getInstance(timeZone)
-    cal.timeInMillis = nowMillis
-    return localDatePartsToEpochDay(
-            cal.get(Calendar.YEAR),
-            cal.get(Calendar.MONTH),
-            cal.get(Calendar.DAY_OF_MONTH),
-    )
-}
-
 fun localDatePartsToEpochDay(year: Int, monthZeroBased: Int, dayOfMonth: Int): Long {
     val cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
     cal.clear()

@@ -1,11 +1,13 @@
 package com.lu4p.fokuslauncher.ui.widgets
 
 import android.appwidget.AppWidgetHostView
+import android.os.Build
 import android.os.Bundle
 import android.util.SizeF
 import android.view.Gravity
 import android.widget.FrameLayout
 import android.widget.TextView
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Box
@@ -228,8 +230,18 @@ private fun EditBarIconButton(
     )
 }
 
+@Suppress("DEPRECATION")
 private fun applyWidgetSize(view: android.view.View, widthDp: Int, heightDp: Int) {
     if (view !is AppWidgetHostView || widthDp <= 0 || heightDp <= 0) return
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        applyWidgetSizeApi31(view, widthDp, heightDp)
+    } else {
+        view.updateAppWidgetSize(Bundle(), widthDp, heightDp, widthDp, heightDp)
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.S)
+private fun applyWidgetSizeApi31(view: AppWidgetHostView, widthDp: Int, heightDp: Int) {
     view.updateAppWidgetSize(
             Bundle(),
             listOf(SizeF(widthDp.toFloat(), heightDp.toFloat())),
@@ -275,7 +287,6 @@ private fun Modifier.observeLongPress(
                                         break
                                     }
                                 }
-                                Unit
                             }
                     if (completedBeforeTimeout == null && !cancelled) {
                         onLongPress()

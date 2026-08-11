@@ -13,7 +13,6 @@ import android.os.Process
 import android.os.UserHandle
 import android.provider.AlarmClock
 import android.provider.CalendarContract
-import android.provider.Settings
 import android.text.format.DateFormat
 import android.widget.Toast
 import androidx.core.net.toUri
@@ -87,7 +86,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -1359,28 +1357,6 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    /** Resolves ordered extras into visible chips for the home row. */
-    fun resolveHomeExtraChips(
-            entries: List<HomeExtraWidgetEntry> = _homeExtraWidgets.value,
-            worldClock: HomeWorldClockUiState = _worldClockUiState.value,
-            countdown: HomeCountdownUiState = _countdownUiState.value,
-    ): List<HomeExtraChipUi> {
-        return entries.mapNotNull { entry ->
-            when (entry) {
-                is HomeExtraWidgetEntry.WorldClock ->
-                        worldClock.citiesById[entry.cityId]?.let { HomeExtraChipUi.WorldClock(it) }
-                is HomeExtraWidgetEntry.Countdown ->
-                        countdown.eventsById[entry.eventId]?.let { event ->
-                            if (event.title.isNotBlank() && event.remainingText.isNotBlank()) {
-                                HomeExtraChipUi.Countdown(event.title, event.remainingText)
-                            } else {
-                                null
-                            }
-                        }
-            }
-        }
-    }
-
     private fun observeCategoryOptions() {
         observeFlow(
                 combine(
@@ -1771,8 +1747,6 @@ class HomeViewModel @Inject constructor(
         val user = appRepository.getUserHandleForProfile(action.profileKey)
         appRepository.launchLauncherShortcut(target.packageName, target.shortcutId, user)
     }
-
-    fun getShortcutIcon(action: AppShortcutAction) = appRepository.getShortcutIcon(action)
 
     private fun isHomeCategoryPickerReserved(category: String): Boolean =
         category.equals(ReservedCategoryNames.ALL_APPS, ignoreCase = true) ||

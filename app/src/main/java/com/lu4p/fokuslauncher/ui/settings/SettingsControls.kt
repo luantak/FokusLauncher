@@ -237,7 +237,7 @@ internal fun languageAutonym(localeTag: String, allTags: List<String>): String {
     val displayLocale =
             when {
                 sameLanguageTags.size <= 1 -> locale
-                localeTag == "pt" -> Locale("pt", "PT")
+                localeTag == "pt" -> Locale.forLanguageTag("pt-PT")
                 else -> locale
             }
     val raw =
@@ -1061,8 +1061,10 @@ internal fun ShortcutTargetRow(
 
 // =====================  DIALOGS  =====================
 
-internal fun formatWidgetAppEmptyLabel(context: Context, resources: Resources): String =
-        resources.getString(R.string.settings_weather_app_system_default)
+internal fun formatWidgetAppEmptyLabel(
+        _context: Context,
+        resources: Resources,
+): String = resources.getString(R.string.settings_weather_app_system_default)
 
 internal fun formatWeatherAppEmptyLabel(context: Context, resources: Resources): String {
     val hasSystemWeatherApp =

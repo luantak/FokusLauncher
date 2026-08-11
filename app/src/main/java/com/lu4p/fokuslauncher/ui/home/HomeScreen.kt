@@ -586,7 +586,6 @@ private fun HomeWidgetsSection(
         }
     // A bit of air under the date line so extras don't sit flush against it.
     val extrasTopPad = if (showDateOrBattery) 8.dp else belowHeaderTopPad
-    var nextTopPad = belowHeaderTopPad
 
     val extraChips =
         remember(homeExtraWidgets, worldClockUiState, countdownUiState) {
@@ -612,16 +611,17 @@ private fun HomeWidgetsSection(
                 }
             }
         }
-    if (extraChips.isNotEmpty()) {
-        HomeExtraChipsRow(
-            chips = extraChips,
-            outlined = outlined,
-            modifier = Modifier.fillMaxWidth().padding(top = extrasTopPad),
-        )
-        nextTopPad = 8.dp
-    } else {
-        nextTopPad = belowHeaderTopPad
-    }
+    val nextTopPad =
+        if (extraChips.isNotEmpty()) {
+            HomeExtraChipsRow(
+                chips = extraChips,
+                outlined = outlined,
+                modifier = Modifier.fillMaxWidth().padding(top = extrasTopPad),
+            )
+            8.dp
+        } else {
+            belowHeaderTopPad
+        }
 
     when {
         pomodoroUiState.showWidget -> {

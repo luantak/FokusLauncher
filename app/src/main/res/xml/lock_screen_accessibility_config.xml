@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:accessibilityEventTypes="typeWindowStateChanged"
     android:accessibilityFeedbackType="feedbackGeneric"
     android:accessibilityFlags="flagDefault"
@@ -7,4 +8,5 @@
     android:description="@string/accessibility_lock_service_description"
     android:isAccessibilityTool="false"
     android:notificationTimeout="100"
-    android:packageNames="io.github.luantak.fokuslauncher" />
+    android:packageNames="io.github.luantak.fokuslauncher"
+    tools:ignore="UnusedAttribute" />

@@ -1,11 +1,11 @@
 package com.lu4p.fokuslauncher.pomodoro
 
+import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.lu4p.fokuslauncher.MainActivity
@@ -21,6 +21,7 @@ class PomodoroActiveNotifier
 @Inject
 constructor(@param:ApplicationContext private val context: Context) {
 
+    @SuppressLint("MissingPermission") // Gated by [PomodoroCompletionAlerter.canPostNotifications].
     fun showRunning(mode: PomodoroMode, endsAtEpochMs: Long) {
         if (!PomodoroCompletionAlerter.canPostNotifications(context)) return
         ensureChannel()
@@ -77,7 +78,6 @@ constructor(@param:ApplicationContext private val context: Context) {
     }
 
     private fun ensureChannel() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
         // New id so devices that created the old LOW/silent channel pick up lock-screen visibility.
         if (manager.getNotificationChannel(CHANNEL_ID) != null) return

@@ -2,6 +2,7 @@ package com.lu4p.fokuslauncher.utils
 
 import android.app.Activity
 import android.content.Intent
+import android.os.Build
 import android.os.SystemClock
 import android.util.Log
 import android.view.Display
@@ -51,7 +52,9 @@ object FrozenRendererRecovery {
     }
 
     fun isDisplayVisiblyOn(displayState: Int): Boolean =
-            displayState == Display.STATE_ON || displayState == Display.STATE_ON_SUSPEND
+            displayState == Display.STATE_ON ||
+                    (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
+                            displayState == Display.STATE_ON_SUSPEND)
 
     /**
      * Reads `ViewRootImpl.mAttachInfo.mDisplayState` via reflection.
@@ -78,7 +81,7 @@ object FrozenRendererRecovery {
 
     fun actualDisplayState(activity: Activity): Int {
         val display =
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     activity.display
                 } else {
                     @Suppress("DEPRECATION")

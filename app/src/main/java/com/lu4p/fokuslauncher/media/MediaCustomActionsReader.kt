@@ -91,13 +91,14 @@ object MediaCustomActionsReader {
             ) {
                 continue
             }
+            @Suppress("DEPRECATION")
             when (val value = extras.get(key)) {
                 is Boolean ->
                         return if (normalizedKey in INACTIVE_EXTRA_KEYS) !value else value
                 is Int ->
-                        return when {
-                            value == 1 -> normalizedKey !in INACTIVE_EXTRA_KEYS
-                            value == 0 -> false
+                        return when (value) {
+                            1 -> normalizedKey !in INACTIVE_EXTRA_KEYS
+                            0 -> false
                             else -> null
                         }
                 is String -> {

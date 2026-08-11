@@ -1,7 +1,6 @@
 package com.lu4p.fokuslauncher.data.model
 
 import android.icu.text.TimeZoneNames
-import android.os.Build
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Locale
@@ -167,13 +166,9 @@ fun ianaLeafLabel(timeZoneId: String): String {
 }
 
 private fun timeZoneNamesOrNull(locale: Locale): TimeZoneNames? =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            try {
-                TimeZoneNames.getInstance(locale)
-            } catch (_: Exception) {
-                null
-            }
-        } else {
+        try {
+            TimeZoneNames.getInstance(locale)
+        } catch (_: Exception) {
             null
         }
 

@@ -101,14 +101,6 @@ constructor(
         _uiState.value = _uiState.value.copy(showProviderPicker = false)
     }
 
-    fun enterManageMode() {
-        _uiState.value =
-                _uiState.value.copy(
-                        showActionSheet = false,
-                        manageMode = true,
-                )
-    }
-
     fun editWidgets() {
         _uiState.value =
                 _uiState.value.copy(

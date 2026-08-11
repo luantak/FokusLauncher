@@ -12,7 +12,7 @@ object LauncherFontPreferences {
     const val CUSTOM_FONT_ACTIVE_FILE: String = "active.ttf"
 
     /** Stored preference value after a successful TTF import. */
-    val CUSTOM_FONT_STORAGE: String = CUSTOM_FONT_PREFIX + CUSTOM_FONT_ACTIVE_FILE
+    const val CUSTOM_FONT_STORAGE: String = CUSTOM_FONT_PREFIX + CUSTOM_FONT_ACTIVE_FILE
 
     fun isCustomFont(storageValue: String?): Boolean =
             storageValue?.startsWith(CUSTOM_FONT_PREFIX) == true

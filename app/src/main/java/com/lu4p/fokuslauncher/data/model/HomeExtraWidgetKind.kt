@@ -161,11 +161,5 @@ fun moveHomeExtraWidget(
     return mutable
 }
 
-fun homeExtraHasCountdown(entries: List<HomeExtraWidgetEntry>): Boolean =
-        entries.any { it is HomeExtraWidgetEntry.Countdown }
-
 fun homeExtraWorldClockCount(entries: List<HomeExtraWidgetEntry>): Int =
         entries.count { it is HomeExtraWidgetEntry.WorldClock }
-
-fun homeExtraCityIds(entries: List<HomeExtraWidgetEntry>): List<String> =
-        entries.mapNotNull { (it as? HomeExtraWidgetEntry.WorldClock)?.cityId }

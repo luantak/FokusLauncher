@@ -22,3 +22,4 @@ signing/play-upload-key-encrypted.zip
 .kotlin
 /app/release
 AGENTS.md
+/report

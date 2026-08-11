@@ -22,7 +22,6 @@ import com.lu4p.fokuslauncher.data.model.HomeExtraWidgetEntry
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.NotificationIndicatorColorPreset
 import com.lu4p.fokuslauncher.data.model.NotificationIndicatorStyle
-import com.lu4p.fokuslauncher.data.model.PomodoroConfig
 import com.lu4p.fokuslauncher.data.model.TemperatureUnit
 import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import com.lu4p.fokuslauncher.data.model.WORLD_CLOCK_LABEL_MAX_LENGTH
@@ -1081,9 +1080,6 @@ constructor(
     fun removeHomeExtraWidget(entry: HomeExtraWidgetEntry) =
             launchPreferences { removeHomeExtraWidget(entry) }
 
-    fun reorderHomeExtraWidget(from: Int, to: Int) =
-            launchPreferences { reorderHomeExtraWidget(from, to) }
-
     fun setHomeExtraWidgets(entries: List<HomeExtraWidgetEntry>) =
             launchPreferences { setHomeExtraWidgets(entries) }
 
@@ -1158,9 +1154,6 @@ constructor(
         if (!MinimalIcons.all.containsKey(iconName)) return
         viewModelScope.launch { preferencesManager.setDrawerCategoryIcon(category, iconName) }
     }
-
-    fun clearCategoryDrawerIcon(category: String) =
-            launchPreferences { clearDrawerCategoryIcon(category) }
 
     fun setDrawerAppSortMode(mode: DrawerAppSortMode) {
         viewModelScope.launch {

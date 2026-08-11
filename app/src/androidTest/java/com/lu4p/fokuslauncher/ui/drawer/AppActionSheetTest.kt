@@ -16,7 +16,6 @@ class AppActionSheetTest {
 
     @Test
     fun pwaShortcut_showsRemoveShortcut_notUninstall() {
-        var removedShortcut: AppInfo? = null
         val pwa =
                 AppInfo(
                         packageName = "org.mozilla.firefox",
@@ -37,7 +36,7 @@ class AppActionSheetTest {
                         onHide = {},
                         onAppInfo = {},
                         onUninstall = {},
-                        onRemoveShortcut = { removedShortcut = it },
+                        onRemoveShortcut = {},
                 )
             }
         }

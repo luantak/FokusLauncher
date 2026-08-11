@@ -159,11 +159,9 @@ fun HomeAppMenuSheet(
 
         val actions: List<Triple<Int, ImageVector, () -> Unit>> =
             listOf(
-                Triple(
-                    R.string.action_set_category,
-                    Icons.Default.Category,
-                    { showingCategoryPicker = true },
-                ),
+                Triple(R.string.action_set_category, Icons.Default.Category) {
+                    showingCategoryPicker = true
+                },
                 Triple(
                     R.string.action_remove_from_home,
                     Icons.Default.Close,

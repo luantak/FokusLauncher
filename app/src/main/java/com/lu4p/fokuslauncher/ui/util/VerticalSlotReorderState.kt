@@ -19,12 +19,6 @@ class VerticalSlotReorderState internal constructor(
         private val dragOffsetState: MutableFloatState,
         val itemHeightPx: Float,
 ) {
-    val draggedIndex: Int
-        get() = draggedIndexState.intValue
-
-    val dragOffset: Float
-        get() = dragOffsetState.floatValue
-
     fun translationYForIndex(index: Int): Float {
         val d = draggedIndexState.intValue
         val off = dragOffsetState.floatValue
@@ -39,7 +33,7 @@ class VerticalSlotReorderState internal constructor(
     fun onVerticalDrag(amount: Float, lastIndex: Int, onReorder: (from: Int, to: Int) -> Unit) {
         val d = draggedIndexState.intValue
         if (d !in 0..lastIndex) return
-        var off = dragOffsetState.floatValue + amount
+        val off = dragOffsetState.floatValue + amount
         val (newOff, newIdx) =
                 applyVerticalSlotReorder(
                         itemHeightPx,

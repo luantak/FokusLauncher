@@ -319,11 +319,3 @@ fun CountdownEditDialog(
         )
     }
 }
-
-fun defaultCountdownTargetMillis(): Long {
-    val cal = Calendar.getInstance()
-    cal.add(Calendar.DAY_OF_YEAR, 7)
-    cal.set(Calendar.SECOND, 0)
-    cal.set(Calendar.MILLISECOND, 0)
-    return cal.timeInMillis
-}

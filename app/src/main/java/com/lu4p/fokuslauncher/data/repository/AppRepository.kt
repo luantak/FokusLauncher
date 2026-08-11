@@ -29,7 +29,6 @@ import com.lu4p.fokuslauncher.data.database.entity.AppCategoryDefinitionEntity
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryEntity
 import com.lu4p.fokuslauncher.data.database.entity.HiddenAppEntity
 import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
-import com.lu4p.fokuslauncher.data.database.entity.SuppressedCategoryDefinitionEntity
 import com.lu4p.fokuslauncher.data.model.AddCategoryResult
 import com.lu4p.fokuslauncher.data.model.reservedCategoryAddFailure
 import com.lu4p.fokuslauncher.data.model.AppInfo
@@ -1449,13 +1448,11 @@ constructor(
         val owner = Process.myUserHandle()
         val inOwner = launcherApps.getActivityList(packageName, owner).isNotEmpty()
         val privateProfile = privateSpaceManager.getPrivateSpaceProfile()
-        val inPrivate =
-                privateProfile != null &&
-                        launcherApps.getActivityList(packageName, privateProfile).isNotEmpty()
-        return when {
-            inPrivate && !inOwner && privateProfile != null -> appProfileKey(privateProfile)
-            else -> "0"
+        if (privateProfile != null) {
+            val inPrivate = launcherApps.getActivityList(packageName, privateProfile).isNotEmpty()
+            if (inPrivate && !inOwner) return appProfileKey(privateProfile)
         }
+        return "0"
     }
 
     private fun extractUserHandle(intent: Intent): UserHandle? {

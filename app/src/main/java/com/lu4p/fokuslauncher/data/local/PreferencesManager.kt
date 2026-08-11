@@ -9,7 +9,6 @@ import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.model.drawerOpenCountKey
@@ -40,8 +39,6 @@ import com.lu4p.fokuslauncher.data.model.LauncherVisualStyle
 import com.lu4p.fokuslauncher.data.model.DotSearchTargetMode
 import com.lu4p.fokuslauncher.data.model.DotSearchTargetPreference
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
-import com.lu4p.fokuslauncher.data.model.homeExtraHasCountdown
-import com.lu4p.fokuslauncher.data.model.homeExtraWorldClockCount
 import com.lu4p.fokuslauncher.data.model.idleRuntimeFor
 import com.lu4p.fokuslauncher.data.model.moveHomeExtraWidget
 import com.lu4p.fokuslauncher.data.model.normalizeCountdownEvents
@@ -507,12 +504,6 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         setPref(POMODORO_RUNTIME_KEY, serializePomodoroRuntime(state))
     }
 
-    suspend fun resetPomodoroRuntimeToIdle(mode: PomodoroMode? = null) {
-        val config = getPomodoroConfig()
-        val current = getPomodoroRuntime()
-        setPomodoroRuntime(idleRuntimeFor(config, mode ?: current.mode))
-    }
-
     val showHomeScreenTimeFlow: Flow<Boolean> = prefFlow(SHOW_HOME_SCREEN_TIME_KEY, false)
     suspend fun setShowHomeScreenTime(show: Boolean) = setPref(SHOW_HOME_SCREEN_TIME_KEY, show)
 
@@ -646,12 +637,6 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
             else prefs[HOME_EXTRA_WIDGETS_KEY] = serializeHomeExtraWidgets(moved)
         }
     }
-
-    val showHomeWorldClockFlow: Flow<Boolean> =
-            homeExtraWidgetsFlow.map { homeExtraWorldClockCount(it) > 0 }
-
-    val showHomeCountdownFlow: Flow<Boolean> =
-            homeExtraWidgetsFlow.map { homeExtraHasCountdown(it) }
 
     val showNotificationIndicatorsFlow: Flow<Boolean> =
             prefFlow(SHOW_NOTIFICATION_INDICATORS_KEY, false)
@@ -908,13 +893,9 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
             context.fokusLauncherPreferencesDataStore.data.map { prefs ->
                 val visualStyle =
                         LauncherVisualStyle.fromString(prefs[LAUNCHER_VISUAL_STYLE_KEY] ?: "")
-                val glowStored = prefs[LAUNCHER_GLOW_ENABLED_KEY]
                 val glowEnabled =
-                        if (glowStored != null) {
-                            glowStored == true
-                        } else {
-                            visualStyle != LauncherVisualStyle.CLASSIC
-                        }
+                        prefs[LAUNCHER_GLOW_ENABLED_KEY]
+                                ?: (visualStyle != LauncherVisualStyle.CLASSIC)
                 val usesPhotoWallpaper = prefs[HOME_USES_PHOTO_WALLPAPER_KEY] == true
                 LauncherAppearance(
                         visualStyle = visualStyle,
@@ -922,15 +903,6 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
                         usesPhotoWallpaper = usesPhotoWallpaper,
                 )
             }
-
-    val launcherVisualStyleFlow: Flow<LauncherVisualStyle> =
-            launcherAppearanceFlow.map { it.visualStyle }
-
-    /**
-     * Text/icon glow when enabled. If the key was never written, defaults to **on** for non-Classic
-     * visual styles (migration) and **off** for Classic.
-     */
-    val launcherGlowEnabledFlow: Flow<Boolean> = launcherAppearanceFlow.map { it.glowEnabled }
 
     suspend fun setLauncherVisualStyle(style: LauncherVisualStyle) {
         context.fokusLauncherPreferencesDataStore.edit { prefs ->
@@ -1129,9 +1101,9 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
                 val packageName = semiParts[1]
                 val iconName = semiParts[2]
                 val (iconPackage, profileKey) =
-                        when {
-                            semiParts.size == 3 -> "" to "0"
-                            semiParts.size == 4 -> semiParts[3] to "0"
+                        when (semiParts.size) {
+                            3 -> "" to "0"
+                            4 -> semiParts[3] to "0"
                             else ->
                                     semiParts.subList(3, semiParts.lastIndex).joinToString(";") to
                                             semiParts.last().ifBlank { "0" }

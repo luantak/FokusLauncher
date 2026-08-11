@@ -68,12 +68,12 @@ constructor(@param:ApplicationContext private val context: Context) {
     }
 
     @MainThread
-    fun onNotificationPosted(@Suppress("UNUSED_PARAMETER") sbn: StatusBarNotification) {
+    fun onNotificationPosted(_sbn: StatusBarNotification) {
         resyncFromConnectedService()
     }
 
     @MainThread
-    fun onNotificationRemoved(@Suppress("UNUSED_PARAMETER") sbn: StatusBarNotification) {
+    fun onNotificationRemoved(_sbn: StatusBarNotification) {
         resyncFromConnectedService()
     }
 

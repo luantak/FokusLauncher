@@ -164,11 +164,16 @@ class MediaRepository @Inject constructor(@param:ApplicationContext private val 
         controller.sessionActivity?.let { pending ->
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                    val startMode =
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+                                ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOW_IF_VISIBLE
+                            } else {
+                                @Suppress("DEPRECATION")
+                                ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+                            }
                     val options =
                             ActivityOptions.makeBasic()
-                                    .setPendingIntentBackgroundActivityStartMode(
-                                            ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
-                                    )
+                                    .setPendingIntentBackgroundActivityStartMode(startMode)
                                     .toBundle()
                     pending.send(context, 0, null, null, null, null, options)
                 } else {
@@ -409,9 +414,5 @@ class MediaRepository @Inject constructor(@param:ApplicationContext private val 
     companion object {
         /** Hide a session that stays paused this long, so closed apps don't leave the widget up. */
         private const val PAUSE_HIDE_DELAY_MS = 60_000L
-
-        /** First non-blank artist-like field; many players only populate display subtitle. */
-        fun artistName(metadata: android.support.v4.media.MediaMetadataCompat?): String? =
-                MediaMetadataReader.artistName(metadata)
     }
 }

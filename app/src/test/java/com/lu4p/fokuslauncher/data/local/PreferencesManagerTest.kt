@@ -143,9 +143,9 @@ class PreferencesManagerTest {
                 val packageName = semiParts[1]
                 val iconName = semiParts[2]
                 val (iconPackage, profileKey) =
-                        when {
-                            semiParts.size == 3 -> "" to "0"
-                            semiParts.size == 4 -> semiParts[3] to "0"
+                        when (semiParts.size) {
+                            3 -> "" to "0"
+                            4 -> semiParts[3] to "0"
                             else ->
                                     semiParts.subList(3, semiParts.lastIndex).joinToString(";") to
                                             semiParts.last().ifBlank { "0" }

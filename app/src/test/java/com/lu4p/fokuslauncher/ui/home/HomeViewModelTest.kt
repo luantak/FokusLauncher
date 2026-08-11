@@ -134,7 +134,14 @@ class HomeViewModelTest {
         every { preferencesManager.launcherFontScaleFlow } returns
                 flowOf(LauncherFontScale.DEFAULT)
         every { preferencesManager.homeWidgetVisibilityFlow } returns
-                flowOf(HomeWidgetVisibility(true, true, true, true))
+                flowOf(
+                        HomeWidgetVisibility(
+                                showClock = true,
+                                showDate = true,
+                                showWeather = true,
+                                showBattery = true,
+                        )
+                )
         every { preferencesManager.showHomeClockFlow } returns flowOf(true)
         every { preferencesManager.showHomeDateFlow } returns flowOf(true)
         every { preferencesManager.showHomeWeatherFlow } returns flowOf(true)
@@ -319,7 +326,7 @@ class HomeViewModelTest {
             FavoriteApp(label = "Chrome Work", packageName = "com.lu4p.chrome", profileKey = "42")
         val personalFavorite =
             FavoriteApp(label = "Chrome", packageName = "com.lu4p.chrome", profileKey = "0")
-        val favoritesFlow = kotlinx.coroutines.flow.MutableStateFlow(listOf(personalFavorite, workFavorite))
+        val favoritesFlow = MutableStateFlow(listOf(personalFavorite, workFavorite))
         every { preferencesManager.favoritesFlow } returns favoritesFlow
 
         val viewModel = createViewModel()

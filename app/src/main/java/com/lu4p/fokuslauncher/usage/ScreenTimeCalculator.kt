@@ -1,7 +1,9 @@
 package com.lu4p.fokuslauncher.usage
 
+import android.app.usage.EventStats
 import android.app.usage.UsageEvents
 import android.os.Build
+import androidx.annotation.RequiresApi
 
 /**
  * Computes screen-on duration from [UsageEvents.Event.SCREEN_INTERACTIVE] /
@@ -56,9 +58,13 @@ internal fun computeScreenOnTimeMs(
 }
 
 /** Screen-on time from aggregated event stats (API 28+). */
-internal fun screenOnTimeFromEventStats(
-        eventStats: List<android.app.usage.EventStats>?,
-): Long {
+internal fun screenOnTimeFromEventStats(eventStats: List<EventStats>?): Long {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return 0L
+    return screenOnTimeFromEventStatsApi28(eventStats)
+}
+
+@RequiresApi(Build.VERSION_CODES.P)
+private fun screenOnTimeFromEventStatsApi28(eventStats: List<EventStats>?): Long {
     if (eventStats.isNullOrEmpty()) return 0L
     return eventStats
             .asSequence()

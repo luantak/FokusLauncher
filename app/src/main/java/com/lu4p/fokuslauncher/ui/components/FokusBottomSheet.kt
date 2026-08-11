@@ -18,12 +18,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.SubcomposeLayout
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 
-private val BottomSheetScrimAlpha = 0.56f
-private val BottomSheetDragHandleAlpha = 0.5f
+private const val BottomSheetScrimAlpha = 0.56f
+private const val BottomSheetDragHandleAlpha = 0.5f
 
 /** Shared [ModalBottomSheet] chrome: surfaceVariant container + full-width column with bottom padding. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -83,7 +84,8 @@ private fun PeekExpandableSheetContent(
         peekHeightFraction: Float,
         content: @Composable ColumnScope.() -> Unit,
 ) {
-    val screenHeight = LocalConfiguration.current.screenHeightDp.dp
+    val screenHeight =
+            with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() }
     val peekHeight = screenHeight * peekHeightFraction
     val scrollState = rememberScrollState()
 

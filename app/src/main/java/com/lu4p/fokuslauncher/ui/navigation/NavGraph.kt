@@ -18,6 +18,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
@@ -297,8 +298,8 @@ fun FokusNavGraph(
             // =====================  HOME  =====================
             composable(
                 Routes.HOME,
-                exitTransition = { androidx.compose.animation.ExitTransition.KeepUntilTransitionsFinished },
-                popEnterTransition = { androidx.compose.animation.EnterTransition.None }
+                exitTransition = { ExitTransition.KeepUntilTransitionsFinished },
+                popEnterTransition = { EnterTransition.None }
             ) {
                 BackHandler(enabled = true) { /* launcher: no-op */ }
 
@@ -517,17 +518,18 @@ fun FokusNavGraph(
                             
                     ) {
                         // Preview the widget page only while animating a drag, or once settled open.
-                        if ((systemAnimationsEnabled && widgetDragSide != null) || widgetPageSide != null) {
-                            val side = widgetPageSide ?: widgetDragSide
+                        val previewSide = widgetPageSide ?: widgetDragSide
+                        if (previewSide != null &&
+                                        (widgetPageSide != null || systemAnimationsEnabled)
+                        ) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .graphicsLayer {
                                         translationX =
-                                            when (side) {
+                                            when (previewSide) {
                                                 SwipeSide.RIGHT -> displayedHorizontalOffsetPx - pageWidthPx
                                                 SwipeSide.LEFT -> displayedHorizontalOffsetPx + pageWidthPx
-                                                null -> pageWidthPx
                                             }
                                     }
                             ) {
