@@ -195,12 +195,28 @@
     <string name="settings_drawer_app_sort_alphabetical">A-Z</string>
     <string name="settings_drawer_app_sort_most_opened">Más usadas</string>
     <string name="settings_drawer_app_sort_custom">Personalizado</string>
-    <string name="settings_dot_search_title">Buscar con punto</string>
-    <string name="settings_dot_search_subtitle">Escribe `. términos` o `.&lt;letra minúscula&gt; términos` en la barra de búsqueda</string>
-    <string name="settings_dot_search_screen_title">Búsqueda con punto en el cajón de aplicaciones</string>
+    <string name="settings_dot_search_title">Buscar con punto y accesos directos</string>
+    <string name="settings_dot_search_subtitle">Escribe `. búsqueda` para buscar, `.x búsqueda`para búsqueda definida o `.x`para un acceso directo</string>
+    <string name="settings_dot_search_screen_title">Búsqueda con punto y accesos directos</string>
     <string name="settings_dot_search_explanation">En el cajón de aplicaciones, escribe un punto y un espacio, luego tus palabras de búsqueda. Para un atajo, usa un punto, una letra minúscula, un espacio y luego tu búsqueda (por ejemplo, \'.a coffee\'). La lista de aplicaciones solo incluye aplicaciones que exponen la búsqueda web o la búsqueda estándar dentro de la app para su paquete. Para otros sitios o aplicaciones, añade una URL HTTPS o una plantilla de enlace profundo y pon %1$s donde pertenece el texto de búsqueda (por ejemplo, https://example.com/search?q=%1$s).</string>
     <string name="settings_dot_search_default_label">Aplicación de búsqueda por defecto</string>
     <string name="settings_dot_search_url_template">Plantilla URL</string>
     <string name="settings_dot_search_url_template_dialog_title">Plantilla de búsqueda URL</string>
     <string name="settings_dot_search_url_template_help">Puedes usar un enlace de búsqueda HTTPS o un enlace profundo de aplicación (por ejemplo, intent://). Escribe %1$s donde deben ir las palabras de búsqueda—el lanzador las reemplaza por lo que escribes después de `. search` o `.x search`. Ejemplo: https://example.com/search?q=%1$s</string>
+    <string name="settings_profile_names_subtitle">Renombra los perfiles personal, de trabajo y otros en el cajón de aplicaciones y en la pantalla inicial</string>
+    <string name="settings_profile_names_title">Nombres de perfiles</string>
+    <string name="media_pause">Pausa</string>
+    <string name="settings_profile_names_default_label">Por defecto: %1$s</string>
+    <string name="settings_profile_names_help">Deja el campo en blanco y guarda para volver al nombre por defecto. Los nombres se aplican a los encabezados del cajón de aplicaciones, agrupaciones e insignias de los perfiles junto a favoritos.</string>
+    <string name="media_unlike">No me gusta</string>
+    <string name="settings_profile_names_field_label">Mostrar nombre</string>
+    <string name="settings_profile_names_reset">Resetear</string>
+    <string name="media_like">Me gusta</string>
+    <string name="media_save">Guardar en biblioteca</string>
+    <string name="settings_dot_search_add_shortcut_title">Añadir acceso directo</string>
+    <string name="media_buffering">Cargando</string>
+    <string name="settings_dot_search_url_template_error">Añade %1$s en el lugar de la consulta (ejemplo: https://example.com/search?q=%1$s).</string>
+    <string name="settings_profile_names_save">Guardar</string>
+    <string name="media_next_track">Siguiente pista</string>
+    <string name="media_unsave">Remover de biblioteca</string>
 </resources>
