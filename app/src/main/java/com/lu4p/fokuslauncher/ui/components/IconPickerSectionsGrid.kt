@@ -16,7 +16,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 
 enum class IconPickerGridVariant {
-    Dialog,
+    Page,
     Drawer,
 }
 
@@ -27,7 +27,7 @@ fun IconPickerSectionsLazyGrid(
         modifier: Modifier = Modifier,
         horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(12.dp),
         verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(12.dp),
-        variant: IconPickerGridVariant = IconPickerGridVariant.Dialog,
+        variant: IconPickerGridVariant = IconPickerGridVariant.Page,
         isSelected: (String) -> Boolean,
         onSelect: (String) -> Unit,
 ) {
@@ -51,7 +51,7 @@ fun IconPickerSectionsLazyGrid(
             }
             items(section.names, key = { it }) { name ->
                 when (variant) {
-                    IconPickerGridVariant.Dialog ->
+                    IconPickerGridVariant.Page ->
                         LauncherIcon(
                                 imageVector = MinimalIcons.iconFor(name),
                                 contentDescription = name,

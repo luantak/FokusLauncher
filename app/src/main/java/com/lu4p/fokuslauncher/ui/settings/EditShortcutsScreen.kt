@@ -16,7 +16,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,7 +32,6 @@ import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.model.stableSelectionKey
 import com.lu4p.fokuslauncher.ui.components.EditorScreenScaffold
-import com.lu4p.fokuslauncher.ui.components.MinimalIconPickerDialog
 import com.lu4p.fokuslauncher.ui.components.MinimalIcons
 import com.lu4p.fokuslauncher.ui.drawer.DrawerProfileShortcutSectionUi
 import com.lu4p.fokuslauncher.ui.drawer.groupShortcutActionsIntoProfileSections
@@ -56,6 +54,7 @@ import com.lu4p.fokuslauncher.utils.containsNormalizedSearch
 fun EditShortcutsScreen(
         viewModel: HomeViewModel,
         onNavigateBack: () -> Unit,
+        onOpenIconPicker: (shortcutIndex: Int) -> Unit,
         backgroundScrim: Color = FokusBackdrop.ScrimColorWithoutBlur
 ) {
     val context = LocalContext.current
@@ -63,7 +62,6 @@ fun EditShortcutsScreen(
     val allActions by viewModel.allShortcutActions.collectAsStateWithLifecycle()
     val allApps by viewModel.allInstalledApps.collectAsStateWithLifecycle()
     val profileDisplayNameOverrides by viewModel.profileDisplayNameOverrides.collectAsStateWithLifecycle()
-    val iconPickerForIndex = remember { mutableStateOf<Int?>(null) }
 
     val saveAndBack: () -> Unit = {
         viewModel.saveEditedRightShortcuts()
@@ -121,27 +119,10 @@ fun EditShortcutsScreen(
                 },
                 onToggleUnchecked = { action -> viewModel.toggleRightShortcut(action) },
                 onReorder = { from, to -> viewModel.reorderRightShortcut(from, to) },
-                onOpenIconPicker = { index -> iconPickerForIndex.value = index },
+                onOpenIconPicker = onOpenIconPicker,
                 formatCheckedLabel = { shortcut ->
                     viewModel.formatShortcutTarget(shortcut.target, shortcut.profileKey)
                 }
-        )
-    }
-
-    iconPickerForIndex.value?.let { pickerIndex ->
-        MinimalIconPickerDialog(
-                storedIconKey = editShortcuts.getOrNull(pickerIndex)?.iconName ?: "circle",
-                title = {
-                    Text(
-                            stringResource(R.string.edit_shortcuts_choose_icon),
-                            color = MaterialTheme.colorScheme.onBackground
-                    )
-                },
-                onSelect = { name ->
-                    viewModel.updateShortcutIcon(pickerIndex, name)
-                    iconPickerForIndex.value = null
-                },
-                onDismiss = { iconPickerForIndex.value = null }
         )
     }
 }

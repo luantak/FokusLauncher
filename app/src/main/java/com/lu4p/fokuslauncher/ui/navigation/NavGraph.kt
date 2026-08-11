@@ -72,6 +72,7 @@ import com.lu4p.fokuslauncher.ui.onboarding.OnboardingScreen
 import com.lu4p.fokuslauncher.ui.settings.AppearanceSettingsScreen
 import com.lu4p.fokuslauncher.ui.settings.AppsManagementSettingsScreen
 import com.lu4p.fokuslauncher.ui.settings.CategoryAppsScreen
+import com.lu4p.fokuslauncher.ui.settings.CategoryIconPickerScreen
 import com.lu4p.fokuslauncher.ui.settings.CategorySettingsScreen
 import com.lu4p.fokuslauncher.ui.settings.EditHomeAppsScreen
 import com.lu4p.fokuslauncher.ui.settings.EditShortcutsScreen
@@ -79,9 +80,12 @@ import com.lu4p.fokuslauncher.ui.settings.DeviceControlSettingsScreen
 import com.lu4p.fokuslauncher.ui.settings.DrawerBehaviorSettingsScreen
 import com.lu4p.fokuslauncher.ui.settings.DrawerDotSearchSettingsScreen
 import com.lu4p.fokuslauncher.ui.settings.HomeWidgetsSettingsScreen
+import com.lu4p.fokuslauncher.ui.settings.IconPickerScreen
 import com.lu4p.fokuslauncher.ui.settings.ProfileNamesSettingsScreen
 import com.lu4p.fokuslauncher.ui.settings.SettingsScreen
 import com.lu4p.fokuslauncher.ui.settings.SettingsViewModel
+import androidx.compose.ui.res.stringResource
+import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
 import com.lu4p.fokuslauncher.ui.widgets.WidgetPageScreen
 import kotlinx.coroutines.delay
@@ -97,12 +101,19 @@ object Routes {
     const val SETTINGS_CATEGORY_APPS = "settings_category_apps"
     const val SETTINGS_EDIT_HOME_APPS = "settings_edit_home_apps"
     const val SETTINGS_EDIT_SHORTCUTS = "settings_edit_shortcuts"
+    const val SETTINGS_ICON_PICKER_SHORTCUT = "settings_icon_picker/shortcut/{index}"
+    const val SETTINGS_ICON_PICKER_CATEGORY = "settings_icon_picker/category/{category}"
     const val SETTINGS_HOME_WIDGETS = "settings_home_widgets"
     const val SETTINGS_DRAWER_DOT_SEARCH = "settings_drawer_dot_search"
     const val SETTINGS_PROFILE_NAMES = "settings_profile_names"
     const val SETTINGS_APPEARANCE = "settings_appearance"
     const val SETTINGS_DRAWER_BEHAVIOR = "settings_drawer_behavior"
     const val SETTINGS_APPS_MANAGEMENT = "settings_apps_management"
+
+    fun iconPickerShortcut(index: Int): String = "settings_icon_picker/shortcut/$index"
+
+    fun iconPickerCategory(category: String): String =
+            "settings_icon_picker/category/${Uri.encode(category)}"
 }
 
 private const val SWIPE_THRESHOLD = 100f
@@ -772,10 +783,30 @@ fun FokusNavGraph(
                                     "${Routes.SETTINGS_CATEGORY_APPS}/${Uri.encode(category)}"
                             )
                         },
+                        onOpenCategoryIconPicker = { category ->
+                            navController.navigateSingleTop(Routes.iconPickerCategory(category))
+                        },
                         onOpenProfileNamesSettings = {
                             navController.navigateSingleTop(Routes.SETTINGS_PROFILE_NAMES)
                         },
                         backgroundScrim = Color.Black
+                )
+            }
+
+            fokusSettingsComposable(Routes.SETTINGS_ICON_PICKER_CATEGORY) { entry ->
+                val category =
+                        Uri.decode(entry.arguments?.getString("category").orEmpty())
+                val settingsVm = settingsViewModel(componentActivity)
+                val uiState by settingsVm.uiState.collectAsStateWithLifecycle()
+                CategoryIconPickerScreen(
+                        category = category,
+                        iconOverrides = uiState.categoryDrawerIconOverrides,
+                        onSelect = { name ->
+                            settingsVm.setCategoryDrawerIcon(category, name)
+                            navController.popBackStack()
+                        },
+                        onNavigateBack = { navController.popBackStack() },
+                        backgroundScrim = Color.Black,
                 )
             }
 
@@ -818,7 +849,30 @@ fun FokusNavGraph(
                 EditShortcutsScreen(
                     viewModel = homeViewModel,
                     onNavigateBack = { navController.popBackStack() },
+                    onOpenIconPicker = { index ->
+                        navController.navigateSingleTop(Routes.iconPickerShortcut(index))
+                    },
                     backgroundScrim = Color.Black
+                )
+            }
+
+            fokusSettingsComposable(Routes.SETTINGS_ICON_PICKER_SHORTCUT) { entry ->
+                val index = entry.arguments?.getString("index")?.toIntOrNull() ?: 0
+                val homeBackStackEntry = remember(entry) {
+                    navController.getBackStackEntry(Routes.HOME)
+                }
+                val homeViewModel: HomeViewModel = hiltViewModel(homeBackStackEntry)
+                val editShortcuts by homeViewModel.editRightShortcuts.collectAsStateWithLifecycle()
+                val storedIconKey = editShortcuts.getOrNull(index)?.iconName ?: "circle"
+                IconPickerScreen(
+                        storedIconKey = storedIconKey,
+                        titleText = stringResource(R.string.edit_shortcuts_choose_icon),
+                        onSelect = { name ->
+                            homeViewModel.updateShortcutIcon(index, name)
+                            navController.popBackStack()
+                        },
+                        onNavigateBack = { navController.popBackStack() },
+                        backgroundScrim = Color.Black,
                 )
             }
         }
