@@ -1,0 +1,5 @@
+Optional Arcticons app icons in the app drawer.
+
+Fix notification indicator dots ignoring the selected color.
+
+A bit more space above the media player and Pomodoro timer.

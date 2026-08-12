@@ -611,6 +611,7 @@ private fun HomeWidgetsSection(
                 }
             }
         }
+    val mediaOrPomodoroTopPad = 16.dp
     val nextTopPad =
         if (extraChips.isNotEmpty()) {
             HomeExtraChipsRow(
@@ -618,9 +619,11 @@ private fun HomeWidgetsSection(
                 outlined = outlined,
                 modifier = Modifier.fillMaxWidth().padding(top = extrasTopPad),
             )
-            8.dp
+            mediaOrPomodoroTopPad
+        } else if (belowHeaderTopPad > 0.dp) {
+            mediaOrPomodoroTopPad
         } else {
-            belowHeaderTopPad
+            0.dp
         }
 
     when {
