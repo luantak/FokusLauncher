@@ -1345,7 +1345,9 @@ fun AppListItem(
                     modifier =
                             Modifier.size(8.dp)
                                     .background(
-                                            color = if (showDot) textColor else Color.Transparent,
+                                            color =
+                                                    if (showDot) indicatorColor
+                                                    else Color.Transparent,
                                             shape = CircleShape,
                                     ),
             )

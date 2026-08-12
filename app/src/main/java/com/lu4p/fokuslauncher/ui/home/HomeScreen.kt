@@ -967,7 +967,7 @@ private fun FavoriteAppItem(
             }
             if (showDot) {
                 NotificationIndicatorDot(
-                    color = textColor,
+                    color = indicatorColor,
                     modifier =
                         Modifier.align(
                             if (dotLeading) Alignment.CenterStart
