@@ -13,6 +13,8 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -133,6 +135,14 @@ private fun snapBackAnimationSpec() = spring<Float>(
     dampingRatio = Spring.DampingRatioNoBouncy,
     stiffness = Spring.StiffnessHigh
 )
+
+/** Drawer slide: medium spring, no bounce. */
+private fun <T> drawerSlideSpec() = spring<T>(
+    dampingRatio = Spring.DampingRatioNoBouncy,
+    stiffness = Spring.StiffnessMedium,
+)
+
+private fun <T> drawerFadeSpec() = tween<T>(durationMillis = 100)
 
 /** Animates [from] → [to], or snaps instantly when system animations are disabled. */
 private suspend fun animateHorizontalOffset(
@@ -613,12 +623,18 @@ fun FokusNavGraph(
                                 )
                             }
                         }
+                        val homeAlpha by animateFloatAsState(
+                            targetValue = if (showDrawer) 0f else 1f,
+                            animationSpec =
+                                if (systemAnimationsEnabled) drawerFadeSpec() else snap(),
+                            label = "homeDrawerAlpha",
+                        )
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .graphicsLayer {
                                     translationX = displayedHorizontalOffsetPx
-                                    alpha = if (showDrawer) 0f else 1f
+                                    alpha = homeAlpha
                                 }
                         ) {
                             HomeScreen(
@@ -639,13 +655,34 @@ fun FokusNavGraph(
                 }
 
                 // ── App Drawer overlay ─────────────────────────────────────
-                // Full-screen scrim must not use the drawer's slide-in: Home is hidden immediately
-                // (alpha 0) while the overlay used to start fully below the screen, which briefly
-                // showed the wallpaper at full brightness before the scrim covered it.
+                // Scrim fades in place (no slide) so home can dim underneath without a wallpaper
+                // flash. Drawer content slides with a no-bounce medium spring.
+                val drawerEnterFade =
+                    if (systemAnimationsEnabled) fadeIn(drawerFadeSpec()) else EnterTransition.None
+                val drawerExitFade =
+                    if (systemAnimationsEnabled) fadeOut(drawerFadeSpec()) else ExitTransition.None
+                val drawerEnterSlide =
+                    if (systemAnimationsEnabled) {
+                        slideInVertically(
+                            animationSpec = drawerSlideSpec(),
+                            initialOffsetY = { it },
+                        )
+                    } else {
+                        EnterTransition.None
+                    }
+                val drawerExitSlide =
+                    if (systemAnimationsEnabled) {
+                        slideOutVertically(
+                            animationSpec = drawerSlideSpec(),
+                            targetOffsetY = { it },
+                        )
+                    } else {
+                        ExitTransition.None
+                    }
                 AnimatedVisibility(
                     visible = showDrawer,
-                    enter = EnterTransition.None,
-                    exit = fadeOut(tween(220)),
+                    enter = drawerEnterFade,
+                    exit = drawerExitFade,
                 ) {
                     Box(
                         modifier = Modifier
@@ -659,20 +696,8 @@ fun FokusNavGraph(
                 }
                 AnimatedVisibility(
                     visible = showDrawer,
-                    enter = slideInVertically(
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioLowBouncy,
-                            stiffness = Spring.StiffnessMedium
-                        ),
-                        initialOffsetY = { it }   // slide up from below the screen
-                    ),
-                    exit = slideOutVertically(
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioNoBouncy,
-                            stiffness = Spring.StiffnessMedium
-                        ),
-                        targetOffsetY = { it }     // slide back down
-                    )
+                    enter = drawerEnterSlide,
+                    exit = drawerExitSlide,
                 ) {
                     AppDrawerScreen(
                         viewModel = appDrawerViewModel,

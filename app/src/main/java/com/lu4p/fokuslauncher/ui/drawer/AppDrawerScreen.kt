@@ -1,5 +1,7 @@
 package com.lu4p.fokuslauncher.ui.drawer
 
+import android.app.Activity
+import android.view.View
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -60,6 +62,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -76,6 +79,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -83,6 +87,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.R
@@ -683,7 +688,7 @@ fun AppDrawerScreen(
         viewModel: AppDrawerViewModel = hiltViewModel(),
         onSettingsClick: () -> Unit = {},
         onEditCategoryApps: (String) -> Unit = {},
-        onClose: () -> Unit = {}
+        onClose: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val view = LocalView.current
@@ -760,7 +765,7 @@ fun AppDrawerScreen(
             onToggleDrawerReorderApps = viewModel::toggleDrawerReorderSession,
             onClose = closeAndReset,
             onReorderDrawerProfileSection = viewModel::reorderDrawerProfileSectionApps,
-            onReorderPrivateDrawerApps = viewModel::reorderPrivateDrawerApps
+            onReorderPrivateDrawerApps = viewModel::reorderPrivateDrawerApps,
     )
 
     // Action sheet on long-press
@@ -843,7 +848,7 @@ fun AppDrawerContent(
         onClose: () -> Unit = {},
         onReorderDrawerProfileSection: (sectionId: String, fromIndex: Int, toIndex: Int) -> Unit =
                 { _, _, _ -> },
-        onReorderPrivateDrawerApps: (fromIndex: Int, toIndex: Int) -> Unit = { _, _ -> }
+        onReorderPrivateDrawerApps: (fromIndex: Int, toIndex: Int) -> Unit = { _, _ -> },
 ) {
     val drawerContext = LocalContext.current
     val focusRequester = remember { FocusRequester() }
@@ -925,8 +930,7 @@ fun AppDrawerContent(
     // Sidebar icon search: focus when opened (independent of list scroll position).
     LaunchedEffect(showSearch, useSidebarCategoryDrawer) {
         if (useSidebarCategoryDrawer && showSearch) {
-            focusRequester.requestFocus()
-            keyboardController?.show()
+            showDrawerSearchKeyboard(focusRequester, keyboardController, view)
         }
     }
 
@@ -951,10 +955,20 @@ fun AppDrawerContent(
         val topAutoLaunch =
                 isAtTop && (!hasScrolledDown || uiState.drawerScrollToTopAutoKeyboard)
         if (topAutoLaunch) {
-            focusRequester.requestFocus()
-            keyboardController?.show()
+            showDrawerSearchKeyboard(focusRequester, keyboardController, view)
         } else if (!isAtTop) {
             hasScrolledDown = true
+        }
+    }
+
+    // Start IME with the enter animation. IMM showSoftInput can no-op while the field is
+    // still off-screen; WindowInsetsController + a short retry is more reliable.
+    LaunchedEffect(useSidebarCategoryDrawer) {
+        if (useSidebarCategoryDrawer) return@LaunchedEffect
+        repeat(16) {
+            showDrawerSearchKeyboard(focusRequester, keyboardController, view)
+            if (view.isImeVisible()) return@LaunchedEffect
+            withFrameNanos {}
         }
     }
 
@@ -982,8 +996,7 @@ fun AppDrawerContent(
                     if (latestScrollToTopAutoKeyboard.value && !latestUseSidebar.value) {
                         // LaunchedEffect(isAtTop) handles focus when scrolling to top; re-request
                         // if already at top and pulling down at the list boundary.
-                        focusRequester.requestFocus()
-                        keyboardController?.show()
+                        showDrawerSearchKeyboard(focusRequester, keyboardController, view)
                     }
                     overscrollY += available.y
                     if (overscrollY > 300f) {
@@ -1407,4 +1420,30 @@ private fun ArcticonsDrawerAppIcon(app: AppInfo, tint: Color) {
             )
         }
     }
+}
+
+private fun FocusRequester.requestFocusIfAttached() {
+    try {
+        requestFocus()
+    } catch (_: IllegalStateException) {
+        // Search field not placed yet (enter animation / first frame).
+    }
+}
+
+private fun View.showIme() {
+    val window = (context as? Activity)?.window ?: return
+    WindowInsetsControllerCompat(window, this).show(WindowInsetsCompat.Type.ime())
+}
+
+private fun View.isImeVisible(): Boolean =
+        ViewCompat.getRootWindowInsets(this)?.isVisible(WindowInsetsCompat.Type.ime()) == true
+
+private fun showDrawerSearchKeyboard(
+        focusRequester: FocusRequester,
+        keyboardController: SoftwareKeyboardController?,
+        view: View,
+) {
+    focusRequester.requestFocusIfAttached()
+    keyboardController?.show()
+    view.showIme()
 }
