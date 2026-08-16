@@ -431,4 +431,6 @@
     <string name="settings_show_home_countdown_subtitle">Odliczanie do wydarzenia pod datą</string>
     <string name="settings_world_clock_edit_city">Edytuj miasto</string>
     <string name="settings_world_clock_city_zone">Strefa czasowa</string>
+    <string name="edit_home_section_all_apps" translatable="false">\@string/drawer_filter_all_apps</string>
+    <string name="app_name" translatable="false">Fokus Launcher</string>
 </resources>
