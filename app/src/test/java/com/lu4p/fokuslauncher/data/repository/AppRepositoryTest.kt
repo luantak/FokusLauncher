@@ -33,6 +33,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
@@ -51,6 +52,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class AppRepositoryTest {
 
@@ -657,9 +659,9 @@ class AppRepositoryTest {
         val result = repository.getAllShortcutActions()
         val gmailActions =
                 result.filter {
-                    it.target is com.lu4p.fokuslauncher.data.model.ShortcutTarget.LauncherShortcut &&
-                            (it.target as com.lu4p.fokuslauncher.data.model.ShortcutTarget.LauncherShortcut)
-                                    .packageName == "com.google.android.gm"
+                    val target = it.target
+                    target is com.lu4p.fokuslauncher.data.model.ShortcutTarget.LauncherShortcut &&
+                            target.packageName == "com.google.android.gm"
                 }
 
         assertEquals(2, gmailActions.size)
