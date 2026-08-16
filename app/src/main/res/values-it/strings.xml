@@ -411,4 +411,6 @@
     <string name="settings_show_home_countdown_subtitle">Conto alla rovescia dell\'evento sotto la data</string>
     <string name="settings_world_clock_edit_city">Modifica città</string>
     <string name="settings_world_clock_city_zone">Fuso orario</string>
+    <string name="edit_home_section_all_apps" translatable="false"></string>
+    <string name="app_name" translatable="false"></string>
 </resources>
