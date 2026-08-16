@@ -401,4 +401,5 @@
     <string name="settings_long_lock_duration"></string>
     <string name="settings_show_home_screen_time"></string>
     <string name="settings_visual_style_subtitle"></string>
+    <string name="app_name" translatable="false">Fokus Launcher</string>
 </resources>
