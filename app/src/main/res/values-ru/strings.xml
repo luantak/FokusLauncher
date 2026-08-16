@@ -416,4 +416,6 @@
     <string name="settings_world_clock_search_zones">Поиск часовых поясов</string>
     <string name="settings_world_clock_edit_city">Редактировать город</string>
     <string name="settings_world_clock_city_zone">Часовой пояс</string>
+    <string name="edit_home_section_all_apps" translatable="false"></string>
+    <string name="app_name" translatable="false"></string>
 </resources>
