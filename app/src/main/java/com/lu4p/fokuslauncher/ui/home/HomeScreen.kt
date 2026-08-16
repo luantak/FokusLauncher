@@ -856,7 +856,7 @@ private fun RightShortcutIcons(
     iconAlignment: Alignment,
     outlined: Boolean = false,
 ) {
-    shortcuts.reversed().forEachIndexed { index, shortcut ->
+    shortcuts.forEachIndexed { index, shortcut ->
         Box(
             modifier =
                 Modifier.size(touchTargetSize)

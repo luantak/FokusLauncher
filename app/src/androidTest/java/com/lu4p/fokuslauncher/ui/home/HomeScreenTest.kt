@@ -14,6 +14,7 @@ import com.lu4p.fokuslauncher.data.model.FavoriteApp
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.WeatherData
 import com.lu4p.fokuslauncher.ui.theme.FokusLauncherTheme
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -366,6 +367,40 @@ class HomeScreenTest {
         composeTestRule.onAllNodesWithText("Fri. 12 Jul.").assertCountEquals(0)
         composeTestRule.onAllNodesWithText("88%").assertCountEquals(0)
         composeTestRule.onAllNodesWithText("22°C").assertCountEquals(0)
+    }
+
+    @Test
+    fun homeScreen_rightShortcuts_followEditListOrder() {
+        val shortcuts = testRightSideShortcuts.take(2)
+        val clicked = mutableListOf<String>()
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                HomeScreenContent(
+                        uiState = HomeUiState(),
+                        clockUiState = clock(),
+                        weatherUiState = weatherOff,
+                        favorites = testFavorites,
+                        rightSideShortcuts = shortcuts,
+                        onLabelClick = {},
+                        onLabelLongPress = {},
+                        onIconClick = { clicked.add(it.iconName) }
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("right_shortcut_icon_0").performClick()
+        composeTestRule.onNodeWithTag("right_shortcut_icon_1").performClick()
+        assertEquals(listOf(shortcuts[0].iconName, shortcuts[1].iconName), clicked)
+
+        val firstTop =
+                composeTestRule.onNodeWithTag("right_shortcut_icon_0")
+                        .fetchSemanticsNode()
+                        .boundsInRoot.top
+        val secondTop =
+                composeTestRule.onNodeWithTag("right_shortcut_icon_1")
+                        .fetchSemanticsNode()
+                        .boundsInRoot.top
+        assertTrue(firstTop < secondTop)
     }
 
     @Test
