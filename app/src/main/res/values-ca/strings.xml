@@ -335,4 +335,15 @@
     <string name="settings_accessibility">Control del dispositiu</string>
     <string name="settings_long_lock_duration">Durada del bloqueig llarg</string>
     <string name="settings_visual_style_subtitle">Colors de text i icones clàssics o neon</string>
+    <string name="cd_restore_archived_app">Restaura app arxivada</string>
+    <string name="toast_digital_wellbeing_launch_failed">No es pot obrir benestar digital</string>
+    <string name="action_remove_shortcut">Elimina drecera</string>
+    <string name="home_alignment_middle">Centrat</string>
+    <string name="settings_show_world_clock_weather">Mostra el temps en rellotges mundials</string>
+    <string name="settings_show_world_clock_weather_subtitle">Cerca les condicions de cada etiqueta de la ciutat</string>
+    <string name="settings_show_home_media_subtitle">S\'està reproduint amb controls de transport quan l\'àudio està actiu</string>
+    <string name="settings_show_home_media_subtitle_grant_access">Requereix accés a les notificacions — activeu-ho per concedir-ho a la configuració del sistema</string>
+    <string name="settings_notification_indicators">Mostra indicador de notificacions</string>
+    <string name="settings_notification_indicators_subtitle">Ressalta les aplicacions amb notificacions actives a inici i al calaix</string>
+    <string name="settings_notification_indicators_subtitle_grant_access">Requereix accés a les notificacions — activeu-ho per concedir-ho a la configuració del sistema</string>
 </resources>
