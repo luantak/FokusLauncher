@@ -303,7 +303,7 @@ class AppRepositoryTest {
     }
 
     @Test
-    fun `LauncherApps package removed callback emits removed package and refreshes`() =
+    fun `LauncherApps package removed callback refreshes without emitting uninstall`() =
             runTest(UnconfinedTestDispatcher()) {
                 val callbackSlot = slot<LauncherApps.Callback>()
                 every { launcherApps.registerCallback(capture(callbackSlot), any()) } returns Unit
@@ -327,9 +327,43 @@ class AppRepositoryTest {
                 } returns listOf(createMockLauncherActivity("com.lu4p.app1", "App 1"))
                 callbackSlot.captured.onPackageRemoved("com.lu4p.app2", myUser)
 
-                assertEquals(1, removedApps.size)
-                assertEquals("com.lu4p.app2", removedApps.single().packageName)
-                assertEquals("0", removedApps.single().profileKey)
+                assertTrue(removedApps.isEmpty())
+                assertEquals(
+                        listOf("com.lu4p.app1"),
+                        repository.getInstalledApps().map { it.packageName },
+                )
+            }
+
+    @Test
+    fun `LauncherApps packages unavailable callback refreshes without emitting uninstall`() =
+            runTest(UnconfinedTestDispatcher()) {
+                val callbackSlot = slot<LauncherApps.Callback>()
+                every { launcherApps.registerCallback(capture(callbackSlot), any()) } returns Unit
+                repository = AppRepository(context, appDao, privateSpaceManager)
+
+                every {
+                    launcherApps.getActivityList(null, myUser)
+                } returns
+                        listOf(
+                                createMockLauncherActivity("com.lu4p.app1", "App 1"),
+                                createMockLauncherActivity("com.lu4p.app2", "App 2"),
+                        )
+                repository.getInstalledApps()
+
+                val removedApps = mutableListOf<RemovedApp>()
+                backgroundScope.launch {
+                    repository.getRemovedPackages().collect { removedApps += it }
+                }
+                every {
+                    launcherApps.getActivityList(null, myUser)
+                } returns listOf(createMockLauncherActivity("com.lu4p.app1", "App 1"))
+                callbackSlot.captured.onPackagesUnavailable(
+                        arrayOf("com.lu4p.app2"),
+                        myUser,
+                        false,
+                )
+
+                assertTrue(removedApps.isEmpty())
                 assertEquals(
                         listOf("com.lu4p.app1"),
                         repository.getInstalledApps().map { it.packageName },

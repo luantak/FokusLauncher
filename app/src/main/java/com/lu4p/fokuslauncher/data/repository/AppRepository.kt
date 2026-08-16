@@ -94,7 +94,14 @@ constructor(
                         Intent.ACTION_PACKAGE_REPLACED -> {
                             if (intent.action == Intent.ACTION_PACKAGE_REMOVED && replacing) return
                             if (intent.action == Intent.ACTION_PACKAGE_REMOVED) {
-                                extractRemovedApp(intent)?.let(removedPackages::tryEmit)
+                                extractRemovedApp(intent)?.let { removed ->
+                                    Log.i(
+                                            TAG,
+                                            "PACKAGE_REMOVED ${removed.packageName} " +
+                                                    "profile=${removed.profileKey}",
+                                    )
+                                    removedPackages.tryEmit(removed)
+                                }
                             }
                             scheduleInstalledAppsRefresh()
                         }
@@ -115,11 +122,12 @@ constructor(
     private val launcherAppsCallback =
             object : LauncherApps.Callback() {
                 override fun onPackageRemoved(packageName: String, user: UserHandle) {
-                    removedPackages.tryEmit(
-                            RemovedApp(
-                                    packageName = packageName,
-                                    profileKey = profileKeyForUser(user),
-                            )
+                    // Updates and locked profiles also fire this; only
+                    // ACTION_PACKAGE_REMOVED (non-replacing) prunes favorites.
+                    Log.i(
+                            TAG,
+                            "LauncherApps onPackageRemoved $packageName " +
+                                    "profile=${profileKeyForUser(user)}; refresh only",
                     )
                     scheduleInstalledAppsRefresh()
                 }
@@ -145,14 +153,14 @@ constructor(
                         user: UserHandle,
                         replacing: Boolean,
                 ) {
-                    if (!replacing) {
-                        val profileKey = profileKeyForUser(user)
-                        for (packageName in packageNames) {
-                            removedPackages.tryEmit(
-                                    RemovedApp(packageName = packageName, profileKey = profileKey)
-                            )
-                        }
-                    }
+                    // Direct Boot, locked work/Secure Folder, and sleeping apps fire this
+                    // without an uninstall. Refresh the list; do not prune favorites.
+                    Log.i(
+                            TAG,
+                            "LauncherApps onPackagesUnavailable replacing=$replacing " +
+                                    "profile=${profileKeyForUser(user)} " +
+                                    "count=${packageNames.size}; refresh only",
+                    )
                     scheduleInstalledAppsRefresh()
                 }
             }
