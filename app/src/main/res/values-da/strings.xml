@@ -404,4 +404,6 @@
     <string name="media_previous_track"></string>
     <string name="settings_show_home_screen_time"></string>
     <string name="settings_visual_style_subtitle"></string>
+    <string name="edit_home_section_all_apps" translatable="false">\@string/drawer_filter_all_apps</string>
+    <string name="app_name" translatable="false">Fokus Startskærm</string>
 </resources>
