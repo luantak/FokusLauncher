@@ -12,6 +12,7 @@ import android.os.BatteryManager
 import android.os.Process
 import android.os.UserHandle
 import android.provider.AlarmClock
+import android.util.Log
 import android.provider.CalendarContract
 import android.text.format.DateFormat
 import android.widget.Toast
@@ -485,9 +486,9 @@ class HomeViewModel @Inject constructor(
     }
 
     /**
-     * Reloads installed apps and syncs persisted favorites. Returns true when at least one current
-     * favorite was missing from the snapshot but still resolves via a batched launchability scan
-     * (partial [LauncherApps] enumeration); callers may invalidate and run another pass.
+     * Reloads installed apps and syncs persisted favorites. Returns true when the snapshot looks
+     * incomplete (launchable-but-missing favorites, or a profile with favorites never appeared)
+     * so callers may invalidate and run another pass.
      */
     private suspend fun runInstalledAppsRefreshPass(forceReload: Boolean): Boolean {
         if (forceReload) {
@@ -498,6 +499,16 @@ class HomeViewModel @Inject constructor(
         // Read DataStore directly: refresh runs on Dispatchers.IO and can race ahead of
         // rawFavorites' Main-thread stateIn collector during ViewModel init.
         val currentFavorites = preferencesManager.favoritesFlow.first()
+        val snapshotProfiles = snapshotProfileKeys(apps, archivedApps)
+        Log.i(
+                TAG,
+                "refresh pass forceReload=$forceReload apps=${apps.size} " +
+                        "owner=${apps.count { it.userHandle == null }} " +
+                        "secondary=${apps.count { it.userHandle != null }} " +
+                        "archived=${archivedApps.size} profiles=$snapshotProfiles " +
+                        "favorites=${currentFavorites.size} " +
+                        "prevApps=${_allInstalledApps.value.size}",
+        )
         if (apps.isEmpty()) {
             if (archivedApps.isNotEmpty()) {
                 applyInstalledAppsSnapshot(apps)
@@ -506,10 +517,30 @@ class HomeViewModel @Inject constructor(
             if (_allInstalledApps.value.isNotEmpty() ||
                             currentFavorites.any { !it.isPhoneFavoriteSentinel() }
             ) {
+                Log.w(
+                        TAG,
+                        "skipping empty launcher snapshot; keeping " +
+                                "prevApps=${_allInstalledApps.value.size} " +
+                                "favorites=${currentFavorites.size}",
+                )
                 return false
             }
             applyInstalledAppsSnapshot(apps)
             return false
+        }
+        val incompleteOwnerSnapshot = isIncompleteOwnerAppsSnapshot(apps)
+        val hasPreviousOwnerApps = _allInstalledApps.value.any { it.userHandle == null }
+        val hasOwnerFavorites =
+                currentFavorites.any { !it.isPhoneFavoriteSentinel() && it.profileKey == "0" }
+        if (incompleteOwnerSnapshot && (hasPreviousOwnerApps || hasOwnerFavorites)) {
+            Log.w(
+                    TAG,
+                    "skipping incomplete owner snapshot " +
+                            "(secondary-only apps=${apps.size} profiles=$snapshotProfiles); " +
+                            "keeping prevApps=${_allInstalledApps.value.size} " +
+                            "favorites=${currentFavorites.size}",
+            )
+            return true
         }
         applyInstalledAppsSnapshot(apps)
         val installedAppKeys = apps.map { appMetadataKey(it) }.toSet()
@@ -523,18 +554,71 @@ class HomeViewModel @Inject constructor(
                         .toSet()
         val launchableMissing =
                 launchableMissingFavoriteKeysSubset(nonSentinel, missingFavoriteKeys)
+        val favoritesKeptForAbsentProfiles =
+                nonSentinel.filter { fav ->
+                    val key = favoriteAppStableKey(fav)
+                    key in missingFavoriteKeys &&
+                            key !in archivedAppKeys &&
+                            key !in launchableMissing &&
+                            fav.profileKey !in snapshotProfiles
+                }
+        if (favoritesKeptForAbsentProfiles.isNotEmpty()) {
+            Log.w(
+                    TAG,
+                    "keeping ${favoritesKeptForAbsentProfiles.size} favorites for " +
+                            "profiles absent from snapshot: " +
+                            favoritesKeptForAbsentProfiles.joinToString { favoriteLogKey(it) },
+            )
+        }
         val updatedFavorites =
                 currentFavorites.filter {
                     it.packageName == ShortcutTarget.PHONE_FAVORITE_SENTINEL_PACKAGE ||
                             favoriteAppStableKey(it) in installedAppKeys ||
                             favoriteAppStableKey(it) in archivedAppKeys ||
-                            favoriteAppStableKey(it) in launchableMissing
+                            favoriteAppStableKey(it) in launchableMissing ||
+                            it.profileKey !in snapshotProfiles
                 }
         if (updatedFavorites.size != currentFavorites.size) {
+            val pruned =
+                    currentFavorites
+                            .filter { fav -> updatedFavorites.none { it === fav || it == fav } }
+                            .map(::favoriteLogKey)
+            Log.w(
+                    TAG,
+                    "pruning ${pruned.size} favorites no longer in snapshot: $pruned " +
+                            "(kept=${updatedFavorites.size} snapshotProfiles=$snapshotProfiles)",
+            )
             preferencesManager.setFavorites(updatedFavorites)
         }
-        return launchableMissing.isNotEmpty()
+        val shouldRetry =
+                launchableMissing.isNotEmpty() || favoritesKeptForAbsentProfiles.isNotEmpty()
+        if (shouldRetry) {
+            Log.i(
+                    TAG,
+                    "refresh will retry (launchableMissing=${launchableMissing.size} " +
+                            "absentProfileFavorites=${favoritesKeptForAbsentProfiles.size})",
+            )
+        }
+        return shouldRetry
     }
+
+    private fun snapshotProfileKeys(apps: List<AppInfo>, archivedApps: List<AppInfo>): Set<String> {
+        val keys = LinkedHashSet<String>()
+        for (app in apps) keys += appProfileKey(app.userHandle)
+        for (app in archivedApps) keys += appProfileKey(app.userHandle)
+        return keys
+    }
+
+    /** Secondary-only list while the owner user should still have launchable apps. */
+    private fun isIncompleteOwnerAppsSnapshot(apps: List<AppInfo>): Boolean {
+        if (apps.isEmpty()) return false
+        val hasOwnerApps = apps.any { it.userHandle == null }
+        val hasSecondaryApps = apps.any { it.userHandle != null }
+        return !hasOwnerApps && hasSecondaryApps
+    }
+
+    private fun favoriteLogKey(favorite: FavoriteApp): String =
+            "${favorite.profileKey}|${favorite.packageName}"
 
     private fun applyInstalledAppsSnapshot(apps: List<AppInfo>) {
         _allInstalledApps.value = apps
@@ -1673,7 +1757,15 @@ class HomeViewModel @Inject constructor(
         val updatedFavorites =
                 currentFavorites.filterNot { it.matches(removedPkg, removedProfileKey) }
         if (updatedFavorites.size != currentFavorites.size) {
+            Log.i(
+                    TAG,
+                    "package removed $removedPkg profile=$removedProfileKey; " +
+                            "pruned ${currentFavorites.size - updatedFavorites.size} favorites " +
+                            "(kept=${updatedFavorites.size})",
+            )
             preferencesManager.setFavorites(updatedFavorites)
+        } else {
+            Log.i(TAG, "package removed $removedPkg profile=$removedProfileKey; no favorites matched")
         }
     }
 
@@ -1755,6 +1847,8 @@ class HomeViewModel @Inject constructor(
             category.equals(ReservedCategoryNames.UNCATEGORIZED, ignoreCase = true)
 
     private companion object {
+        private const val TAG = "FokusHomeApps"
+
         /** Max launcher shortcuts shown in the home long-press app menu. */
         private const val MAX_APP_MENU_SHORTCUTS = 5
 

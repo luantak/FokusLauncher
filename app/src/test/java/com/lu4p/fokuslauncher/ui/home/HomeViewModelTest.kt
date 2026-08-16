@@ -809,6 +809,8 @@ class HomeViewModelTest {
 
     @Test
     fun `refreshInstalledApps prunes favorites missing from one profile only`() {
+        val workHandle = mockk<android.os.UserHandle>()
+        every { workHandle.hashCode() } returns 42
         every { preferencesManager.favoritesFlow } returns flowOf(
             listOf(
                 FavoriteApp(label = "Chrome", packageName = "com.lu4p.chrome", iconName = "circle", profileKey = "0"),
@@ -816,7 +818,15 @@ class HomeViewModelTest {
             )
         )
         every { appRepository.getInstalledApps() } returns
-            listOf(AppInfo(packageName = "com.lu4p.chrome", label = "Chrome", icon = null))
+            listOf(
+                AppInfo(packageName = "com.lu4p.chrome", label = "Chrome", icon = null),
+                AppInfo(
+                    packageName = "com.lu4p.slack",
+                    label = "Slack Work",
+                    icon = null,
+                    userHandle = workHandle,
+                ),
+            )
         every { appRepository.getLaunchableAppKeys(setOf("42")) } returns emptySet()
 
         val viewModel = createViewModel()
@@ -836,6 +846,54 @@ class HomeViewModelTest {
                 }
             )
         }
+        collectJob.cancel()
+    }
+
+    @Test
+    fun `refreshInstalledApps does not prune owner favorites when snapshot is work-only`() {
+        val workHandle = mockk<android.os.UserHandle>()
+        every { workHandle.hashCode() } returns 95
+        every { appRepository.getInstalledApps() } returns
+            listOf(
+                AppInfo(
+                    packageName = "com.lu4p.knox",
+                    label = "Knox",
+                    icon = null,
+                    userHandle = workHandle,
+                )
+            )
+
+        val viewModel = createViewModel()
+        val collectJob = CoroutineScope(testDispatcher).launch { viewModel.favorites.collect { } }
+        testDispatcher.scheduler.runCurrent()
+
+        viewModel.refreshInstalledApps()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 0) { preferencesManager.setFavorites(any()) }
+        collectJob.cancel()
+    }
+
+    @Test
+    fun `refreshInstalledApps does not prune work favorites when work profile is absent`() {
+        every { preferencesManager.favoritesFlow } returns flowOf(
+            listOf(
+                FavoriteApp(label = "Chrome", packageName = "com.lu4p.chrome", iconName = "circle", profileKey = "0"),
+                FavoriteApp(label = "Chrome Work", packageName = "com.lu4p.chrome", iconName = "circle", profileKey = "42")
+            )
+        )
+        every { appRepository.getInstalledApps() } returns
+            listOf(AppInfo(packageName = "com.lu4p.chrome", label = "Chrome", icon = null))
+        every { appRepository.getLaunchableAppKeys(setOf("42")) } returns emptySet()
+
+        val viewModel = createViewModel()
+        val collectJob = CoroutineScope(testDispatcher).launch { viewModel.favorites.collect { } }
+        testDispatcher.scheduler.runCurrent()
+
+        viewModel.refreshInstalledApps()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 0) { preferencesManager.setFavorites(any()) }
         collectJob.cancel()
     }
 

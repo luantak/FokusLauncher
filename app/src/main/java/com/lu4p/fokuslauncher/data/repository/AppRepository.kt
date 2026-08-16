@@ -355,6 +355,7 @@ constructor(
     ): List<AppInfo> {
         val myUser = Process.myUserHandle()
         val rawEntries = mutableListOf<RawLauncherEntry>()
+        val activitiesByProfile = LinkedHashMap<String, Int>()
 
         for (user in userManager.userProfiles) {
             if (privateSpaceManager.isPrivateSpaceProfile(user)) continue
@@ -365,6 +366,8 @@ constructor(
                     } catch (_: Exception) {
                         emptyList()
                     }
+            val profileKey = if (user == myUser) "0" else appProfileKey(user)
+            activitiesByProfile[profileKey] = activities.size
 
             for (info in activities) {
                 val packageName = info.applicationInfo.packageName
@@ -433,7 +436,13 @@ constructor(
                         knownApps = (primary + secondary).filterNot { it.isArchived },
                 )
 
-        return (primary + secondary + pinnedShortcuts).sortedBy { it.label.lowercase() }
+        val merged =
+                (primary + secondary + pinnedShortcuts).sortedBy { it.label.lowercase() }
+        Log.i(
+                TAG,
+                "merged ${mergedAppsSummary(merged)} perProfile=$activitiesByProfile",
+        )
+        return merged
     }
 
     /**
