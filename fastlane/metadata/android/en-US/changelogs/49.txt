@@ -1,0 +1,5 @@
+Home shortcuts now appear in the same order as the editor.
+
+Keep home favorites when a locked profile or Knox snapshot hides apps.
+
+Updated translations via Weblate.
