@@ -58,7 +58,7 @@
     <string name="action_add_to_home">Añadir a la pantalla de inicio</string>
     <string name="home_alignment_subtitle">Posición de las etiquetas de las aplicaciones e iconos de los accesos directos</string>
     <string name="toast_weather_app_launch_failed">La aplicación del tiempo seleccionada no se puede abrir</string>
-    <string name="category_add_error_blank">Introduce el nombre de la categoría. Los nombres vacíos no se guardaran.</string>
+    <string name="category_add_error_blank">Introduce el nombre de la categoría. Los nombres vacíos no se guardan.</string>
     <string name="shortcut_target_deep_link">Enlace profundo</string>
     <string name="home_weather_app_picker_title">Elija la aplicación para el clima</string>
     <string name="search">Buscar</string>
@@ -196,7 +196,7 @@
     <string name="settings_drawer_app_sort_most_opened">Más usadas</string>
     <string name="settings_drawer_app_sort_custom">Personalizado</string>
     <string name="settings_dot_search_title">Buscar con punto y accesos directos</string>
-    <string name="settings_dot_search_subtitle">Escribe `. búsqueda` para buscar, `.x búsqueda`para búsqueda definida o `.x`para un acceso directo</string>
+    <string name="settings_dot_search_subtitle">Escribe `. búsqueda` para buscar, `.x búsqueda` para búsqueda definida o `.x` para un acceso directo</string>
     <string name="settings_dot_search_screen_title">Búsqueda con punto y accesos directos</string>
     <string name="settings_dot_search_explanation">En el cajón de aplicaciones, escribe un punto y un espacio, luego tus palabras de búsqueda. Para un atajo, usa un punto, una letra minúscula, un espacio y luego tu búsqueda (por ejemplo, \'.a coffee\'). La lista de aplicaciones solo incluye aplicaciones que exponen la búsqueda web o la búsqueda estándar dentro de la app para su paquete. Para otros sitios o aplicaciones, añade una URL HTTPS o una plantilla de enlace profundo y pon %1$s donde pertenece el texto de búsqueda (por ejemplo, https://example.com/search?q=%1$s).</string>
     <string name="settings_dot_search_default_label">Aplicación de búsqueda por defecto</string>

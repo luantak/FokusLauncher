@@ -337,7 +337,7 @@
     <string name="visual_style_emerald">Изумрудный</string>
     <string name="settings_weather_location_disabled_subtitle">Нажмите, чтобы разрешить доступ к местоположению</string>
     <string name="media_unlike">Не нравится</string>
-    <string name="settings_show_home_screen_time_subtitle">Время использывания экрана на последние 24 часа</string>
+    <string name="settings_show_home_screen_time_subtitle">Время использования экрана за последние 24 часа</string>
     <string name="settings_show_home_screen_time_subtitle_grant_access">Требуется доступ к статистике использования — включите его в системных настройках</string>
     <string name="visual_style_gold">Золотой</string>
     <string name="settings_font_import_failed_io">Не удалось сохранить файл шрифта</string>
@@ -347,7 +347,7 @@
     <string name="media_like">Нравится</string>
     <string name="media_notification_listener_label">Fokus: Сейчас воспроизводится</string>
     <string name="media_save">Сохранить в библиотеке</string>
-    <string name="settings_section_archived_apps">Архивированые приложения</string>
+    <string name="settings_section_archived_apps">Архивированные приложения</string>
     <string name="visual_style_lavender">Лавандовый</string>
     <string name="visual_style_neon_magenta">Фиолетовый космос</string>
     <string name="media_buffering">Буферизация</string>
@@ -363,7 +363,7 @@
     <string name="settings_weblate_title">Помочь с переводом</string>
     <string name="media_unsave">Удалить из библиотеки</string>
     <string name="settings_connect_section">Связь</string>
-    <string name="visual_style_rose">Ярко-Розовый</string>
+    <string name="visual_style_rose">Ярко-розовый</string>
     <string name="visual_style_sky">Небесный</string>
     <string name="settings_matrix_title">Присоединяйтесь к обсуждению</string>
     <string name="settings_glow_subtitle">Мягкий ореол вокруг текста и значков</string>

@@ -290,7 +290,7 @@
     <string name="settings_world_clock_remove_city">Выдаліць горад</string>
     <string name="settings_notification_indicator_style_colored_label">Каляровая назва</string>
     <string name="settings_notification_indicator_style">Стыль індыкатара</string>
-    <string name="settings_world_clock_search_zones">Пошук часавык паясоў</string>
+    <string name="settings_world_clock_search_zones">Пошук часавых паясоў</string>
     <string name="settings_world_clock_edit_city">Рэдагаваць горад</string>
     <string name="settings_world_clock_city_zone">Часавы пояс</string>
 </resources>

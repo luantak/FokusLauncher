@@ -264,7 +264,7 @@
     <string name="settings_dot_search_url_template_for_alias">URL für .%1$s …</string>
     <string name="settings_dot_search_add_url_template_help">Gebe `.x anfrage` ein, um eine URL oder eine Verknüpfung mit der eingegebenen Anfrage zu öffnen.</string>
     <string name="settings_dot_search_add_shortcut_url">URL Vorlage</string>
-    <string name="settings_dot_search_add_search_target_help">Gebe `x. anfrage` ein, um eine Anfrage an die App abzusenden, die eine Suche bereitstellt.</string>
+    <string name="settings_dot_search_add_search_target_help">Gebe `.x anfrage` ein, um eine Anfrage an die App abzusenden, die eine Suche bereitstellt.</string>
     <string name="settings_dot_search_add_search_target_app">Ziel durchsuchen</string>
     <string name="settings_dot_search_add_shortcut_help">Gebe `.x` ein, um eine App, eine Aktion oder einen Launcher Shortcut sofort zu öffnen.</string>
     <string name="settings_dot_search_add_shortcut_app">Öffne Shortcut-Ziel</string>
@@ -282,7 +282,7 @@
     <string name="settings_world_clock_no_zones">Keine passenden Zeitzonen</string>
     <string name="settings_visual_style_label">Farbstil</string>
     <string name="add_widget">Widget hinzufügen</string>
-    <string name="settings_home_date_format_eu_slashes">DD/MM/YYY</string>
+    <string name="settings_home_date_format_eu_slashes">DD/MM/YYYY</string>
     <string name="settings_home_date_format">Datumsformat</string>
     <string name="settings_drawer_scroll_to_top_auto_keyboard_subtitle">Tastatur automatisch öffnen und suchen, wenn in der Appliste bis ganz oben gescrollt wurde</string>
     <plurals name="settings_home_screen_apps_count">
@@ -324,6 +324,4 @@
     <string name="settings_world_clock_edit_city">Stadt bearbeiten</string>
     <string name="settings_world_clock_city_zone">Zeitzone</string>
     <string name="resize_widget">Widgetgröße anpassen</string>
-    <string name="edit_home_section_all_apps" translatable="false">\@string/drawer_filter_all_apps</string>
-    <string name="app_name" translatable="false">Fokus Launcher</string>
 </resources>

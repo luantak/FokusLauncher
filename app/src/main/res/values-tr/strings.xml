@@ -317,6 +317,4 @@
     <string name="settings_glow_subtitle">Metin ve ikonlarda hafif hare</string>
     <string name="settings_font_size_subtitle">Cihaz yazı boyutunun üzerine eklenir</string>
     <string name="settings_dot_search_add_shortcut_help">Anına bir uygulama açmak, telefonla ilgili bir işlem yapmak, veya başlatıcı kısayolu açmak için \".x\" yazınız</string>
-    <string name="edit_home_section_all_apps" translatable="false">\@string/drawer_filter_all_apps</string>
-    <string name="app_name" translatable="false">Fokus Launcher</string>
 </resources>
