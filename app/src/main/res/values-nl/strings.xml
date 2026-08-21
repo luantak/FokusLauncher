@@ -1,3 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="drawer_filter_all_apps">Alle apps</string>
+    <string name="drawer_filter_work">Werk</string>
+    <string name="drawer_reorder_done">Klaar</string>
+    <string name="search">Zoeken</string>
+    <string name="drawer_section_profile_numbered">Profiel %1$d</string>
+    <string name="search_apps">Zoek apps</string>
+    <string name="search_apps_and_actions">Zoek apps en acties</string>
+    <string name="action_back">Standaard acties</string>
+    <string name="action_done">Klaar</string>
+    <string name="action_cancel">Annuleer</string>
+    <string name="action_save">Opslaan</string>
+    <string name="action_add">Toevoegen</string>
+    <string name="action_rename">Hernoemen</string>
+    <string name="cd_menu">Menu</string>
+    <string name="cd_settings">Instellingen</string>
+    <string name="shortcut_open_app">Open app</string>
+    <string name="shortcut_generic_label">Snelkoppeling</string>
+    <string name="widget_page_shortcut_label">Widget pagina</string>
+    <string name="action_uninstall">Deinstalleren</string>
+    <string name="category_action_rename">Hernoemen</string>
+    <string name="action_remove_shortcut">Verwijder snelkoppeling</string>
+    <string name="action_remove_from_home">Verwijder van startscherm</string>
+    <string name="action_reset">Reset</string>
+    <string name="drawer_filter_private">Prive</string>
+    <string name="drawer_filter_uncategorized">Zonder categorie</string>
 </resources>
