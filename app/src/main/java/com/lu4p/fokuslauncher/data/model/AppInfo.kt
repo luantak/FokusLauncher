@@ -92,12 +92,13 @@ fun overlayCustomName(
     val packageRows =
             renamedApps.filter { it.packageName == app.packageName && it.profileKey == profileKey }
     if (packageRows.isEmpty()) return null
+    // Names are per row: renaming the host browser must not rename the PWAs it published.
     app.launcherShortcutId?.let { shortcutId ->
-        packageRows.find { it.launcherShortcutId == shortcutId }?.customName?.let { return it }
+        return packageRows.find { it.launcherShortcutId == shortcutId }?.customName
     }
-            ?: packageRows.find { it.launcherShortcutId == HOST_APP_METADATA_SENTINEL }?.customName?.let {
-                return it
-            }
+    packageRows.find { it.launcherShortcutId == HOST_APP_METADATA_SENTINEL }?.customName?.let {
+        return it
+    }
     return packageRows.find { it.launcherShortcutId == LEGACY_PACKAGE_WIDE_METADATA }?.customName
 }
 

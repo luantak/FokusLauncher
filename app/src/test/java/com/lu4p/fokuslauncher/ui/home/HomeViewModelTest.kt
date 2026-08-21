@@ -777,6 +777,68 @@ class HomeViewModelTest {
         )
     }
 
+    private fun pwaFavorite(
+            label: String = "Twitter",
+            packageName: String = "org.mozilla.firefox",
+            shortcutId: String = "pwa-twitter",
+    ) =
+            FavoriteApp(
+                    label = label,
+                    packageName = packageName,
+                    iconPackage =
+                            ShortcutTarget.encode(
+                                    ShortcutTarget.LauncherShortcut(packageName, shortcutId)
+                            ),
+                    profileKey = "0",
+            )
+
+    @Test
+    fun `renameApp on a PWA favorite writes the per-shortcut row`() {
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.renameApp(pwaFavorite(), "Bird")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify {
+            appRepository.renameApp("org.mozilla.firefox", "0", "Bird", "pwa-twitter")
+        }
+    }
+
+    @Test
+    fun `favorites keep the PWA name when the host browser is renamed`() {
+        val favorite = pwaFavorite()
+        every { preferencesManager.favoritesFlow } returns flowOf(listOf(favorite))
+        every { appRepository.getAllRenamedApps() } returns
+                flowOf(
+                        listOf(
+                                com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity(
+                                        packageName = "org.mozilla.firefox",
+                                        profileKey = "0",
+                                        customName = "Firefox Beta",
+                                        launcherShortcutId = HOST_APP_METADATA_SENTINEL,
+                                )
+                        )
+                )
+        every { appRepository.getInstalledApps() } returns
+                listOf(
+                        AppInfo("org.mozilla.firefox", "Firefox", null),
+                        AppInfo(
+                                packageName = "org.mozilla.firefox",
+                                label = "Twitter",
+                                icon = null,
+                                launcherShortcutId = "pwa-twitter",
+                        ),
+                )
+
+        val viewModel = createViewModel()
+        val collectJob = CoroutineScope(testDispatcher).launch { viewModel.favorites.collect { } }
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals("Twitter", viewModel.favorites.value.single().label)
+        collectJob.cancel()
+    }
+
     @Test
     fun `removeFavoriteFromEdit removes built-in phone favorite without installed app`() {
         val phoneFavorite =
