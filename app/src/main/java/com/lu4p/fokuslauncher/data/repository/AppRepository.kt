@@ -678,6 +678,12 @@ constructor(
      * @return true if the app was launched successfully, false otherwise.
      */
     fun launchApp(packageName: String, options: Bundle? = null): Boolean {
+        // Launch the activity the app list shows. PackageManager.getLaunchIntentForPackage picks
+        // its own winner among a package's MAIN/INFO activities, so packages exposing several
+        // (e.g. vendor Settings with an emergency entry) could open a different screen.
+        mainLauncherActivity(packageName)?.let { component ->
+            if (launchMainActivity(component, Process.myUserHandle(), options)) return true
+        }
         val intent = context.packageManager.getLaunchIntentForPackage(packageName)
         return if (intent != null) {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -687,6 +693,17 @@ constructor(
             false
         }
     }
+
+    /** First owner-profile launcher activity of [packageName], matching how the app list is built. */
+    private fun mainLauncherActivity(packageName: String): ComponentName? =
+            try {
+                launcherAppsOrNull()
+                        ?.getActivityList(packageName, Process.myUserHandle())
+                        ?.firstOrNull()
+                        ?.componentName
+            } catch (_: Exception) {
+                null
+            }
 
     /**
      * Launches a web-style search in the given app or via the system resolver. [target] null uses
