@@ -435,6 +435,32 @@ class AppRepositoryTest {
     }
 
     @Test
+    fun `launchApp starts the launcher activity the app list shows`() {
+        val settingsComponent = ComponentName("com.android.settings", "com.android.settings.Settings")
+        every { launcherApps.getActivityList("com.android.settings", myUser) } returns
+                listOf(
+                        createMockLauncherActivity(
+                                "com.android.settings",
+                                "Settings",
+                                activityName = settingsComponent.className,
+                        ),
+                        createMockLauncherActivity(
+                                "com.android.settings",
+                                "Emergency rescue",
+                                activityName = "com.android.settings.EmergencyRescue",
+                        ),
+                )
+        every { packageManager.getLaunchIntentForPackage("com.android.settings") } returns
+                mockk<Intent>(relaxed = true)
+
+        val result = repository.launchApp("com.android.settings")
+
+        assertTrue(result)
+        verify { launcherApps.startMainActivity(settingsComponent, myUser, null, null) }
+        verify(exactly = 0) { context.startActivity(any<Intent>(), any()) }
+    }
+
+    @Test
     fun `launchApp returns false when no intent found`() {
         val realContext = RuntimeEnvironment.getApplication().applicationContext as Context
         val realRepository = AppRepository(realContext, appDao, PrivateSpaceManager(realContext))
@@ -963,6 +989,7 @@ class AppRepositoryTest {
             category: Int = ApplicationInfo.CATEGORY_UNDEFINED,
             flags: Int = 0,
             archived: Boolean = false,
+            activityName: String = "$packageName.MainActivity",
     ): android.content.pm.LauncherActivityInfo {
         val mockLa = mockk<android.content.pm.LauncherActivityInfo>(relaxed = true)
         val appInfo =
@@ -974,8 +1001,7 @@ class AppRepositoryTest {
                 }
         every { mockLa.applicationInfo } returns appInfo
         every { mockLa.label } returns label
-        every { mockLa.componentName } returns
-                ComponentName(packageName, "$packageName.MainActivity")
+        every { mockLa.componentName } returns ComponentName(packageName, activityName)
         every { mockLa.getBadgedIcon(0) } returns null
         return mockLa
     }
