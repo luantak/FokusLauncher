@@ -32,14 +32,20 @@ data class FavoriteApp(
         get() = (resolvedIconTarget as? ShortcutTarget.App)?.packageName ?: packageName
 }
 
-fun favoriteAppStableKey(favorite: FavoriteApp): String {
-    val base = drawerOpenCountKey(favorite.packageName, favorite.profileKey)
+/** Pinned launcher shortcut (PWA) this favorite points at, or null for a plain app row. */
+fun favoriteLauncherShortcutId(favorite: FavoriteApp): String? {
     val target = favorite.resolvedIconTarget
     return if (target is ShortcutTarget.LauncherShortcut &&
                     target.packageName == favorite.packageName
     ) {
-        "$base#shortcut:${target.shortcutId}"
+        target.shortcutId
     } else {
-        base
+        null
     }
+}
+
+fun favoriteAppStableKey(favorite: FavoriteApp): String {
+    val base = drawerOpenCountKey(favorite.packageName, favorite.profileKey)
+    val shortcutId = favoriteLauncherShortcutId(favorite) ?: return base
+    return "$base#shortcut:$shortcutId"
 }

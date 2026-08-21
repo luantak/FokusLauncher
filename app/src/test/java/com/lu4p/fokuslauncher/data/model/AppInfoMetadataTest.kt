@@ -1,6 +1,7 @@
 package com.lu4p.fokuslauncher.data.model
 
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryEntity
+import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
@@ -35,6 +36,43 @@ class AppInfoMetadataTest {
                     icon = null,
                     launcherShortcutId = shortcutId,
             )
+
+    @Test
+    fun `overlayCustomName never renames PWAs after the host browser`() {
+        val renames =
+                listOf(
+                        RenamedAppEntity(
+                                browserPackage,
+                                "0",
+                                "Vivaldi",
+                                launcherShortcutId = HOST_APP_METADATA_SENTINEL,
+                        ),
+                        RenamedAppEntity(
+                                browserPackage,
+                                "0",
+                                "Vivaldi",
+                                launcherShortcutId = LEGACY_PACKAGE_WIDE_METADATA,
+                        ),
+                )
+
+        assertEquals("Vivaldi", overlayCustomName(browserHost(), renames))
+        assertNull(overlayCustomName(pwa("pwa-twitter", "Twitter"), renames))
+    }
+
+    @Test
+    fun `overlayCustomName uses the per-PWA rename`() {
+        val renames =
+                listOf(
+                        RenamedAppEntity(
+                                browserPackage,
+                                "0",
+                                "Bird",
+                                launcherShortcutId = "pwa-twitter",
+                        ),
+                )
+
+        assertEquals("Bird", overlayCustomName(pwa("pwa-twitter", "Twitter"), renames))
+    }
 
     @Test
     fun `overlayCategory uses per-PWA assignment when present`() {

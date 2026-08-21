@@ -29,6 +29,7 @@ import com.lu4p.fokuslauncher.data.model.appMetadataKey
 import com.lu4p.fokuslauncher.data.model.appProfileKey
 import com.lu4p.fokuslauncher.data.model.drawerOpenCountKey
 import com.lu4p.fokuslauncher.data.model.favoriteAppStableKey
+import com.lu4p.fokuslauncher.data.model.favoriteLauncherShortcutId
 import com.lu4p.fokuslauncher.data.model.HOST_APP_METADATA_SENTINEL
 import com.lu4p.fokuslauncher.data.model.metadataSettingsStableKey
 import com.lu4p.fokuslauncher.data.model.CountdownEvent
@@ -704,6 +705,10 @@ class HomeViewModel @Inject constructor(
         return rawRightSideShortcuts.value.filterNot { shortcutArchivedKey(it) in archivedKeys }
     }
 
+    /** Metadata row a favorite owns: its own shortcut row for PWAs, else the host app row. */
+    private fun favoriteMetadataShortcutId(favorite: FavoriteApp): String =
+            favoriteLauncherShortcutId(favorite) ?: HOST_APP_METADATA_SENTINEL
+
     private fun resolveFavoritesSnapshot(
             favs: List<FavoriteApp>,
             renames: Map<String, String>,
@@ -712,11 +717,17 @@ class HomeViewModel @Inject constructor(
     ): List<FavoriteApp> =
             favs.filterNot { favoriteAppStableKey(it) in archivedKeys }.map { fav ->
                 val appKey = favoriteAppStableKey(fav)
+                // PWA rows only answer to their own key; the package-wide keys belong to the
+                // host app and would show the browser name on every PWA.
+                val hostKey =
+                        appMetadataKey(fav.packageName, fav.profileKey).takeIf {
+                            favoriteLauncherShortcutId(fav) == null
+                        }
                 val resolvedName =
                         renames[appKey]
-                                ?: renames[appMetadataKey(fav.packageName, fav.profileKey)]
+                                ?: hostKey?.let { renames[it] }
                                 ?: appNames[appKey]
-                                ?: appNames[appMetadataKey(fav.packageName, fav.profileKey)]
+                                ?: hostKey?.let { appNames[it] }
                                 ?: fav.label
                 fav.copy(label = resolvedName)
             }
@@ -871,7 +882,12 @@ class HomeViewModel @Inject constructor(
                     preferencesManager.setFavorites(current)
                 }
             } else {
-                appRepository.renameApp(favorite.packageName, favorite.profileKey, newName)
+                appRepository.renameApp(
+                        favorite.packageName,
+                        favorite.profileKey,
+                        newName,
+                        favoriteMetadataShortcutId(favorite),
+                )
             }
             dismissAppMenu()
         }
@@ -896,15 +912,10 @@ class HomeViewModel @Inject constructor(
     fun hideApp(favorite: FavoriteApp) {
         if (endAppMenuIfPhoneFavoriteSentinel(favorite)) return
         viewModelScope.launch {
-            val launcherShortcutId =
-                    when (val target = favorite.resolvedIconTarget) {
-                        is ShortcutTarget.LauncherShortcut -> target.shortcutId
-                        else -> HOST_APP_METADATA_SENTINEL
-                    }
             appRepository.hideApp(
                     favorite.packageName,
                     favorite.profileKey,
-                    launcherShortcutId,
+                    favoriteMetadataShortcutId(favorite),
             )
             val current = rawFavorites.value.toMutableList()
             val favoriteKey = favoriteAppStableKey(favorite)
