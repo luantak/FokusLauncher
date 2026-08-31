@@ -18,7 +18,9 @@ signing/pepk-output.zip
 signing/play-upload-key-encrypted.zip
 .vscode
 .keystore
-.cursor
+.cursor/*
+!.cursor/environment.json
+!.cursor/install.sh
 .kotlin
 /app/release
 AGENTS.md

@@ -1,0 +1,4 @@
+{
+  "name": "Fokus Launcher",
+  "install": "bash .cursor/install.sh"
+}
