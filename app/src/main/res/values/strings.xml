@@ -338,6 +338,8 @@
     <string name="settings_weather_app">Weather app</string>
     <string name="settings_swipe_left">Swipe left</string>
     <string name="settings_swipe_right">Swipe right</string>
+    <string name="settings_double_tap">Double tap</string>
+    <string name="settings_double_tap_open_app">Choose app for double tap</string>
     <string name="settings_edit_app_categories">Edit app categories</string>
     <string name="settings_section_app_drawer">App drawer</string>
     <string name="settings_drawer_sidebar_categories">Use category sidebar</string>

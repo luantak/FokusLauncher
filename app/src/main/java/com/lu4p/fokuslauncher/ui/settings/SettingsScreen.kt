@@ -116,6 +116,7 @@ fun SettingsScreen(
                 when (target) {
                     "swipeLeft" -> viewModel.setSwipeLeftTarget(action.target)
                     "swipeRight" -> viewModel.setSwipeRightTarget(action.target)
+                    "doubleTap" -> viewModel.setDoubleTapEmptyTarget(action)
                 }
             },
     )
@@ -269,6 +270,25 @@ private fun SettingsHubContent(
                             ),
                     onPickApp = { onShowAppPicker(row.pickerKey) },
                     onClear = row.onClear,
+            )
+        }
+        item {
+            ShortcutTargetRow(
+                    label = stringResource(R.string.settings_double_tap),
+                    currentTarget =
+                            formatWidgetTapTarget(
+                                    context = context,
+                                    resources = resources,
+                                    binding = uiState.doubleTapEmptyTarget,
+                                    allApps = uiState.allApps,
+                                    allActions = uiState.allShortcutActions,
+                                    emptyLabel = { _, res ->
+                                        res.getString(R.string.shortcut_target_not_set)
+                                    },
+                            ),
+                    onPickApp = { onShowAppPicker("doubleTap") },
+                    onClear = { viewModel.setDoubleTapEmptyTarget(null) },
+                    enabled = !uiState.doubleTapEmptyLock,
             )
         }
         item { SettingsDivider() }
@@ -435,6 +455,22 @@ private fun SettingsScreenDialogs(
                         },
                         onDismiss = onDismissPicker,
                         includeWidgetPageTarget = true,
+                        profileDisplayNameOverrides = uiState.profileDisplayNameOverrides,
+                )
+            }
+            "doubleTap" -> {
+                ShortcutActionPickerDialog(
+                        allActions =
+                                uiState.allShortcutActions.filter {
+                                    it.actionLabel == AppShortcutAction.OPEN_APP_LABEL
+                                },
+                        allApps = uiState.allApps,
+                        title = stringResource(R.string.settings_double_tap_open_app),
+                        onSelect = { action ->
+                            onShortcutTargetSelected(target, action)
+                            onDismissPicker()
+                        },
+                        onDismiss = onDismissPicker,
                         profileDisplayNameOverrides = uiState.profileDisplayNameOverrides,
                 )
             }

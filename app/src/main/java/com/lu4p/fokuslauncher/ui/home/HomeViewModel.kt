@@ -105,6 +105,7 @@ data class HomeUiState(
     val isDefaultLauncher: Boolean = true,
     val homeAlignment: HomeAlignment = HomeAlignment.LEFT,
     val doubleTapEmptyLockEnabled: Boolean = false,
+    val doubleTapEmptyActionEnabled: Boolean = false,
     val launcherFontScale: Float = LauncherFontScale.DEFAULT,
     /** Image / non-black wallpaper — stronger home scrim for readability. */
     val usesPhotoWallpaper: Boolean = false,
@@ -1192,7 +1193,14 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun observeDoubleTapEmptyLock() {
-        observeFlow(preferencesManager.doubleTapEmptyLockFlow, ::recomputeDoubleTapEmptyLockUi)
+        observeFlow(
+                combine(
+                        preferencesManager.doubleTapEmptyLockFlow,
+                        preferencesManager.doubleTapEmptyTargetFlow,
+                ) { lockEnabled, target -> lockEnabled to target }
+        ) { (lockEnabled, target) ->
+            recomputeDoubleTapEmptyUi(lockEnabled, target)
+        }
     }
 
     // ── Media widget ────────────────────────────────────────────────
@@ -1474,14 +1482,23 @@ class HomeViewModel @Inject constructor(
 
     fun refreshDoubleTapLockEffective() {
         viewModelScope.launch {
-            recomputeDoubleTapEmptyLockUi(preferencesManager.doubleTapEmptyLockFlow.first())
+            recomputeDoubleTapEmptyUi(
+                    preferencesManager.doubleTapEmptyLockFlow.first(),
+                    preferencesManager.doubleTapEmptyTargetFlow.first(),
+            )
         }
     }
 
-    private fun recomputeDoubleTapEmptyLockUi(prefEnabled: Boolean) {
+    private fun recomputeDoubleTapEmptyUi(
+            lockEnabled: Boolean,
+            target: WidgetTapTarget?,
+    ) {
         val svcEnabled = LockScreenHelper.isLockAccessibilityServiceEnabled(context)
         _uiState.value =
-            _uiState.value.copy(doubleTapEmptyLockEnabled = prefEnabled && svcEnabled)
+            _uiState.value.copy(
+                    doubleTapEmptyLockEnabled = lockEnabled && svcEnabled,
+                    doubleTapEmptyActionEnabled = lockEnabled || target != null,
+            )
     }
 
     private fun checkDefaultLauncher() {
@@ -1498,12 +1515,26 @@ class HomeViewModel @Inject constructor(
     /** Double-tap on the empty region above home screen apps; locks via accessibility if enabled. */
     fun onDoubleTapEmptyLock() {
         viewModelScope.launch {
-            if (!preferencesManager.doubleTapEmptyLockFlow.first()) return@launch
-            if (!LockScreenHelper.isLockAccessibilityServiceEnabled(context)) return@launch
-            if (LockScreenHelper.lockScreenIfPossible()) return@launch
-            Toast.makeText(context, R.string.double_tap_lock_failed, Toast.LENGTH_SHORT).show()
-            _requestLockAccessibilitySettings.emit(Unit)
+            lockScreenFromDoubleTapIfEnabled()
         }
+    }
+
+    fun onDoubleTapEmpty() {
+        viewModelScope.launch {
+            if (preferencesManager.doubleTapEmptyLockFlow.first()) {
+                lockScreenFromDoubleTapIfEnabled()
+                return@launch
+            }
+            preferencesManager.doubleTapEmptyTargetFlow.first()?.let(::launchWidgetTapTarget)
+        }
+    }
+
+    private suspend fun lockScreenFromDoubleTapIfEnabled() {
+        if (!preferencesManager.doubleTapEmptyLockFlow.first()) return
+        if (!LockScreenHelper.isLockAccessibilityServiceEnabled(context)) return
+        if (LockScreenHelper.lockScreenIfPossible()) return
+        Toast.makeText(context, R.string.double_tap_lock_failed, Toast.LENGTH_SHORT).show()
+        _requestLockAccessibilitySettings.emit(Unit)
     }
 
     fun openDefaultLauncherSettings() {

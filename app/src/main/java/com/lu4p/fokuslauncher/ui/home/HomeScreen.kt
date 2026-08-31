@@ -127,7 +127,7 @@ fun HomeScreen(
     val onDateClick = viewModel::openCalendarApp
     val onWeatherClick = viewModel::openWeatherAppPicker
     val onScreenTimeClick = viewModel::openDigitalWellbeing
-    val onDoubleTapEmptyLock = viewModel::onDoubleTapEmptyLock
+    val onDoubleTapEmpty = viewModel::onDoubleTapEmpty
 
     LaunchedEffect(viewModel) {
         viewModel.requestLockAccessibilitySettings.collect {
@@ -179,8 +179,8 @@ fun HomeScreen(
             onPomodoroDecrease = { viewModel.pomodoroAdjustMinutes(-1) },
             onPomodoroIncrease = { viewModel.pomodoroAdjustMinutes(1) },
             onPomodoroSelectMode = viewModel::pomodoroSelectMode,
-            doubleTapEmptyLockEnabled = uiState.doubleTapEmptyLockEnabled,
-            onDoubleTapEmptyLock = onDoubleTapEmptyLock,
+            doubleTapEmptyEnabled = uiState.doubleTapEmptyActionEnabled,
+            onDoubleTapEmpty = onDoubleTapEmpty,
         )
     }
 
@@ -277,8 +277,8 @@ fun HomeScreenContent(
     onPomodoroDecrease: () -> Unit = {},
     onPomodoroIncrease: () -> Unit = {},
     onPomodoroSelectMode: (PomodoroMode) -> Unit = {},
-    doubleTapEmptyLockEnabled: Boolean = false,
-    onDoubleTapEmptyLock: () -> Unit = {},
+    doubleTapEmptyEnabled: Boolean = false,
+    onDoubleTapEmpty: () -> Unit = {},
 ) {
     val play = LocalSystemClickSound.current
     val noIndication = remember { MutableInteractionSource() }
@@ -293,10 +293,10 @@ fun HomeScreenContent(
                 interactionSource = noIndication,
                 onClick = { },
                 onLongClick = onHomeScreenLongPress,
-                onDoubleClick = if (doubleTapEmptyLockEnabled) {
+                onDoubleClick = if (doubleTapEmptyEnabled) {
                     {
                         play()
-                        onDoubleTapEmptyLock()
+                        onDoubleTapEmpty()
                     }
                 } else null
             )

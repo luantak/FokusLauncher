@@ -99,6 +99,7 @@ data class SettingsUiState(
         val rightSideShortcuts: List<HomeShortcut> = emptyList(),
         val swipeLeftTarget: ShortcutTarget? = null,
         val swipeRightTarget: ShortcutTarget? = null,
+        val doubleTapEmptyTarget: WidgetTapTarget? = null,
         val preferredWeatherTap: WidgetTapTarget? = null,
         val preferredClockTap: WidgetTapTarget? = null,
         val preferredCalendarTap: WidgetTapTarget? = null,
@@ -482,14 +483,18 @@ constructor(
                     }
             val lockRailPrefsFlow =
                     combine(
-                            preferencesManager.doubleTapEmptyLockFlow,
+                            combine(
+                                    preferencesManager.doubleTapEmptyLockFlow,
+                                    preferencesManager.doubleTapEmptyTargetFlow,
+                            ) { lockEnabled, target -> lockEnabled to target },
                             preferencesManager.longLockReturnHomeFlow,
                             preferencesManager.longLockReturnHomeThresholdMinutesFlow,
                             preferencesManager.drawerCategorySidebarOnLeftFlow,
                             preferencesManager.drawerCategoryIconsFlow,
                     ) { doubleTap, longLockReturn, longLockMinutes, railOnLeft, iconOverrides ->
                         LockRailPrefs(
-                                doubleTapEmptyLock = doubleTap,
+                                doubleTapEmptyLock = doubleTap.first,
+                                doubleTapEmptyTarget = doubleTap.second,
                                 longLockReturnHome = longLockReturn,
                                 longLockReturnHomeThresholdMinutes = longLockMinutes,
                                 drawerCategorySidebarOnLeft = railOnLeft,
@@ -582,6 +587,7 @@ constructor(
                         rightSideShortcuts = left.rightSideShortcuts,
                         swipeLeftTarget = left.swipeLeft,
                         swipeRightTarget = drawer.swipeRightTarget,
+                        doubleTapEmptyTarget = lockRail.doubleTapEmptyTarget,
                         preferredWeatherTap = drawer.preferredWeatherTap,
                         preferredClockTap = homeWidgetItems.preferredClockTap,
                         preferredCalendarTap = homeWidgetItems.preferredCalendarTap,
@@ -742,6 +748,7 @@ constructor(
 
     private data class LockRailPrefs(
             val doubleTapEmptyLock: Boolean,
+            val doubleTapEmptyTarget: WidgetTapTarget?,
             val longLockReturnHome: Boolean,
             val longLockReturnHomeThresholdMinutes: Int,
             val drawerCategorySidebarOnLeft: Boolean,
@@ -976,6 +983,13 @@ constructor(
 
     fun setSwipeRightTarget(target: ShortcutTarget?) =
             launchPreferences { setSwipeRightTarget(target) }
+
+    fun setDoubleTapEmptyTarget(action: AppShortcutAction?) =
+            launchPreferences {
+                setDoubleTapEmptyTarget(
+                        action?.let { WidgetTapTarget(it.target, it.profileKey) }
+                )
+            }
 
     fun setPreferredWeatherTap(action: AppShortcutAction?) =
             launchPreferences {

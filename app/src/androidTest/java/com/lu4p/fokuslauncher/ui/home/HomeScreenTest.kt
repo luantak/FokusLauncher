@@ -432,12 +432,12 @@ class HomeScreenTest {
     }
 
     @Test
-    fun homeScreen_doubleTapToLock_triggersCallback() {
+    fun homeScreen_doubleTapActionEnabled_triggersCallback() {
         var doubleTapTriggered = false
         composeTestRule.setContent {
             FokusLauncherTheme {
                 HomeScreenContent(
-                        uiState = HomeUiState(doubleTapEmptyLockEnabled = true),
+                        uiState = HomeUiState(doubleTapEmptyActionEnabled = true),
                         clockUiState = clock(),
                         weatherUiState = weatherOff,
                         favorites = testFavorites,
@@ -445,7 +445,8 @@ class HomeScreenTest {
                         onLabelClick = {},
                         onLabelLongPress = {},
                         onIconClick = {},
-                        onDoubleTapEmptyLock = { doubleTapTriggered = true }
+                        doubleTapEmptyEnabled = true,
+                        onDoubleTapEmpty = { doubleTapTriggered = true }
                 )
             }
         }
@@ -457,12 +458,12 @@ class HomeScreenTest {
     }
 
     @Test
-    fun homeScreen_doubleTapToLockDisabled_doesNotTriggerCallback() {
+    fun homeScreen_doubleTapActionDisabled_doesNotTriggerCallback() {
         var doubleTapTriggered = false
         composeTestRule.setContent {
             FokusLauncherTheme {
                 HomeScreenContent(
-                        uiState = HomeUiState(doubleTapEmptyLockEnabled = false),
+                        uiState = HomeUiState(doubleTapEmptyActionEnabled = false),
                         clockUiState = clock(),
                         weatherUiState = weatherOff,
                         favorites = testFavorites,
@@ -470,7 +471,8 @@ class HomeScreenTest {
                         onLabelClick = {},
                         onLabelLongPress = {},
                         onIconClick = {},
-                        onDoubleTapEmptyLock = { doubleTapTriggered = true }
+                        doubleTapEmptyEnabled = false,
+                        onDoubleTapEmpty = { doubleTapTriggered = true }
                 )
             }
         }
@@ -482,12 +484,12 @@ class HomeScreenTest {
     }
 
     @Test
-    fun homeScreen_doubleTapOnFavorite_doesNotTriggerLock() {
+    fun homeScreen_doubleTapOnFavorite_doesNotTriggerAction() {
         var doubleTapTriggered = false
         composeTestRule.setContent {
             FokusLauncherTheme {
                 HomeScreenContent(
-                        uiState = HomeUiState(doubleTapEmptyLockEnabled = true),
+                        uiState = HomeUiState(doubleTapEmptyActionEnabled = true),
                         clockUiState = clock(),
                         weatherUiState = weatherOff,
                         favorites = testFavorites,
@@ -495,7 +497,8 @@ class HomeScreenTest {
                         onLabelClick = {},
                         onLabelLongPress = {},
                         onIconClick = {},
-                        onDoubleTapEmptyLock = { doubleTapTriggered = true }
+                        doubleTapEmptyEnabled = true,
+                        onDoubleTapEmpty = { doubleTapTriggered = true }
                 )
             }
         }

@@ -91,6 +91,7 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         private val FAVORITES_KEY = stringPreferencesKey("favorite_apps")
         private val SWIPE_LEFT_KEY = stringPreferencesKey("swipe_left_app")
         private val SWIPE_RIGHT_KEY = stringPreferencesKey("swipe_right_app")
+        private val DOUBLE_TAP_EMPTY_TARGET_KEY = stringPreferencesKey("double_tap_empty_target")
         private val RIGHT_SIDE_SHORTCUTS_KEY = stringPreferencesKey("right_side_shortcuts")
         private val HOSTED_WIDGETS_KEY = stringPreferencesKey("hosted_widgets")
         private val WORLD_CLOCK_CITIES_KEY = stringPreferencesKey("world_clock_cities")
@@ -360,6 +361,14 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
     suspend fun setSwipeRightTarget(target: ShortcutTarget?) {
         context.fokusLauncherPreferencesDataStore.edit { prefs -> prefs[SWIPE_RIGHT_KEY] = ShortcutTarget.encode(target) }
     }
+
+    val doubleTapEmptyTargetFlow: Flow<WidgetTapTarget?> =
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
+                decodeWidgetTapTarget(prefs[DOUBLE_TAP_EMPTY_TARGET_KEY] ?: "")
+            }
+
+    suspend fun setDoubleTapEmptyTarget(target: WidgetTapTarget?) =
+            setPref(DOUBLE_TAP_EMPTY_TARGET_KEY, encodeWidgetTapTarget(target))
 
     // --- Home widget tap targets (clock / calendar / weather) ---
 

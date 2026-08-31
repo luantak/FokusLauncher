@@ -1011,7 +1011,8 @@ internal fun ShortcutTargetRow(
         label: String,
         currentTarget: String,
         onPickApp: () -> Unit,
-        onClear: () -> Unit
+        onClear: () -> Unit,
+        enabled: Boolean = true,
 ) {
     Row(
             verticalAlignment = Alignment.Top,
@@ -1035,6 +1036,7 @@ internal fun ShortcutTargetRow(
         ) {
             FokusIconButton(
                     onClick = onPickApp,
+                    enabled = enabled,
                     modifier = Modifier.size(36.dp.launcherIconDp()),
             ) {
                 LauncherIcon(
@@ -1046,6 +1048,7 @@ internal fun ShortcutTargetRow(
             }
             FokusIconButton(
                     onClick = onClear,
+                    enabled = enabled,
                     modifier = Modifier.size(36.dp.launcherIconDp()),
             ) {
                 LauncherIcon(

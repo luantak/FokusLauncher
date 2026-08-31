@@ -24,6 +24,7 @@ import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.HOST_APP_METADATA_SENTINEL
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
+import com.lu4p.fokuslauncher.data.model.WidgetTapTarget
 import com.lu4p.fokuslauncher.data.model.appMetadataKey
 import com.lu4p.fokuslauncher.data.model.favoriteAppStableKey
 import com.lu4p.fokuslauncher.data.repository.AppRepository
@@ -171,6 +172,7 @@ class HomeViewModelTest {
         every { preferencesManager.homeDateFormatStyleFlow } returns
                 flowOf(HomeDateFormatStyle.SYSTEM_DEFAULT)
         every { preferencesManager.doubleTapEmptyLockFlow } returns flowOf(false)
+        every { preferencesManager.doubleTapEmptyTargetFlow } returns flowOf(null)
         coEvery { preferencesManager.ensureRightSideShortcutsInitialized() } returns Unit
         coEvery { preferencesManager.setFavorites(any()) } returns Unit
 
@@ -1107,6 +1109,47 @@ class HomeViewModelTest {
         testDispatcher.scheduler.runCurrent()
 
         verify { LockScreenHelper.lockScreenIfPossible() }
+        unmockkObject(LockScreenHelper)
+    }
+
+    @Test
+    fun `onDoubleTapEmpty launches configured app when lock is disabled`() {
+        every { preferencesManager.doubleTapEmptyTargetFlow } returns
+                flowOf(WidgetTapTarget(ShortcutTarget.App("com.lu4p.music"), "0"))
+
+        val viewModel = createViewModel()
+        viewModel.onDoubleTapEmpty()
+        testDispatcher.scheduler.runCurrent()
+
+        verify { appRepository.launchApp("com.lu4p.music") }
+    }
+
+    @Test
+    fun `configured double tap target enables the home gesture`() {
+        every { preferencesManager.doubleTapEmptyTargetFlow } returns
+                flowOf(WidgetTapTarget(ShortcutTarget.App("com.lu4p.music"), "0"))
+
+        val viewModel = createViewModel(contextForClockAndBattery(mockBatteryStickyIntent()))
+        testDispatcher.scheduler.runCurrent()
+
+        assertTrue(viewModel.uiState.value.doubleTapEmptyActionEnabled)
+    }
+
+    @Test
+    fun `onDoubleTapEmpty locks instead of launching configured app when lock is enabled`() {
+        mockkObject(LockScreenHelper)
+        every { LockScreenHelper.isLockAccessibilityServiceEnabled(any()) } returns true
+        every { LockScreenHelper.lockScreenIfPossible() } returns true
+        every { preferencesManager.doubleTapEmptyLockFlow } returns flowOf(true)
+        every { preferencesManager.doubleTapEmptyTargetFlow } returns
+                flowOf(WidgetTapTarget(ShortcutTarget.App("com.lu4p.music"), "0"))
+
+        val viewModel = createViewModel()
+        viewModel.onDoubleTapEmpty()
+        testDispatcher.scheduler.runCurrent()
+
+        verify { LockScreenHelper.lockScreenIfPossible() }
+        verify(exactly = 0) { appRepository.launchApp("com.lu4p.music") }
         unmockkObject(LockScreenHelper)
     }
 
