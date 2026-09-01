@@ -35,9 +35,12 @@ class PomodoroWidgetLayoutTest {
         val decrease = composeTestRule.onNodeWithTag("pomodoro_decrease").fetchSemanticsNode().boundsInRoot
         val playPause = composeTestRule.onNodeWithTag("pomodoro_play_pause").fetchSemanticsNode().boundsInRoot
         val increase = composeTestRule.onNodeWithTag("pomodoro_increase").fetchSemanticsNode().boundsInRoot
-        val minimumGapPx = with(density) { 28.dp.toPx() }
+        val remaining = composeTestRule.onNodeWithTag("pomodoro_remaining").fetchSemanticsNode().boundsInRoot
+        val minimumHorizontalGapPx = with(density) { 28.dp.toPx() }
+        val minimumVerticalGapPx = with(density) { 20.dp.toPx() }
 
-        assertTrue("Decrease and pause backdrops need separate visual space", playPause.left - decrease.right >= minimumGapPx)
-        assertTrue("Pause and increase backdrops need separate visual space", increase.left - playPause.right >= minimumGapPx)
+        assertTrue("Decrease and pause backdrops need separate visual space", playPause.left - decrease.right >= minimumHorizontalGapPx)
+        assertTrue("Pause and increase backdrops need separate visual space", increase.left - playPause.right >= minimumHorizontalGapPx)
+        assertTrue("Timer text and control backdrops need separate visual space", playPause.top - remaining.bottom >= minimumVerticalGapPx)
     }
 }
