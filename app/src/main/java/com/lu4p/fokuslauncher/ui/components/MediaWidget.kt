@@ -5,7 +5,6 @@ import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -22,14 +21,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.media.MediaCustomActionButton
+import com.lu4p.fokuslauncher.ui.home.HomeWidgetAlignment
+import com.lu4p.fokuslauncher.ui.home.WidgetControlIconBaseSizeDp
 import com.lu4p.fokuslauncher.ui.util.clickableNoRippleWithSystemSound
 
 /**
@@ -50,6 +51,7 @@ fun MediaWidget(
         canSkipToNext: Boolean,
         like: MediaCustomActionButton? = null,
         save: MediaCustomActionButton? = null,
+        alignment: HomeWidgetAlignment = HomeWidgetAlignment.START,
         modifier: Modifier = Modifier,
         outlined: Boolean = false,
         onOpenApp: () -> Unit = {},
@@ -63,9 +65,25 @@ fun MediaWidget(
     val titleStyle = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
     val artistStyle = MaterialTheme.typography.bodyMedium
     val showArtist = !artist.isNullOrBlank() && !artist.equals(title, ignoreCase = true)
-    val iconSize = with(LocalDensity.current) { (titleStyle.fontSize * 1.5f).toDp() }
+    val iconSize = WidgetControlIconBaseSizeDp.dp
+    val horizontalAlignment =
+            when (alignment) {
+                HomeWidgetAlignment.START -> Alignment.Start
+                HomeWidgetAlignment.CENTER -> Alignment.CenterHorizontally
+                HomeWidgetAlignment.END -> Alignment.End
+            }
 
-    Column(modifier = modifier.testTag("media_widget")) {
+    val textAlign =
+            when (alignment) {
+                HomeWidgetAlignment.START -> TextAlign.Start
+                HomeWidgetAlignment.CENTER -> TextAlign.Center
+                HomeWidgetAlignment.END -> TextAlign.End
+            }
+
+    Column(
+            horizontalAlignment = horizontalAlignment,
+            modifier = modifier.testTag("media_widget"),
+    ) {
         Column(
                 modifier =
                         Modifier.fillMaxWidth()
@@ -76,6 +94,7 @@ fun MediaWidget(
                     style = titleStyle,
                     color = color,
                     outlined = outlined,
+                    textAlign = textAlign,
                     modifier = Modifier.testTag("media_title"),
             )
             if (showArtist) {
@@ -84,6 +103,7 @@ fun MediaWidget(
                         style = artistStyle,
                         color = color.copy(alpha = 0.78f),
                         outlined = outlined,
+                        textAlign = textAlign,
                         modifier =
                                 Modifier.testTag("media_artist").padding(top = 2.dp),
                 )
@@ -91,12 +111,9 @@ fun MediaWidget(
         }
         Row(
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp, horizontalAlignment),
                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
         ) {
-            Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
                 val previousColor = if (canSkipToPrevious) color else color.copy(alpha = 0.38f)
                 LauncherIcon(
                         imageVector = Icons.Filled.SkipPrevious,
@@ -152,14 +169,7 @@ fun MediaWidget(
                                                 }
                                         ),
                 )
-            }
             if (like != null || save != null) {
-                Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        modifier = Modifier.weight(1f, fill = true),
-                ) {
-                    Spacer(modifier = Modifier.weight(1f))
                     if (like != null) {
                         val likeTint =
                                 if (like.active) color else color.copy(alpha = 0.5f)
@@ -205,7 +215,6 @@ fun MediaWidget(
                                                 .clickableNoRippleWithSystemSound(onClick = onSave),
                         )
                     }
-                }
             }
         }
     }
@@ -218,6 +227,7 @@ private fun MediaWidgetMarqueeText(
         style: androidx.compose.ui.text.TextStyle,
         color: androidx.compose.ui.graphics.Color,
         outlined: Boolean,
+        textAlign: TextAlign,
         modifier: Modifier = Modifier,
 ) {
     val marqueeModifier = modifier.fillMaxWidth().basicMarquee()
@@ -228,6 +238,7 @@ private fun MediaWidgetMarqueeText(
                 color = color,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+                textAlign = textAlign,
                 modifier = marqueeModifier,
         )
     } else {
@@ -237,6 +248,7 @@ private fun MediaWidgetMarqueeText(
                 color = color,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+                textAlign = textAlign,
                 modifier = marqueeModifier,
         )
     }

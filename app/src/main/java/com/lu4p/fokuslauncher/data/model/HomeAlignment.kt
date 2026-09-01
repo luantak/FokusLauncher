@@ -4,13 +4,12 @@ import androidx.annotation.StringRes
 import com.lu4p.fokuslauncher.R
 
 /**
- * Controls the alignment of favourite app labels and shortcut icons
- * on the home screen.
+ * Controls horizontal placement of home widgets, favourite app labels, and shortcut icons.
  *
- * - [LEFT]: Labels on the left, shortcut icons on the right (default).
- * - [CENTER]: Labels and shortcut icons horizontally centered together near the bottom.
- * - [MIDDLE]: Labels and shortcut icons horizontally centered in the middle of the screen.
- * - [RIGHT]: Labels on the right, shortcut icons on the left (swapped).
+ * - [LEFT]: Widgets and labels on the left, shortcut icons on the right (default).
+ * - [CENTER]: Widgets, labels, and shortcut icons horizontally centered near the bottom.
+ * - [MIDDLE]: Same horizontal centering, with labels and shortcuts in the middle of the screen.
+ * - [RIGHT]: Widgets and labels on the right, shortcut icons on the left (swapped).
  */
 enum class HomeAlignment(@param:StringRes val labelRes: Int) {
     LEFT(R.string.home_alignment_left),

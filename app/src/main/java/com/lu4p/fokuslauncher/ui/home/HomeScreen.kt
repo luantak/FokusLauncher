@@ -389,6 +389,7 @@ private fun HomeClockWeatherHeader(
     weatherUiState: HomeWeatherUiState,
     screenTimeUiState: HomeScreenTimeUiState,
     showWeather: Boolean,
+    widgetAlignment: HomeWidgetAlignment,
     onClockClick: () -> Unit,
     onWeatherClick: () -> Unit,
     onScreenTimeClick: () -> Unit,
@@ -412,9 +413,33 @@ private fun HomeClockWeatherHeader(
             with(density) { (10f * launcherScale).sp.toDp() } + 8.dp
         }
     val weatherRowHeight = rememberTitleMediumRowHeight()
-    val weatherTop = weatherTopPad + weatherLowerInset
+    val clockColumnHeight =
+        with(density) {
+            clockStyle.lineHeight.toDp() +
+                if (clockUiState.nextAlarm == null) 0.dp
+                else MaterialTheme.typography.labelMedium.lineHeight.toDp() + 4.dp
+        }
+    val weatherTop = maxOf(weatherTopPad + weatherLowerInset, clockColumnHeight + 4.dp)
     val screenTimeTop =
         weatherTop + if (showWeather) weatherRowHeight + 4.dp else 0.dp
+    val clockBoxAlignment =
+        when (widgetAlignment) {
+            HomeWidgetAlignment.START -> Alignment.TopStart
+            HomeWidgetAlignment.CENTER -> Alignment.TopCenter
+            HomeWidgetAlignment.END -> Alignment.TopEnd
+        }
+    val auxiliaryBoxAlignment =
+        when (widgetAlignment) {
+            HomeWidgetAlignment.START -> Alignment.TopStart
+            HomeWidgetAlignment.CENTER -> Alignment.TopCenter
+            HomeWidgetAlignment.END -> Alignment.TopEnd
+        }
+    val clockColumnAlignment =
+        when (widgetAlignment) {
+            HomeWidgetAlignment.START -> Alignment.Start
+            HomeWidgetAlignment.CENTER -> Alignment.CenterHorizontally
+            HomeWidgetAlignment.END -> Alignment.End
+        }
     Box(modifier = Modifier.fillMaxWidth()) {
         if (showWeather) {
             WeatherWidget(
@@ -424,7 +449,7 @@ private fun HomeClockWeatherHeader(
                 outlined = outlined,
                 onClick = onWeatherClick,
                 modifier =
-                    Modifier.align(Alignment.TopEnd)
+                    Modifier.align(auxiliaryBoxAlignment)
                         .padding(top = weatherTop),
             )
         }
@@ -434,12 +459,13 @@ private fun HomeClockWeatherHeader(
                 outlined = outlined,
                 onClick = onScreenTimeClick,
                 modifier =
-                    Modifier.align(Alignment.TopEnd)
+                    Modifier.align(auxiliaryBoxAlignment)
                         .offset(y = screenTimeTop),
             )
         }
         Column(
-            modifier = Modifier.align(Alignment.TopStart),
+            horizontalAlignment = clockColumnAlignment,
+            modifier = Modifier.align(clockBoxAlignment),
         ) {
             ClockWidget(
                 time = clockUiState.currentTime,
@@ -515,6 +541,13 @@ private fun HomeWidgetsSection(
     val showWeather = uiState.showHomeWeather && weatherUiState.showWeatherWidget
     val showDateOrBattery = uiState.showHomeDate || uiState.showHomeBattery
     val weatherRowHeight = rememberTitleMediumRowHeight()
+    val widgetAlignment = HomeWidgetAlignment.from(uiState.homeAlignment)
+    val standaloneWidgetBoxAlignment =
+        when (widgetAlignment) {
+            HomeWidgetAlignment.START -> Alignment.TopStart
+            HomeWidgetAlignment.CENTER -> Alignment.TopCenter
+            HomeWidgetAlignment.END -> Alignment.TopEnd
+        }
 
     when {
         showClock -> {
@@ -523,6 +556,7 @@ private fun HomeWidgetsSection(
                 weatherUiState = weatherUiState,
                 screenTimeUiState = screenTimeUiState,
                 showWeather = showWeather,
+                widgetAlignment = widgetAlignment,
                 onClockClick = onClockClick,
                 onWeatherClick = onWeatherClick,
                 onScreenTimeClick = onScreenTimeClick,
@@ -538,7 +572,7 @@ private fun HomeWidgetsSection(
                         prominent = false,
                         outlined = outlined,
                         onClick = onWeatherClick,
-                        modifier = Modifier.align(Alignment.TopEnd),
+                        modifier = Modifier.align(standaloneWidgetBoxAlignment),
                     )
                 }
                 if (screenTimeUiState.showWidget) {
@@ -547,7 +581,7 @@ private fun HomeWidgetsSection(
                         outlined = outlined,
                         onClick = onScreenTimeClick,
                         modifier =
-                            Modifier.align(Alignment.TopEnd)
+                            Modifier.align(standaloneWidgetBoxAlignment)
                                 .offset(
                                     y =
                                         if (showWeather) {
@@ -569,6 +603,7 @@ private fun HomeWidgetsSection(
             isCharging = clockUiState.isCharging,
             showDate = uiState.showHomeDate,
             showBattery = uiState.showHomeBattery,
+            alignment = widgetAlignment,
             outlined = outlined,
             onDateClick = onDateClick,
             modifier =
@@ -616,6 +651,7 @@ private fun HomeWidgetsSection(
         if (extraChips.isNotEmpty()) {
             HomeExtraChipsRow(
                 chips = extraChips,
+                alignment = widgetAlignment,
                 outlined = outlined,
                 modifier = Modifier.fillMaxWidth().padding(top = extrasTopPad),
             )
@@ -633,6 +669,7 @@ private fun HomeWidgetsSection(
                 isRunning = pomodoroUiState.isRunning,
                 awaitingDismiss = pomodoroUiState.awaitingDismiss,
                 mode = pomodoroUiState.mode,
+                alignment = widgetAlignment,
                 outlined = outlined,
                 onPlayPause = onPomodoroPlayPause,
                 onDecrease = onPomodoroDecrease,
@@ -653,6 +690,7 @@ private fun HomeWidgetsSection(
                     canSkipToNext = playback.canSkipToNext,
                     like = playback.like,
                     save = playback.save,
+                    alignment = widgetAlignment,
                     outlined = outlined,
                     onOpenApp = onMediaOpenApp,
                     onLike = onMediaLike,

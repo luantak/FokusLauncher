@@ -116,7 +116,7 @@ android {
         versionCode = 49
         versionName = "1.9.3"
 
-        testInstrumentationRunner = "io.github.luantak.fokuslauncher.HiltTestRunner"
+        testInstrumentationRunner = "com.lu4p.fokuslauncher.HiltTestRunner"
     }
 
     if (hasApkReleaseSigning || hasBundleReleaseSigning) {

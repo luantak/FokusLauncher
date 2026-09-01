@@ -14,6 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import com.lu4p.fokuslauncher.ui.home.HomeExtraChipUi
+import com.lu4p.fokuslauncher.ui.home.HomeWidgetAlignment
 import com.lu4p.fokuslauncher.ui.theme.LocalPhotoWallpaperOutlineWidthDp
 import kotlin.math.max
 
@@ -25,6 +26,7 @@ import kotlin.math.max
 @Composable
 fun HomeExtraChipsRow(
         chips: List<HomeExtraChipUi>,
+        alignment: HomeWidgetAlignment = HomeWidgetAlignment.START,
         modifier: Modifier = Modifier,
         outlined: Boolean = false,
 ) {
@@ -143,19 +145,30 @@ fun HomeExtraChipsRow(
                     contentWidth.coerceAtLeast(constraints.minWidth)
                 }
         val layoutHeight = (y + rowHeight).coerceAtLeast(constraints.minHeight)
+        val rowWidths =
+                placed.groupBy { it.y }.mapValues { (_, row) ->
+                    row.maxOf { item -> item.x + chipPlaceables[item.index].width }
+                }
 
         layout(layoutWidth, layoutHeight) {
             var dividerIndex = 0
             placed.forEach { item ->
                 val placeable = chipPlaceables[item.index]
+                val rowWidth = rowWidths.getValue(item.y)
+                val rowOffset =
+                        when (alignment) {
+                            HomeWidgetAlignment.START -> 0
+                            HomeWidgetAlignment.CENTER -> (layoutWidth - rowWidth) / 2
+                            HomeWidgetAlignment.END -> layoutWidth - rowWidth
+                        }
                 if (item.withLeadingDivider) {
                     val divider = dividerPlaceables[dividerIndex++]
                     divider.placeRelative(
-                            x = item.x - dividerPad - divider.width,
+                            x = rowOffset + item.x - dividerPad - divider.width,
                             y = item.y + (placeable.height - divider.height) / 2,
                     )
                 }
-                placeable.placeRelative(item.x, item.y)
+                placeable.placeRelative(rowOffset + item.x, item.y)
             }
         }
     }

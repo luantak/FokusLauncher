@@ -17,7 +17,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -26,6 +25,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.model.PomodoroMode
+import com.lu4p.fokuslauncher.ui.home.HomeWidgetAlignment
+import com.lu4p.fokuslauncher.ui.home.WidgetControlIconBaseSizeDp
 import com.lu4p.fokuslauncher.ui.util.clickableNoRippleWithSystemSound
 
 /**
@@ -40,6 +41,7 @@ fun PomodoroWidget(
         isRunning: Boolean,
         awaitingDismiss: Boolean,
         mode: PomodoroMode,
+        alignment: HomeWidgetAlignment = HomeWidgetAlignment.START,
         modifier: Modifier = Modifier,
         outlined: Boolean = false,
         onPlayPause: () -> Unit = {},
@@ -50,13 +52,22 @@ fun PomodoroWidget(
     val color = MaterialTheme.colorScheme.onBackground
     val titleStyle = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
     val modeStyle = MaterialTheme.typography.bodyMedium
-    val iconSize = with(LocalDensity.current) { (titleStyle.fontSize * 1.5f).toDp() }
+    val iconSize = WidgetControlIconBaseSizeDp.dp
     val muted = color.copy(alpha = 0.38f)
+    val horizontalAlignment =
+            when (alignment) {
+                HomeWidgetAlignment.START -> Alignment.Start
+                HomeWidgetAlignment.CENTER -> Alignment.CenterHorizontally
+                HomeWidgetAlignment.END -> Alignment.End
+            }
 
-    Column(modifier = modifier.testTag("pomodoro_widget")) {
+    Column(
+            horizontalAlignment = horizontalAlignment,
+            modifier = modifier.testTag("pomodoro_widget"),
+    ) {
         Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp, horizontalAlignment),
                 modifier = Modifier.fillMaxWidth(),
         ) {
             PomodoroModeLabel(
@@ -89,7 +100,7 @@ fun PomodoroWidget(
         }
         Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp, horizontalAlignment),
                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
         ) {
             LauncherIcon(

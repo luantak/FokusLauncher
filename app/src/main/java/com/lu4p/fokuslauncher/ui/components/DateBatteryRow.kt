@@ -1,6 +1,7 @@
 package com.lu4p.fokuslauncher.ui.components
 
 import com.lu4p.fokuslauncher.ui.util.clickableNoRippleWithSystemSound
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -19,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.lu4p.fokuslauncher.ui.theme.LocalPhotoWallpaperOutlineWidthDp
+import com.lu4p.fokuslauncher.ui.home.HomeWidgetAlignment
 
 /**
  * Row displaying the current date and battery percentage.
@@ -32,6 +34,7 @@ fun DateBatteryRow(
     isCharging: Boolean = false,
     showDate: Boolean = true,
     showBattery: Boolean = true,
+    alignment: HomeWidgetAlignment = HomeWidgetAlignment.START,
     outlined: Boolean = false,
     onDateClick: () -> Unit = {}
 ) {
@@ -41,8 +44,18 @@ fun DateBatteryRow(
     val backdropStrength = LocalPhotoWallpaperOutlineWidthDp.current
     val useSharedBackdrop = outlined && backdropStrength > 0f
     val batteryPercentText = "$batteryPercent%"
+    val horizontalArrangement =
+        when (alignment) {
+            HomeWidgetAlignment.START -> Arrangement.Start
+            HomeWidgetAlignment.CENTER -> Arrangement.Center
+            HomeWidgetAlignment.END -> Arrangement.End
+        }
 
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = horizontalArrangement,
+        modifier = modifier,
+    ) {
         if (showDate) {
             Box(
                     contentAlignment = Alignment.CenterStart,

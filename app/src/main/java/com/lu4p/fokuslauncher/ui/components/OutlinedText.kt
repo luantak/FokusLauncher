@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import com.lu4p.fokuslauncher.ui.theme.LocalPhotoWallpaperOutlineWidthDp
 
@@ -26,6 +27,7 @@ fun OutlinedText(
         outlineWidth: Float = 2f,
         maxLines: Int = Int.MAX_VALUE,
         overflow: TextOverflow = TextOverflow.Clip,
+        textAlign: TextAlign = TextAlign.Unspecified,
 ) {
     val outlineWidthDpSetting = LocalPhotoWallpaperOutlineWidthDp.current
     if (outlineWidthDpSetting > 0f) {
@@ -36,6 +38,7 @@ fun OutlinedText(
                     color = Color.Transparent,
                     maxLines = maxLines,
                     overflow = overflow,
+                    textAlign = textAlign,
                     modifier =
                             Modifier.photoBackdropPill(outlineWidthDpSetting)
                                     .clearAndSetSemantics {},
@@ -46,6 +49,7 @@ fun OutlinedText(
                     color = color,
                     maxLines = maxLines,
                     overflow = overflow,
+                    textAlign = textAlign,
             )
         }
         return
@@ -68,6 +72,7 @@ fun OutlinedText(
                 color = outlineColor,
                 maxLines = maxLines,
                 overflow = overflow,
+                    textAlign = textAlign,
                 modifier = Modifier.clearAndSetSemantics {},
         )
         Text(
@@ -76,6 +81,7 @@ fun OutlinedText(
                 color = color,
                 maxLines = maxLines,
                 overflow = overflow,
+                    textAlign = textAlign,
         )
     }
 }
