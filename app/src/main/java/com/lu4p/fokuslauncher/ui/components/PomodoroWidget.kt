@@ -100,7 +100,7 @@ fun PomodoroWidget(
         }
         Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp, horizontalAlignment),
+                horizontalArrangement = Arrangement.spacedBy(32.dp, horizontalAlignment),
                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
         ) {
             LauncherIcon(
