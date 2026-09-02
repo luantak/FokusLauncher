@@ -436,7 +436,7 @@
     <string name="settings_show_home_pomodoro_subtitle">Timer %1$s al posto dei controlli multimediali</string>
     <string name="settings_show_home_pomodoro_subtitle_grant_notifications">Richiede le notifiche: attivale per consentire al timer di avvisarti chiaramente quando termina</string>
     <string name="pomodoro_notification_channel_name">Timer pomodoro</string>
-    <string name="pomodoro_notification_channel_description">Avvisa quando termina una sessione %1$s o di Pausa</string>
+    <string name="pomodoro_notification_channel_description">Avvisa quando termina una sessione %1$s o una pausa</string>
     <string name="pomodoro_notification_active_channel_name">Pomodoro in corso</string>
     <string name="pomodoro_notification_active_title">%1$s in corso</string>
     <string name="pomodoro_notification_active_body">Tempo rimanente</string>
@@ -445,7 +445,7 @@
     <string name="pomodoro_notification_dismiss_body">Ignora per disattivare la sveglia e avviare la sessione successiva</string>
     <string name="pomodoro_notification_dismiss_action">Ignora</string>
     <string name="pomodoro_dismiss_alarm">Ignora sveglia</string>
-    <string name="settings_show_home_media_or_pomodoro_exclusive">I controlli multimediali e pomodoro condividono lo stesso spazio: solo uno può essere attivo</string>
+    <string name="settings_show_home_media_or_pomodoro_exclusive">I controlli multimediali e il timer Pomodoro condividono lo stesso spazio: solo uno dei due può essere attivo</string>
     <string name="settings_pomodoro_title">Pomodoro</string>
     <string name="settings_pomodoro_configure">Impostazioni pomodoro</string>
     <string name="settings_pomodoro_configure_subtitle">Durata di %1$s e delle pause per il timer principale</string>

@@ -366,7 +366,7 @@
     <string name="media_like">Aimer</string>
     <string name="media_unlike">Ne plus aimer</string>
     <string name="settings_look_and_feel_title">Apparence et expérience</string>
-    <string name="settings_look_and_feel_subtitle">Langue, polices, couleurs, lueur, fond d\'écran et notifications</string>
+    <string name="settings_look_and_feel_subtitle">Langue, polices, couleurs, lueur, fond d\'écran et indicateurs de notification</string>
     <string name="settings_look_section_display">Affichage</string>
     <string name="settings_look_section_text">Texte</string>
     <string name="settings_look_section_colors">Couleurs</string>
@@ -383,7 +383,7 @@
         <item quantity="many">%d applications gérées</item>
         <item quantity="other">%d applications gérées</item>
     </plurals>
-    <string name="settings_show_home_air_quality">Afficher l\'index de qualité de l\'air</string>
+    <string name="settings_show_home_air_quality">Afficher l\'indice de qualité de l\'air</string>
     <string name="settings_show_home_air_quality_subtitle">Afficher l\'AQI à proximité de la température</string>
     <string name="weather_with_aqi_format">%1$s · %2$d</string>
     <string name="settings_show_world_clock_weather">Afficher la météo sur les horloges mondiales</string>
@@ -429,7 +429,7 @@
     <string name="settings_world_clock_city_label">Nom</string>
     <string name="settings_world_clock_city_zone">Fuseau horaire</string>
     <string name="settings_show_home_pomodoro_subtitle_grant_notifications">Nécessite l\'accès aux notifications. Veuillez l\'activer afin que l\'alarme puisse vous alerter de manière fiable</string>
-    <string name="pomodoro_notification_channel_name">Alarme Pomodoro</string>
+    <string name="pomodoro_notification_channel_name">Minuteur Pomodoro</string>
     <string name="pomodoro_notification_active_channel_name">Pomodoro en cours</string>
     <string name="pomodoro_notification_active_channel_description">Affiche le minuteur lorsqu\'une session est en cours</string>
     <string name="pomodoro_notification_active_title">%1$s en cours</string>

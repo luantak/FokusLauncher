@@ -17,8 +17,8 @@
     <string name="cd_settings">Instellingen</string>
     <string name="shortcut_open_app">Open app</string>
     <string name="shortcut_generic_label">Snelkoppeling</string>
-    <string name="widget_page_shortcut_label">Widget pagina</string>
-    <string name="action_uninstall">Deinstalleren</string>
+    <string name="widget_page_shortcut_label">Widgetpagina</string>
+    <string name="action_uninstall">Deïnstalleren</string>
     <string name="category_action_rename">Hernoemen</string>
     <string name="action_remove_shortcut">Verwijder snelkoppeling</string>
     <string name="action_remove_from_home">Verwijder van startscherm</string>
