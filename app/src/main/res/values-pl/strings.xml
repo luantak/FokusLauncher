@@ -502,4 +502,5 @@
     <string name="settings_paypal_subtitle">Napiwki przez PayPal — fundusze na kofeinę mile widziane</string>
     <string name="settings_double_tap">Podwójne stuknięcie</string>
     <string name="settings_double_tap_open_app">Wybierz aplikację do otwarcia po podwójnym stuknięciu</string>
+    <string name="pomodoro_mode_focus" translatable="false"></string>
 </resources>
