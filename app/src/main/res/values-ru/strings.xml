@@ -416,4 +416,68 @@
     <string name="settings_world_clock_search_zones">Поиск часовых поясов</string>
     <string name="settings_world_clock_edit_city">Редактировать город</string>
     <string name="settings_world_clock_city_zone">Часовой пояс</string>
+    <string name="settings_paypal_subtitle"></string>
+    <string name="pomodoro_pause"></string>
+    <string name="settings_pomodoro_break_duration_subtitle"></string>
+    <string name="edit_home_section_all_apps" translatable="false"></string>
+    <string name="pomodoro_increase"></string>
+    <string name="settings_drawer_behavior_subtitle"></string>
+    <string name="settings_look_and_feel_subtitle"></string>
+    <string name="settings_arcticons_drawer_icons_subtitle"></string>
+    <string name="settings_show_home_air_quality"></string>
+    <string name="settings_look_section_icons"></string>
+    <string name="settings_arcticons_drawer_icons_subtitle_missing"></string>
+    <string name="settings_show_home_air_quality_subtitle"></string>
+    <string name="pomodoro_notification_dismiss_body"></string>
+    <string name="pomodoro_notification_active_channel_name"></string>
+    <string name="settings_drawer_behavior_title"></string>
+    <string name="pomodoro_notification_active_channel_description"></string>
+    <string name="settings_arcticons_install_fdroid"></string>
+    <string name="settings_show_home_media_or_pomodoro_exclusive"></string>
+    <string name="settings_section_apps"></string>
+    <string name="settings_look_section_colors"></string>
+    <string name="pomodoro_notification_focus_complete"></string>
+    <string name="settings_look_and_feel_title"></string>
+    <string name="settings_pomodoro_break_duration"></string>
+    <string name="weather_with_aqi_format"></string>
+    <plurals name="settings_pomodoro_duration_minutes">
+    </plurals>
+    <string name="settings_arcticons_install_message"></string>
+    <string name="settings_look_section_wallpaper"></string>
+    <string name="pomodoro_play"></string>
+    <string name="settings_arcticons_install_play"></string>
+    <string name="settings_paypal_title"></string>
+    <string name="pomodoro_dismiss_alarm"></string>
+    <string name="settings_show_home_pomodoro_subtitle_grant_notifications"></string>
+    <string name="settings_apps_management_title"></string>
+    <string name="settings_look_section_text"></string>
+    <string name="settings_pomodoro_alarm_sound"></string>
+    <string name="pomodoro_decrease"></string>
+    <string name="settings_apps_management_subtitle_empty"></string>
+    <string name="settings_look_section_notifications"></string>
+    <string name="pomodoro_notification_dismiss_action"></string>
+    <string name="settings_pomodoro_configure_subtitle"></string>
+    <string name="settings_pomodoro_title"></string>
+    <string name="settings_arcticons_install_title"></string>
+    <string name="settings_look_section_display"></string>
+    <string name="settings_show_home_pomodoro_subtitle"></string>
+    <string name="settings_pomodoro_alarm_sound_default"></string>
+    <string name="pomodoro_notification_break_complete"></string>
+    <string name="settings_double_tap"></string>
+    <string name="pomodoro_notification_active_body"></string>
+    <string name="pomodoro_notification_active_title"></string>
+    <string name="settings_pomodoro_focus_duration_subtitle"></string>
+    <string name="settings_pomodoro_configure"></string>
+    <string name="pomodoro_mode_focus" translatable="false"></string>
+    <string name="settings_pomodoro_focus_duration"></string>
+    <string name="app_name" translatable="false"></string>
+    <plurals name="settings_apps_management_count">
+    </plurals>
+    <string name="pomodoro_notification_channel_name"></string>
+    <string name="pomodoro_notification_channel_description"></string>
+    <string name="settings_double_tap_open_app"></string>
+    <string name="settings_show_home_pomodoro"></string>
+    <string name="pomodoro_mode_break"></string>
+    <string name="cd_app_icon"></string>
+    <string name="settings_arcticons_drawer_icons"></string>
 </resources>
