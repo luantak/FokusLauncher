@@ -456,4 +456,29 @@
     <string name="home_countdown_now">Maintenant</string>
     <string name="home_countdown_past">Passé</string>
     <string name="settings_paypal_subtitle">Pourboire via Paypal – une petite dose de café pour le développeur est bienvenue !</string>
+    <string name="settings_add_other_widget_title"></string>
+    <string name="edit_home_section_all_apps" translatable="false"></string>
+    <string name="settings_arcticons_drawer_icons_subtitle"></string>
+    <string name="settings_arcticons_drawer_icons_subtitle_missing"></string>
+    <string name="settings_arcticons_install_fdroid"></string>
+    <string name="settings_countdown_event"></string>
+    <string name="settings_arcticons_install_message"></string>
+    <string name="settings_arcticons_install_play"></string>
+    <string name="settings_paypal_title"></string>
+    <string name="settings_countdown_clear"></string>
+    <string name="settings_pomodoro_configure_subtitle"></string>
+    <string name="settings_arcticons_install_title"></string>
+    <string name="settings_show_home_pomodoro_subtitle"></string>
+    <string name="settings_countdown_edit"></string>
+    <string name="settings_double_tap"></string>
+    <string name="settings_world_clock_search_zones"></string>
+    <string name="settings_pomodoro_focus_duration_subtitle"></string>
+    <string name="pomodoro_mode_focus" translatable="false"></string>
+    <string name="settings_countdown_time"></string>
+    <string name="settings_pomodoro_focus_duration"></string>
+    <string name="app_name" translatable="false"></string>
+    <string name="pomodoro_notification_channel_description"></string>
+    <string name="settings_double_tap_open_app"></string>
+    <string name="cd_app_icon"></string>
+    <string name="settings_arcticons_drawer_icons"></string>
 </resources>
