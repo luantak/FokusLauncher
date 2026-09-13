@@ -80,7 +80,7 @@
     <string name="edit_shortcuts_choose_icon">Selecionar ícone</string>
     <string name="settings_section_appearance">Aparência</string>
     <string name="settings_language_system_default">Padrão do sistema</string>
-    <string name="icon_cat_ui_actions">Acções da UI</string>
+    <string name="icon_cat_ui_actions">Ações da interface</string>
     <string name="category_add_error_reserved_work">“Trabalho” está reservado para aplicativos de perfil profissional. Escolha um nome diferente.</string>
     <string name="settings_accessibility_permission_enabled">Concedida para Fokus Launcher</string>
     <string name="settings_home_date_format_eu_slashes">DD/MM/AAAA</string>
@@ -315,5 +315,5 @@
     <string name="cd_restore_archived_app">Restaurar aplicativo arquivado</string>
     <string name="action_remove_shortcut">Remover atalho</string>
     <string name="home_alignment_middle">Meio</string>
-    <string name="settings_look_and_feel_title">Aparência &amp; sensação</string>
+    <string name="settings_look_and_feel_title">Aparência e comportamento</string>
 </resources>

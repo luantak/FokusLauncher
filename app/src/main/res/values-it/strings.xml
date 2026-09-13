@@ -465,10 +465,10 @@
     <string name="pomodoro_decrease">Togli un minuto</string>
     <string name="pomodoro_mode_break">Pausa</string>
     <string name="pomodoro_notification_active_channel_description">Mostra il conto alla rovescia mentre una sessione è in corso</string>
-    <string name="pomodoro_pause">Interrompi pomodoro</string>
-    <string name="settings_arcticons_drawer_icons">Icone delle app Articons</string>
+    <string name="pomodoro_pause">Metti in pausa Pomodoro</string>
+    <string name="settings_arcticons_drawer_icons">Icone delle app Arcticons</string>
     <string name="settings_arcticons_drawer_icons_subtitle">Mostra le icone Arcticons accanto ai nomi delle app nel drawer</string>
-    <string name="settings_arcticons_drawer_icons_subtitle_missing">Richiedere Arcticons: tocca per installare</string>
+    <string name="settings_arcticons_drawer_icons_subtitle_missing">Richiede Arcticons: tocca per installare</string>
     <string name="settings_arcticons_install_title">Installare Arcticons?</string>
     <string name="settings_arcticons_install_message">Fokus Launcher utilizza il pacchetto icone Arcticons per semplificare le icone del drawer. Installa Arcticons da F-Droid o dal Play Store, quindi attiva nuovamente questa opzione.</string>
     <string name="settings_arcticons_install_fdroid">Apri F-Droid</string>
