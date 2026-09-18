@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.R
+import com.lu4p.fokuslauncher.WidgetConfigurationActivity
 import com.lu4p.fokuslauncher.ui.components.FokusBottomSheet
 import com.lu4p.fokuslauncher.ui.components.FokusIconButton
 import com.lu4p.fokuslauncher.ui.components.SheetActionRow
@@ -87,10 +88,7 @@ fun WidgetPageScreen(
                 }
                 is WidgetPageEvent.RequestConfigure -> {
                     configureLauncher.launch(
-                            Intent(AppWidgetManager.ACTION_APPWIDGET_CONFIGURE).apply {
-                                component = event.configure
-                                putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, event.appWidgetId)
-                            }
+                            WidgetConfigurationActivity.createIntent(context, event.appWidgetId)
                     )
                 }
                 is WidgetPageEvent.ShowToast ->
