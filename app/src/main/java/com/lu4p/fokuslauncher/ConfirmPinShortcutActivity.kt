@@ -25,7 +25,7 @@ class ConfirmPinShortcutActivity : ComponentActivity() {
             val request = intent?.pinItemRequest()
             if (request?.requestType == LauncherApps.PinItemRequest.REQUEST_TYPE_SHORTCUT) {
                 if (request.accept()) {
-                    appRepository.invalidateCache()
+                    appRepository.scheduleInstalledAppsRefresh()
                 }
             }
         }

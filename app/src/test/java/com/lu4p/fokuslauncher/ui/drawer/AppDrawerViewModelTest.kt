@@ -124,6 +124,9 @@ class AppDrawerViewModelTest {
         every { appRepository.invalidateCache() } answers { installedAppsVersion.value += 1L }
         installedApps = testApps
         every { appRepository.getInstalledApps() } answers { installedApps }
+        every { appRepository.getAppsSnapshotFirst() } answers {
+            AppRepository.AppLists(appRepository.getInstalledApps(), appRepository.getArchivedApps())
+        }
         every { appRepository.getHiddenApps() } returns hiddenFlow
         every { appRepository.getAllRenamedApps() } returns renamedFlow
         every { appRepository.getAllAppCategories() } returns categoriesFlow

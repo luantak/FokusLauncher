@@ -829,9 +829,9 @@ constructor(
     private suspend fun loadInstalledAppsForDrawerRebuild(
             hadVisibleApps: Boolean,
             hadOwnerProfileApps: Boolean,
-    ): List<AppInfo> {
-        var base = withContext(drawerComputationDispatcher) { appRepository.getInstalledApps() }
-        var archived = appRepository.getArchivedApps()
+    ): AppRepository.AppLists {
+        var (base, archived) =
+                withContext(drawerComputationDispatcher) { appRepository.getAppsSnapshotFirst() }
         val ownerArchived = { archived.any { it.userHandle == null } }
         if (hadVisibleApps &&
                         ((base.isEmpty() && archived.isEmpty()) ||
@@ -856,7 +856,7 @@ constructor(
                 )
             }
         }
-        return base
+        return AppRepository.AppLists(base, archived)
     }
 
     /** Owner-profile apps absent while secondary-profile apps are present. */
@@ -870,12 +870,11 @@ constructor(
             val stateSnapshot = _uiState.value
             val hadVisibleApps = stateSnapshot.hasVisibleDrawerApps()
             val hadOwnerProfileApps = stateSnapshot.allApps.any { it.userHandle == null }
-            val base =
+            val (base, archivedApps) =
                     loadInstalledAppsForDrawerRebuild(
                             hadVisibleApps = hadVisibleApps,
                             hadOwnerProfileApps = hadOwnerProfileApps,
                     )
-            val archivedApps = appRepository.getArchivedApps()
             val ownerArchived = archivedApps.any { it.userHandle == null }
             if (base.isEmpty() && hadVisibleApps && archivedApps.isEmpty()) {
                 return

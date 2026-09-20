@@ -29,6 +29,7 @@ import com.lu4p.fokuslauncher.data.database.entity.AppCategoryDefinitionEntity
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryEntity
 import com.lu4p.fokuslauncher.data.database.entity.HiddenAppEntity
 import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
+import com.lu4p.fokuslauncher.data.local.AppListSnapshotStore
 import com.lu4p.fokuslauncher.data.model.AddCategoryResult
 import com.lu4p.fokuslauncher.data.model.reservedCategoryAddFailure
 import com.lu4p.fokuslauncher.data.model.AppInfo
@@ -47,9 +48,15 @@ import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
 import com.lu4p.fokuslauncher.utils.registerBroadcastReceiverNotExported
 import com.lu4p.fokuslauncher.utils.ProfileHeuristics
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -66,23 +73,35 @@ import kotlinx.coroutines.withContext
  */
 @Singleton
 class AppRepository
-@Inject
-constructor(
-        @param:ApplicationContext private val context: Context,
+internal constructor(
+        private val context: Context,
         private val appDao: AppDao,
-        private val privateSpaceManager: PrivateSpaceManager
+        private val privateSpaceManager: PrivateSpaceManager,
+        private val appListSnapshotStore: AppListSnapshotStore,
+        snapshotDispatcher: CoroutineDispatcher,
 ) {
-    private var cachedApps: List<AppInfo>? = null
-    private var cachedArchivedApps: List<AppInfo>? = null
+    @Inject
+    constructor(
+            @ApplicationContext context: Context,
+            appDao: AppDao,
+            privateSpaceManager: PrivateSpaceManager,
+            appListSnapshotStore: AppListSnapshotStore,
+    ) : this(context, appDao, privateSpaceManager, appListSnapshotStore, Dispatchers.IO)
+
+    data class AppLists(val installed: List<AppInfo>, val archived: List<AppInfo>)
+
+    @Volatile private var cachedLists: AppLists? = null
+    private val packageEventSeen = AtomicBoolean(false)
+    private val snapshotWindowOpen = AtomicBoolean(true)
+    private val cacheEpoch = AtomicLong(0)
+    private val persistSequence = AtomicLong(0)
+    private val persistLock = Any()
+    private var lastPersistedSequence = 0L
+    private val snapshotScope = CoroutineScope(SupervisorJob() + snapshotDispatcher)
     private val installedAppsVersion = MutableStateFlow(0L)
     private val removedPackages = MutableSharedFlow<RemovedApp>(extraBufferCapacity = 8)
     private val mainHandler = Handler(Looper.getMainLooper())
-    private val delayedInstalledAppsRefresh =
-            Runnable {
-                cachedApps = null
-                cachedArchivedApps = null
-                installedAppsVersion.value += 1
-            }
+    private val delayedInstalledAppsRefresh = Runnable { invalidateCache() }
     private val packageChangeReceiver =
             object : android.content.BroadcastReceiver() {
                 override fun onReceive(context: Context?, intent: Intent?) {
@@ -215,18 +234,14 @@ constructor(
      * yield no activities; caching that would hide every app until process death (e.g. force stop).
      */
     fun getInstalledApps(): List<AppInfo> {
-        cachedApps?.let {
-            return it
-        }
+        cachedLists?.let { return it.installed }
 
+        val epoch = cacheEpoch.get()
         val allApps = loadInstalledAppsMergedAcrossProfiles()
         val apps = allApps.filterNot { it.isArchived }
-        val archivedApps = allApps.filter { it.isArchived }
         when {
-            allApps.isNotEmpty() && !isIncompleteOwnerProfileSnapshot(allApps) -> {
-                cachedApps = apps
-                cachedArchivedApps = archivedApps
-            }
+            allApps.isNotEmpty() && !isIncompleteOwnerProfileSnapshot(allApps) ->
+                    cacheScan(allApps, apps, allApps.filter { it.isArchived }, epoch)
             allApps.isNotEmpty() ->
                     Log.w(
                             TAG,
@@ -237,18 +252,113 @@ constructor(
         return apps
     }
 
+    /** Substitutes the persisted list for the first scan of the process and reconciles in the background. */
+    fun getAppsSnapshotFirst(): AppLists {
+        cachedLists?.let { return it }
+        // Cache invalidations from refreshes are fine; a package or profile event may have made the file stale.
+        if (!packageEventSeen.get() && snapshotWindowOpen.compareAndSet(true, false)) {
+            loadSnapshotApps()?.let { snapshot ->
+                scheduleSnapshotBackedRefresh(snapshot)
+                return snapshot
+            }
+        }
+        return AppLists(getInstalledApps(), getArchivedApps())
+    }
+
+    private fun loadSnapshotApps(): AppLists? {
+        val entries = appListSnapshotStore.read() ?: return null
+        val userManager = userManagerOrNull()
+        val profiles = userManager?.userProfiles.orEmpty()
+        val apps =
+                entries.mapNotNull { entry ->
+                    val userHandle =
+                            if (entry.profileKey == "0") {
+                                null
+                            } else {
+                                profiles.firstOrNull {
+                                    it != Process.myUserHandle() &&
+                                            appProfileKey(it) == entry.profileKey
+                                } ?: return@mapNotNull null
+                            }
+                    AppInfo(
+                            packageName = entry.packageName,
+                            label = entry.label,
+                            icon = null,
+                            category = entry.category,
+                            userHandle = userHandle,
+                            componentName =
+                                    entry.componentName?.let(ComponentName::unflattenFromString),
+                            launcherShortcutId = entry.launcherShortcutId,
+                            isArchived = entry.isArchived,
+                    )
+                }
+        if (apps.isEmpty()) return null
+        val (installed, archived) = apps.partition { !it.isArchived }
+        return AppLists(installed, archived)
+    }
+
+    private fun scheduleSnapshotBackedRefresh(served: AppLists) {
+        val servedVersion = installedAppsVersion.value
+        snapshotScope.launch {
+            // A bump since the serve already queued a rebuild that scans; a second scan is waste.
+            if (installedAppsVersion.value != servedVersion) return@launch
+            getInstalledApps()
+            // An empty or incomplete scan is not cached and must not replace the snapshot.
+            val fresh = cachedLists ?: return@launch
+            if (fresh != served) {
+                installedAppsVersion.value += 1
+            }
+        }
+    }
+
+    private fun cacheScan(
+            allApps: List<AppInfo>,
+            apps: List<AppInfo>,
+            archivedApps: List<AppInfo>,
+            epoch: Long,
+    ) {
+        snapshotWindowOpen.set(false)
+        cachedLists = AppLists(apps, archivedApps)
+        persistAppListSnapshotAsync(allApps, epoch)
+    }
+
+    private fun persistAppListSnapshotAsync(allApps: List<AppInfo>, epoch: Long) {
+        // A scan that raced an invalidation may predate the event that caused it.
+        if (cacheEpoch.get() != epoch) return
+        val sequence = persistSequence.incrementAndGet()
+        snapshotScope.launch {
+            val entries =
+                    allApps.map { app ->
+                        AppListSnapshotStore.Entry(
+                                packageName = app.packageName,
+                                label = app.label,
+                                category = app.category,
+                                profileKey = appProfileKey(app.userHandle),
+                                componentName = app.componentName?.flattenToString(),
+                                launcherShortcutId = app.launcherShortcutId,
+                                isArchived = app.isArchived,
+                        )
+                    }
+            synchronized(persistLock) {
+                // Writes may run out of scan order; an older scan must not clobber a newer one.
+                if (sequence <= lastPersistedSequence) return@launch
+                lastPersistedSequence = sequence
+                appListSnapshotStore.write(entries)
+            }
+        }
+    }
+
     suspend fun getInstalledAppsOnBackground(): List<AppInfo> =
             withContext(Dispatchers.IO) { getInstalledApps() }
 
     /** Returns archived apps that are intentionally hidden from home, drawer, and pickers. */
     fun getArchivedApps(): List<AppInfo> {
-        cachedArchivedApps?.let { return it }
+        cachedLists?.let { return it.archived }
+        val epoch = cacheEpoch.get()
         val allApps = loadInstalledAppsMergedAcrossProfiles()
-        val apps = allApps.filterNot { it.isArchived }
         val archivedApps = allApps.filter { it.isArchived }
         if (allApps.isNotEmpty() && !isIncompleteOwnerProfileSnapshot(allApps)) {
-            cachedApps = apps
-            cachedArchivedApps = archivedApps
+            cacheScan(allApps, allApps.filterNot { it.isArchived }, archivedApps, epoch)
         }
         return archivedApps
     }
@@ -596,17 +706,19 @@ constructor(
 
     /** Clears the cached app list, forcing a reload on next access. */
     fun invalidateCache() {
-        cachedApps = null
-        cachedArchivedApps = null
+        cachedLists = null
+        cacheEpoch.incrementAndGet()
         installedAppsVersion.value += 1
     }
 
     /**
-     * Invalidates immediately, then again shortly after. Package / archive events often arrive
-     * before [LauncherApps.getActivityList] reflects the new state; a single invalidate can cache
-     * a stale non-empty snapshot until the next unrelated bump.
+     * Marks a launcher-list change (package, profile, or pinned-shortcut event): invalidates
+     * immediately, then again shortly after. Package / archive events often arrive before
+     * [LauncherApps.getActivityList] reflects the new state; a single invalidate can cache a stale
+     * non-empty snapshot until the next unrelated bump.
      */
-    private fun scheduleInstalledAppsRefresh() {
+    fun scheduleInstalledAppsRefresh() {
+        packageEventSeen.set(true)
         invalidateCache()
         mainHandler.removeCallbacks(delayedInstalledAppsRefresh)
         mainHandler.postDelayed(delayedInstalledAppsRefresh, INSTALLED_APPS_REFRESH_RETRY_DELAY_MS)
