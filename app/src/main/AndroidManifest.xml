@@ -108,6 +108,12 @@
         </activity>
 
         <activity
+            android:name=".WidgetConfigurationActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:theme="@style/Theme.FokusLauncher" />
+
+        <activity
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTask"

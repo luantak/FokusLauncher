@@ -37,8 +37,7 @@ data class WidgetPageUiState(
 
 sealed interface WidgetPageEvent {
     data class RequestBind(val appWidgetId: Int, val provider: ComponentName) : WidgetPageEvent
-    data class RequestConfigure(val appWidgetId: Int, val configure: ComponentName) :
-            WidgetPageEvent
+    data class RequestConfigure(val appWidgetId: Int) : WidgetPageEvent
 
     data class ShowToast(val messageRes: Int) : WidgetPageEvent
 }
@@ -184,7 +183,7 @@ constructor(
         val pending = pendingAdd ?: return
         val configure = pending.provider.appWidgetProviderInfo.configure
         if (configure != null) {
-            _events.tryEmit(WidgetPageEvent.RequestConfigure(pending.appWidgetId, configure))
+            _events.tryEmit(WidgetPageEvent.RequestConfigure(pending.appWidgetId))
         } else {
             persistPendingAdd()
         }
