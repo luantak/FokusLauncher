@@ -2,7 +2,7 @@ package com.lu4p.fokuslauncher.ui.home
 
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
 
-/** Horizontal placement shared by home widgets and the favorites section. */
+/** Horizontal placement for secondary home widgets, favorites, and shortcuts. */
 enum class HomeWidgetAlignment {
     START,
     CENTER,

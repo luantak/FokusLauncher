@@ -7,18 +7,18 @@ import org.junit.Test
 class HomeWidgetLayoutTest {
 
     @Test
-    fun `left home alignment places widgets at start`() {
+    fun `left home alignment places secondary content at start`() {
         assertEquals(HomeWidgetAlignment.START, HomeWidgetAlignment.from(HomeAlignment.LEFT))
     }
 
     @Test
-    fun `center and middle home alignments center widgets`() {
+    fun `center and middle home alignments center secondary content`() {
         assertEquals(HomeWidgetAlignment.CENTER, HomeWidgetAlignment.from(HomeAlignment.CENTER))
         assertEquals(HomeWidgetAlignment.CENTER, HomeWidgetAlignment.from(HomeAlignment.MIDDLE))
     }
 
     @Test
-    fun `right home alignment places widgets at end`() {
+    fun `right home alignment places secondary content at end`() {
         assertEquals(HomeWidgetAlignment.END, HomeWidgetAlignment.from(HomeAlignment.RIGHT))
     }
 

@@ -11,6 +11,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
+import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.WeatherData
 import com.lu4p.fokuslauncher.ui.theme.FokusLauncherTheme
@@ -281,6 +282,61 @@ class HomeScreenTest {
 
         composeTestRule.onNodeWithTag("weather_widget").assertIsDisplayed()
         composeTestRule.onNodeWithText("22°C · 29").assertIsDisplayed()
+    }
+
+    @Test
+    fun homeScreen_centerAlignment_keepsPrimaryInfoAtEstablishedEdges() {
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                HomeScreenContent(
+                        uiState =
+                                HomeUiState(
+                                        homeAlignment = HomeAlignment.CENTER,
+                                        showHomeWeather = true,
+                                ),
+                        clockUiState = clock(),
+                        weatherUiState =
+                                HomeWeatherUiState(
+                                        weather = WeatherData(temperature = 22, iconCode = "01d"),
+                                        showWeatherWidget = true,
+                                ),
+                        favorites = testFavorites,
+                        rightSideShortcuts = testRightSideShortcuts,
+                        onLabelClick = {},
+                        onLabelLongPress = {},
+                        onIconClick = {},
+                )
+            }
+        }
+
+        val screenCenter =
+                composeTestRule.onNodeWithTag("home_screen")
+                        .fetchSemanticsNode()
+                        .boundsInRoot
+                        .center
+                        .x
+        val clockCenter =
+                composeTestRule.onNodeWithTag("clock_widget")
+                        .fetchSemanticsNode()
+                        .boundsInRoot
+                        .center
+                        .x
+        val weatherCenter =
+                composeTestRule.onNodeWithTag("weather_widget")
+                        .fetchSemanticsNode()
+                        .boundsInRoot
+                        .center
+                        .x
+        val dateCenter =
+                composeTestRule.onNodeWithText("Fri. 12 Jul.")
+                        .fetchSemanticsNode()
+                        .boundsInRoot
+                        .center
+                        .x
+
+        assertTrue(clockCenter < screenCenter)
+        assertTrue(dateCenter < screenCenter)
+        assertTrue(weatherCenter > screenCenter)
     }
 
     @Test
