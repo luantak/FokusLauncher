@@ -370,18 +370,9 @@ fun HomeScreenContent(
     }
 }
 
-@Composable
-private fun rememberTitleMediumRowHeight(extra: Dp = 8.dp): Dp {
-    val density = LocalDensity.current
-    val style = MaterialTheme.typography.titleMedium
-    return remember(density, style, extra) { with(density) { style.fontSize.toDp() } + extra }
-}
-
 /**
- * Clock [TopStart], weather [TopEnd] on the full content width. Baseline-based placement was wrong:
- * the clock’s first baseline sits far below the top, which shoved weather down into the AM/PM
- * cluster. A small top inset on weather matches roughly where [displayLarge] glyphs start.
- * Screen time sits under weather via [Modifier.offset] so it does not expand the header height.
+ * Keeps the primary home information in its established positions: clock at the start and weather
+ * plus screen time at the end. These positions do not follow the app and shortcut alignment.
  */
 @Composable
 private fun HomeClockWeatherHeader(
@@ -389,22 +380,33 @@ private fun HomeClockWeatherHeader(
     weatherUiState: HomeWeatherUiState,
     screenTimeUiState: HomeScreenTimeUiState,
     showWeather: Boolean,
-    widgetAlignment: HomeWidgetAlignment,
     onClockClick: () -> Unit,
     onWeatherClick: () -> Unit,
     onScreenTimeClick: () -> Unit,
     outlined: Boolean,
 ) {
-    val horizontalAlignment =
-        when (widgetAlignment) {
-            HomeWidgetAlignment.START -> Alignment.Start
-            HomeWidgetAlignment.CENTER -> Alignment.CenterHorizontally
-            HomeWidgetAlignment.END -> Alignment.End
+    val density = LocalDensity.current
+    val clockStyle = MaterialTheme.typography.displayLarge
+    val weatherTopPad =
+        remember(clockStyle, density.density, density.fontScale) {
+            val lead =
+                ((clockStyle.lineHeight.value - clockStyle.fontSize.value) / 2f)
+                    .coerceAtLeast(0f)
+            with(density) { lead.sp.toDp() }
         }
-    Column(
-        horizontalAlignment = horizontalAlignment,
+    val launcherScale =
+        LocalLauncherFontScale.current.coerceIn(LauncherFontScale.MIN, LauncherFontScale.MAX)
+    val weatherLowerInset =
+        remember(density.density, density.fontScale, launcherScale) {
+            with(density) { (10f * launcherScale).sp.toDp() } + 8.dp
+        }
+
+    Row(
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.Top,
         modifier = Modifier.fillMaxWidth(),
     ) {
+        Column(modifier = Modifier.weight(1f)) {
             ClockWidget(
                 time = clockUiState.currentTime,
                 is24HourFormat = clockUiState.is24HourFormat,
@@ -444,23 +446,31 @@ private fun HomeClockWeatherHeader(
                     }
                 }
             }
-        if (showWeather) {
-            WeatherWidget(
-                weather = weatherUiState.weather,
-                useFahrenheit = weatherUiState.weatherUseFahrenheit,
-                prominent = false,
-                outlined = outlined,
-                onClick = onWeatherClick,
-                modifier = Modifier.padding(top = 4.dp),
-            )
         }
-        if (screenTimeUiState.showWidget) {
-            ScreenTimeWidget(
-                durationText = screenTimeUiState.durationText.orEmpty(),
-                outlined = outlined,
-                onClick = onScreenTimeClick,
-                modifier = Modifier.padding(top = 4.dp),
-            )
+
+        if (showWeather || screenTimeUiState.showWidget) {
+            Column(
+                horizontalAlignment = Alignment.End,
+                modifier = Modifier.padding(top = weatherTopPad + weatherLowerInset),
+            ) {
+                if (showWeather) {
+                    WeatherWidget(
+                        weather = weatherUiState.weather,
+                        useFahrenheit = weatherUiState.weatherUseFahrenheit,
+                        prominent = false,
+                        outlined = outlined,
+                        onClick = onWeatherClick,
+                    )
+                }
+                if (screenTimeUiState.showWidget) {
+                    ScreenTimeWidget(
+                        durationText = screenTimeUiState.durationText.orEmpty(),
+                        outlined = outlined,
+                        onClick = onScreenTimeClick,
+                        modifier = Modifier.padding(top = if (showWeather) 4.dp else 0.dp),
+                    )
+                }
+            }
         }
     }
 }
@@ -496,12 +506,6 @@ private fun HomeWidgetsSection(
     val showWeather = uiState.showHomeWeather && weatherUiState.showWeatherWidget
     val showDateOrBattery = uiState.showHomeDate || uiState.showHomeBattery
     val widgetAlignment = HomeWidgetAlignment.from(uiState.homeAlignment)
-    val widgetHorizontalAlignment =
-        when (widgetAlignment) {
-            HomeWidgetAlignment.START -> Alignment.Start
-            HomeWidgetAlignment.CENTER -> Alignment.CenterHorizontally
-            HomeWidgetAlignment.END -> Alignment.End
-        }
 
     when {
         showClock -> {
@@ -510,7 +514,6 @@ private fun HomeWidgetsSection(
                 weatherUiState = weatherUiState,
                 screenTimeUiState = screenTimeUiState,
                 showWeather = showWeather,
-                widgetAlignment = widgetAlignment,
                 onClockClick = onClockClick,
                 onWeatherClick = onWeatherClick,
                 onScreenTimeClick = onScreenTimeClick,
@@ -519,7 +522,7 @@ private fun HomeWidgetsSection(
         }
         showWeather || screenTimeUiState.showWidget -> {
             Column(
-                horizontalAlignment = widgetHorizontalAlignment,
+                horizontalAlignment = Alignment.End,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 if (showWeather) {
@@ -551,7 +554,6 @@ private fun HomeWidgetsSection(
             isCharging = clockUiState.isCharging,
             showDate = uiState.showHomeDate,
             showBattery = uiState.showHomeBattery,
-            alignment = widgetAlignment,
             outlined = outlined,
             onDateClick = onDateClick,
             modifier =
