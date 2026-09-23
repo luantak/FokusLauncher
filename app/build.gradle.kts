@@ -114,7 +114,7 @@ android {
         minSdk = 26
         targetSdk = 36
         versionCode = 50
-        versionName = "1.9.5"
+        versionName = "1.9.4"
 
         testInstrumentationRunner = "com.lu4p.fokuslauncher.HiltTestRunner"
     }
