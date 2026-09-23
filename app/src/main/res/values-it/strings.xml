@@ -478,4 +478,7 @@
     <string name="settings_paypal_subtitle">Donazione tramite PayPal — contributi per il caffè benaccetti</string>
     <string name="settings_double_tap">Doppio tocco</string>
     <string name="settings_double_tap_open_app">Scegli app per il doppio tocco</string>
+    <string name="edit_home_section_all_apps" translatable="false"></string>
+    <string name="pomodoro_mode_focus" translatable="false"></string>
+    <string name="app_name" translatable="false"></string>
 </resources>
