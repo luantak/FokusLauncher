@@ -209,6 +209,31 @@ class AppDrawerViewModelTest {
     }
 
     @Test
+    fun `first app list waits for hidden-app metadata`() {
+        val delayedHiddenApps = MutableSharedFlow<List<HiddenAppEntity>>(replay = 1)
+        every { appRepository.getHiddenApps() } returns delayedHiddenApps
+        val freshViewModel =
+                AppDrawerViewModel(
+                        context,
+                        appRepository,
+                        privateSpaceManager,
+                        preferencesManager,
+                        notificationIndicatorRepository,
+                        arcticonsIconPackRepository,
+                        Dispatchers.Unconfined,
+                )
+
+        assertTrue(freshViewModel.uiState.value.allApps.isEmpty())
+        delayedHiddenApps.tryEmit(listOf(HiddenAppEntity("com.lu4p.atom", "0")))
+        val timeoutAt = System.currentTimeMillis() + 1500
+        while (freshViewModel.uiState.value.allApps.isEmpty() && System.currentTimeMillis() < timeoutAt) {
+            Thread.sleep(10)
+        }
+        assertFalse(freshViewModel.uiState.value.allApps.any { it.packageName == "com.lu4p.atom" })
+        assertEquals(testApps.size - 1, freshViewModel.uiState.value.allApps.size)
+    }
+
+    @Test
     fun `apps are loaded from repository on init`() {
         verify { appRepository.getInstalledApps() }
     }

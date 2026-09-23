@@ -756,6 +756,27 @@ class AppRepositoryTest {
     }
 
     @Test
+    fun `drawer rebuilds reuse the served snapshot while reconciliation is pending`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        writeSnapshot(dispatcher, "com.lu4p.old")
+        val scans = AtomicInteger()
+        every { launcherApps.getActivityList(null, myUser) } answers {
+            scans.incrementAndGet()
+            listOf(createMockLauncherActivity("com.lu4p.new", "com.lu4p.new"))
+        }
+        val coldRepository = snapshotRepository(dispatcher)
+
+        val first = coldRepository.getAppsSnapshotFirst()
+        val metadataRebuild = coldRepository.getAppsSnapshotFirst()
+
+        assertEquals(first, metadataRebuild)
+        assertEquals(0, scans.get())
+        advanceUntilIdle()
+        assertEquals(1, scans.get())
+        assertEquals("com.lu4p.new", coldRepository.getAppsSnapshotFirst().installed.single().packageName)
+    }
+
+    @Test
     fun `getAppsSnapshotFirst does not bump the version when the scan matches the snapshot`() = runTest {
         val dispatcher = StandardTestDispatcher(testScheduler)
         writeSnapshot(dispatcher, "com.lu4p.app1", "com.lu4p.app2")
@@ -867,6 +888,25 @@ class AppRepositoryTest {
     }
 
     @Test
+    fun `a queued snapshot write is discarded after invalidation`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        writeSnapshot(dispatcher, "com.lu4p.previous")
+        every { launcherApps.getActivityList(null, myUser) } returns
+                listOf(createMockLauncherActivity("com.lu4p.stale", "com.lu4p.stale"))
+        val racingRepository = snapshotRepository(dispatcher)
+
+        racingRepository.getInstalledApps()
+        racingRepository.invalidateCache()
+        advanceUntilIdle()
+
+        val realContext = RuntimeEnvironment.getApplication().applicationContext as Context
+        assertEquals(
+                listOf("com.lu4p.previous"),
+                AppListSnapshotStore(realContext).read()?.map { it.packageName },
+        )
+    }
+
+    @Test
     fun `a refresh invalidation during the reconcile does not stop the fresh scan from persisting`() {
         val seed = StandardTestDispatcher()
         writeSnapshot(seed, "com.lu4p.gone")
@@ -927,7 +967,7 @@ class AppRepositoryTest {
     }
 
     @Test
-    fun `reconcile is skipped when a version bump already queued a rebuild`() = runTest {
+    fun `reconcile still completes when a version bump occurs before it starts`() = runTest {
         val dispatcher = StandardTestDispatcher(testScheduler)
         writeSnapshot(dispatcher, "com.lu4p.gone")
         every { launcherApps.getActivityList(null, myUser) } returns
@@ -938,7 +978,8 @@ class AppRepositoryTest {
         coldRepository.invalidateCache()
         advanceUntilIdle()
 
-        assertEquals(1L, coldRepository.getInstalledAppsVersion().value)
+        assertEquals(2L, coldRepository.getInstalledAppsVersion().value)
+        assertEquals("com.lu4p.kept", coldRepository.getAppsSnapshotFirst().installed.single().packageName)
     }
 
     /** Queues dispatched blocks; [drainNewestFirst] runs them in reverse order. */

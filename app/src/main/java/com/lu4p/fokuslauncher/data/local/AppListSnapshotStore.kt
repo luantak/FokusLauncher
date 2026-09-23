@@ -1,8 +1,10 @@
 package com.lu4p.fokuslauncher.data.local
 
 import android.content.Context
+import android.util.AtomicFile
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
+import java.io.FileOutputStream
 import javax.inject.Inject
 import javax.inject.Singleton
 import org.json.JSONArray
@@ -10,7 +12,7 @@ import org.json.JSONObject
 
 /** Last known app list on disk so the first drawer render does not wait for a LauncherApps scan. */
 @Singleton
-class AppListSnapshotStore @Inject constructor(@param:ApplicationContext context: Context) {
+class AppListSnapshotStore @Inject constructor(@ApplicationContext context: Context) {
 
     data class Entry(
             val packageName: String,
@@ -22,14 +24,12 @@ class AppListSnapshotStore @Inject constructor(@param:ApplicationContext context
             val isArchived: Boolean,
     )
 
-    private val file = File(context.filesDir, FILE_NAME)
-    private val writeLock = Any()
+    private val file = AtomicFile(File(context.filesDir, FILE_NAME))
 
     /** Null when absent, corrupt, or written by another version. */
-    fun read(): List<Entry>? {
+    @Synchronized fun read(): List<Entry>? {
         return try {
-            if (!file.isFile) return null
-            val root = JSONObject(file.readText())
+            val root = JSONObject(file.openRead().bufferedReader(Charsets.UTF_8).use { it.readText() })
             if (root.optInt(KEY_VERSION) != VERSION) return null
             val rows = root.optJSONArray(KEY_APPS) ?: return null
             val entries = ArrayList<Entry>(rows.length())
@@ -58,8 +58,9 @@ class AppListSnapshotStore @Inject constructor(@param:ApplicationContext context
         }
     }
 
-    fun write(entries: List<Entry>) {
+    @Synchronized fun write(entries: List<Entry>) {
         if (entries.isEmpty()) return
+        var stream: FileOutputStream? = null
         try {
             val rows = JSONArray()
             entries.forEach { entry ->
@@ -80,17 +81,12 @@ class AppListSnapshotStore @Inject constructor(@param:ApplicationContext context
                         put(KEY_VERSION, VERSION)
                         put(KEY_APPS, rows)
                     }
-            synchronized(writeLock) {
-                val tmp = File(file.parentFile, "$FILE_NAME.tmp")
-                try {
-                    tmp.writeText(payload.toString())
-                    // A failed rename keeps the previous snapshot; never write the target in place.
-                    tmp.renameTo(file)
-                } finally {
-                    tmp.delete()
-                }
-            }
-        } catch (_: Exception) {}
+            stream = file.startWrite()
+            stream.write(payload.toString().toByteArray(Charsets.UTF_8))
+            file.finishWrite(stream)
+        } catch (_: Exception) {
+            stream?.let(file::failWrite)
+        }
     }
 
     private companion object {

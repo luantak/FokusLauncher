@@ -315,7 +315,6 @@ constructor(
             allApps.isNotEmpty() || filteredProfileSections.any { it.apps.isNotEmpty() }
 
     init {
-        loadApps()
         observeHiddenAndRenamed()
         observeInstalledApps()
         observeRemovedPackages()
@@ -748,26 +747,7 @@ constructor(
     }
 
     /**
-     * Loads raw installed apps on a background thread and stores them. The hidden/renamed overlay
-     * is applied reactively via [observeHiddenAndRenamed].
-     */
-    private fun loadApps() {
-        viewModelScope.launch {
-            rebuildVisibleApps(
-                    DrawerMetadataSnapshot(
-                            latestHiddenApps,
-                            latestRenamedApps,
-                            latestCategoryEntities,
-                            latestDefinedCategories,
-                            latestSuppressedCategories,
-                    )
-            )
-        }
-    }
-
-    /**
-     * Observes the hidden-package-names and renamed-apps Flows from Room and rebuilds the visible
-     * app list whenever either changes.
+     * Builds the first drawer list with its metadata, then rebuilds when Room changes it.
      */
     private fun observeHiddenAndRenamed() {
         viewModelScope.launch {

@@ -1,11 +1,10 @@
 package com.lu4p.fokuslauncher.data.local
 
 import android.content.Context
+import android.util.AtomicFile
 import java.io.File
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
-import org.junit.Assume.assumeFalse
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -85,33 +84,13 @@ class AppListSnapshotStoreTest {
     }
 
     @Test
-    fun `failed write leaves no temp file behind`() {
-        val target = File(context.filesDir, "app_list_snapshot.json")
-        target.deleteRecursively()
-        File(target, "blocker").apply { parentFile?.mkdirs() }.writeText("x")
-
-        store.write(listOf(entry("com.example.one")))
-
-        assertFalse(File(context.filesDir, "app_list_snapshot.json.tmp").exists())
-        assertNull(store.read())
-        target.deleteRecursively()
-    }
-
-    @Test
-    fun `failed rename keeps the previous snapshot untouched`() {
-        val dir = context.filesDir
-        val tmp = File(dir, "app_list_snapshot.json.tmp")
+    fun `interrupted atomic write keeps the previous snapshot`() {
         val previous = listOf(entry("com.example.old"))
         store.write(previous)
-        tmp.writeText("")
-        dir.setWritable(false, false)
-        try {
-            assumeFalse(dir.canWrite())
-            store.write(listOf(entry("com.example.new")))
-        } finally {
-            dir.setWritable(true, false)
-            tmp.delete()
-        }
+        val atomicFile = AtomicFile(File(context.filesDir, "app_list_snapshot.json"))
+        val stream = atomicFile.startWrite()
+        stream.write("incomplete".toByteArray())
+        atomicFile.failWrite(stream)
 
         assertEquals(previous, store.read())
     }
