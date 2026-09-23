@@ -478,4 +478,7 @@
     <string name="settings_double_tap_open_app">Choisir l\'appli pour double appui</string>
     <string name="cd_app_icon">Icône d\'appli</string>
     <string name="settings_arcticons_drawer_icons">Icônes d\'applis Arcticons</string>
+    <string name="edit_home_section_all_apps" translatable="false"></string>
+    <string name="pomodoro_mode_focus" translatable="false"></string>
+    <string name="app_name" translatable="false"></string>
 </resources>
