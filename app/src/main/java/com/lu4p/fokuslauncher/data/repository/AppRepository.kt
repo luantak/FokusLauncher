@@ -94,8 +94,6 @@ internal constructor(
     private var snapshotAvailable = true
     private var packageEventSeen = false
     private var cacheEpoch = 0L
-    private var persistSequence = 0L
-    private var lastPersistedSequence = 0L
     private val snapshotScope = CoroutineScope(SupervisorJob() + snapshotDispatcher)
     private val installedAppsVersion = MutableStateFlow(0L)
     private val removedPackages = MutableSharedFlow<RemovedApp>(extraBufferCapacity = 8)
@@ -232,10 +230,7 @@ internal constructor(
      * Empty lists are not cached: [LauncherApps.getActivityList] / package events can briefly
      * yield no activities; caching that would hide every app until process death (e.g. force stop).
      */
-    fun getInstalledApps(): List<AppInfo> {
-        cachedLists?.let { return it.installed }
-        return loadAppLists().installed
-    }
+    fun getInstalledApps(): List<AppInfo> = cachedLists?.installed ?: loadAppLists().installed
 
     /** Serves the persisted list to drawer rebuilds until a successful scan replaces it. */
     fun getAppsSnapshotFirst(): AppLists {
@@ -298,61 +293,45 @@ internal constructor(
 
     private fun scheduleSnapshotBackedRefresh(served: AppLists) {
         snapshotScope.launch {
-            repeat(2) {
-                val epoch = synchronized(cacheLock) { cacheEpoch }
-                getInstalledApps()
-                synchronized(cacheLock) {
-                    if (cacheEpoch == epoch) {
-                        val fresh = cachedLists
-                        if (fresh == null) servedSnapshot = null
-                        else if (fresh != served) installedAppsVersion.value += 1
-                        return@launch
-                    }
+            val epoch = synchronized(cacheLock) { cacheEpoch }
+            getInstalledApps()
+            synchronized(cacheLock) {
+                val fresh = cachedLists
+                servedSnapshot = null
+                if (cacheEpoch != epoch || (fresh != null && fresh != served)) {
+                    installedAppsVersion.value += 1
                 }
             }
-            synchronized(cacheLock) { servedSnapshot = null }
         }
     }
 
     private fun loadAppLists(): AppLists {
-        var latest = AppLists(emptyList(), emptyList())
-        repeat(2) {
-            val epoch = synchronized(cacheLock) { cacheEpoch }
-            val allApps = loadInstalledAppsMergedAcrossProfiles()
-            latest = AppLists(allApps.filterNot { it.isArchived }, allApps.filter { it.isArchived })
-            if (allApps.isNotEmpty() && !isIncompleteOwnerProfileSnapshot(allApps)) {
-                if (cacheScan(allApps, latest, epoch)) return latest
-            } else if (synchronized(cacheLock) { cacheEpoch == epoch }) {
-                if (allApps.isNotEmpty()) {
-                    Log.w(
-                            TAG,
-                            "not caching installed-apps snapshot (${mergedAppsSummary(allApps)}); " +
-                                    "owner profile still missing from merged list",
-                    )
-                }
-                return latest
-            }
+        val epoch = synchronized(cacheLock) { cacheEpoch }
+        val allApps = loadInstalledAppsMergedAcrossProfiles()
+        val lists = AppLists(allApps.filterNot { it.isArchived }, allApps.filter { it.isArchived })
+        if (allApps.isNotEmpty() && !isIncompleteOwnerProfileSnapshot(allApps)) {
+            cacheScan(allApps, lists, epoch)
+        } else if (allApps.isNotEmpty()) {
+            Log.w(
+                    TAG,
+                    "not caching installed-apps snapshot (${mergedAppsSummary(allApps)}); " +
+                            "owner profile still missing from merged list",
+            )
         }
-        return latest
+        return lists
     }
 
-    private fun cacheScan(
-            allApps: List<AppInfo>,
-            lists: AppLists,
-            epoch: Long,
-    ): Boolean {
-        val sequence = synchronized(cacheLock) {
-            if (cacheEpoch != epoch) return false
+    private fun cacheScan(allApps: List<AppInfo>, lists: AppLists, epoch: Long) {
+        synchronized(cacheLock) {
+            if (cacheEpoch != epoch) return
             cachedLists = lists
             servedSnapshot = null
             snapshotAvailable = false
-            ++persistSequence
         }
-        persistAppListSnapshotAsync(allApps, epoch, sequence)
-        return true
+        persistAppListSnapshotAsync(allApps, lists)
     }
 
-    private fun persistAppListSnapshotAsync(allApps: List<AppInfo>, epoch: Long, sequence: Long) {
+    private fun persistAppListSnapshotAsync(allApps: List<AppInfo>, lists: AppLists) {
         snapshotScope.launch {
             val entries =
                     allApps.map { app ->
@@ -367,9 +346,8 @@ internal constructor(
                         )
                     }
             synchronized(cacheLock) {
-                // An invalidated or older scan must not reach disk after a newer one.
-                if (cacheEpoch != epoch || sequence <= lastPersistedSequence) return@launch
-                lastPersistedSequence = sequence
+                // A newer scan or invalidation replaces this exact list before it can be written.
+                if (cachedLists !== lists) return@launch
                 appListSnapshotStore.write(entries)
             }
         }
@@ -379,10 +357,7 @@ internal constructor(
             withContext(Dispatchers.IO) { getInstalledApps() }
 
     /** Returns archived apps that are intentionally hidden from home, drawer, and pickers. */
-    fun getArchivedApps(): List<AppInfo> {
-        cachedLists?.let { return it.archived }
-        return loadAppLists().archived
-    }
+    fun getArchivedApps(): List<AppInfo> = cachedLists?.archived ?: loadAppLists().archived
 
     suspend fun getArchivedAppsOnBackground(): List<AppInfo> =
             withContext(Dispatchers.IO) { getArchivedApps() }
@@ -726,9 +701,7 @@ internal constructor(
     }
 
     /** Clears the cached app list, forcing a reload on next access. */
-    fun invalidateCache() {
-        invalidateCache(packageEvent = false)
-    }
+    fun invalidateCache() = invalidateCache(packageEvent = false)
 
     private fun invalidateCache(packageEvent: Boolean) {
         synchronized(cacheLock) {

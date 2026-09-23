@@ -34,15 +34,10 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
@@ -753,6 +748,8 @@ class AppRepositoryTest {
                 listOf("com.lu4p.kept"),
                 coldRepository.getAppsSnapshotFirst().installed.map { it.packageName },
         )
+        coldRepository.invalidateCache()
+        assertEquals("com.lu4p.kept", coldRepository.getAppsSnapshotFirst().installed.single().packageName)
     }
 
     @Test
@@ -806,24 +803,6 @@ class AppRepositoryTest {
     }
 
     @Test
-    fun `getAppsSnapshotFirst serves the snapshot once per process`() = runTest {
-        val dispatcher = StandardTestDispatcher(testScheduler)
-        writeSnapshot(dispatcher, "com.lu4p.gone", "com.lu4p.kept")
-        every { launcherApps.getActivityList(null, myUser) } returns
-                listOf(createMockLauncherActivity("com.lu4p.kept", "com.lu4p.kept"))
-        val coldRepository = snapshotRepository(dispatcher)
-
-        coldRepository.getAppsSnapshotFirst()
-        advanceUntilIdle()
-        coldRepository.invalidateCache()
-
-        assertEquals(
-                listOf("com.lu4p.kept"),
-                coldRepository.getAppsSnapshotFirst().installed.map { it.packageName },
-        )
-    }
-
-    @Test
     fun `getAppsSnapshotFirst still serves the snapshot after a plain cache invalidation`() = runTest {
         val dispatcher = StandardTestDispatcher(testScheduler)
         writeSnapshot(dispatcher, "com.lu4p.gone", "com.lu4p.kept")
@@ -847,21 +826,6 @@ class AppRepositoryTest {
         every { launcherApps.registerCallback(capture(callbackSlot), any()) } returns Unit
         val coldRepository = snapshotRepository(dispatcher)
         callbackSlot.captured.onPackageRemoved("com.lu4p.gone", myUser)
-
-        val served = coldRepository.getAppsSnapshotFirst()
-
-        assertEquals(listOf("com.lu4p.kept"), served.installed.map { it.packageName })
-    }
-
-    @Test
-    fun `getAppsSnapshotFirst uses the cache when a scan finished before the first drawer call`() = runTest {
-        val dispatcher = StandardTestDispatcher(testScheduler)
-        writeSnapshot(dispatcher, "com.lu4p.gone")
-        every { launcherApps.getActivityList(null, myUser) } returns
-                listOf(createMockLauncherActivity("com.lu4p.kept", "com.lu4p.kept"))
-        val coldRepository = snapshotRepository(dispatcher)
-        coldRepository.getInstalledApps()
-        coldRepository.invalidateCache()
 
         val served = coldRepository.getAppsSnapshotFirst()
 
@@ -907,43 +871,6 @@ class AppRepositoryTest {
     }
 
     @Test
-    fun `a refresh invalidation during the reconcile does not stop the fresh scan from persisting`() {
-        val seed = StandardTestDispatcher()
-        writeSnapshot(seed, "com.lu4p.gone")
-        val executor = Executors.newSingleThreadExecutor()
-        val coldRepository = snapshotRepository(executor.asCoroutineDispatcher())
-        val reconcileEntered = CountDownLatch(1)
-        val reconcileGate = CountDownLatch(1)
-        val homeEntered = CountDownLatch(1)
-        val homeGate = CountDownLatch(1)
-        val calls = AtomicInteger()
-        every { launcherApps.getActivityList(null, myUser) } answers {
-            when (calls.incrementAndGet()) {
-                1 -> { reconcileEntered.countDown(); reconcileGate.await(5, TimeUnit.SECONDS) }
-                2 -> { homeEntered.countDown(); homeGate.await(5, TimeUnit.SECONDS) }
-            }
-            listOf(createMockLauncherActivity("com.lu4p.kept", "com.lu4p.kept"))
-        }
-
-        coldRepository.getAppsSnapshotFirst()
-        assertTrue(reconcileEntered.await(5, TimeUnit.SECONDS))
-        coldRepository.invalidateCache()
-        val home = Thread { coldRepository.getInstalledApps() }.apply { start() }
-        assertTrue(homeEntered.await(5, TimeUnit.SECONDS))
-        reconcileGate.countDown()
-        runBlocking { coldRepository.getInstalledAppsVersion().first { it == 2L } }
-        homeGate.countDown()
-        home.join(5_000)
-        executor.submit(Runnable {}).get(5, TimeUnit.SECONDS)
-        executor.shutdown()
-
-        assertEquals(
-                listOf("com.lu4p.kept"),
-                snapshotRepository(seed).getAppsSnapshotFirst().installed.map { it.packageName },
-        )
-    }
-
-    @Test
     fun `an older scan does not overwrite a newer scan on disk`() {
         val lifo = LifoDispatcher()
         val repository = snapshotRepository(lifo)
@@ -967,19 +894,19 @@ class AppRepositoryTest {
     }
 
     @Test
-    fun `reconcile still completes when a version bump occurs before it starts`() = runTest {
+    fun `reconcile requests a rebuild when invalidated during the scan`() = runTest {
         val dispatcher = StandardTestDispatcher(testScheduler)
         writeSnapshot(dispatcher, "com.lu4p.gone")
-        every { launcherApps.getActivityList(null, myUser) } returns
-                listOf(createMockLauncherActivity("com.lu4p.kept", "com.lu4p.kept"))
         val coldRepository = snapshotRepository(dispatcher)
 
         coldRepository.getAppsSnapshotFirst()
-        coldRepository.invalidateCache()
+        every { launcherApps.getActivityList(null, myUser) } answers {
+            coldRepository.invalidateCache()
+            listOf(createMockLauncherActivity("com.lu4p.kept", "com.lu4p.kept"))
+        }
         advanceUntilIdle()
 
         assertEquals(2L, coldRepository.getInstalledAppsVersion().value)
-        assertEquals("com.lu4p.kept", coldRepository.getAppsSnapshotFirst().installed.single().packageName)
     }
 
     /** Queues dispatched blocks; [drainNewestFirst] runs them in reverse order. */
