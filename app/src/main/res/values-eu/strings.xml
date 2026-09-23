@@ -368,7 +368,7 @@
     <string name="pomodoro_notification_dismiss_body">Baztertu alarma gelditzeko eta hurrengo saioa hasteko</string>
     <string name="pomodoro_notification_active_channel_name">Pomodoro martxan</string>
     <string name="settings_drawer_behavior_title">Tiraderaren portaera</string>
-    <string name="pomodoro_notification_active_channel_description">Erakutsi atzerako kontaneta saio bat martxan dagoenean</string>
+    <string name="pomodoro_notification_active_channel_description">Erakutsi atzerako kontaketa saio bat martxan dagoenean</string>
     <string name="settings_show_world_clock_weather_subtitle">Egoera bilatzen du hiriaren etiketaren arabera</string>
     <string name="settings_section_apps">Aplikazioak</string>
     <string name="settings_look_section_colors">Koloreak</string>
