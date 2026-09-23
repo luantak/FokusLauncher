@@ -277,7 +277,7 @@
     <string name="settings_notification_indicator_color_orange">Naranja</string>
     <string name="settings_countdown_event">Cuenta regresiva</string>
     <string name="settings_notification_indicators">Mostrar indicadores de notificación</string>
-    <string name="pomodoro_notification_focus_complete">Sesión %1$s completada</string>
+    <string name="pomodoro_notification_focus_complete">%1$s sesión completa</string>
     <string name="settings_notification_indicator_color_cyan">Cian</string>
     <string name="settings_look_and_feel_title">Apariencia y estilo</string>
     <string name="home_countdown_now">Ahora</string>
@@ -317,13 +317,13 @@
     <string name="settings_apps_management_subtitle_empty">Aún no hay apps administradas</string>
     <string name="settings_look_section_notifications">Notificaciones</string>
     <string name="pomodoro_notification_dismiss_action">Descartar</string>
-    <string name="settings_pomodoro_configure_subtitle">Duraciones de %1$s y de descanso para el temporizador de la pantalla de inicio</string>
+    <string name="settings_pomodoro_configure_subtitle">Duraciones de %1$s y descanso para el temporizador de inicio</string>
     <string name="settings_notification_indicator_color_purple">Púrpura</string>
     <string name="settings_countdown_date">Fecha</string>
     <string name="settings_world_clock_cities">Relojes mundiales</string>
     <string name="settings_dot_search_alias_dialog_title">Letra del atajo</string>
     <string name="settings_world_clock_city_label">Etiqueta</string>
-    <string name="settings_look_section_display">Pantalla</string>
+    <string name="settings_look_section_display">pantalla</string>
     <string name="settings_world_clock_add_city">Añadir ciudad</string>
     <string name="settings_show_home_pomodoro_subtitle">Temporizador %1$s en lugar de los controles de multimedia</string>
     <string name="settings_world_clock_remove_city">Eliminar ciudad</string>
