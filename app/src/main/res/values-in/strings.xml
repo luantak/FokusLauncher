@@ -462,4 +462,9 @@
     <string name="cd_app_icon">Ikon aplikasi</string>
     <string name="settings_paypal_title">Traktir saya istirahat untuk fokus</string>
     <string name="settings_paypal_subtitle">Berikan tip melalui PayPal—dukungan untuk membeli kafein sangat diterima</string>
+    <string name="edit_home_section_all_apps" translatable="false"></string>
+    <string name="settings_double_tap"></string>
+    <string name="pomodoro_mode_focus" translatable="false"></string>
+    <string name="app_name" translatable="false"></string>
+    <string name="settings_double_tap_open_app"></string>
 </resources>
