@@ -1,0 +1,13 @@
+Open an app with a double tap on the home screen.
+
+Show the app drawer sooner after starting the launcher.
+
+Keep home widgets aligned and their controls readable at larger text sizes.
+
+Fix widget setup and launch the exact app shown in the drawer.
+
+Keep home favorites when a profile briefly hides its apps.
+
+Keep status bar visible on launcher backgrounds.
+
+Updated translations via Weblate, thanks to evryone who contributed.

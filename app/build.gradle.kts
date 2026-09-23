@@ -113,8 +113,8 @@ android {
         applicationId = "io.github.luantak.fokuslauncher"
         minSdk = 26
         targetSdk = 36
-        versionCode = 49
-        versionName = "1.9.3"
+        versionCode = 50
+        versionName = "1.9.5"
 
         testInstrumentationRunner = "com.lu4p.fokuslauncher.HiltTestRunner"
     }
