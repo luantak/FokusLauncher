@@ -14,6 +14,7 @@ import android.os.UserHandle
 import android.os.UserManager
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.database.dao.AppDao
+import com.lu4p.fokuslauncher.data.local.AppListSnapshotStore
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryDefinitionEntity
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryEntity
 import com.lu4p.fokuslauncher.data.database.entity.HiddenAppEntity
@@ -33,11 +34,17 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import androidx.room.Room
 import com.lu4p.fokuslauncher.data.database.AppDatabase
@@ -93,7 +100,7 @@ class AppRepositoryTest {
         every { context.getString(R.string.inferred_category_media) } returns "Media"
         every { context.getString(R.string.shortcut_generic_label) } returns "Shortcut"
 
-        repository = AppRepository(context, appDao, privateSpaceManager)
+        repository = AppRepository(context, appDao, privateSpaceManager, mockk(relaxed = true))
     }
 
     // --- App Loading Tests ---
@@ -264,7 +271,7 @@ class AppRepositoryTest {
     fun `LauncherApps package added callback invalidates cache and schedules delayed refresh`() {
         val callbackSlot = slot<LauncherApps.Callback>()
         every { launcherApps.registerCallback(capture(callbackSlot), any()) } returns Unit
-        repository = AppRepository(context, appDao, privateSpaceManager)
+        repository = AppRepository(context, appDao, privateSpaceManager, mockk(relaxed = true))
 
         every {
             launcherApps.getActivityList(null, myUser)
@@ -309,7 +316,7 @@ class AppRepositoryTest {
             runTest(UnconfinedTestDispatcher()) {
                 val callbackSlot = slot<LauncherApps.Callback>()
                 every { launcherApps.registerCallback(capture(callbackSlot), any()) } returns Unit
-                repository = AppRepository(context, appDao, privateSpaceManager)
+                repository = AppRepository(context, appDao, privateSpaceManager, mockk(relaxed = true))
 
                 every {
                     launcherApps.getActivityList(null, myUser)
@@ -341,7 +348,7 @@ class AppRepositoryTest {
             runTest(UnconfinedTestDispatcher()) {
                 val callbackSlot = slot<LauncherApps.Callback>()
                 every { launcherApps.registerCallback(capture(callbackSlot), any()) } returns Unit
-                repository = AppRepository(context, appDao, privateSpaceManager)
+                repository = AppRepository(context, appDao, privateSpaceManager, mockk(relaxed = true))
 
                 every {
                     launcherApps.getActivityList(null, myUser)
@@ -463,7 +470,12 @@ class AppRepositoryTest {
     @Test
     fun `launchApp returns false when no intent found`() {
         val realContext = RuntimeEnvironment.getApplication().applicationContext as Context
-        val realRepository = AppRepository(realContext, appDao, PrivateSpaceManager(realContext))
+        val realRepository = AppRepository(
+                        realContext,
+                        appDao,
+                        PrivateSpaceManager(realContext),
+                        AppListSnapshotStore(realContext),
+                )
 
         val result = realRepository.launchApp("com.lu4p.nonexistent")
 
@@ -602,7 +614,7 @@ class AppRepositoryTest {
     @Test
     fun `getInstalledApps falls back to legacy query when LauncherApps missing`() {
         every { context.getSystemService(Context.LAUNCHER_APPS_SERVICE) } returns null
-        val legacyRepo = AppRepository(context, appDao, privateSpaceManager)
+        val legacyRepo = AppRepository(context, appDao, privateSpaceManager, mockk(relaxed = true))
 
         val resolveInfos =
                 listOf(
@@ -695,6 +707,221 @@ class AppRepositoryTest {
         assertTrue(gmailActions.any { it.actionLabel == "Search" && it.appLabel == "Gmail" })
     }
 
+    // --- Snapshot-first Tests ---
+
+    private fun snapshotRepository(dispatcher: CoroutineDispatcher): AppRepository {
+        val realContext = RuntimeEnvironment.getApplication().applicationContext as Context
+        every { context.filesDir } returns realContext.filesDir
+        return AppRepository(
+                context,
+                appDao,
+                privateSpaceManager,
+                AppListSnapshotStore(realContext),
+                dispatcher,
+        )
+    }
+
+    private fun writeSnapshot(dispatcher: TestDispatcher, vararg packages: String) {
+        every { launcherApps.getActivityList(null, myUser) } returns
+                packages.map { createMockLauncherActivity(it, it) }
+        snapshotRepository(dispatcher).getInstalledApps()
+        dispatcher.scheduler.advanceUntilIdle()
+    }
+
+    @Test
+    fun `getAppsSnapshotFirst serves the persisted list then bumps the version once`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        writeSnapshot(dispatcher, "com.lu4p.gone", "com.lu4p.kept")
+        every { launcherApps.getActivityList(null, myUser) } returns
+                listOf(createMockLauncherActivity("com.lu4p.kept", "com.lu4p.kept"))
+        val coldRepository = snapshotRepository(dispatcher)
+
+        val served = coldRepository.getAppsSnapshotFirst()
+
+        assertEquals(listOf("com.lu4p.gone", "com.lu4p.kept"), served.installed.map { it.packageName })
+        assertEquals(0L, coldRepository.getInstalledAppsVersion().value)
+
+        advanceUntilIdle()
+
+        assertEquals(1L, coldRepository.getInstalledAppsVersion().value)
+        assertEquals(
+                listOf("com.lu4p.kept"),
+                coldRepository.getAppsSnapshotFirst().installed.map { it.packageName },
+        )
+        coldRepository.invalidateCache()
+        assertEquals("com.lu4p.kept", coldRepository.getAppsSnapshotFirst().installed.single().packageName)
+    }
+
+    @Test
+    fun `drawer rebuilds reuse the served snapshot while reconciliation is pending`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        writeSnapshot(dispatcher, "com.lu4p.old")
+        val scans = AtomicInteger()
+        every { launcherApps.getActivityList(null, myUser) } answers {
+            scans.incrementAndGet()
+            listOf(createMockLauncherActivity("com.lu4p.new", "com.lu4p.new"))
+        }
+        val coldRepository = snapshotRepository(dispatcher)
+
+        val first = coldRepository.getAppsSnapshotFirst()
+        val metadataRebuild = coldRepository.getAppsSnapshotFirst()
+
+        assertEquals(first, metadataRebuild)
+        assertEquals(0, scans.get())
+        advanceUntilIdle()
+        assertEquals(1, scans.get())
+        assertEquals("com.lu4p.new", coldRepository.getAppsSnapshotFirst().installed.single().packageName)
+    }
+
+    @Test
+    fun `getAppsSnapshotFirst does not bump the version when the scan matches the snapshot`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        writeSnapshot(dispatcher, "com.lu4p.app1", "com.lu4p.app2")
+        val coldRepository = snapshotRepository(dispatcher)
+
+        val served = coldRepository.getAppsSnapshotFirst()
+        advanceUntilIdle()
+
+        assertEquals(listOf("com.lu4p.app1", "com.lu4p.app2"), served.installed.map { it.packageName })
+        assertEquals(0L, coldRepository.getInstalledAppsVersion().value)
+    }
+
+    @Test
+    fun `getAppsSnapshotFirst scans instead of re-serving the snapshot after an empty reconcile`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        writeSnapshot(dispatcher, "com.lu4p.app1")
+        every { launcherApps.getActivityList(null, myUser) } returns emptyList()
+        val coldRepository = snapshotRepository(dispatcher)
+
+        val served = coldRepository.getAppsSnapshotFirst()
+        advanceUntilIdle()
+        val next = coldRepository.getAppsSnapshotFirst()
+
+        assertEquals(listOf("com.lu4p.app1"), served.installed.map { it.packageName })
+        assertEquals(0L, coldRepository.getInstalledAppsVersion().value)
+        assertTrue(next.installed.isEmpty())
+    }
+
+    @Test
+    fun `getAppsSnapshotFirst still serves the snapshot after a plain cache invalidation`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        writeSnapshot(dispatcher, "com.lu4p.gone", "com.lu4p.kept")
+        every { launcherApps.getActivityList(null, myUser) } returns
+                listOf(createMockLauncherActivity("com.lu4p.kept", "com.lu4p.kept"))
+        val coldRepository = snapshotRepository(dispatcher)
+        coldRepository.invalidateCache()
+
+        val served = coldRepository.getAppsSnapshotFirst()
+
+        assertEquals(listOf("com.lu4p.gone", "com.lu4p.kept"), served.installed.map { it.packageName })
+    }
+
+    @Test
+    fun `getAppsSnapshotFirst skips the snapshot after a package event`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        writeSnapshot(dispatcher, "com.lu4p.gone")
+        every { launcherApps.getActivityList(null, myUser) } returns
+                listOf(createMockLauncherActivity("com.lu4p.kept", "com.lu4p.kept"))
+        val callbackSlot = slot<LauncherApps.Callback>()
+        every { launcherApps.registerCallback(capture(callbackSlot), any()) } returns Unit
+        val coldRepository = snapshotRepository(dispatcher)
+        callbackSlot.captured.onPackageRemoved("com.lu4p.gone", myUser)
+
+        val served = coldRepository.getAppsSnapshotFirst()
+
+        assertEquals(listOf("com.lu4p.kept"), served.installed.map { it.packageName })
+    }
+
+    @Test
+    fun `a scan that raced an invalidation is not persisted`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        writeSnapshot(dispatcher, "com.lu4p.before")
+        val racingRepository = snapshotRepository(dispatcher)
+        every { launcherApps.getActivityList(null, myUser) } answers {
+            racingRepository.invalidateCache()
+            listOf(createMockLauncherActivity("com.lu4p.after", "com.lu4p.after"))
+        }
+
+        racingRepository.getInstalledApps()
+        advanceUntilIdle()
+
+        assertEquals(
+                listOf("com.lu4p.before"),
+                snapshotRepository(dispatcher).getAppsSnapshotFirst().installed.map { it.packageName },
+        )
+    }
+
+    @Test
+    fun `a queued snapshot write is discarded after invalidation`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        writeSnapshot(dispatcher, "com.lu4p.previous")
+        every { launcherApps.getActivityList(null, myUser) } returns
+                listOf(createMockLauncherActivity("com.lu4p.stale", "com.lu4p.stale"))
+        val racingRepository = snapshotRepository(dispatcher)
+
+        racingRepository.getInstalledApps()
+        racingRepository.invalidateCache()
+        advanceUntilIdle()
+
+        val realContext = RuntimeEnvironment.getApplication().applicationContext as Context
+        assertEquals(
+                listOf("com.lu4p.previous"),
+                AppListSnapshotStore(realContext).read()?.map { it.packageName },
+        )
+    }
+
+    @Test
+    fun `an older scan does not overwrite a newer scan on disk`() {
+        val lifo = LifoDispatcher()
+        val repository = snapshotRepository(lifo)
+        val calls = AtomicInteger()
+        every { launcherApps.getActivityList(null, myUser) } answers {
+            if (calls.incrementAndGet() == 1) {
+                repository.getInstalledApps()
+                listOf(createMockLauncherActivity("com.lu4p.newer", "com.lu4p.newer"))
+            } else {
+                listOf(createMockLauncherActivity("com.lu4p.older", "com.lu4p.older"))
+            }
+        }
+
+        repository.getInstalledApps()
+        lifo.drainNewestFirst()
+
+        assertEquals(
+                listOf("com.lu4p.newer"),
+                snapshotRepository(lifo).getAppsSnapshotFirst().installed.map { it.packageName },
+        )
+    }
+
+    @Test
+    fun `reconcile requests a rebuild when invalidated during the scan`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        writeSnapshot(dispatcher, "com.lu4p.gone")
+        val coldRepository = snapshotRepository(dispatcher)
+
+        coldRepository.getAppsSnapshotFirst()
+        every { launcherApps.getActivityList(null, myUser) } answers {
+            coldRepository.invalidateCache()
+            listOf(createMockLauncherActivity("com.lu4p.kept", "com.lu4p.kept"))
+        }
+        advanceUntilIdle()
+
+        assertEquals(2L, coldRepository.getInstalledAppsVersion().value)
+    }
+
+    /** Queues dispatched blocks; [drainNewestFirst] runs them in reverse order. */
+    private class LifoDispatcher : CoroutineDispatcher() {
+        private val queue = ArrayDeque<Runnable>()
+
+        override fun dispatch(context: CoroutineContext, block: Runnable) {
+            queue.addLast(block)
+        }
+
+        fun drainNewestFirst() {
+            while (queue.isNotEmpty()) queue.removeLast().run()
+        }
+    }
+
     // --- Hidden Apps Tests ---
 
     @Test
@@ -770,7 +997,12 @@ class AppRepositoryTest {
     @Test
     fun `setAppCategory normalizes localized inferred category names`() = runTest {
         val realContext = RuntimeEnvironment.getApplication().applicationContext as Context
-        val realRepository = AppRepository(realContext, appDao, PrivateSpaceManager(realContext))
+        val realRepository = AppRepository(
+                        realContext,
+                        appDao,
+                        PrivateSpaceManager(realContext),
+                        AppListSnapshotStore(realContext),
+                )
 
         realRepository.setAppCategory("com.lu4p.app1", "0", "Produktivität")
 
@@ -791,7 +1023,12 @@ class AppRepositoryTest {
         val realContext = RuntimeEnvironment.getApplication().applicationContext as Context
         every { appDao.getAllAppCategories() } returns
                 flowOf(listOf(AppCategoryEntity("com.lu4p.app1", "0", "Spiele")))
-        val realRepository = AppRepository(realContext, appDao, PrivateSpaceManager(realContext))
+        val realRepository = AppRepository(
+                        realContext,
+                        appDao,
+                        PrivateSpaceManager(realContext),
+                        AppListSnapshotStore(realContext),
+                )
 
         val result = realRepository.getAllAppCategories().first()
 
@@ -896,7 +1133,12 @@ class AppRepositoryTest {
                             )
                     )
             val realRepository =
-                    AppRepository(realContext, realDao, PrivateSpaceManager(realContext))
+                    AppRepository(
+                            realContext,
+                            realDao,
+                            PrivateSpaceManager(realContext),
+                            AppListSnapshotStore(realContext),
+                    )
             realRepository.invalidateCache()
             realRepository.deleteCategory("Games")
 

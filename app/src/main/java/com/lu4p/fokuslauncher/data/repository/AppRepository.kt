@@ -29,6 +29,7 @@ import com.lu4p.fokuslauncher.data.database.entity.AppCategoryDefinitionEntity
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryEntity
 import com.lu4p.fokuslauncher.data.database.entity.HiddenAppEntity
 import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
+import com.lu4p.fokuslauncher.data.local.AppListSnapshotStore
 import com.lu4p.fokuslauncher.data.model.AddCategoryResult
 import com.lu4p.fokuslauncher.data.model.reservedCategoryAddFailure
 import com.lu4p.fokuslauncher.data.model.AppInfo
@@ -49,7 +50,11 @@ import com.lu4p.fokuslauncher.utils.ProfileHeuristics
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -66,23 +71,34 @@ import kotlinx.coroutines.withContext
  */
 @Singleton
 class AppRepository
-@Inject
-constructor(
-        @param:ApplicationContext private val context: Context,
+internal constructor(
+        private val context: Context,
         private val appDao: AppDao,
-        private val privateSpaceManager: PrivateSpaceManager
+        private val privateSpaceManager: PrivateSpaceManager,
+        private val appListSnapshotStore: AppListSnapshotStore,
+        snapshotDispatcher: CoroutineDispatcher,
 ) {
-    private var cachedApps: List<AppInfo>? = null
-    private var cachedArchivedApps: List<AppInfo>? = null
+    @Inject
+    constructor(
+            @ApplicationContext context: Context,
+            appDao: AppDao,
+            privateSpaceManager: PrivateSpaceManager,
+            appListSnapshotStore: AppListSnapshotStore,
+    ) : this(context, appDao, privateSpaceManager, appListSnapshotStore, Dispatchers.IO)
+
+    data class AppLists(val installed: List<AppInfo>, val archived: List<AppInfo>)
+
+    @Volatile private var cachedLists: AppLists? = null
+    private val cacheLock = Any()
+    private var servedSnapshot: AppLists? = null
+    private var snapshotAvailable = true
+    private var packageEventSeen = false
+    private var cacheEpoch = 0L
+    private val snapshotScope = CoroutineScope(SupervisorJob() + snapshotDispatcher)
     private val installedAppsVersion = MutableStateFlow(0L)
     private val removedPackages = MutableSharedFlow<RemovedApp>(extraBufferCapacity = 8)
     private val mainHandler = Handler(Looper.getMainLooper())
-    private val delayedInstalledAppsRefresh =
-            Runnable {
-                cachedApps = null
-                cachedArchivedApps = null
-                installedAppsVersion.value += 1
-            }
+    private val delayedInstalledAppsRefresh = Runnable { invalidateCache() }
     private val packageChangeReceiver =
             object : android.content.BroadcastReceiver() {
                 override fun onReceive(context: Context?, intent: Intent?) {
@@ -214,44 +230,134 @@ constructor(
      * Empty lists are not cached: [LauncherApps.getActivityList] / package events can briefly
      * yield no activities; caching that would hide every app until process death (e.g. force stop).
      */
-    fun getInstalledApps(): List<AppInfo> {
-        cachedApps?.let {
-            return it
-        }
+    fun getInstalledApps(): List<AppInfo> = cachedLists?.installed ?: loadAppLists().installed
 
-        val allApps = loadInstalledAppsMergedAcrossProfiles()
-        val apps = allApps.filterNot { it.isArchived }
-        val archivedApps = allApps.filter { it.isArchived }
-        when {
-            allApps.isNotEmpty() && !isIncompleteOwnerProfileSnapshot(allApps) -> {
-                cachedApps = apps
-                cachedArchivedApps = archivedApps
+    /** Serves the persisted list to drawer rebuilds until a successful scan replaces it. */
+    fun getAppsSnapshotFirst(): AppLists {
+        val shouldRead = synchronized(cacheLock) {
+            cachedLists?.let { return it }
+            servedSnapshot?.let { return it }
+            if (!snapshotAvailable || packageEventSeen) false
+            else {
+                snapshotAvailable = false
+                true
             }
-            allApps.isNotEmpty() ->
-                    Log.w(
-                            TAG,
-                            "not caching installed-apps snapshot (${mergedAppsSummary(allApps)}); " +
-                                    "owner profile still missing from merged list",
-                    )
         }
-        return apps
+        if (shouldRead) {
+            val snapshot = loadSnapshotApps()
+            val served = synchronized(cacheLock) {
+                if (snapshot != null && !packageEventSeen && cachedLists == null) {
+                    servedSnapshot = snapshot
+                    snapshot
+                } else cachedLists
+            }
+            if (served != null) {
+                if (served === snapshot) scheduleSnapshotBackedRefresh(served)
+                return served
+            }
+        }
+        return AppLists(getInstalledApps(), getArchivedApps())
+    }
+
+    private fun loadSnapshotApps(): AppLists? {
+        val entries = appListSnapshotStore.read() ?: return null
+        val userManager = userManagerOrNull()
+        val profiles = userManager?.userProfiles.orEmpty()
+        val apps =
+                entries.mapNotNull { entry ->
+                    val userHandle =
+                            if (entry.profileKey == "0") {
+                                null
+                            } else {
+                                profiles.firstOrNull {
+                                    it != Process.myUserHandle() &&
+                                            appProfileKey(it) == entry.profileKey
+                                } ?: return@mapNotNull null
+                            }
+                    AppInfo(
+                            packageName = entry.packageName,
+                            label = entry.label,
+                            icon = null,
+                            category = entry.category,
+                            userHandle = userHandle,
+                            componentName =
+                                    entry.componentName?.let(ComponentName::unflattenFromString),
+                            launcherShortcutId = entry.launcherShortcutId,
+                            isArchived = entry.isArchived,
+                    )
+                }
+        if (apps.isEmpty()) return null
+        val (installed, archived) = apps.partition { !it.isArchived }
+        return AppLists(installed, archived)
+    }
+
+    private fun scheduleSnapshotBackedRefresh(served: AppLists) {
+        snapshotScope.launch {
+            val epoch = synchronized(cacheLock) { cacheEpoch }
+            getInstalledApps()
+            synchronized(cacheLock) {
+                val fresh = cachedLists
+                servedSnapshot = null
+                if (cacheEpoch != epoch || (fresh != null && fresh != served)) {
+                    installedAppsVersion.value += 1
+                }
+            }
+        }
+    }
+
+    private fun loadAppLists(): AppLists {
+        val epoch = synchronized(cacheLock) { cacheEpoch }
+        val allApps = loadInstalledAppsMergedAcrossProfiles()
+        val lists = AppLists(allApps.filterNot { it.isArchived }, allApps.filter { it.isArchived })
+        if (allApps.isNotEmpty() && !isIncompleteOwnerProfileSnapshot(allApps)) {
+            cacheScan(allApps, lists, epoch)
+        } else if (allApps.isNotEmpty()) {
+            Log.w(
+                    TAG,
+                    "not caching installed-apps snapshot (${mergedAppsSummary(allApps)}); " +
+                            "owner profile still missing from merged list",
+            )
+        }
+        return lists
+    }
+
+    private fun cacheScan(allApps: List<AppInfo>, lists: AppLists, epoch: Long) {
+        synchronized(cacheLock) {
+            if (cacheEpoch != epoch) return
+            cachedLists = lists
+            servedSnapshot = null
+            snapshotAvailable = false
+        }
+        persistAppListSnapshotAsync(allApps, lists)
+    }
+
+    private fun persistAppListSnapshotAsync(allApps: List<AppInfo>, lists: AppLists) {
+        snapshotScope.launch {
+            val entries =
+                    allApps.map { app ->
+                        AppListSnapshotStore.Entry(
+                                packageName = app.packageName,
+                                label = app.label,
+                                category = app.category,
+                                profileKey = appProfileKey(app.userHandle),
+                                componentName = app.componentName?.flattenToString(),
+                                launcherShortcutId = app.launcherShortcutId,
+                                isArchived = app.isArchived,
+                        )
+                    }
+            synchronized(cacheLock) {
+                // A newer scan or invalidation replaces this exact list before it can be written.
+                if (cachedLists !== lists) return@launch
+                appListSnapshotStore.write(entries)
+            }
+        }
     }
 
     suspend fun getInstalledAppsOnBackground(): List<AppInfo> =
             withContext(Dispatchers.IO) { getInstalledApps() }
 
     /** Returns archived apps that are intentionally hidden from home, drawer, and pickers. */
-    fun getArchivedApps(): List<AppInfo> {
-        cachedArchivedApps?.let { return it }
-        val allApps = loadInstalledAppsMergedAcrossProfiles()
-        val apps = allApps.filterNot { it.isArchived }
-        val archivedApps = allApps.filter { it.isArchived }
-        if (allApps.isNotEmpty() && !isIncompleteOwnerProfileSnapshot(allApps)) {
-            cachedApps = apps
-            cachedArchivedApps = archivedApps
-        }
-        return archivedApps
-    }
+    fun getArchivedApps(): List<AppInfo> = cachedLists?.archived ?: loadAppLists().archived
 
     suspend fun getArchivedAppsOnBackground(): List<AppInfo> =
             withContext(Dispatchers.IO) { getArchivedApps() }
@@ -595,19 +701,29 @@ constructor(
     }
 
     /** Clears the cached app list, forcing a reload on next access. */
-    fun invalidateCache() {
-        cachedApps = null
-        cachedArchivedApps = null
-        installedAppsVersion.value += 1
+    fun invalidateCache() = invalidateCache(packageEvent = false)
+
+    private fun invalidateCache(packageEvent: Boolean) {
+        synchronized(cacheLock) {
+            cachedLists = null
+            cacheEpoch += 1
+            if (packageEvent) {
+                packageEventSeen = true
+                snapshotAvailable = false
+                servedSnapshot = null
+            }
+            installedAppsVersion.value += 1
+        }
     }
 
     /**
-     * Invalidates immediately, then again shortly after. Package / archive events often arrive
-     * before [LauncherApps.getActivityList] reflects the new state; a single invalidate can cache
-     * a stale non-empty snapshot until the next unrelated bump.
+     * Marks a launcher-list change (package, profile, or pinned-shortcut event): invalidates
+     * immediately, then again shortly after. Package / archive events often arrive before
+     * [LauncherApps.getActivityList] reflects the new state; a single invalidate can cache a stale
+     * non-empty snapshot until the next unrelated bump.
      */
-    private fun scheduleInstalledAppsRefresh() {
-        invalidateCache()
+    fun scheduleInstalledAppsRefresh() {
+        invalidateCache(packageEvent = true)
         mainHandler.removeCallbacks(delayedInstalledAppsRefresh)
         mainHandler.postDelayed(delayedInstalledAppsRefresh, INSTALLED_APPS_REFRESH_RETRY_DELAY_MS)
     }
