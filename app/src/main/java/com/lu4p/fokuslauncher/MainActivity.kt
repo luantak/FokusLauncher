@@ -170,6 +170,11 @@ class MainActivity : AppCompatActivity() {
     private fun applySystemBarsAppearance() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         WindowInsetsControllerCompat(window, window.decorView).apply {
+            // Fokus always draws light content over a dark or photo background. Do not let the
+            // device's light theme turn the system-bar icons black, which makes the status bar
+            // look hidden when the launcher uses its black wallpaper.
+            isAppearanceLightStatusBars = false
+            isAppearanceLightNavigationBars = false
             if (shouldShowStatusBar) {
                 show(WindowInsetsCompat.Type.statusBars())
                 systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
