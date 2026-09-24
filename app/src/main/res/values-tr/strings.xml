@@ -319,4 +319,17 @@
     <string name="settings_dot_search_add_shortcut_help">Anına bir uygulama açmak, telefonla ilgili bir işlem yapmak, veya başlatıcı kısayolu açmak için \".x\" yazınız</string>
     <string name="edit_home_section_all_apps" translatable="false">\@string/drawer_filter_all_apps</string>
     <string name="app_name" translatable="false">Fokus Launcher</string>
+    <string name="cd_restore_archived_app">Arşivlenmiș uygulamayı geri yükle</string>
+    <string name="toast_digital_wellbeing_launch_failed">Dijital Sağlık uygulaması açılamadı</string>
+    <string name="settings_look_and_feel_title">Görsel Ayarlar</string>
+    <string name="settings_look_and_feel_subtitle">Dil, yazı tipleri, renkler, parlaklik, duvar kağıdı ve bildirim göstergeleri</string>
+    <string name="settings_look_section_display">Ekran</string>
+    <string name="settings_look_section_text">Metin</string>
+    <string name="settings_look_section_colors">Renkler</string>
+    <string name="settings_look_section_icons">Simgeler</string>
+    <string name="settings_look_section_wallpaper">Duvar kağıdı</string>
+    <string name="settings_look_section_notifications">Bildirimler</string>
+    <string name="settings_drawer_behavior_title">Uygulama Çekmecesi</string>
+    <string name="settings_section_apps">Uygulamalar</string>
+    <string name="settings_apps_management_title">Gizlenen, yeniden adlandırılan &amp; arşivlenen</string>
 </resources>
