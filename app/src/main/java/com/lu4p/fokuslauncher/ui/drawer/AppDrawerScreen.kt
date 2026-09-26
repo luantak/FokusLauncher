@@ -773,6 +773,10 @@ fun AppDrawerScreen(
         AppActionSheet(
                 app = app,
                 categories = uiState.categories,
+                shortcuts = uiState.selectedAppShortcuts,
+                onShortcutClick = { action ->
+                    if (viewModel.launchSelectedAppShortcut(action)) closeAndResetAfterLaunch()
+                },
                 onDismiss = viewModel::dismissActionSheet,
                 onAddToHome = {
                     viewModel.addToHomeScreen(it)

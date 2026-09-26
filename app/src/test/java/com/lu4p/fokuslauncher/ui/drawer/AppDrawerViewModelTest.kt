@@ -3,6 +3,7 @@ package com.lu4p.fokuslauncher.ui.drawer
 import android.content.ComponentName
 import android.content.Context
 import android.os.UserHandle
+import android.os.Process
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryDefinitionEntity
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryEntity
@@ -10,6 +11,7 @@ import com.lu4p.fokuslauncher.data.database.entity.HiddenAppEntity
 import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.AppInfo
+import com.lu4p.fokuslauncher.data.model.AppShortcutAction
 import com.lu4p.fokuslauncher.data.model.DotSearchTargetPreference
 import com.lu4p.fokuslauncher.data.model.DotSearchTargetMode
 import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
@@ -30,6 +32,8 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -905,6 +909,51 @@ class AppDrawerViewModelTest {
 
         val state = viewModel.uiState.value
         assertNull(state.selectedApp)
+    }
+
+    @Test
+    fun `long press loads only selected app shortcuts and launch uses its profile`() {
+        val user = mockk<UserHandle>()
+        val app = testApps[0].copy(userHandle = user)
+        val action = AppShortcutAction("Atom", "Compose", ShortcutTarget.LauncherShortcut(app.packageName, "compose"))
+        every { appRepository.getShortcutsForApp(app.packageName, user) } returns listOf(action)
+
+        viewModel.onAppLongPress(app)
+
+        assertEquals(listOf(action), viewModel.uiState.value.selectedAppShortcuts)
+        assertTrue(viewModel.launchSelectedAppShortcut(action))
+        verify { appRepository.launchLauncherShortcut(app.packageName, "compose", user) }
+        assertNull(viewModel.uiState.value.selectedApp)
+    }
+
+    @Test
+    fun `dismiss and switching apps clear shortcuts without leaking previous results`() {
+        val user = mockk<UserHandle>()
+        val app = testApps[0].copy(userHandle = user)
+        val action = AppShortcutAction("Atom", "Compose", ShortcutTarget.LauncherShortcut(app.packageName, "compose"))
+        every { appRepository.getShortcutsForApp(app.packageName, user) } returns listOf(action)
+        viewModel.onAppLongPress(app)
+        viewModel.dismissActionSheet()
+        assertTrue(viewModel.uiState.value.selectedAppShortcuts.isEmpty())
+
+        val pinned = app.copy(launcherShortcutId = "pwa")
+        viewModel.onAppLongPress(pinned)
+        assertTrue(viewModel.uiState.value.selectedAppShortcuts.isEmpty())
+        verify(exactly = 1) { appRepository.getShortcutsForApp(app.packageName, user) }
+    }
+
+    @Test
+    fun `owner app shortcut lookup resolves owner handle`() {
+        val user = mockk<UserHandle>()
+        mockkStatic(Process::class)
+        try {
+            every { Process.myUserHandle() } returns user
+            every { appRepository.getShortcutsForApp(testApps[0].packageName, user) } returns emptyList()
+            viewModel.onAppLongPress(testApps[0])
+            verify { appRepository.getShortcutsForApp(testApps[0].packageName, user) }
+        } finally {
+            unmockkStatic(Process::class)
+        }
     }
 
     @Test
