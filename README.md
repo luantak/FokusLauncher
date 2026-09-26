@@ -156,11 +156,14 @@ message.
 PRs from branches in this repository run [is-malicious](https://github.com/luantak/is-malicious)
 against files changed from the base branch. High-severity findings and scan errors
 fail the check; a clean result is not proof that the code is safe. The scanner sends
-eligible source files to the TypeSafe API and consumes paid tokens. A maintainer
-must add the `TYPESAFE_API_KEY` repository secret under Settings → Secrets and
-variables → Actions before the check can pass. Fork PRs skip this check because
-GitHub does not expose that secret to fork workflows; review those changes
-manually. Do not move this workflow to `pull_request_target` to expose the key.
+eligible source files to OpenCode Zen's `jev-1.13-free` model, which is free for
+a limited time. A maintainer must add an OpenCode Zen API key as the
+`OPENCODE_API_KEY` repository secret under Settings → Secrets and variables →
+Actions before the check can pass. The CLI receives it as `TYPESAFE_API_KEY`,
+its provider-independent credential variable; it does not call the paid TypeSafe
+endpoint. Fork PRs skip this check because GitHub does not expose the secret to
+fork workflows; review those changes manually. Do not move this workflow to
+`pull_request_target` to expose the key.
 
 ### Translations
 

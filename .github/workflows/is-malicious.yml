@@ -27,15 +27,16 @@ jobs:
 
       - name: Check scanner credentials
         env:
-          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
         run: |
-          if [ -z "$TYPESAFE_API_KEY" ]; then
-            echo 'Missing repository secret TYPESAFE_API_KEY' >&2
+          if [ -z "$OPENCODE_API_KEY" ]; then
+            echo 'Missing repository secret OPENCODE_API_KEY' >&2
             exit 1
           fi
 
       - name: Scan files changed in this PR
         env:
-          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+          # is-malicious uses this variable for any compatible provider's key.
+          TYPESAFE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           BASE_REF: ${{ github.base_ref }}
-        run: npx --yes is-malicious@0.1.1 . --diff-from "origin/$BASE_REF"
+        run: npx --yes is-malicious@0.1.1 . --base-url https://opencode.ai/zen --model jev-1.13-free --diff-from "origin/$BASE_REF"
