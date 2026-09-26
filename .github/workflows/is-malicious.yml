@@ -1,0 +1,42 @@
+name: is-malicious
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: is-malicious-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    # pull_request does not expose repository secrets to fork PRs. Do not use
+    # pull_request_target to run a fork's code with the API key.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Check scanner credentials
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+        run: |
+          if [ -z "$OPENCODE_API_KEY" ]; then
+            echo 'Missing repository secret OPENCODE_API_KEY' >&2
+            exit 1
+          fi
+
+      - name: Scan files changed in this PR
+        env:
+          # is-malicious uses this variable for any compatible provider's key.
+          TYPESAFE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          BASE_REF: ${{ github.base_ref }}
+        run: npx --yes is-malicious@0.1.1 . --base-url https://opencode.ai/zen --model jev-1.13-free --diff-from "origin/$BASE_REF"
