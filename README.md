@@ -151,6 +151,17 @@ thoughtful UX decisions, and good test coverage are always appreciated. For bug
 reports, **Settings → Export app logs** can attach a diagnostic file to your
 message.
 
+### PR malware scan
+
+PRs from branches in this repository run [is-malicious](https://github.com/luantak/is-malicious)
+against files changed from the base branch. High-severity findings and scan errors
+fail the check; a clean result is not proof that the code is safe. The scanner sends
+eligible source files to the TypeSafe API and consumes paid tokens. A maintainer
+must add the `TYPESAFE_API_KEY` repository secret under Settings → Secrets and
+variables → Actions before the check can pass. Fork PRs skip this check because
+GitHub does not expose that secret to fork workflows; review those changes
+manually. Do not move this workflow to `pull_request_target` to expose the key.
+
 ### Translations
 
 All UI strings can be translated in your language through
