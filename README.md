@@ -151,20 +151,6 @@ thoughtful UX decisions, and good test coverage are always appreciated. For bug
 reports, **Settings → Export app logs** can attach a diagnostic file to your
 message.
 
-### PR malware scan
-
-PRs from branches in this repository run [is-malicious](https://github.com/luantak/is-malicious)
-against files changed from the base branch. High-severity findings and scan errors
-fail the check; a clean result is not proof that the code is safe. The scanner sends
-eligible source files to OpenCode Zen's `jev-1.13-free` model, which is free for
-a limited time. A maintainer must add an OpenCode Zen API key as the
-`OPENCODE_API_KEY` repository secret under Settings → Secrets and variables →
-Actions before the check can pass. The CLI receives it as `TYPESAFE_API_KEY`,
-its provider-independent credential variable; it does not call the paid TypeSafe
-endpoint. Fork PRs skip this check because GitHub does not expose the secret to
-fork workflows; review those changes manually. Do not move this workflow to
-`pull_request_target` to expose the key.
-
 ### Translations
 
 All UI strings can be translated in your language through
