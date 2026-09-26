@@ -1,8 +1,13 @@
 package com.lu4p.fokuslauncher.ui.drawer
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Launch
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
@@ -10,6 +15,8 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -22,20 +29,24 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.model.AppInfo
+import com.lu4p.fokuslauncher.data.model.AppShortcutAction
 import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
+import com.lu4p.fokuslauncher.ui.components.LauncherIcon
 import com.lu4p.fokuslauncher.ui.components.RenameableBottomSheet
 import com.lu4p.fokuslauncher.ui.components.SheetActionRow
 import com.lu4p.fokuslauncher.ui.util.categoryChipDisplayLabel
 
 /**
  * Bottom sheet shown on long-press of an app in the drawer.
- * Offers: Add to home, Rename, App info, Hide, Uninstall.
+ * Offers published app shortcuts and the existing app management actions.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppActionSheet(
     app: AppInfo,
     categories: List<String>,
+    shortcuts: List<AppShortcutAction> = emptyList(),
+    onShortcutClick: (AppShortcutAction) -> Unit = {},
     onDismiss: () -> Unit,
     onAddToHome: (AppInfo) -> Unit,
     onRename: (String) -> Unit,
@@ -92,6 +103,42 @@ fun AppActionSheet(
                 )
             }
             return@RenameableBottomSheet
+        }
+
+        shortcuts.forEach { action ->
+            SheetActionRow(
+                label = action.actionLabel,
+                onClick = { onShortcutClick(action) },
+                leadingContent = {
+                    Box(
+                        contentAlignment = androidx.compose.ui.Alignment.Center,
+                        modifier = Modifier.size(32.dp).background(
+                            MaterialTheme.colorScheme.secondaryContainer,
+                            androidx.compose.foundation.shape.CircleShape
+                        ),
+                    ) {
+                        if (action.icon != null) {
+                            LauncherIcon(
+                                drawable = action.icon,
+                                contentDescription = action.actionLabel,
+                                iconSize = 26.dp,
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                            )
+                        } else {
+                            LauncherIcon(
+                                imageVector = Icons.AutoMirrored.Filled.Launch,
+                                contentDescription = action.actionLabel,
+                                iconSize = 20.dp,
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                            )
+                        }
+                    }
+                },
+                testTag = "shortcut_${action.id}",
+            )
+        }
+        if (shortcuts.isNotEmpty()) {
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         }
 
         if (!isOnHomeScreen) {

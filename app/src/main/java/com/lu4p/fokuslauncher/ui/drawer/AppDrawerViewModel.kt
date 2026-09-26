@@ -3,12 +3,14 @@ package com.lu4p.fokuslauncher.ui.drawer
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.os.Process
 import android.os.UserHandle
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.model.AppInfo
+import com.lu4p.fokuslauncher.data.model.AppShortcutAction
 import com.lu4p.fokuslauncher.data.model.DotSearchTargetPreference
 import com.lu4p.fokuslauncher.data.model.DotSearchTargetMode
 import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
@@ -67,6 +69,7 @@ data class AppDrawerUiState(
         val selectedCategory: String = ReservedCategoryNames.ALL_APPS,
         val categories: List<String> = listOf(ReservedCategoryNames.ALL_APPS),
         val selectedApp: AppInfo? = null,
+        val selectedAppShortcuts: List<AppShortcutAction> = emptyList(),
         val showMenu: Boolean = false,
         /** True when Private Space is available on this device (profile exists). */
         val isPrivateSpaceSupported: Boolean = false,
@@ -1210,12 +1213,39 @@ constructor(
 
     // --- Long-press actions ---
 
+    private var shortcutLookupJob: Job? = null
+
     fun onAppLongPress(app: AppInfo) {
-        _uiState.update { it.copy(selectedApp = app) }
+        shortcutLookupJob?.cancel()
+        _uiState.update { it.copy(selectedApp = app, selectedAppShortcuts = emptyList()) }
+        // Pinned shortcut rows already represent a shortcut, not the host app.
+        if (app.launcherShortcutId != null) return
+        shortcutLookupJob = viewModelScope.launch {
+            val shortcuts = withContext(drawerComputationDispatcher) {
+                appRepository.getShortcutsForApp(
+                    app.packageName, app.userHandle ?: Process.myUserHandle()
+                ).take(MAX_APP_MENU_SHORTCUTS)
+            }
+            if (_uiState.value.selectedApp == app) {
+                _uiState.update { it.copy(selectedAppShortcuts = shortcuts) }
+            }
+        }
     }
 
     fun dismissActionSheet() {
-        _uiState.update { it.copy(selectedApp = null) }
+        shortcutLookupJob?.cancel()
+        _uiState.update { it.copy(selectedApp = null, selectedAppShortcuts = emptyList()) }
+    }
+
+    fun launchSelectedAppShortcut(action: AppShortcutAction): Boolean {
+        val app = _uiState.value.selectedApp ?: return false
+        val target = action.target as? ShortcutTarget.LauncherShortcut ?: return false
+        if (action !in _uiState.value.selectedAppShortcuts || target.packageName != app.packageName) return false
+        val launched = launchTarget(
+            LaunchTarget.LauncherShortcut(target.packageName, target.shortcutId, app.userHandle)
+        )
+        if (launched) dismissActionSheet()
+        return launched
     }
 
     fun reorderDrawerProfileSectionApps(sectionId: String, fromIndex: Int, toIndex: Int) {
@@ -1920,6 +1950,7 @@ constructor(
     }
 
     private companion object {
+        private const val MAX_APP_MENU_SHORTCUTS = 4
         private const val EMPTY_INSTALLED_APPS_RETRY_DELAY_MS = 200L
         private const val DRAWER_LOAD_TAG = "FokusAppLoad"
     }
