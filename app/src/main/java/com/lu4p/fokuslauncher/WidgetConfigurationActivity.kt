@@ -7,7 +7,27 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import com.lu4p.fokuslauncher.data.widget.WidgetHostManager
+
+internal enum class WidgetConfigurationLaunchResult {
+    STARTED,
+    MISSING_ACTIVITY,
+    ACCESS_DENIED,
+    STALE_BINDING,
+}
+
+internal fun launchWidgetConfiguration(launch: () -> Unit): WidgetConfigurationLaunchResult =
+        try {
+            launch()
+            WidgetConfigurationLaunchResult.STARTED
+        } catch (_: ActivityNotFoundException) {
+            WidgetConfigurationLaunchResult.MISSING_ACTIVITY
+        } catch (_: SecurityException) {
+            WidgetConfigurationLaunchResult.ACCESS_DENIED
+        } catch (_: IllegalArgumentException) {
+            WidgetConfigurationLaunchResult.STALE_BINDING
+        }
 
 /**
  * Starts widget configuration through [AppWidgetHost], then forwards the provider's result to the
@@ -33,7 +53,7 @@ class WidgetConfigurationActivity : Activity() {
         }
 
         if (savedInstanceState == null) {
-            try {
+            val launchResult = launchWidgetConfiguration {
                 AppWidgetHost(applicationContext, WidgetHostManager.HOST_ID)
                         .startAppWidgetConfigureActivityForResult(
                                 this,
@@ -42,9 +62,9 @@ class WidgetConfigurationActivity : Activity() {
                                 REQUEST_CONFIGURE,
                                 null,
                         )
-            } catch (_: ActivityNotFoundException) {
-                finishWithResult(RESULT_CANCELED, null)
-            } catch (_: SecurityException) {
+            }
+            Log.i(TAG, "Widget configuration launch: $launchResult, id=$appWidgetId")
+            if (launchResult != WidgetConfigurationLaunchResult.STARTED) {
                 finishWithResult(RESULT_CANCELED, null)
             }
         }
@@ -54,6 +74,7 @@ class WidgetConfigurationActivity : Activity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_CONFIGURE) {
+            Log.i(TAG, "Widget provider configuration result: code=$resultCode, id=$appWidgetId")
             finishWithResult(resultCode, data)
         }
     }
@@ -66,6 +87,7 @@ class WidgetConfigurationActivity : Activity() {
     }
 
     companion object {
+        private const val TAG = "WidgetConfiguration"
         private const val REQUEST_CONFIGURE = 1
 
         fun createIntent(context: Context, appWidgetId: Int): Intent =
