@@ -67,12 +67,15 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import android.view.WindowManager
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
+import com.lu4p.fokuslauncher.data.local.TwoFingerDirection
 import com.lu4p.fokuslauncher.ui.drawer.AppDrawerScreen
 import com.lu4p.fokuslauncher.ui.drawer.AppDrawerViewModel
 import com.lu4p.fokuslauncher.ui.home.HomeScreen
 import com.lu4p.fokuslauncher.ui.home.HomeViewModel
+import com.lu4p.fokuslauncher.ui.home.detectTwoFingerSwipes
 import com.lu4p.fokuslauncher.ui.onboarding.OnboardingScreen
 import com.lu4p.fokuslauncher.ui.settings.AppearanceSettingsScreen
+import com.lu4p.fokuslauncher.ui.settings.GesturesSettingsScreen
 import com.lu4p.fokuslauncher.ui.settings.AppsManagementSettingsScreen
 import com.lu4p.fokuslauncher.ui.settings.CategoryAppsScreen
 import com.lu4p.fokuslauncher.ui.settings.CategoryIconPickerScreen
@@ -100,6 +103,7 @@ import java.util.function.Consumer
 object Routes {
     const val HOME = "home"
     const val SETTINGS = "settings"
+    const val SETTINGS_GESTURES = "settings_gestures"
     const val SETTINGS_DEVICE_CONTROL = "settings_device_control"
     const val SETTINGS_CATEGORIES = "settings_categories"
     const val SETTINGS_CATEGORY_APPS = "settings_category_apps"
@@ -329,6 +333,10 @@ fun FokusNavGraph(
 
                 val swipeLeftTarget by homeViewModel.swipeLeftTarget.collectAsStateWithLifecycle()
                 val swipeRightTarget by homeViewModel.swipeRightTarget.collectAsStateWithLifecycle()
+                val twoFingerTargets = TwoFingerDirection.entries.associateWith { direction ->
+                    val target by homeViewModel.twoFingerTargets.getValue(direction).collectAsStateWithLifecycle()
+                    target
+                }
                 val systemAnimationsEnabled = rememberSystemAnimationsEnabled()
 
                 BoxWithConstraints(
@@ -343,6 +351,9 @@ fun FokusNavGraph(
                     var widgetDragSide by remember { mutableStateOf<SwipeSide?>(null) }
                     val coroutineScope = rememberCoroutineScope()
                     var launchTriggered by remember { mutableStateOf(false) }
+                    var twoFingersActive by remember { mutableStateOf(false) }
+                    var ignoreVerticalDrag by remember { mutableStateOf(false) }
+                    var ignoreHorizontalDrag by remember { mutableStateOf(false) }
                     // With animations off, only show settled positions (no finger-follow slide).
                     val displayedHorizontalOffsetPx =
                         when {
@@ -398,6 +409,34 @@ fun FokusNavGraph(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
+                            .detectTwoFingerSwipes(
+                                onTwoFingersActive = { active ->
+                                    twoFingersActive = active
+                                    if (active) {
+                                        ignoreVerticalDrag = true
+                                        ignoreHorizontalDrag = true
+                                    }
+                                    if (active && widgetPageSide == null) {
+                                        horizontalOffsetPx = 0f
+                                        widgetDragSide = null
+                                    }
+                                },
+                                onSwipe = { direction ->
+                                    if (widgetPageSide == null && widgetDragSide == null && !showDrawer) {
+                                        twoFingerTargets[direction]?.let { target ->
+                                            if (target is ShortcutTarget.WidgetPage) {
+                                                val side = if (direction == TwoFingerDirection.LEFT)
+                                                    SwipeSide.LEFT else SwipeSide.RIGHT
+                                                widgetPageSide = side
+                                                horizontalOffsetPx = if (side == SwipeSide.LEFT)
+                                                    -pageWidthPx else pageWidthPx
+                                            } else {
+                                                activity?.launchWithBottomReveal(target)
+                                            }
+                                        }
+                                    }
+                                },
+                            )
                             .pointerInput(widgetPageSide, widgetDragSide) {
                                 var verticalDragOffset = 0f
                                 var drawerTriggered = false
@@ -405,8 +444,10 @@ fun FokusNavGraph(
                                     onDragStart = {
                                         verticalDragOffset = 0f
                                         drawerTriggered = false
+                                        ignoreVerticalDrag = twoFingersActive
                                     },
                                     onVerticalDrag = { change, dragAmount ->
+                                        if (ignoreVerticalDrag || twoFingersActive) return@detectVerticalDragGestures
                                         if (widgetPageSide != null || widgetDragSide != null) {
                                             return@detectVerticalDragGestures
                                         }
@@ -419,6 +460,10 @@ fun FokusNavGraph(
                                         }
                                     },
                                     onDragEnd = {
+                                        if (ignoreVerticalDrag || twoFingersActive) {
+                                            verticalDragOffset = 0f
+                                            return@detectVerticalDragGestures
+                                        }
                                         when {
                                             verticalDragOffset > SWIPE_THRESHOLD -> activity?.let {
                                                 MainActivity.expandStatusBar(it)
@@ -486,11 +531,13 @@ fun FokusNavGraph(
                                                 }
                                                 detectHorizontalDragGestures(
                                                     onDragStart = {
+                                                        ignoreHorizontalDrag = twoFingersActive
                                                         if (widgetPageSide != null) return@detectHorizontalDragGestures
                                                         launchTriggered = false
                                                         widgetDragSide = null
                                                     },
                                                     onHorizontalDrag = { change, dragAmount ->
+                                                        if (ignoreHorizontalDrag || twoFingersActive) return@detectHorizontalDragGestures
                                                         if (widgetPageSide != null) return@detectHorizontalDragGestures
                                                         if (launchTriggered) return@detectHorizontalDragGestures
                                                         if (horizontalOffsetPx == 0f) {
@@ -519,8 +566,8 @@ fun FokusNavGraph(
                                                             }
                                                         }
                                                     },
-                                                    onDragEnd = settleHorizontalDrag,
-                                                    onDragCancel = settleHorizontalDrag
+                                                    onDragEnd = { if (!ignoreHorizontalDrag && !twoFingersActive) settleHorizontalDrag() },
+                                                    onDragCancel = { if (!ignoreHorizontalDrag) settleHorizontalDrag() }
                                                 )
                                             }
                                         } else Modifier
@@ -747,7 +794,18 @@ fun FokusNavGraph(
                     onOpenAppsManagementSettings = {
                         navController.navigateSingleTop(Routes.SETTINGS_APPS_MANAGEMENT)
                     },
+                    onOpenGesturesSettings = {
+                        navController.navigateSingleTop(Routes.SETTINGS_GESTURES)
+                    },
                     backgroundScrim = Color.Black
+                )
+            }
+
+            fokusSettingsComposable(Routes.SETTINGS_GESTURES) {
+                GesturesSettingsScreen(
+                    viewModel = settingsViewModel(componentActivity),
+                    onNavigateBack = { navController.popBackStack() },
+                    backgroundScrim = Color.Black,
                 )
             }
 

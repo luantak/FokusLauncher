@@ -7,6 +7,7 @@ import com.lu4p.fokuslauncher.data.database.entity.AppCategoryEntity
 import com.lu4p.fokuslauncher.data.database.entity.HiddenAppEntity
 import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
+import com.lu4p.fokuslauncher.data.local.TwoFingerDirection
 import com.lu4p.fokuslauncher.data.model.AddCategoryResult
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
@@ -983,6 +984,13 @@ constructor(
 
     fun setSwipeRightTarget(target: ShortcutTarget?) =
             launchPreferences { setSwipeRightTarget(target) }
+
+    val twoFingerTargets = TwoFingerDirection.entries.associateWith { direction ->
+        preferencesManager.twoFingerTargetFlow(direction).stateWhileSubscribedIn(viewModelScope, null)
+    }
+
+    fun setTwoFingerTarget(direction: TwoFingerDirection, target: ShortcutTarget?) =
+            launchPreferences { setTwoFingerTarget(direction, target) }
 
     fun setDoubleTapEmptyTarget(action: AppShortcutAction?) =
             launchPreferences {

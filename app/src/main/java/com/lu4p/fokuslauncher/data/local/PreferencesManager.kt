@@ -91,6 +91,9 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         private val FAVORITES_KEY = stringPreferencesKey("favorite_apps")
         private val SWIPE_LEFT_KEY = stringPreferencesKey("swipe_left_app")
         private val SWIPE_RIGHT_KEY = stringPreferencesKey("swipe_right_app")
+        private val TWO_FINGER_KEYS = TwoFingerDirection.entries.associateWith {
+            stringPreferencesKey("two_finger_swipe_${it.name.lowercase()}")
+        }
         private val DOUBLE_TAP_EMPTY_TARGET_KEY = stringPreferencesKey("double_tap_empty_target")
         private val RIGHT_SIDE_SHORTCUTS_KEY = stringPreferencesKey("right_side_shortcuts")
         private val HOSTED_WIDGETS_KEY = stringPreferencesKey("hosted_widgets")
@@ -343,6 +346,17 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
     }
 
     // --- Swipe gestures ---
+
+    fun twoFingerTargetFlow(direction: TwoFingerDirection): Flow<ShortcutTarget?> =
+            context.fokusLauncherPreferencesDataStore.data.map { prefs ->
+                ShortcutTarget.decode(prefs[TWO_FINGER_KEYS.getValue(direction)] ?: "")
+            }
+
+    suspend fun setTwoFingerTarget(direction: TwoFingerDirection, target: ShortcutTarget?) {
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            prefs[TWO_FINGER_KEYS.getValue(direction)] = ShortcutTarget.encode(target)
+        }
+    }
 
     val swipeLeftTargetFlow: Flow<ShortcutTarget?> =
             context.fokusLauncherPreferencesDataStore.data.map { prefs ->

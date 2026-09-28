@@ -338,6 +338,13 @@
     <string name="settings_weather_app">Weather app</string>
     <string name="settings_swipe_left">Swipe left</string>
     <string name="settings_swipe_right">Swipe right</string>
+    <string name="settings_gestures">Gestures</string>
+    <string name="settings_gestures_subtitle">Swipe and double-tap shortcuts</string>
+    <string name="settings_two_finger_gestures">Two-finger swipes</string>
+    <string name="settings_two_finger_up">Two fingers up</string>
+    <string name="settings_two_finger_down">Two fingers down</string>
+    <string name="settings_two_finger_left">Two fingers left</string>
+    <string name="settings_two_finger_right">Two fingers right</string>
     <string name="settings_double_tap">Double tap</string>
     <string name="settings_double_tap_open_app">Choose app for double tap</string>
     <string name="settings_edit_app_categories">Edit app categories</string>

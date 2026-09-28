@@ -2,7 +2,6 @@ package com.lu4p.fokuslauncher.ui.settings
 
 import android.content.Context
 import android.content.Intent
-import android.content.res.Resources
 import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -26,7 +25,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -35,7 +33,6 @@ import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.R
-import com.lu4p.fokuslauncher.data.model.AppShortcutAction
 import com.lu4p.fokuslauncher.ui.components.FokusAlertDialog
 import com.lu4p.fokuslauncher.ui.components.FokusTextButton
 import com.lu4p.fokuslauncher.ui.components.LauncherIcon
@@ -61,13 +58,12 @@ fun SettingsScreen(
         onOpenAppearanceSettings: () -> Unit = {},
         onOpenDrawerBehaviorSettings: () -> Unit = {},
         onOpenAppsManagementSettings: () -> Unit = {},
+        onOpenGesturesSettings: () -> Unit = {},
         backgroundScrim: Color = FokusBackdrop.ScrimColorWithoutBlur,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val resources = LocalResources.current
 
-    val showAppPickerFor = remember { mutableStateOf<String?>(null) }
     val showResetConfirm = remember { mutableStateOf(false) }
 
     Column(
@@ -87,7 +83,6 @@ fun SettingsScreen(
                 viewModel = viewModel,
                 uiState = uiState,
                 context = context,
-                resources = resources,
                 onOpenAppearanceSettings = onOpenAppearanceSettings,
                 onOpenHomeWidgetsSettings = onOpenHomeWidgetsSettings,
                 onOpenDeviceControlSettings = onOpenDeviceControlSettings,
@@ -97,27 +92,17 @@ fun SettingsScreen(
                 onDrawerDotSearchSettings = onDrawerDotSearchSettings,
                 onOpenDrawerBehaviorSettings = onOpenDrawerBehaviorSettings,
                 onOpenAppsManagementSettings = onOpenAppsManagementSettings,
-                onShowAppPicker = { showAppPickerFor.value = it },
+                onOpenGesturesSettings = onOpenGesturesSettings,
                 onShowResetConfirm = { showResetConfirm.value = true },
         )
     }
 
     SettingsScreenDialogs(
-            uiState = uiState,
             showResetConfirm = showResetConfirm.value,
-            pickerTarget = showAppPickerFor.value,
             onDismissResetConfirm = { showResetConfirm.value = false },
             onResetConfirmed = {
                 viewModel.resetAllState()
                 onNavigateBack()
-            },
-            onDismissPicker = { showAppPickerFor.value = null },
-            onShortcutTargetSelected = { target, action ->
-                when (target) {
-                    "swipeLeft" -> viewModel.setSwipeLeftTarget(action.target)
-                    "swipeRight" -> viewModel.setSwipeRightTarget(action.target)
-                    "doubleTap" -> viewModel.setDoubleTapEmptyTarget(action)
-                }
             },
     )
 }
@@ -127,7 +112,6 @@ private fun SettingsHubContent(
         viewModel: SettingsViewModel,
         uiState: SettingsUiState,
         context: Context,
-        resources: Resources,
         onOpenAppearanceSettings: () -> Unit,
         onOpenHomeWidgetsSettings: () -> Unit,
         onOpenDeviceControlSettings: () -> Unit,
@@ -137,7 +121,7 @@ private fun SettingsHubContent(
         onDrawerDotSearchSettings: () -> Unit,
         onOpenDrawerBehaviorSettings: () -> Unit,
         onOpenAppsManagementSettings: () -> Unit,
-        onShowAppPicker: (String) -> Unit,
+        onOpenGesturesSettings: () -> Unit,
         onShowResetConfirm: () -> Unit,
 ) {
     val homeScreenSubpageRows =
@@ -239,58 +223,21 @@ private fun SettingsHubContent(
             )
         }
         item {
+            SettingsRow(
+                    label = stringResource(R.string.settings_gestures),
+                    subtitle = stringResource(R.string.settings_gestures_subtitle),
+                    verticalPadding = 14.dp,
+                    onClick = onOpenGesturesSettings,
+                    trailing = { SubpageChevron() },
+            )
+        }
+        item {
             HomeAlignmentRow(
                     currentAlignment = uiState.homeAlignment,
                     onAlignmentChanged = viewModel::setHomeAlignment,
             )
         }
-        items(
-                listOf(
-                        SwipeTargetPick(
-                                "swipeLeft",
-                                R.string.settings_swipe_left,
-                                uiState.swipeLeftTarget,
-                        ) { viewModel.setSwipeLeftTarget(null) },
-                        SwipeTargetPick(
-                                "swipeRight",
-                                R.string.settings_swipe_right,
-                                uiState.swipeRightTarget,
-                        ) { viewModel.setSwipeRightTarget(null) },
-                ),
-                key = { it.pickerKey },
-        ) { row ->
-            ShortcutTargetRow(
-                    label = stringResource(row.labelRes),
-                    currentTarget =
-                            formatShortcutTarget(
-                                    context,
-                                    resources,
-                                    row.target,
-                                    uiState.allApps,
-                            ),
-                    onPickApp = { onShowAppPicker(row.pickerKey) },
-                    onClear = row.onClear,
-            )
-        }
-        item {
-            ShortcutTargetRow(
-                    label = stringResource(R.string.settings_double_tap),
-                    currentTarget =
-                            formatWidgetTapTarget(
-                                    context = context,
-                                    resources = resources,
-                                    binding = uiState.doubleTapEmptyTarget,
-                                    allApps = uiState.allApps,
-                                    allActions = uiState.allShortcutActions,
-                                    emptyLabel = { _, res ->
-                                        res.getString(R.string.shortcut_target_not_set)
-                                    },
-                            ),
-                    onPickApp = { onShowAppPicker("doubleTap") },
-                    onClear = { viewModel.setDoubleTapEmptyTarget(null) },
-                    enabled = !uiState.doubleTapEmptyLock,
-            )
-        }
+
         item { SettingsDivider() }
 
         item { SectionHeader(stringResource(R.string.settings_section_app_drawer)) }
@@ -386,13 +333,9 @@ private fun SettingsHubContent(
 
 @Composable
 private fun SettingsScreenDialogs(
-        uiState: SettingsUiState,
         showResetConfirm: Boolean,
-        pickerTarget: String?,
         onDismissResetConfirm: () -> Unit,
         onResetConfirmed: suspend () -> Unit,
-        onDismissPicker: () -> Unit,
-        onShortcutTargetSelected: (String, AppShortcutAction) -> Unit,
 ) {
     if (showResetConfirm) {
         FokusAlertDialog(
@@ -441,40 +384,4 @@ private fun SettingsScreenDialogs(
         )
     }
 
-    pickerTarget?.let { target ->
-        when (target) {
-            "swipeLeft",
-            "swipeRight" -> {
-                ShortcutActionPickerDialog(
-                        allActions = uiState.allShortcutActions,
-                        allApps = uiState.allApps,
-                        title = stringResource(R.string.edit_shortcuts_section_all_actions),
-                        onSelect = { action ->
-                            onShortcutTargetSelected(target, action)
-                            onDismissPicker()
-                        },
-                        onDismiss = onDismissPicker,
-                        includeWidgetPageTarget = true,
-                        profileDisplayNameOverrides = uiState.profileDisplayNameOverrides,
-                )
-            }
-            "doubleTap" -> {
-                ShortcutActionPickerDialog(
-                        allActions =
-                                uiState.allShortcutActions.filter {
-                                    it.actionLabel == AppShortcutAction.OPEN_APP_LABEL
-                                },
-                        allApps = uiState.allApps,
-                        title = stringResource(R.string.settings_double_tap_open_app),
-                        onSelect = { action ->
-                            onShortcutTargetSelected(target, action)
-                            onDismissPicker()
-                        },
-                        onDismiss = onDismissPicker,
-                        profileDisplayNameOverrides = uiState.profileDisplayNameOverrides,
-                )
-            }
-            else -> onDismissPicker()
-        }
-    }
 }

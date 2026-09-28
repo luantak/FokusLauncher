@@ -21,6 +21,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
+import com.lu4p.fokuslauncher.data.local.TwoFingerDirection
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.dynamicCategoryExtras
 import com.lu4p.fokuslauncher.data.model.AppShortcutAction
@@ -314,6 +315,10 @@ class HomeViewModel @Inject constructor(
 
     val swipeRightTarget: StateFlow<ShortcutTarget?> =
             preferencesManager.swipeRightTargetFlow.stateWhileSubscribedIn(viewModelScope, null)
+
+    val twoFingerTargets = TwoFingerDirection.entries.associateWith { direction ->
+        preferencesManager.twoFingerTargetFlow(direction).stateWhileSubscribedIn(viewModelScope, null)
+    }
 
     val rightSideShortcuts: StateFlow<List<HomeShortcut>> =
             combine(preferencesManager.rightSideShortcutsFlow, _archivedAppKeys) {
