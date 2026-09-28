@@ -581,6 +581,19 @@ class HomeViewModelTest {
     }
 
     @Test
+    fun `missing favorite retry does not publish another installed apps change`() {
+        every { appRepository.getInstalledAppsVersion() } returns MutableStateFlow(0L)
+        every { appRepository.getInstalledApps() } returns
+                listOf(AppInfo(packageName = "com.lu4p.music", label = "Music", icon = null))
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.runCurrent()
+
+        viewModel.refreshInstalledApps(forceReload = false)
+        verify(timeout = 2_000, exactly = 2) { appRepository.invalidateCacheForRetry() }
+        verify(exactly = 1) { appRepository.invalidateCache() }
+    }
+
+    @Test
     fun `refreshInstalledApps does not clear favorites when launcher query is empty`() {
         every { appRepository.getInstalledApps() } returns emptyList()
         val viewModel = createViewModel()

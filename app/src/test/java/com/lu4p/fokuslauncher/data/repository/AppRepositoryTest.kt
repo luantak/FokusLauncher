@@ -268,6 +268,19 @@ class AppRepositoryTest {
     }
 
     @Test
+    fun `retrying an incomplete snapshot reloads without notifying observers`() {
+        every { launcherApps.getActivityList(null, myUser) } returns
+                listOf(createMockLauncherActivity("com.lu4p.app1", "App 1"))
+
+        repository.getInstalledApps()
+        repository.invalidateCacheForRetry()
+        repository.getInstalledApps()
+
+        verify(exactly = 2) { launcherApps.getActivityList(null, myUser) }
+        assertEquals(0L, repository.getInstalledAppsVersion().value)
+    }
+
+    @Test
     fun `LauncherApps package added callback invalidates cache and schedules delayed refresh`() {
         val callbackSlot = slot<LauncherApps.Callback>()
         every { launcherApps.registerCallback(capture(callbackSlot), any()) } returns Unit

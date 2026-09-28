@@ -700,10 +700,13 @@ internal constructor(
                 .toList()
     }
 
-    /** Clears the cached app list, forcing a reload on next access. */
-    fun invalidateCache() = invalidateCache(packageEvent = false)
+    /** Clears the cached app list and notifies consumers to reload. */
+    fun invalidateCache() = invalidateCache(packageEvent = false, notifyConsumers = true)
 
-    private fun invalidateCache(packageEvent: Boolean) {
+    /** Reloads a suspect snapshot within the current refresh without triggering another refresh. */
+    fun invalidateCacheForRetry() = invalidateCache(packageEvent = false, notifyConsumers = false)
+
+    private fun invalidateCache(packageEvent: Boolean, notifyConsumers: Boolean = true) {
         synchronized(cacheLock) {
             cachedLists = null
             cacheEpoch += 1
@@ -712,7 +715,7 @@ internal constructor(
                 snapshotAvailable = false
                 servedSnapshot = null
             }
-            installedAppsVersion.value += 1
+            if (notifyConsumers) installedAppsVersion.value += 1
         }
     }
 

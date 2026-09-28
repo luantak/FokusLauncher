@@ -481,7 +481,7 @@ class HomeViewModel @Inject constructor(
         installedAppsRefreshMutex.withLock {
             val recoveredAfterFirstPass = runInstalledAppsRefreshPass(forceReload)
             if (recoveredAfterFirstPass) {
-                appRepository.invalidateCache()
+                appRepository.invalidateCacheForRetry()
                 runInstalledAppsRefreshPass(forceReload = false)
             }
         }
