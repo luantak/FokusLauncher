@@ -41,6 +41,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
+import io.mockk.slot
 import io.mockk.unmockkObject
 import io.mockk.verify
 import kotlinx.coroutines.CoroutineScope
@@ -167,6 +168,8 @@ class HomeViewModelTest {
                         ),
                 )
         every { preferencesManager.showHomeScreenTimeFlow } returns flowOf(false)
+        every { preferencesManager.showHomeNoteFlow } returns flowOf(false)
+        every { preferencesManager.homeNoteTextFlow } returns flowOf("")
         every { preferencesManager.homeExtraWidgetsFlow } returns flowOf(emptyList())
         every { preferencesManager.worldClockCitiesFlow } returns flowOf(emptyList())
         every { preferencesManager.countdownEventsFlow } returns flowOf(emptyList())
@@ -1181,4 +1184,107 @@ class HomeViewModelTest {
 
         assertNull(viewModel.appMenuTarget.value)
     }
+
+    @Test
+    fun `note widget is hidden by default`() {
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.runCurrent()
+
+        assertFalse(viewModel.noteUiState.value.showWidget)
+    }
+
+    @Test
+    fun `note widget exposes stored text when enabled`() {
+        every { preferencesManager.showHomeNoteFlow } returns flowOf(true)
+        every { preferencesManager.homeNoteTextFlow } returns flowOf("milk\neggs")
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.runCurrent()
+
+        val state = viewModel.noteUiState.value
+        assertTrue(state.showWidget)
+        assertEquals("milk\neggs", state.text)
+    }
+
+    @Test
+    fun `saveHomeNote persists the entire text`() {
+        coEvery { preferencesManager.setHomeNoteText(any()) } returns Unit
+        val viewModel = createViewModel()
+
+        viewModel.saveHomeNote("buy bread")
+        viewModel.saveHomeNote("x".repeat(100_000))
+        testDispatcher.scheduler.runCurrent()
+
+        coVerify { preferencesManager.setHomeNoteText("buy bread") }
+        coVerify { preferencesManager.setHomeNoteText("x".repeat(100_000)) }
+    }
+
+    @Test
+    fun `toggleHomeNoteTask flips the task through a single preferences transaction`() {
+        val transform = slot<(String) -> String>()
+        coEvery { preferencesManager.updateHomeNoteText(capture(transform)) } returns Unit
+        val viewModel = createViewModel()
+
+        viewModel.toggleHomeNoteTask(1)
+        testDispatcher.scheduler.runCurrent()
+
+        coVerify(exactly = 1) { preferencesManager.updateHomeNoteText(any()) }
+        coVerify(exactly = 0) { preferencesManager.setHomeNoteText(any()) }
+        assertEquals("milk\n- [x] eggs", transform.captured("milk\n- [ ] eggs"))
+    }
+
+    @Test
+    fun `saveHomeNote closes the note editor`() {
+        coEvery { preferencesManager.setHomeNoteText(any()) } returns Unit
+        val viewModel = createViewModel()
+        viewModel.openNoteEditor()
+        assertTrue(viewModel.showNoteEditor.value)
+
+        viewModel.saveHomeNote("done")
+
+        assertFalse(viewModel.showNoteEditor.value)
+    }
+
+    @Test
+    fun `dismissHomeOverlays closes note editor`() {
+        val viewModel = createViewModel()
+        viewModel.openNoteEditor()
+        assertTrue(viewModel.showNoteEditor.value)
+
+        viewModel.dismissHomeOverlays()
+
+        assertFalse(viewModel.showNoteEditor.value)
+    }
+    @Test
+    fun `leaving the editor saves changes and reopening shows them`() {
+        coEvery { preferencesManager.setHomeNoteText(any()) } returns Unit
+        every { preferencesManager.homeNoteTextFlow } returns flowOf("saved note")
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.runCurrent()
+        viewModel.openNoteEditor()
+        assertEquals("saved note", viewModel.noteDraft.value)
+
+        viewModel.updateNoteDraft("unfinished edit")
+        viewModel.dismissHomeOverlays()
+        testDispatcher.scheduler.runCurrent()
+        assertNull(viewModel.noteDraft.value)
+        assertFalse(viewModel.showNoteEditor.value)
+        coVerify(exactly = 1) { preferencesManager.setHomeNoteText("unfinished edit") }
+        viewModel.openNoteEditor()
+        assertEquals("unfinished edit", viewModel.noteDraft.value)
+        assertEquals("unfinished edit", viewModel.noteUiState.value.text)
+    }
+
+    @Test
+    fun `saving clears the recovered draft`() {
+        coEvery { preferencesManager.setHomeNoteText(any()) } returns Unit
+        val viewModel = createViewModel()
+        viewModel.openNoteEditor()
+        viewModel.updateNoteDraft("new note")
+        viewModel.saveHomeNote("new note")
+
+        assertNull(viewModel.noteDraft.value)
+        assertFalse(viewModel.showNoteEditor.value)
+    }
+
 }

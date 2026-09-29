@@ -137,6 +137,9 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
         private val POMODORO_CONFIG_KEY = stringPreferencesKey("pomodoro_config")
         private val POMODORO_RUNTIME_KEY = stringPreferencesKey("pomodoro_runtime")
         private val SHOW_HOME_SCREEN_TIME_KEY = booleanPreferencesKey("show_home_screen_time")
+        /** Opt-in free-form note shown on home; edited by tapping it. */
+        private val SHOW_HOME_NOTE_KEY = booleanPreferencesKey("show_home_note")
+        private val HOME_NOTE_TEXT_KEY = stringPreferencesKey("home_note_text")
         /** Opt-in notification status indicators on home favorites and the app drawer. */
         private val SHOW_NOTIFICATION_INDICATORS_KEY =
                 booleanPreferencesKey("show_notification_indicators")
@@ -536,6 +539,19 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
 
     val showHomeScreenTimeFlow: Flow<Boolean> = prefFlow(SHOW_HOME_SCREEN_TIME_KEY, false)
     suspend fun setShowHomeScreenTime(show: Boolean) = setPref(SHOW_HOME_SCREEN_TIME_KEY, show)
+
+    val showHomeNoteFlow: Flow<Boolean> = prefFlow(SHOW_HOME_NOTE_KEY, false)
+    suspend fun setShowHomeNote(show: Boolean) = setPref(SHOW_HOME_NOTE_KEY, show)
+
+    val homeNoteTextFlow: Flow<String> = prefFlow(HOME_NOTE_TEXT_KEY, "")
+    suspend fun setHomeNoteText(text: String) = setPref(HOME_NOTE_TEXT_KEY, text)
+
+    /** Read-modify-write in one transaction so quick successive edits can't overwrite each other. */
+    suspend fun updateHomeNoteText(transform: (String) -> String) {
+        context.fokusLauncherPreferencesDataStore.edit { prefs ->
+            prefs[HOME_NOTE_TEXT_KEY] = transform(prefs[HOME_NOTE_TEXT_KEY] ?: "")
+        }
+    }
 
     val worldClockCitiesFlow: Flow<List<WorldClockCity>> =
             context.fokusLauncherPreferencesDataStore.data.map { prefs ->

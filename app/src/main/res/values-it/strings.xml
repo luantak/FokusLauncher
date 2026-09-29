@@ -358,6 +358,14 @@
     <string name="settings_show_home_media_subtitle_grant_access">Richiede l\'accesso alle notifiche: concedilo nelle impostazioni di sistema</string>
     <string name="settings_show_home_screen_time">Mostra tempo di utilizzo</string>
     <string name="settings_show_home_screen_time_subtitle">Tempo di utilizzo nelle ultime 24 ore</string>
+    <string name="settings_show_home_note">Mostra nota</string>
+    <string name="settings_show_home_note_subtitle">Una breve nota nella schermata home: tocca un\'attività per spuntarla, tocca altrove o tieni premuto per modificarla</string>
+    <string name="home_note_edit_action">Modifica nota</string>
+    <string name="home_note_add_task">Aggiungi attività</string>
+    <string name="home_note_toggle_task">Cambia stato: %1$s</string>
+    <string name="home_note_placeholder">Tieni premuto per aggiungere una nota</string>
+    <string name="home_note_edit_title">Nota</string>
+    <string name="home_note_edit_hint">Un elemento per linea...</string>
     <string name="media_buffering">Caricamento</string>
     <string name="media_next_track">Brano successivo</string>
     <string name="media_like">Mi piace</string>

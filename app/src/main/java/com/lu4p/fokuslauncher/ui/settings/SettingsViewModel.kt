@@ -118,6 +118,7 @@ data class SettingsUiState(
         val pomodoroBreakMinutes: Int = DEFAULT_BREAK_MINUTES,
         val pomodoroAlarmSoundUri: String = "",
         val showHomeScreenTime: Boolean = false,
+        val showHomeNote: Boolean = false,
         val homeExtraWidgets: List<HomeExtraWidgetEntry> = emptyList(),
         val worldClockCities: List<WorldClockCity> = emptyList(),
         val countdownEvents: List<CountdownEvent> = emptyList(),
@@ -297,17 +298,21 @@ constructor(
                             ) { showMedia, showPomodoro, pomodoroConfig ->
                                 Triple(showMedia, showPomodoro, pomodoroConfig)
                             },
-                            preferencesManager.showHomeScreenTimeFlow,
+                            combine(
+                                    preferencesManager.showHomeScreenTimeFlow,
+                                    preferencesManager.showHomeNoteFlow,
+                            ) { showScreenTime, showNote -> showScreenTime to showNote },
                             preferencesManager.showNotificationIndicatorsFlow,
                             preferencesManager.notificationIndicatorStyleFlow,
                             preferencesManager.notificationIndicatorColorFlow,
                     ) {
                             mediaPomodoro,
-                            showScreenTime,
+                            screenTimeAndNote,
                             showIndicators,
                             indicatorStyle,
                             indicatorColor ->
                         val (showMedia, showPomodoro, pomodoroConfig) = mediaPomodoro
+                        val (showScreenTime, showNote) = screenTimeAndNote
                         MediaAndIndicatorPrefs(
                                 showMedia = showMedia,
                                 showPomodoro = showPomodoro,
@@ -315,6 +320,7 @@ constructor(
                                 pomodoroBreakMinutes = pomodoroConfig.breakMinutes,
                                 pomodoroAlarmSoundUri = pomodoroConfig.alarmSoundUri,
                                 showScreenTime = showScreenTime,
+                                showNote = showNote,
                                 showNotificationIndicators = showIndicators,
                                 notificationIndicatorStyle = indicatorStyle,
                                 notificationIndicatorColor = indicatorColor,
@@ -375,6 +381,7 @@ constructor(
                                 pomodoroBreakMinutes = mediaAndIndicators.pomodoroBreakMinutes,
                                 pomodoroAlarmSoundUri = mediaAndIndicators.pomodoroAlarmSoundUri,
                                 showScreenTime = mediaAndIndicators.showScreenTime,
+                                showNote = mediaAndIndicators.showNote,
                                 showNotificationIndicators =
                                         mediaAndIndicators.showNotificationIndicators,
                                 notificationIndicatorStyle =
@@ -610,6 +617,7 @@ constructor(
                         pomodoroBreakMinutes = homeWidgetItems.pomodoroBreakMinutes,
                         pomodoroAlarmSoundUri = homeWidgetItems.pomodoroAlarmSoundUri,
                         showHomeScreenTime = homeWidgetItems.showScreenTime,
+                        showHomeNote = homeWidgetItems.showNote,
                         homeExtraWidgets = homeWidgetItems.homeExtraWidgets,
                         worldClockCities = homeWidgetItems.worldClockCities,
                         countdownEvents = homeWidgetItems.countdownEvents,
@@ -659,6 +667,7 @@ constructor(
             val pomodoroBreakMinutes: Int,
             val pomodoroAlarmSoundUri: String,
             val showScreenTime: Boolean,
+            val showNote: Boolean,
             val showNotificationIndicators: Boolean,
             val notificationIndicatorStyle: NotificationIndicatorStyle,
             val notificationIndicatorColor: Int,
@@ -684,6 +693,7 @@ constructor(
             val pomodoroBreakMinutes: Int,
             val pomodoroAlarmSoundUri: String,
             val showScreenTime: Boolean,
+            val showNote: Boolean,
             val showNotificationIndicators: Boolean,
             val notificationIndicatorStyle: NotificationIndicatorStyle,
             val notificationIndicatorColor: Int,
@@ -1093,6 +1103,7 @@ constructor(
     }
 
     fun setShowHomeScreenTime(show: Boolean) = launchPreferences { setShowHomeScreenTime(show) }
+    fun setShowHomeNote(show: Boolean) = launchPreferences { setShowHomeNote(show) }
 
     fun addHomeExtraWidget(type: HomeExtraWidgetAddType) {
         when (type) {

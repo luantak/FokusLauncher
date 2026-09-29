@@ -3,7 +3,8 @@
 
 // Fail fast when Gradle runs on a JRE without jlink (e.g. Cursor/VS Code Red Hat Java extension).
 run {
-    val jlink = File(System.getProperty("java.home"), "bin/jlink")
+    val isWindows = System.getProperty("os.name").startsWith("Windows", ignoreCase = true)
+    val jlink = File(System.getProperty("java.home"), if (isWindows) "bin/jlink.exe" else "bin/jlink")
     check(jlink.isFile && jlink.canExecute()) {
         buildString {
             appendLine("Gradle JVM is missing jlink at ${jlink.absolutePath}.")

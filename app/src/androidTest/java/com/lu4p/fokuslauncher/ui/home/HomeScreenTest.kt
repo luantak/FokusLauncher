@@ -1,8 +1,11 @@
 package com.lu4p.fokuslauncher.ui.home
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.doubleClick
@@ -454,6 +457,142 @@ class HomeScreenTest {
         }
 
         composeTestRule.onAllNodesWithTag("screen_time_widget").assertCountEquals(0)
+    }
+
+    @Test
+    fun homeScreen_noteWidget_showsTextAndOpensEditorOnTap() {
+        var noteClicks = 0
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                HomeScreenContent(
+                        uiState = HomeUiState(),
+                        clockUiState = clock(),
+                        weatherUiState = weatherOff,
+                        noteUiState = HomeNoteUiState(showWidget = true, text = "milk\neggs"),
+                        favorites = testFavorites,
+                        rightSideShortcuts = testRightSideShortcuts,
+                        onLabelClick = {},
+                        onLabelLongPress = {},
+                        onIconClick = {},
+                        onNoteClick = { noteClicks++ },
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("milk\neggs").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("note_widget").assertIsDisplayed().performClick()
+        assertEquals(1, noteClicks)
+    }
+
+    @Test
+    fun homeScreen_noteWidget_rendersMarkdown() {
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                HomeScreenContent(
+                        uiState = HomeUiState(),
+                        clockUiState = clock(),
+                        weatherUiState = weatherOff,
+                        noteUiState =
+                                HomeNoteUiState(
+                                        showWidget = true,
+                                        text = "# Today\n- [ ] **milk**\n- [x] eggs\n- bread",
+                                ),
+                        favorites = testFavorites,
+                        rightSideShortcuts = testRightSideShortcuts,
+                        onLabelClick = {},
+                        onLabelLongPress = {},
+                        onIconClick = {},
+                )
+            }
+        }
+
+        composeTestRule
+                .onNodeWithText("Today\n☐ milk\n☑ eggs\n• bread")
+                .assertIsDisplayed()
+    }
+
+    @Test
+    fun homeScreen_noteWidget_tapTaskTogglesAndOtherTapsEdit() {
+        val toggled = mutableListOf<Int>()
+        var noteClicks = 0
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                HomeScreenContent(
+                        uiState = HomeUiState(),
+                        clockUiState = clock(),
+                        weatherUiState = weatherOff,
+                        noteUiState = HomeNoteUiState(showWidget = true, text = "milk\n- [ ] eggs"),
+                        favorites = testFavorites,
+                        rightSideShortcuts = testRightSideShortcuts,
+                        onLabelClick = {},
+                        onLabelLongPress = {},
+                        onIconClick = {},
+                        onNoteClick = { noteClicks++ },
+                        onToggleNoteTask = { toggled += it },
+                )
+            }
+        }
+
+        val note = composeTestRule.onNodeWithTag("note_widget")
+        note.performTouchInput { click(Offset(5f, height - 5f)) }
+        composeTestRule.runOnIdle {
+            assertEquals(listOf(1), toggled)
+            assertEquals(0, noteClicks)
+        }
+
+        note.performTouchInput { click(Offset(5f, 5f)) }
+        composeTestRule.runOnIdle {
+            assertEquals(listOf(1), toggled)
+            assertEquals(1, noteClicks)
+        }
+
+        note.performTouchInput { longClick(Offset(5f, height - 5f)) }
+        composeTestRule.runOnIdle {
+            assertEquals(listOf(1), toggled)
+            assertEquals(2, noteClicks)
+        }
+    }
+
+    @Test
+    fun homeScreen_noteWidget_showsPlaceholderWhenEmpty() {
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                HomeScreenContent(
+                        uiState = HomeUiState(),
+                        clockUiState = clock(),
+                        weatherUiState = weatherOff,
+                        noteUiState = HomeNoteUiState(showWidget = true, text = ""),
+                        favorites = testFavorites,
+                        rightSideShortcuts = testRightSideShortcuts,
+                        onLabelClick = {},
+                        onLabelLongPress = {},
+                        onIconClick = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Tap to add a note").assertIsDisplayed()
+    }
+
+    @Test
+    fun homeScreen_noteWidget_hiddenWhenDisabled() {
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                HomeScreenContent(
+                        uiState = HomeUiState(),
+                        clockUiState = clock(),
+                        weatherUiState = weatherOff,
+                        noteUiState = HomeNoteUiState(showWidget = false, text = "milk"),
+                        favorites = testFavorites,
+                        rightSideShortcuts = testRightSideShortcuts,
+                        onLabelClick = {},
+                        onLabelLongPress = {},
+                        onIconClick = {},
+                )
+            }
+        }
+
+        composeTestRule.onAllNodesWithTag("note_widget").assertCountEquals(0)
     }
 
     @Test

@@ -275,6 +275,14 @@
     <string name="settings_show_home_screen_time">Show screen time</string>
     <string name="settings_show_home_screen_time_subtitle">Screen-on time in the past 24 hours</string>
     <string name="settings_show_home_screen_time_subtitle_grant_access">Requires usage access — turn on to grant in system settings</string>
+    <string name="settings_show_home_note">Show note</string>
+    <string name="settings_show_home_note_subtitle">A short note on home — tap a task to tick it off, tap elsewhere or long-press to edit</string>
+    <string name="home_note_edit_action">Edit note</string>
+    <string name="home_note_add_task">Add task</string>
+    <string name="home_note_toggle_task">Toggle %1$s</string>
+    <string name="home_note_placeholder">Long press to add a note</string>
+    <string name="home_note_edit_title">Note</string>
+    <string name="home_note_edit_hint">One item per line...</string>
     <string name="settings_show_home_world_clock_subtitle">Cities under the date</string>
     <string name="settings_world_clock_cities">World clocks</string>
     <string name="settings_world_clock_cities_subtitle">Add cities to show on home</string>

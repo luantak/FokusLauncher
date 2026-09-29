@@ -216,6 +216,14 @@ fun HomeWidgetsSettingsScreen(
                         },
                 )
             }
+            item {
+                SettingsToggleRow(
+                        label = stringResource(R.string.settings_show_home_note),
+                        subtitle = stringResource(R.string.settings_show_home_note_subtitle),
+                        checked = uiState.showHomeNote,
+                        onCheckedChange = viewModel::setShowHomeNote,
+                )
+            }
             items(
                     listOf(
                             Triple(R.string.settings_show_home_battery, uiState.showHomeBattery, viewModel::setShowHomeBattery),
