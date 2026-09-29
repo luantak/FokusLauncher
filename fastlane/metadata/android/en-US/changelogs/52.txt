@@ -1,0 +1,5 @@
+Add an editable note widget to the home screen, with Markdown checklists, tap-to-toggle tasks, and a full-screen editor.
+
+Show Arcticons on home favorites as icons with labels or icons only, with a separate setting from drawer icons.
+
+Fix Gradle JDK detection on Windows.
