@@ -1075,8 +1075,12 @@ class HomeViewModel @Inject constructor(
 
     private fun observeHomeAppIcons() {
         observeFlow(
-            combine(preferencesManager.homeAppIconModeFlow, arcticonsIconPackRepository.installedPackage) {
-                mode, installed -> if (installed == null) HomeAppIconMode.TEXT else HomeAppIconMode.fromStored(mode)
+            combine(
+                preferencesManager.homeAppIconModeFlow,
+                preferencesManager.useArcticonsDrawerIconsFlow,
+                arcticonsIconPackRepository.installedPackage,
+            ) { mode, enabled, installed ->
+                if (!enabled || installed == null) HomeAppIconMode.TEXT else HomeAppIconMode.fromStored(mode)
             }
         ) { mode ->
             _uiState.value = _uiState.value.copy(homeAppIconMode = mode)

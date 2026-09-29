@@ -261,7 +261,7 @@ fun AppearanceSettingsScreen(
                 )
             }
 
-            item {
+            if (uiState.useArcticonsDrawerIcons && uiState.arcticonsInstalled) item {
                 var expanded by remember { mutableStateOf(false) }
                 val onExpandedChange = rememberBooleanChangeWithSystemSound { expanded = it }
                 val labels = mapOf(
