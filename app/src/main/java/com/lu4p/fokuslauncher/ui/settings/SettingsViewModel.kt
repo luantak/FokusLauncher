@@ -53,6 +53,7 @@ import java.util.UUID
 import java.util.TimeZone
 import com.lu4p.fokuslauncher.data.iconpack.ArcticonsIconPackRepository
 import com.lu4p.fokuslauncher.data.iconpack.ArcticonsPackages
+import com.lu4p.fokuslauncher.ui.home.HomeAppIconMode
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.data.util.AppLocaleHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -152,6 +153,7 @@ data class SettingsUiState(
          * whitelisted Arcticons package to be installed.
          */
         val useArcticonsDrawerIcons: Boolean = false,
+        val homeAppIconMode: HomeAppIconMode = HomeAppIconMode.TEXT,
         /** True when any whitelisted Arcticons package is installed. */
         val arcticonsInstalled: Boolean = false,
         /** True when the home wallpaper is not solid black (image or busy wallpaper). */
@@ -456,15 +458,17 @@ constructor(
                             combine(
                                     preferencesManager.allowLandscapeRotationFlow,
                                     preferencesManager.useArcticonsDrawerIconsFlow,
+                                    preferencesManager.homeAppIconModeFlow,
                                     arcticonsIconPackRepository.installedPackage.map {
                                         it != null
                                     },
-                            ) { allowLandscape, useArcticons, arcticonsInstalled ->
-                                Triple(allowLandscape, useArcticons, arcticonsInstalled)
+                            ) { allowLandscape, useArcticons, homeIconMode, arcticonsInstalled ->
+                                Triple(allowLandscape, useArcticons, HomeAppIconMode.fromStored(homeIconMode)) to arcticonsInstalled
                             },
                     ) { fontOutlineDrawer, localeTag, homeAlignment, landscapeAndIcons ->
                         val (fontVisual, outlineWidthDp, drawerOverlayIntensity) = fontOutlineDrawer
-                        val (allowLandscape, useArcticons, arcticonsInstalled) = landscapeAndIcons
+                        val (allowLandscape, useArcticons, homeIconMode) = landscapeAndIcons.first
+                        val arcticonsInstalled = landscapeAndIcons.second
                         LookPrefs(
                                 launcherFontFamilyName = fontVisual.family,
                                 hasCustomFontFile = customFontStore.hasStoredFont(),
@@ -473,6 +477,7 @@ constructor(
                                 launcherVisualStyle = fontVisual.visualStyle,
                                 launcherGlowEnabled = fontVisual.glowEnabled,
                                 useArcticonsDrawerIcons = useArcticons,
+                                homeAppIconMode = homeIconMode,
                                 arcticonsInstalled = arcticonsInstalled,
                                 homeUsesPhotoWallpaper = fontVisual.usesPhotoWallpaper,
                                 photoWallpaperOutlineWidthDp = outlineWidthDp,
@@ -627,6 +632,7 @@ constructor(
                         launcherVisualStyle = look.launcherVisualStyle,
                         launcherGlowEnabled = look.launcherGlowEnabled,
                         useArcticonsDrawerIcons = look.useArcticonsDrawerIcons,
+                        homeAppIconMode = look.homeAppIconMode,
                         arcticonsInstalled = look.arcticonsInstalled,
                         homeUsesPhotoWallpaper = look.homeUsesPhotoWallpaper,
                         photoWallpaperOutlineWidthDp = look.photoWallpaperOutlineWidthDp,
@@ -738,6 +744,7 @@ constructor(
             val launcherVisualStyle: LauncherVisualStyle,
             val launcherGlowEnabled: Boolean,
             val useArcticonsDrawerIcons: Boolean,
+            val homeAppIconMode: HomeAppIconMode,
             val arcticonsInstalled: Boolean,
             val homeUsesPhotoWallpaper: Boolean,
             val photoWallpaperOutlineWidthDp: Float,
@@ -1172,6 +1179,15 @@ constructor(
             }
         }
         launchPreferences { setUseArcticonsDrawerIcons(enabled) }
+        return true
+    }
+
+    fun setHomeAppIconMode(mode: HomeAppIconMode): Boolean {
+        if (mode != HomeAppIconMode.TEXT) {
+            arcticonsIconPackRepository.refreshInstalledPackage()
+            if (!arcticonsIconPackRepository.isArcticonsInstalled()) return false
+        }
+        launchPreferences { setHomeAppIconMode(mode.name) }
         return true
     }
 

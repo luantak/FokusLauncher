@@ -39,12 +39,16 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -55,6 +59,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.lu4p.fokuslauncher.data.model.AppInfo
+import com.lu4p.fokuslauncher.data.model.appListStableKey
 import com.lu4p.fokuslauncher.data.model.appProfileKey
 import com.lu4p.fokuslauncher.ui.settings.ShortcutActionPickerDialog
 import com.lu4p.fokuslauncher.ui.drawer.profileOriginLabelForFavorite
@@ -86,6 +91,8 @@ import com.lu4p.fokuslauncher.ui.util.clickableNoRippleWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.combinedClickableWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.LocalSystemClickSound
 import com.lu4p.fokuslauncher.utils.LockScreenHelper
+
+private val LocalHomeIconLoader = compositionLocalOf<suspend (AppInfo) -> android.graphics.drawable.Drawable?> { { null } }
 
 @Composable
 fun HomeScreen(
@@ -142,10 +149,14 @@ fun HomeScreen(
         viewModel.refreshMedia()
         viewModel.refreshNotificationIndicators()
         viewModel.refreshScreenTime()
+        viewModel.refreshArcticonsInstallState()
     }
 
     Box(modifier = modifier.fillMaxSize()) {
-        HomeScreenContent(
+        CompositionLocalProvider(
+            LocalHomeIconLoader provides remember(viewModel) { { app -> viewModel.loadArcticonsIcon(app) } }
+        ) {
+            HomeScreenContent(
             uiState = uiState,
             clockUiState = clockUiState,
             weatherUiState = weatherUiState,
@@ -182,6 +193,7 @@ fun HomeScreen(
             doubleTapEmptyEnabled = uiState.doubleTapEmptyActionEnabled,
             onDoubleTapEmpty = onDoubleTapEmpty,
         )
+        }
     }
 
     // ── Dialogs & sheets (render as overlay windows) ────────────────
@@ -343,6 +355,7 @@ fun HomeScreenContent(
 
                 HomeFavoritesSection(
                     homeAlignment = uiState.homeAlignment,
+                    homeAppIconMode = uiState.homeAppIconMode,
                     favorites = favorites,
                     installedApps = installedApps,
                     rightSideShortcuts = rightSideShortcuts,
@@ -657,6 +670,7 @@ private fun HomeWidgetsSection(
 @Composable
 private fun FavoritesList(
     favorites: List<FavoriteApp>,
+    homeAppIconMode: HomeAppIconMode,
     installedApps: List<AppInfo>,
     profileDisplayNameOverrides: Map<String, String>,
     horizontalAlignment: Alignment.Horizontal,
@@ -675,6 +689,7 @@ private fun FavoritesList(
         favorites.forEach { fav ->
             FavoriteAppItem(
                 fav = fav,
+                homeAppIconMode = homeAppIconMode,
                 installedApps = installedApps,
                 profileDisplayNameOverrides = profileDisplayNameOverrides,
                 onClick = { onLabelClick(fav) },
@@ -717,6 +732,7 @@ private fun ShortcutIconsColumn(
 @Composable
 private fun HomeFavoritesSection(
     homeAlignment: HomeAlignment,
+    homeAppIconMode: HomeAppIconMode,
     favorites: List<FavoriteApp>,
     installedApps: List<AppInfo>,
     rightSideShortcuts: List<HomeShortcut>,
@@ -754,6 +770,7 @@ private fun HomeFavoritesSection(
             ) {
                 FavoritesList(
                     favorites = favorites,
+                    homeAppIconMode = homeAppIconMode,
                     installedApps = installedApps,
                     profileDisplayNameOverrides = profileDisplayNameOverrides,
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -792,6 +809,7 @@ private fun HomeFavoritesSection(
                 val favs: @Composable () -> Unit = {
                     FavoritesList(
                         favorites = favorites,
+                        homeAppIconMode = homeAppIconMode,
                         installedApps = installedApps,
                         profileDisplayNameOverrides = profileDisplayNameOverrides,
                         horizontalAlignment = favAlign,
@@ -891,6 +909,7 @@ private fun BoxScope.HomeDefaultLauncherBanner(
 @Composable
 private fun FavoriteAppItem(
     fav: FavoriteApp,
+    homeAppIconMode: HomeAppIconMode,
     installedApps: List<AppInfo>,
     profileDisplayNameOverrides: Map<String, String>,
     onClick: () -> Unit,
@@ -901,6 +920,13 @@ private fun FavoriteAppItem(
         HomeNotificationIndicatorUiState(),
 ) {
     val context = LocalContext.current
+    val iconApp = remember(fav, installedApps, homeAppIconMode) {
+        if (homeAppIconMode == HomeAppIconMode.TEXT) null else findHomeFavoriteIconApp(fav, installedApps)
+    }
+    val loadIcon = LocalHomeIconLoader.current
+    val icon by produceState<android.graphics.drawable.Drawable?>(null, iconApp?.let(::appListStableKey), loadIcon) {
+        value = iconApp?.let { loadIcon(it) }
+    }
     val badge =
         remember(fav, installedApps, profileDisplayNameOverrides, context) {
             val match =
@@ -942,18 +968,30 @@ private fun FavoriteAppItem(
                 .testTag("favorite_${fav.label}"),
     ) {
         Box {
-            if (outlined) {
-                OutlinedText(
-                    text = fav.label,
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = labelColor,
-                )
-            } else {
-                Text(
-                    text = fav.label,
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = labelColor,
-                )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (iconApp != null && horizontalAlignment != Alignment.End) {
+                    HomeFavoriteIcon(icon, textColor, fav.label)
+                    if (homeAppIconMode == HomeAppIconMode.WITH_LABEL) Spacer(Modifier.width(12.dp))
+                }
+                if (homeAppIconMode != HomeAppIconMode.ICON_ONLY || iconApp == null) {
+                    if (outlined) {
+                        OutlinedText(
+                            text = fav.label,
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = labelColor,
+                        )
+                    } else {
+                        Text(
+                            text = fav.label,
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = labelColor,
+                        )
+                    }
+                }
+                if (iconApp != null && horizontalAlignment == Alignment.End) {
+                    if (homeAppIconMode == HomeAppIconMode.WITH_LABEL) Spacer(Modifier.width(12.dp))
+                    HomeFavoriteIcon(icon, textColor, fav.label)
+                }
             }
             if (showDot) {
                 NotificationIndicatorDot(
@@ -984,6 +1022,22 @@ private fun FavoriteAppItem(
                     modifier = Modifier.padding(top = 4.dp),
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun HomeFavoriteIcon(drawable: android.graphics.drawable.Drawable?, tint: Color, label: String) {
+    Box(
+        modifier = Modifier.size(34.dp).semantics { contentDescription = label }
+            .testTag("home_app_icon_$label"),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (drawable != null) {
+            LauncherIcon(drawable = drawable, contentDescription = null, tint = tint,
+                iconSize = 32.dp, forceTint = true)
+        } else {
+            Box(Modifier.size(24.dp).background(tint.copy(alpha = 0.28f), CircleShape))
         }
     }
 }

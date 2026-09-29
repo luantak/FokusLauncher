@@ -48,6 +48,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import com.lu4p.fokuslauncher.data.iconpack.ArcticonsIconPackRepository
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -76,6 +77,7 @@ class HomeViewModelTest {
     private lateinit var context: Context
     private lateinit var appRepository: AppRepository
     private lateinit var preferencesManager: PreferencesManager
+    private lateinit var arcticonsIconPackRepository: ArcticonsIconPackRepository
     private lateinit var weatherRepository: WeatherRepository
     private lateinit var mediaRepository: MediaRepository
     private lateinit var screenTimeRepository: ScreenTimeRepository
@@ -124,6 +126,9 @@ class HomeViewModelTest {
 
         // Mock preferences using Fake
         preferencesManager = mockk(relaxed = true)
+        arcticonsIconPackRepository = mockk(relaxed = true)
+        every { arcticonsIconPackRepository.installedPackage } returns MutableStateFlow(null)
+        every { preferencesManager.homeAppIconModeFlow } returns flowOf("TEXT")
         every { preferencesManager.favoritesFlow } returns flowOf(testFavorites)
         every { preferencesManager.swipeLeftTargetFlow } returns flowOf(null)
         every { preferencesManager.swipeRightTargetFlow } returns flowOf(null)
@@ -194,6 +199,7 @@ class HomeViewModelTest {
         context,
         appRepository,
         preferencesManager,
+        arcticonsIconPackRepository,
         weatherRepository,
         mediaRepository,
         screenTimeRepository,
@@ -205,6 +211,7 @@ class HomeViewModelTest {
         withContext,
         appRepository,
         preferencesManager,
+        arcticonsIconPackRepository,
         weatherRepository,
         mediaRepository,
         screenTimeRepository,

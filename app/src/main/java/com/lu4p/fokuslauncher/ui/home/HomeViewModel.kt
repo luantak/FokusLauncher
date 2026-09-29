@@ -21,6 +21,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
+import com.lu4p.fokuslauncher.data.iconpack.ArcticonsIconPackRepository
 import com.lu4p.fokuslauncher.data.local.TwoFingerDirection
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.dynamicCategoryExtras
@@ -112,6 +113,7 @@ data class HomeUiState(
     val usesPhotoWallpaper: Boolean = false,
     /** Uniform outline stroke in dp when [usesPhotoWallpaper]; 0 = per-widget defaults. */
     val photoWallpaperOutlineWidthDp: Float = PhotoWallpaperOutlineWidthDp.DEFAULT,
+    val homeAppIconMode: HomeAppIconMode = HomeAppIconMode.TEXT,
 )
 
 data class HomeNotificationIndicatorUiState(
@@ -186,6 +188,7 @@ class HomeViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val appRepository: AppRepository,
     private val preferencesManager: PreferencesManager,
+    private val arcticonsIconPackRepository: ArcticonsIconPackRepository,
     private val weatherRepository: WeatherRepository,
     private val mediaRepository: MediaRepository,
     private val screenTimeRepository: ScreenTimeRepository,
@@ -394,6 +397,7 @@ class HomeViewModel @Inject constructor(
         updateBattery()
         refreshNextAlarm()
         observeHomeAlignment()
+        observeHomeAppIcons()
         observeLauncherFontScale()
         observePhotoWallpaperAppearance()
         observeHomeDateFormatStyle()
@@ -1068,6 +1072,23 @@ class HomeViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(homeAlignment = alignment)
         }
     }
+
+    private fun observeHomeAppIcons() {
+        observeFlow(
+            combine(preferencesManager.homeAppIconModeFlow, arcticonsIconPackRepository.installedPackage) {
+                mode, installed -> if (installed == null) HomeAppIconMode.TEXT else HomeAppIconMode.fromStored(mode)
+            }
+        ) { mode ->
+            _uiState.value = _uiState.value.copy(homeAppIconMode = mode)
+            if (mode != HomeAppIconMode.TEXT) {
+                viewModelScope.launch { arcticonsIconPackRepository.warmUp() }
+            }
+        }
+    }
+
+    suspend fun loadArcticonsIcon(app: AppInfo) = arcticonsIconPackRepository.getIcon(app)
+
+    fun refreshArcticonsInstallState() = arcticonsIconPackRepository.refreshInstalledPackage()
 
     private fun observeLauncherFontScale() {
         observeFlow(preferencesManager.launcherFontScaleFlow) { scale ->

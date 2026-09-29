@@ -191,6 +191,7 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
          */
         private val USE_ARCTICONS_DRAWER_ICONS_KEY =
                 booleanPreferencesKey("use_arcticons_drawer_icons")
+        private val HOME_APP_ICON_MODE_KEY = stringPreferencesKey("home_app_icon_mode")
         /**
          * True after the user keeps or sets an image wallpaper; false after setting black wallpaper
          * from the app. Default false so existing installs behave as before until they change
@@ -950,6 +951,10 @@ class PreferencesManager @Inject constructor(@param:ApplicationContext private v
 
     suspend fun setUseArcticonsDrawerIcons(enabled: Boolean) =
             setPref(USE_ARCTICONS_DRAWER_ICONS_KEY, enabled)
+
+    val homeAppIconModeFlow: Flow<String> = prefFlow(HOME_APP_ICON_MODE_KEY, "TEXT")
+
+    suspend fun setHomeAppIconMode(mode: String) = setPref(HOME_APP_ICON_MODE_KEY, mode)
 
     suspend fun setHomeUsesPhotoWallpaper(usesPhoto: Boolean) {
         context.fokusLauncherPreferencesDataStore.edit { prefs ->

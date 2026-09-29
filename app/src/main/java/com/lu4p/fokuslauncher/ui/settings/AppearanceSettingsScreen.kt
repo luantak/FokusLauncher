@@ -35,6 +35,9 @@ import com.lu4p.fokuslauncher.data.font.CustomFontImportFailure
 import com.lu4p.fokuslauncher.media.MediaNotificationHelper
 import com.lu4p.fokuslauncher.ui.components.FokusAlertDialog
 import com.lu4p.fokuslauncher.ui.components.FokusTextButton
+import com.lu4p.fokuslauncher.ui.home.HomeAppIconMode
+import com.lu4p.fokuslauncher.ui.settings.components.SettingsDropdown
+import com.lu4p.fokuslauncher.ui.util.rememberBooleanChangeWithSystemSound
 import com.lu4p.fokuslauncher.ui.settings.components.SectionHeader
 import com.lu4p.fokuslauncher.ui.settings.components.SettingsDivider
 import com.lu4p.fokuslauncher.ui.settings.components.SettingsRow
@@ -255,6 +258,27 @@ fun AppearanceSettingsScreen(
                                             R.string.settings_arcticons_drawer_icons_subtitle_missing
                                         }
                                 ),
+                )
+            }
+
+            item {
+                var expanded by remember { mutableStateOf(false) }
+                val onExpandedChange = rememberBooleanChangeWithSystemSound { expanded = it }
+                val labels = mapOf(
+                    HomeAppIconMode.TEXT to R.string.settings_home_app_icons_text,
+                    HomeAppIconMode.WITH_LABEL to R.string.settings_home_app_icons_with_label,
+                    HomeAppIconMode.ICON_ONLY to R.string.settings_home_app_icons_only,
+                )
+                SettingsDropdown(
+                    title = stringResource(R.string.settings_home_app_icons),
+                    options = HomeAppIconMode.entries,
+                    expanded = expanded,
+                    onExpandedChange = onExpandedChange,
+                    selectedDisplayText = stringResource(labels.getValue(uiState.homeAppIconMode)),
+                    itemContent = { mode -> Text(stringResource(labels.getValue(mode))) },
+                    onItemSelected = { mode ->
+                        if (!viewModel.setHomeAppIconMode(mode)) showArcticonsInstallDialog = true
+                    },
                 )
             }
 

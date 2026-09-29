@@ -11,6 +11,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import com.lu4p.fokuslauncher.data.model.FavoriteApp
+import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.HomeAlignment
 import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.WeatherData
@@ -45,6 +46,71 @@ class HomeScreenTest {
     ) = HomeClockUiState(currentTime = time, currentDate = date, batteryPercent = battery)
 
     private val weatherOff = HomeWeatherUiState()
+
+    @Test
+    fun homeIconsAreIndependentOfDrawerAndTextRemainsDefault() {
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                HomeScreenContent(
+                    uiState = HomeUiState(), clockUiState = clock(), weatherUiState = weatherOff,
+                    favorites = testFavorites.take(1), installedApps = listOf(AppInfo("com.lu4p.music", "Music", null)),
+                    rightSideShortcuts = emptyList(), onLabelClick = {}, onIconClick = {},
+                )
+            }
+        }
+        composeTestRule.onNodeWithText("Music").assertIsDisplayed()
+        composeTestRule.onAllNodesWithTag("home_app_icon_Music").assertCountEquals(0)
+    }
+
+    @Test
+    fun homeIconsCanReplaceLabelsWithoutLosingClickTarget() {
+        var clicks = 0
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                HomeScreenContent(
+                    uiState = HomeUiState(homeAppIconMode = HomeAppIconMode.ICON_ONLY),
+                    clockUiState = clock(), weatherUiState = weatherOff,
+                    favorites = testFavorites.take(1), installedApps = listOf(AppInfo("com.lu4p.music", "Music", null)),
+                    rightSideShortcuts = emptyList(), onLabelClick = { clicks++ }, onIconClick = {},
+                )
+            }
+        }
+        composeTestRule.onNodeWithTag("home_app_icon_Music", useUnmergedTree = true).assertIsDisplayed()
+        composeTestRule.onAllNodesWithText("Music").assertCountEquals(0)
+        composeTestRule.onNodeWithTag("favorite_Music").performClick()
+        assertEquals(1, clicks)
+    }
+
+    @Test
+    fun homeIconsCanAppearBesideLabelsWithoutChangingDrawerSetting() {
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                HomeScreenContent(
+                    uiState = HomeUiState(homeAppIconMode = HomeAppIconMode.WITH_LABEL),
+                    clockUiState = clock(), weatherUiState = weatherOff,
+                    favorites = testFavorites.take(1), installedApps = listOf(AppInfo("com.lu4p.music", "Music", null)),
+                    rightSideShortcuts = emptyList(), onLabelClick = {}, onIconClick = {},
+                )
+            }
+        }
+        composeTestRule.onNodeWithTag("home_app_icon_Music", useUnmergedTree = true).assertIsDisplayed()
+        composeTestRule.onNodeWithText("Music").assertIsDisplayed()
+    }
+
+    @Test
+    fun iconOnlyKeepsLabelWhenAppCannotBeResolved() {
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                HomeScreenContent(
+                    uiState = HomeUiState(homeAppIconMode = HomeAppIconMode.ICON_ONLY),
+                    clockUiState = clock(), weatherUiState = weatherOff,
+                    favorites = testFavorites.take(1), installedApps = emptyList(),
+                    rightSideShortcuts = emptyList(), onLabelClick = {}, onIconClick = {},
+                )
+            }
+        }
+        composeTestRule.onNodeWithText("Music").assertIsDisplayed()
+    }
 
     @Test
     fun homeScreen_displaysClockWidget() {
