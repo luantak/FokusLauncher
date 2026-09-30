@@ -320,6 +320,7 @@ constructor(
     init {
         observeHiddenAndRenamed()
         observeInstalledApps()
+        observeDrawerShortcuts()
         observeRemovedPackages()
         observeFavorites()
         observeDrawerSidebarPreference()
@@ -552,7 +553,9 @@ constructor(
                 }
         val filtered =
                 applyMetadataOverlays(
-                                apps = raw,
+                                apps = raw + withContext(drawerComputationDispatcher) {
+                                    appRepository.getDrawerShortcutApps(raw)
+                                },
                                 hiddenApps = metadata.hiddenApps,
                                 renamedApps = metadata.renamedApps,
                                 categoryEntities = metadata.categoryEntities,
@@ -796,6 +799,15 @@ constructor(
         }
     }
 
+    private fun observeDrawerShortcuts() {
+        viewModelScope.launch {
+            appRepository.getDrawerShortcuts().drop(1).collect {
+                rebuildVisibleApps(DrawerMetadataSnapshot(latestHiddenApps, latestRenamedApps,
+                        latestCategoryEntities, latestDefinedCategories, latestSuppressedCategories))
+            }
+        }
+    }
+
     private fun observeRemovedPackages() {
         viewModelScope.launch {
             appRepository.getRemovedPackages().collect { removedApp ->
@@ -839,7 +851,10 @@ constructor(
                 )
             }
         }
-        return AppRepository.AppLists(base, archived)
+        val shortcuts = withContext(drawerComputationDispatcher) {
+            appRepository.getDrawerShortcutApps(base)
+        }
+        return AppRepository.AppLists(base + shortcuts, archived)
     }
 
     /** Owner-profile apps absent while secondary-profile apps are present. */
@@ -1248,6 +1263,17 @@ constructor(
         return launched
     }
 
+    fun addSelectedShortcutToDrawer(action: AppShortcutAction) {
+        val app = _uiState.value.selectedApp ?: return
+        val target = action.target as? ShortcutTarget.LauncherShortcut ?: return
+        if (action !in _uiState.value.selectedAppShortcuts || target.packageName != app.packageName ||
+                action.profileKey != appProfileKey(app.userHandle)) return
+        viewModelScope.launch {
+            val added = withContext(drawerComputationDispatcher) { appRepository.addDrawerShortcut(action) }
+            if (added && _uiState.value.selectedApp == app) dismissActionSheet()
+        }
+    }
+
     fun reorderDrawerProfileSectionApps(sectionId: String, fromIndex: Int, toIndex: Int) {
         viewModelScope.launch {
             val visible =
@@ -1324,6 +1350,13 @@ constructor(
 
     fun removeLauncherShortcut(app: AppInfo) {
         val shortcutId = app.launcherShortcutId ?: return
+        if (app.isDrawerShortcut) {
+            appRepository.getDrawerShortcuts().value.find {
+                it.profileKey == appProfileKey(app.userHandle) &&
+                        it.target == ShortcutTarget.LauncherShortcut(app.packageName, shortcutId)
+            }?.let(appRepository::removeDrawerShortcut)
+            return
+        }
         viewModelScope.launch {
             appRepository.unpinLauncherShortcut(
                     packageName = app.packageName,
@@ -1334,6 +1367,7 @@ constructor(
     }
 
     fun addToHomeScreen(app: AppInfo) {
+        if (app.isDrawerShortcut) return
         viewModelScope.launch {
             val target =
                     app.launcherShortcutId?.let {

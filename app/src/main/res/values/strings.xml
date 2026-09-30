@@ -537,4 +537,8 @@
     <!-- Settings - App drawer -->
     <string name="settings_drawer_scroll_to_top_auto_keyboard">Keyboard on scroll to top</string>
     <string name="settings_drawer_scroll_to_top_auto_keyboard_subtitle">Automatically open keyboard and search when scrolling to the top of the app list</string>
+    <string name="action_add_shortcut_to_drawer">Add %1$s to app drawer</string>
+    <string name="settings_section_drawer_shortcuts">App drawer shortcuts</string>
+    <string name="settings_no_drawer_shortcuts">No added shortcuts. Use the + button beside an app action in the drawer long-press menu.</string>
+    <string name="cd_remove_drawer_shortcut">Remove shortcut from app drawer</string>
 </resources>
