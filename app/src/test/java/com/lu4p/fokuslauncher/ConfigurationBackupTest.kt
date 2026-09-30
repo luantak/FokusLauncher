@@ -66,8 +66,12 @@ class ConfigurationBackupTest {
             it[widgets] = "device-widget-42"
             it[disclosure] = true
         }
+        database.appDao().upsertCategoryDefinition(AppCategoryDefinitionEntity("Stale", 0))
+        database.appDao().hideApp(com.lu4p.fokuslauncher.data.database.entity.HiddenAppEntity("org.example.stale", "0"))
         backup.restore(backup.parse(exported))
         val preferences = context.fokusLauncherPreferencesDataStore.data.first()
+        assertEquals(emptyList<AppCategoryDefinitionEntity>(), database.appDao().getAllCategoryDefinitions().first())
+        assertEquals(emptyList<com.lu4p.fokuslauncher.data.database.entity.HiddenAppEntity>(), database.appDao().getHiddenApps().first())
         assertEquals(null, preferences[clock])
         assertEquals("device-widget-42", preferences[widgets])
         assertEquals(true, preferences[disclosure])
@@ -137,6 +141,28 @@ class ConfigurationBackupTest {
             org.junit.Assert.assertThrows(Exception::class.java) { backup.parse(text) }
             assertEquals("existing", context.fokusLauncherPreferencesDataStore.data.first()[favorites])
         }
+    }
+
+    @Test
+    fun databaseFailureRestoresPreviousFontAndPreferences() = runBlocking {
+        val favorites = stringPreferencesKey("favorite_apps")
+        context.fokusLauncherPreferencesDataStore.edit { it[favorites] = "existing" }
+        val snapshot = backup.parse(backup.export())
+        val font = java.io.File(context.filesDir, "fonts/active.ttf")
+        font.parentFile!!.mkdirs()
+        font.writeText("previous font bytes")
+        database.close()
+        var failed = false
+        try {
+            backup.restore(snapshot)
+        } catch (_: Exception) {
+            failed = true
+        }
+        org.junit.Assert.assertTrue(failed)
+        assertEquals("previous font bytes", font.readText())
+        assertEquals("existing", context.fokusLauncherPreferencesDataStore.data.first()[favorites])
+        font.delete()
+        Unit
     }
 
     @Test
