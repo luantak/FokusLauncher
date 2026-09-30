@@ -2,6 +2,8 @@ package com.lu4p.fokuslauncher.ui.drawer
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
@@ -9,6 +11,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Launch
 import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Home
@@ -16,6 +19,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -47,6 +51,7 @@ fun AppActionSheet(
     categories: List<String>,
     shortcuts: List<AppShortcutAction> = emptyList(),
     onShortcutClick: (AppShortcutAction) -> Unit = {},
+    onAddShortcutToDrawer: (AppShortcutAction) -> Unit = {},
     onDismiss: () -> Unit,
     onAddToHome: (AppInfo) -> Unit,
     onRename: (String) -> Unit,
@@ -106,7 +111,9 @@ fun AppActionSheet(
         }
 
         shortcuts.forEach { action ->
+            Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
             SheetActionRow(
+                modifier = Modifier.weight(1f),
                 label = action.actionLabel,
                 onClick = { onShortcutClick(action) },
                 leadingContent = {
@@ -136,12 +143,19 @@ fun AppActionSheet(
                 },
                 testTag = "shortcut_${action.id}",
             )
+            IconButton(onClick = { onAddShortcutToDrawer(action) },
+                    modifier = Modifier.padding(end = 16.dp).testTag("action_add_shortcut_${action.id}")) {
+                LauncherIcon(Icons.Default.Add,
+                        stringResource(R.string.action_add_shortcut_to_drawer, action.actionLabel),
+                        iconSize = 24.dp)
+            }
+            }
         }
         if (shortcuts.isNotEmpty()) {
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         }
 
-        if (!isOnHomeScreen) {
+        if (!isOnHomeScreen && !app.isDrawerShortcut) {
             SheetActionRow(
                     label = stringResource(R.string.action_add_to_home),
                     onClick = {

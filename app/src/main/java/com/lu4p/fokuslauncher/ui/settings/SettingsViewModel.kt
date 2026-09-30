@@ -91,6 +91,7 @@ import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
 import com.lu4p.fokuslauncher.utils.WallpaperHelper
 
 data class SettingsUiState(
+        val drawerShortcuts: List<AppShortcutAction> = emptyList(),
         val hiddenApps: List<HiddenAppInfo> = emptyList(),
         val renamedApps: List<RenamedAppInfo> = emptyList(),
         val archivedApps: List<ArchivedAppInfo> = emptyList(),
@@ -236,6 +237,16 @@ constructor(
 
     init {
         observeState()
+        viewModelScope.launch {
+            combine(appRepository.getDrawerShortcuts(), privateSpaceRefreshTick) { shortcuts, _ ->
+                val privateKey = privateSpaceManager.getPrivateSpaceProfile()?.let(::appProfileKey)
+                shortcuts.filterNot {
+                    privateKey != null && it.profileKey == privateKey && !privateSpaceManager.isPrivateSpaceUnlocked()
+                }
+            }.collect { shortcuts ->
+                _uiState.update { it.copy(drawerShortcuts = shortcuts) }
+            }
+        }
         viewModelScope.launch {
             privateSpaceManager.profileStateChanged.collect {
                 privateSpaceRefreshTick.value += 1
@@ -656,7 +667,9 @@ constructor(
                         allShortcutActions = allShortcutActions,
                         profileDisplayNameOverrides = profileDisplayNameOverrides,
                 )
-            }.collectLatest { _uiState.value = it }
+            }.collectLatest { state ->
+                _uiState.update { state.copy(drawerShortcuts = it.drawerShortcuts) }
+            }
         }
     }
 
@@ -952,6 +965,10 @@ constructor(
     }
 
     // --- Hidden Apps ---
+
+    fun removeDrawerShortcut(action: AppShortcutAction) {
+        appRepository.removeDrawerShortcut(action)
+    }
 
     fun unhideApp(packageName: String, profileKey: String, launcherShortcutId: String) {
         viewModelScope.launch {

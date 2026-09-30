@@ -774,6 +774,7 @@ fun AppDrawerScreen(
                 app = app,
                 categories = uiState.categories,
                 shortcuts = uiState.selectedAppShortcuts,
+                onAddShortcutToDrawer = viewModel::addSelectedShortcutToDrawer,
                 onShortcutClick = { action ->
                     if (viewModel.launchSelectedAppShortcut(action)) closeAndResetAfterLaunch()
                 },

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -98,6 +99,26 @@ fun AppsManagementSettingsScreen(
                                 tint = MaterialTheme.colorScheme.secondary,
                                 iconSize = 24.dp,
                         )
+                    },
+            )
+            item { SettingsDivider() }
+
+            manageableAppsSection(
+                    headerRes = R.string.settings_section_drawer_shortcuts,
+                    emptyTextRes = R.string.settings_no_drawer_shortcuts,
+                    apps = uiState.drawerShortcuts,
+                    key = { "drawer_shortcut_${it.id}" },
+                    label = { it.displayLabel },
+                    subtitle = {
+                        val target = it.target as com.lu4p.fokuslauncher.data.model.ShortcutTarget.LauncherShortcut
+                        "${target.packageName} • ${it.profileKey}"
+                    },
+                    onRowClick = viewModel::removeDrawerShortcut,
+                    trailingContent = {
+                        Spacer(Modifier.width(8.dp))
+                        LauncherIcon(Icons.Default.Delete,
+                                stringResource(R.string.cd_remove_drawer_shortcut),
+                                tint = MaterialTheme.colorScheme.secondary, iconSize = 24.dp)
                     },
             )
             item { SettingsDivider() }

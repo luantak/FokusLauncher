@@ -179,6 +179,10 @@ internal constructor(
 
     private val launcherAppsCallback =
             object : LauncherApps.Callback() {
+                override fun onShortcutsChanged(packageName: String, shortcuts: MutableList<ShortcutInfo>, user: UserHandle) {
+                    scheduleInstalledAppsRefresh()
+                }
+
                 override fun onPackageRemoved(packageName: String, user: UserHandle) {
                     // Updates and locked profiles also fire this; only
                     // ACTION_PACKAGE_REMOVED (non-replacing) prunes favorites.
