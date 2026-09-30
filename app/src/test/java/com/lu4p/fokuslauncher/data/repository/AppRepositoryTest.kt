@@ -134,7 +134,7 @@ class AppRepositoryTest {
         val preferences = RuntimeEnvironment.getApplication().getSharedPreferences("drawer_shortcuts", Context.MODE_PRIVATE)
         preferences.edit().clear().commit()
         every { context.getSharedPreferences("drawer_shortcuts", Context.MODE_PRIVATE) } returns preferences
-        val privateUser = UserHandle.of(10)
+        val privateUser = secondaryUserHandle()
         every { userManager.userProfiles } returns listOf(myUser, privateUser)
         every { privateSpaceManager.isPrivateSpaceProfile(privateUser) } returns true
         every { privateSpaceManager.isPrivateSpaceUnlocked() } returns true
