@@ -111,44 +111,51 @@ fun AppActionSheet(
         }
 
         shortcuts.forEach { action ->
-            Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-            SheetActionRow(
-                modifier = Modifier.weight(1f),
-                label = action.actionLabel,
-                onClick = { onShortcutClick(action) },
-                leadingContent = {
-                    Box(
-                        contentAlignment = androidx.compose.ui.Alignment.Center,
-                        modifier = Modifier.size(32.dp).background(
-                            MaterialTheme.colorScheme.secondaryContainer,
-                            androidx.compose.foundation.shape.CircleShape
-                        ),
-                    ) {
-                        if (action.icon != null) {
-                            LauncherIcon(
-                                drawable = action.icon,
-                                contentDescription = action.actionLabel,
-                                iconSize = 26.dp,
-                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                            )
-                        } else {
-                            LauncherIcon(
-                                imageVector = Icons.AutoMirrored.Filled.Launch,
-                                contentDescription = action.actionLabel,
-                                iconSize = 20.dp,
-                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                            )
-                        }
-                    }
-                },
-                testTag = "shortcut_${action.id}",
-            )
-            IconButton(onClick = { onAddShortcutToDrawer(action) },
-                    modifier = Modifier.padding(end = 16.dp).testTag("action_add_shortcut_${action.id}")) {
-                LauncherIcon(Icons.Default.Add,
-                        stringResource(R.string.action_add_shortcut_to_drawer, action.actionLabel),
-                        iconSize = 24.dp)
-            }
+            Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            ) {
+                SheetActionRow(
+                        modifier = Modifier.weight(1f),
+                        label = action.actionLabel,
+                        onClick = { onShortcutClick(action) },
+                        leadingContent = {
+                            Box(
+                                    contentAlignment = androidx.compose.ui.Alignment.Center,
+                                    modifier = Modifier.size(32.dp).background(
+                                            MaterialTheme.colorScheme.secondaryContainer,
+                                            androidx.compose.foundation.shape.CircleShape,
+                                    ),
+                            ) {
+                                if (action.icon != null) {
+                                    LauncherIcon(
+                                            drawable = action.icon,
+                                            contentDescription = action.actionLabel,
+                                            iconSize = 26.dp,
+                                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    )
+                                } else {
+                                    LauncherIcon(
+                                            imageVector = Icons.AutoMirrored.Filled.Launch,
+                                            contentDescription = action.actionLabel,
+                                            iconSize = 20.dp,
+                                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    )
+                                }
+                            }
+                        },
+                        testTag = "shortcut_${action.id}",
+                )
+                IconButton(
+                        onClick = { onAddShortcutToDrawer(action) },
+                        modifier = Modifier.padding(end = 16.dp).testTag("action_add_shortcut_${action.id}"),
+                ) {
+                    LauncherIcon(
+                            Icons.Default.Add,
+                            stringResource(R.string.action_add_shortcut_to_drawer, action.actionLabel),
+                            iconSize = 24.dp,
+                    )
+                }
             }
         }
         if (shortcuts.isNotEmpty()) {
