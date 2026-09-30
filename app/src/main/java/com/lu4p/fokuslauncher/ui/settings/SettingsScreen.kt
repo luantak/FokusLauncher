@@ -231,12 +231,6 @@ private fun SettingsHubContent(
                     trailing = { SubpageChevron() },
             )
         }
-        item {
-            HomeAlignmentRow(
-                    currentAlignment = uiState.homeAlignment,
-                    onAlignmentChanged = viewModel::setHomeAlignment,
-            )
-        }
 
         item { SettingsDivider() }
 

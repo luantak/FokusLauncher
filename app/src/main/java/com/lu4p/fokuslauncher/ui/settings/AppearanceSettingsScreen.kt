@@ -157,6 +157,12 @@ fun AppearanceSettingsScreen(
                 )
             }
             item {
+                HomeAlignmentRow(
+                        currentAlignment = uiState.homeAlignment,
+                        onAlignmentChanged = viewModel::setHomeAlignment,
+                )
+            }
+            item {
                 AppLanguageDropdown(
                         currentTag = uiState.appLocaleTag,
                         onTagSelected = viewModel::setAppLocaleTag,
