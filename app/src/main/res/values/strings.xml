@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="configuration_backup_title">Import / export configuration</string>
+    <string name="configuration_backup_subtitle">Back up your setup or restore a saved configuration</string>
+    <string name="configuration_backup_busy">Working…</string>
+    <string name="configuration_backup_details">Back up preferences, favorites, shortcuts, custom categories, app names, hidden apps, notes and your custom font. Wallpaper style is saved, but the system wallpaper image, Android widgets and permissions stay on this device. Backups are not encrypted and may contain personal data. Keep them somewhere safe.</string>
+    <string name="configuration_export">Export configuration</string>
+    <string name="configuration_import">Import configuration</string>
+    <string name="configuration_import_confirm">Replace your current launcher configuration with this backup? Existing Android widgets and permissions will be kept. Apps and shortcuts must still be available on this device.</string>
+    <string name="configuration_export_success">Configuration exported</string>
+    <string name="configuration_import_success">Configuration restored</string>
+    <string name="configuration_backup_failed">Could not save or restore the configuration. Choose a valid Fokus backup and check file access.</string>
     <string name="app_name" translatable="false">Fokus</string>
 
     <!-- Special drawer categories: English keys live in ReservedCategoryNames.kt; translate these for UI. -->
