@@ -115,6 +115,7 @@ data class HomeUiState(
     /** Uniform outline stroke in dp when [usesPhotoWallpaper]; 0 = per-widget defaults. */
     val photoWallpaperOutlineWidthDp: Float = PhotoWallpaperOutlineWidthDp.DEFAULT,
     val homeAppIconMode: HomeAppIconMode = HomeAppIconMode.TEXT,
+    val arcticonsPackage: String? = null,
 )
 
 data class HomeNotificationIndicatorUiState(
@@ -1098,11 +1099,12 @@ class HomeViewModel @Inject constructor(
                 preferencesManager.useArcticonsDrawerIconsFlow,
                 arcticonsIconPackRepository.installedPackage,
             ) { mode, enabled, installed ->
-                if (!enabled || installed == null) HomeAppIconMode.TEXT else HomeAppIconMode.fromStored(mode)
+                val pack = installed.takeIf { enabled }
+                (if (pack == null) HomeAppIconMode.TEXT else HomeAppIconMode.fromStored(mode)) to pack
             }
-        ) { mode ->
-            _uiState.value = _uiState.value.copy(homeAppIconMode = mode)
-            if (mode != HomeAppIconMode.TEXT) {
+        ) { (mode, pack) ->
+            _uiState.value = _uiState.value.copy(homeAppIconMode = mode, arcticonsPackage = pack)
+            if (pack != null) {
                 viewModelScope.launch { arcticonsIconPackRepository.warmUp() }
             }
         }

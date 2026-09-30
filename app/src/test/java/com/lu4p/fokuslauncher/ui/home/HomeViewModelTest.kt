@@ -229,6 +229,20 @@ class HomeViewModelTest {
         assertEquals(HomeAppIconMode.ICON_ONLY, viewModel.uiState.value.homeAppIconMode)
     }
 
+    @Test
+    fun shortcutArcticonsWarmUpEvenWhenFavoritesUseText() {
+        every { preferencesManager.useArcticonsDrawerIconsFlow } returns flowOf(true)
+        every { preferencesManager.homeAppIconModeFlow } returns flowOf("TEXT")
+        every { arcticonsIconPackRepository.installedPackage } returns
+            MutableStateFlow("com.donnnno.arcticons")
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.runCurrent()
+
+        assertEquals(HomeAppIconMode.TEXT, viewModel.uiState.value.homeAppIconMode)
+        coVerify(exactly = 1) { arcticonsIconPackRepository.warmUp() }
+    }
+
     private fun createViewModel() = HomeViewModel(
         context,
         appRepository,

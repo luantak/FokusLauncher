@@ -95,7 +95,7 @@ import com.lu4p.fokuslauncher.ui.util.combinedClickableWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.LocalSystemClickSound
 import com.lu4p.fokuslauncher.utils.LockScreenHelper
 
-private val LocalHomeIconLoader = compositionLocalOf<suspend (AppInfo) -> android.graphics.drawable.Drawable?> { { null } }
+internal val LocalHomeIconLoader = compositionLocalOf<suspend (AppInfo) -> android.graphics.drawable.Drawable?> { { null } }
 
 @Composable
 fun HomeScreen(
@@ -160,7 +160,7 @@ fun HomeScreen(
 
     Box(modifier = modifier.fillMaxSize()) {
         CompositionLocalProvider(
-            LocalHomeIconLoader provides remember(viewModel) { { app -> viewModel.loadArcticonsIcon(app) } }
+            LocalHomeIconLoader provides remember(viewModel, uiState.arcticonsPackage) { { app -> viewModel.loadArcticonsIcon(app) } }
         ) {
             HomeScreenContent(
             uiState = uiState,
@@ -381,6 +381,7 @@ fun HomeScreenContent(
                     HomeFavoritesSection(
                         homeAlignment = uiState.homeAlignment,
                         homeAppIconMode = uiState.homeAppIconMode,
+                        arcticonsPackage = uiState.arcticonsPackage,
                         favorites = favorites,
                         installedApps = installedApps,
                         rightSideShortcuts = rightSideShortcuts,
@@ -750,6 +751,8 @@ private fun FavoritesList(
 @Composable
 private fun ShortcutIconsColumn(
     shortcuts: List<HomeShortcut>,
+    installedApps: List<AppInfo>,
+    arcticonsPackage: String?,
     onIconClick: (HomeShortcut) -> Unit,
     iconSize: Dp,
     touchTargetSize: Dp,
@@ -765,6 +768,8 @@ private fun ShortcutIconsColumn(
     ) {
         RightShortcutIcons(
             shortcuts = shortcuts,
+            installedApps = installedApps,
+            arcticonsPackage = arcticonsPackage,
             onIconClick = onIconClick,
             iconSize = iconSize,
             touchTargetSize = touchTargetSize,
@@ -778,6 +783,7 @@ private fun ShortcutIconsColumn(
 private fun HomeFavoritesSection(
     homeAlignment: HomeAlignment,
     homeAppIconMode: HomeAppIconMode,
+    arcticonsPackage: String?,
     favorites: List<FavoriteApp>,
     installedApps: List<AppInfo>,
     rightSideShortcuts: List<HomeShortcut>,
@@ -833,6 +839,8 @@ private fun HomeFavoritesSection(
                     ) {
                         RightShortcutIcons(
                             shortcuts = rightSideShortcuts,
+                            installedApps = installedApps,
+                            arcticonsPackage = arcticonsPackage,
                             onIconClick = onIconClick,
                             iconSize = shortcutIconSize,
                             touchTargetSize = shortcutTouchTargetSize,
@@ -874,6 +882,8 @@ private fun HomeFavoritesSection(
                         }
                     ShortcutIconsColumn(
                         shortcuts = rightSideShortcuts,
+                        installedApps = installedApps,
+                        arcticonsPackage = arcticonsPackage,
                         onIconClick = onIconClick,
                         iconSize = shortcutIconSize,
                         touchTargetSize = shortcutTouchTargetSize,
@@ -900,6 +910,8 @@ private fun HomeFavoritesSection(
 @Composable
 private fun RightShortcutIcons(
     shortcuts: List<HomeShortcut>,
+    installedApps: List<AppInfo>,
+    arcticonsPackage: String?,
     onIconClick: (HomeShortcut) -> Unit,
     iconSize: Dp,
     touchTargetSize: Dp,
@@ -914,14 +926,49 @@ private fun RightShortcutIcons(
                     .testTag("right_shortcut_icon_$index"),
             contentAlignment = iconAlignment,
         ) {
-            LauncherIcon(
-                imageVector = MinimalIcons.iconFor(shortcut.iconName),
-                contentDescription = stringResource(R.string.cd_shortcut_icon),
-                tint = MaterialTheme.colorScheme.onBackground,
-                iconSize = iconSize,
-                outlined = outlined,
-            )
+            HomeShortcutIcon(shortcut, installedApps, arcticonsPackage, iconSize, outlined)
         }
+    }
+}
+
+@Composable
+private fun HomeShortcutIcon(
+    shortcut: HomeShortcut,
+    installedApps: List<AppInfo>,
+    arcticonsPackage: String?,
+    iconSize: Dp,
+    outlined: Boolean,
+) {
+    val context = LocalContext.current
+    val loadIcon = LocalHomeIconLoader.current
+    val icon by produceState<android.graphics.drawable.Drawable?>(
+        null, shortcut, installedApps, arcticonsPackage, loadIcon,
+    ) {
+        value = null
+        if (arcticonsPackage != null) {
+            value = loadHomeShortcutIcon(context, shortcut, installedApps, loadIcon)
+        }
+    }
+    val drawable = icon.takeIf { arcticonsPackage != null }
+    if (drawable != null) {
+        LauncherIcon(
+            drawable = drawable,
+            contentDescription = stringResource(R.string.cd_shortcut_icon),
+            modifier = Modifier.testTag("shortcut_arcticon"),
+            tint = MaterialTheme.colorScheme.onBackground,
+            iconSize = 32.dp,
+            forceTint = true,
+            outlined = outlined,
+        )
+    } else {
+        LauncherIcon(
+            imageVector = MinimalIcons.iconFor(shortcut.iconName),
+            contentDescription = stringResource(R.string.cd_shortcut_icon),
+            modifier = Modifier.testTag("shortcut_custom_icon"),
+            tint = MaterialTheme.colorScheme.onBackground,
+            iconSize = iconSize,
+            outlined = outlined,
+        )
     }
 }
 
