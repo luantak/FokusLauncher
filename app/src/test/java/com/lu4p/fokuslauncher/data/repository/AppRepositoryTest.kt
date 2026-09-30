@@ -110,12 +110,12 @@ class AppRepositoryTest {
         every { context.getSharedPreferences("drawer_shortcuts", Context.MODE_PRIVATE) } returns preferences
         every { launcherApps.getActivityList(null, myUser) } returns
                 listOf(createMockLauncherActivity("chat", "Chat"))
+        val hosts = repository.getInstalledApps()
         val published = createMockShortcut("alice", "Alice")
         every { launcherApps.getShortcuts(any(), myUser) } returns listOf(published)
         val action = AppShortcutAction("Chat", "Alice",
                 com.lu4p.fokuslauncher.data.model.ShortcutTarget.LauncherShortcut("chat", "alice"))
         assertTrue(repository.addDrawerShortcut(action))
-        val hosts = repository.getInstalledApps()
         val row = repository.getDrawerShortcutApps(hosts).single()
         assertEquals("Chat - Alice", row.label)
         assertEquals("alice", row.launcherShortcutId)
