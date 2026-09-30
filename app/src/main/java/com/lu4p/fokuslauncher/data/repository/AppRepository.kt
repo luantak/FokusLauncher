@@ -30,6 +30,7 @@ import com.lu4p.fokuslauncher.data.database.entity.AppCategoryEntity
 import com.lu4p.fokuslauncher.data.database.entity.HiddenAppEntity
 import com.lu4p.fokuslauncher.data.database.entity.RenamedAppEntity
 import com.lu4p.fokuslauncher.data.local.AppListSnapshotStore
+import com.lu4p.fokuslauncher.data.local.DrawerShortcutStore
 import com.lu4p.fokuslauncher.data.model.AddCategoryResult
 import com.lu4p.fokuslauncher.data.model.reservedCategoryAddFailure
 import com.lu4p.fokuslauncher.data.model.AppInfo
@@ -87,6 +88,47 @@ internal constructor(
     ) : this(context, appDao, privateSpaceManager, appListSnapshotStore, Dispatchers.IO)
 
     data class AppLists(val installed: List<AppInfo>, val archived: List<AppInfo>)
+
+    private val drawerShortcutStore by lazy { DrawerShortcutStore(context) }
+
+    fun getDrawerShortcuts(): StateFlow<List<AppShortcutAction>> = drawerShortcutStore.shortcuts
+
+    fun addDrawerShortcut(action: AppShortcutAction): Boolean {
+        val target = action.target as? ShortcutTarget.LauncherShortcut ?: return false
+        val user = userManagerOrNull()?.userProfiles?.find {
+            profileKeyForUser(it) == action.profileKey
+        } ?: return false
+        if (privateSpaceManager.isPrivateSpaceProfile(user) && !privateSpaceManager.isPrivateSpaceUnlocked()) return false
+        val available = getShortcutsForApp(target.packageName, user).find { it.id == action.id }
+                ?: return false
+        drawerShortcutStore.add(available.copy(appLabel = action.appLabel))
+        return true
+    }
+
+    fun removeDrawerShortcut(action: AppShortcutAction) = drawerShortcutStore.remove(action)
+
+    fun getDrawerShortcutApps(hosts: List<AppInfo>): List<AppInfo> {
+        val saved = getDrawerShortcuts().value
+        return hosts.filter { it.launcherShortcutId == null && !it.isArchived }.flatMap { host ->
+            val selected = saved.filter {
+                val target = it.target as ShortcutTarget.LauncherShortcut
+                target.packageName == host.packageName && it.profileKey == appProfileKey(host.userHandle)
+            }
+            if (selected.isEmpty() || (host.userHandle != null &&
+                    privateSpaceManager.isPrivateSpaceProfile(host.userHandle) &&
+                    !privateSpaceManager.isPrivateSpaceUnlocked())) return@flatMap emptyList()
+            val available = getShortcutsForApp(host.packageName, host.userHandle ?: Process.myUserHandle())
+            selected.mapNotNull { action ->
+                val target = action.target as ShortcutTarget.LauncherShortcut
+                val live = available.find { it.id == action.id } ?: return@mapNotNull null
+                if (hosts.any { it.packageName == target.packageName &&
+                            appProfileKey(it.userHandle) == action.profileKey &&
+                            it.launcherShortcutId == target.shortcutId }) return@mapNotNull null
+                host.copy(label = action.displayLabel, icon = live.icon ?: host.icon,
+                        launcherShortcutId = target.shortcutId, isDrawerShortcut = true)
+            }
+        }.distinctBy(::appMetadataKey)
+    }
 
     @Volatile private var cachedLists: AppLists? = null
     private val cacheLock = Any()
