@@ -1,5 +1,10 @@
 package com.lu4p.fokuslauncher.ui.settings
 
+import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -23,6 +28,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,6 +43,10 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.R
+import com.lu4p.fokuslauncher.data.local.noteFolderLabel
+import com.lu4p.fokuslauncher.data.local.persistNoteFolderAccess
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
 import com.lu4p.fokuslauncher.data.model.HomeExtraWidgetAddType
 import com.lu4p.fokuslauncher.data.model.HomeExtraWidgetEntry
 import com.lu4p.fokuslauncher.data.model.displayNameForTimeZoneId
@@ -67,6 +77,33 @@ fun HomeWidgetsSettingsScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val resources = LocalResources.current
+    val noteFolder by viewModel.homeNoteFolderFlow.collectAsStateWithLifecycle(initialValue = "")
+    val noteScope = rememberCoroutineScope()
+    var noteFolderBusy by remember { mutableStateOf(false) }
+    fun saveNoteFolder(folder: String) {
+        noteFolderBusy = true
+        noteScope.launch {
+            try {
+                viewModel.setHomeNoteFolder(folder)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                Toast.makeText(context, R.string.home_note_storage_error, Toast.LENGTH_LONG).show()
+            } finally {
+                noteFolderBusy = false
+            }
+        }
+    }
+    val noteFolderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri != null) {
+            try {
+                context.persistNoteFolderAccess(uri)
+                saveNoteFolder(uri.toString())
+            } catch (_: SecurityException) {
+                Toast.makeText(context, R.string.home_note_storage_error, Toast.LENGTH_LONG).show()
+            }
+        }
+    }
     val activity = LocalActivity.current
     val showAppPickerFor = remember { mutableStateOf<String?>(null) }
 
@@ -222,6 +259,19 @@ fun HomeWidgetsSettingsScreen(
                         subtitle = stringResource(R.string.settings_show_home_note_subtitle),
                         checked = uiState.showHomeNote,
                         onCheckedChange = viewModel::setShowHomeNote,
+                )
+            }
+            item {
+                ShortcutTargetRow(
+                        label = stringResource(R.string.settings_home_note_folder),
+                        currentTarget = if (noteFolder.isEmpty()) {
+                            stringResource(R.string.settings_home_note_folder_local)
+                        } else noteFolderLabel(noteFolder),
+                        enabled = uiState.showHomeNote && !noteFolderBusy,
+                        onPickApp = {
+                            noteFolderPicker.launch(noteFolder.takeIf { it.isNotEmpty() }?.let(Uri::parse))
+                        },
+                        onClear = { saveNoteFolder("") },
                 )
             }
             items(

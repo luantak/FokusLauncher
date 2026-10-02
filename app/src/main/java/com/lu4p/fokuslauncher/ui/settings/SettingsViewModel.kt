@@ -1105,6 +1105,9 @@ constructor(
     fun setShowHomeScreenTime(show: Boolean) = launchPreferences { setShowHomeScreenTime(show) }
     fun setShowHomeNote(show: Boolean) = launchPreferences { setShowHomeNote(show) }
 
+    val homeNoteFolderFlow get() = preferencesManager.homeNoteFolderFlow
+    suspend fun setHomeNoteFolder(folder: String) = preferencesManager.setHomeNoteFolder(folder)
+
     fun addHomeExtraWidget(type: HomeExtraWidgetAddType) {
         when (type) {
             HomeExtraWidgetAddType.WORLD_CLOCK -> {
