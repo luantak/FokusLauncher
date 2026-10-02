@@ -9,6 +9,7 @@ data class HomeShortcut(
     val iconName: String = "circle",
     val target: ShortcutTarget,
     val profileKey: String = "0",
+    val arcticonName: String = "",
 )
 
 /** Matches [com.lu4p.fokuslauncher.data.model.AppShortcutAction.id] for the same target/profile. */
