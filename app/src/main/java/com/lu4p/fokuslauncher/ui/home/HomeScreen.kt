@@ -1,5 +1,7 @@
 package com.lu4p.fokuslauncher.ui.home
 
+import android.widget.Toast
+
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.LocalIndication
@@ -132,6 +134,11 @@ fun HomeScreen(
     val showHomeScreenMenu by viewModel.showHomeScreenMenu.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val onFavoriteClick = viewModel::launchFavorite
+    LaunchedEffect(viewModel, context) {
+        viewModel.noteStorageErrors.collect {
+            Toast.makeText(context, R.string.home_note_storage_error, Toast.LENGTH_LONG).show()
+        }
+    }
     val onFavoriteLongPress = viewModel::onFavoriteLongPress
     val onHomeLongPress = viewModel::onHomeScreenLongPress
     val onShortcutClick = viewModel::launchShortcut
@@ -253,6 +260,7 @@ fun HomeScreen(
             initialText = noteUiState.text,
             draftText = noteDraft ?: noteUiState.text,
             onDraftChange = viewModel::updateNoteDraft,
+            onClear = viewModel::clearHomeNote,
             onDismiss = viewModel::dismissNoteEditor,
         )
     }

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name" translatable="false">Fokus</string>
 
     <!-- Special drawer categories: English keys live in ReservedCategoryNames.kt; translate these for UI. -->
@@ -276,11 +276,16 @@
     <string name="settings_show_home_screen_time_subtitle">Screen-on time in the past 24 hours</string>
     <string name="settings_show_home_screen_time_subtitle_grant_access">Requires usage access — turn on to grant in system settings</string>
     <string name="settings_show_home_note">Show note</string>
-    <string name="settings_show_home_note_subtitle">A short note on home — tap a task to tick it off, tap elsewhere or long-press to edit</string>
+    <string name="settings_show_home_note_subtitle">A note on home. Tap tasks to tick them off, long-press to edit.</string>
     <string name="home_note_edit_action">Edit note</string>
     <string name="home_note_add_task">Add task</string>
     <string name="home_note_toggle_task">Toggle %1$s</string>
-    <string name="home_note_placeholder">Long press to add a note</string>
+    <string name="home_note_placeholder">Tap to add a note</string>
+    <!-- Use the English fallback until these opt-in controls have community translations. -->
+    <string name="home_note_clear" tools:ignore="MissingTranslation">Clear note</string>
+    <string name="settings_home_note_folder" tools:ignore="MissingTranslation">Notes folder</string>
+    <string name="settings_home_note_folder_local" tools:ignore="MissingTranslation">Only in Fokus. Choose a folder to save Markdown files.</string>
+    <string name="home_note_storage_error" tools:ignore="MissingTranslation">Could not save the note file. Your draft is kept. Choose the notes folder again or turn off file saving.</string>
     <string name="home_note_edit_title">Note</string>
     <string name="home_note_edit_hint">One item per line...</string>
     <string name="settings_show_home_world_clock_subtitle">Cities under the date</string>

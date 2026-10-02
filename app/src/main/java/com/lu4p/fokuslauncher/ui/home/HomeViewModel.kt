@@ -80,6 +80,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -229,6 +231,10 @@ class HomeViewModel @Inject constructor(
 
     private val _noteDraft = MutableStateFlow<String?>(null)
     val noteDraft: StateFlow<String?> = _noteDraft.asStateFlow()
+    private val _noteStorageErrors = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val noteStorageErrors = _noteStorageErrors.asSharedFlow()
+    private var clearingNote = false
+    private var noteSaveFailed = false
 
     private val _showNoteEditor = MutableStateFlow(false)
     val showNoteEditor: StateFlow<Boolean> = _showNoteEditor.asStateFlow()
@@ -1375,8 +1381,9 @@ class HomeViewModel @Inject constructor(
     }
 
     fun dismissNoteEditor() {
+        if (clearingNote) return
         val draft = _noteDraft.value
-        if (draft != null && draft != _noteUiState.value.text) {
+        if (draft != null && (draft != _noteUiState.value.text || noteSaveFailed)) {
             saveHomeNote(draft)
         } else {
             _noteDraft.value = null
@@ -1389,12 +1396,50 @@ class HomeViewModel @Inject constructor(
         _noteUiState.value = _noteUiState.value.copy(text = savedText)
         _noteDraft.value = null
         _showNoteEditor.value = false
-        viewModelScope.launch { preferencesManager.setHomeNoteText(savedText) }
+        viewModelScope.launch {
+            try {
+                preferencesManager.setHomeNoteText(savedText)
+                if (_noteUiState.value.text == savedText) noteSaveFailed = false
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                if (_noteDraft.value == null && _noteUiState.value.text == savedText) {
+                    _noteDraft.value = savedText
+                    noteSaveFailed = true
+                }
+                _noteStorageErrors.emit(Unit)
+            }
+        }
     }
+
+    suspend fun clearHomeNote(draft: String): Boolean = viewModelScope.async {
+        if (clearingNote) return@async false
+        clearingNote = true
+        try {
+            preferencesManager.startNewHomeNote(draft)
+            _noteUiState.value = _noteUiState.value.copy(text = "")
+            _noteDraft.value = ""
+            noteSaveFailed = false
+            true
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            _noteStorageErrors.emit(Unit)
+            false
+        } finally {
+            clearingNote = false
+        }
+    }.await()
 
     fun toggleHomeNoteTask(lineIndex: Int) {
         viewModelScope.launch {
-            preferencesManager.updateHomeNoteText { toggleNoteTask(it, lineIndex) }
+            try {
+                preferencesManager.updateHomeNoteText { toggleNoteTask(it, lineIndex) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                _noteStorageErrors.emit(Unit)
+            }
         }
     }
 

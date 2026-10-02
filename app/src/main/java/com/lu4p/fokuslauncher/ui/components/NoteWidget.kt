@@ -9,6 +9,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.TextField
@@ -33,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -75,6 +78,8 @@ import androidx.core.view.WindowInsetsControllerCompat
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.ui.home.HomeWidgetAlignment
 import com.lu4p.fokuslauncher.ui.util.combinedClickableWithSystemSound
+
+import kotlinx.coroutines.launch
 
 private const val HOME_NOTE_MAX_VISIBLE_LINES = 10
 
@@ -148,7 +153,7 @@ fun NoteWidget(
                                     indication = null,
                                     onLongClickLabel = editLabel,
                                     onLongClick = onClick,
-                                    onClick = {},
+                                    onClick = { if (isEmpty) onClick() },
                             ),
     ) {
         val textModifier =
@@ -169,6 +174,7 @@ fun NoteWidget(
                                 onLongClickLabel = editLabel,
                                 onLongClick = onClick,
                                 onClick = {
+                                    if (isEmpty) onClick()
                                     val line = taskLineAt(lastDown.value)
                                     if (line != null) onToggleTask(line)
                                 },
@@ -211,6 +217,7 @@ fun HomeNoteEditor(
         initialText: String,
         draftText: String = initialText,
         onDraftChange: (String) -> Unit = {},
+        onClear: suspend (String) -> Boolean = { true },
         onDismiss: () -> Unit,
 ) {
     var value by
@@ -219,18 +226,26 @@ fun HomeNoteEditor(
             }
     val focusRequester = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
+    val scope = rememberCoroutineScope()
+    var clearing by remember { mutableStateOf(false) }
     val hostView = LocalView.current
     val showStatusBar = remember(hostView) {
         ViewCompat.getRootWindowInsets(hostView)?.isVisible(WindowInsetsCompat.Type.statusBars()) == true
     }
     val dismissEditor = {
-        keyboard?.hide()
-        onDismiss()
+        if (!clearing) {
+            keyboard?.hide()
+            onDismiss()
+        }
     }
 
     fun updateValue(next: TextFieldValue) {
         value = next
         onDraftChange(next.text)
+    }
+
+    LaunchedEffect(draftText) {
+        if (value.text != draftText) value = TextFieldValue(draftText, TextRange(draftText.length))
     }
 
     Dialog(
@@ -297,6 +312,7 @@ fun HomeNoteEditor(
                     FokusIconButton(
                             onClick = dismissEditor,
                             modifier = Modifier.testTag("note_edit_back"),
+                            enabled = !clearing,
                     ) {
                         LauncherIcon(
                                 Icons.AutoMirrored.Filled.ArrowBack,
@@ -307,13 +323,17 @@ fun HomeNoteEditor(
                     Text(
                             stringResource(R.string.home_note_edit_title),
                             style = MaterialTheme.typography.titleLarge,
-                            modifier = Modifier.weight(1f),
+                            color = MaterialTheme.colorScheme.onBackground,
+                            modifier = Modifier.weight(1f).testTag("note_edit_title"),
                     )
                 }
                 TextField(
                         value = value,
+                        readOnly = clearing,
                         onValueChange = { updateValue(updateNoteEditorValue(value, it)) },
                         colors = TextFieldDefaults.colors(
+                                focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
                                 focusedContainerColor = Color.Transparent,
                                 unfocusedContainerColor = Color.Transparent,
                                 focusedIndicatorColor = Color.Transparent,
@@ -327,6 +347,32 @@ fun HomeNoteEditor(
                         verticalAlignment = Alignment.CenterVertically,
                 ) {
                     FokusIconButton(
+                            enabled = !clearing,
+                            onClick = {
+                                clearing = true
+                                scope.launch {
+                                    try {
+                                        if (onClear(value.text)) {
+                                            updateValue(TextFieldValue(""))
+                                            focusRequester.requestFocus()
+                                            keyboard?.show()
+                                        }
+                                    } finally {
+                                        clearing = false
+                                    }
+                                }
+                            },
+                            modifier = Modifier.testTag("note_clear"),
+                    ) {
+                        LauncherIcon(
+                                Icons.Default.Delete,
+                                stringResource(R.string.home_note_clear),
+                                tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                    Spacer(Modifier.weight(1f))
+                    FokusIconButton(
+                            enabled = !clearing,
                             onClick = {
                                 val (text, cursor) = insertNoteTaskLine(value.text, value.selection.max)
                                 updateValue(TextFieldValue(text, TextRange(cursor)))
