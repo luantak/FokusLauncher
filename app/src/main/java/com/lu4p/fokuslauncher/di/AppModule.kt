@@ -12,7 +12,9 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.lu4p.fokuslauncher.data.database.AppDatabase
 import com.lu4p.fokuslauncher.data.database.dao.AppDao
+import com.lu4p.fokuslauncher.data.local.NoteDocuments
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
+import com.lu4p.fokuslauncher.data.local.SafNoteDocuments
 import com.lu4p.fokuslauncher.data.model.appProfileKey
 import com.lu4p.fokuslauncher.data.repository.WeatherRepository
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
@@ -308,9 +310,15 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideNoteDocuments(@ApplicationContext context: Context): NoteDocuments =
+            SafNoteDocuments(context)
+
+    @Provides
+    @Singleton
     fun providePreferencesManager(
-        @ApplicationContext context: Context
-    ): PreferencesManager = PreferencesManager(context)
+        @ApplicationContext context: Context,
+        noteDocuments: NoteDocuments
+    ): PreferencesManager = PreferencesManager(context, noteDocuments)
 
     @Provides
     @Singleton

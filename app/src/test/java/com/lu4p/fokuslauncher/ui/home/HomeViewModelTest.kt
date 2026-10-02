@@ -1276,6 +1276,53 @@ class HomeViewModelTest {
     }
 
     @Test
+    fun `failed file save keeps draft and retries even when preview already matches`() {
+        coEvery { preferencesManager.setHomeNoteText(any()) } throws java.io.IOException("offline")
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.runCurrent()
+        viewModel.saveHomeNote("unsaved draft")
+        testDispatcher.scheduler.runCurrent()
+        assertEquals("unsaved draft", viewModel.noteDraft.value)
+        coEvery { preferencesManager.setHomeNoteText(any()) } returns Unit
+        viewModel.openNoteEditor()
+        viewModel.dismissNoteEditor()
+        testDispatcher.scheduler.runCurrent()
+        coVerify(exactly = 2) { preferencesManager.setHomeNoteText("unsaved draft") }
+        assertNull(viewModel.noteDraft.value)
+    }
+
+    @Test
+    fun `clear persists unsaved draft and keeps editor open on fresh note`() {
+        coEvery { preferencesManager.startNewHomeNote(any()) } returns Unit
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.runCurrent()
+        viewModel.openNoteEditor()
+        viewModel.updateNoteDraft("latest draft")
+        var result: Boolean? = null
+        CoroutineScope(testDispatcher).launch { result = viewModel.clearHomeNote("latest draft") }
+        testDispatcher.scheduler.runCurrent()
+        coVerify(exactly = 1) { preferencesManager.startNewHomeNote("latest draft") }
+        assertEquals(true, result)
+        assertTrue(viewModel.showNoteEditor.value)
+        assertEquals("", viewModel.noteDraft.value)
+    }
+
+    @Test
+    fun `failed clear does not discard the draft`() {
+        coEvery { preferencesManager.startNewHomeNote(any()) } throws java.io.IOException("offline")
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.runCurrent()
+        viewModel.openNoteEditor()
+        viewModel.updateNoteDraft("latest draft")
+        var result: Boolean? = null
+        CoroutineScope(testDispatcher).launch { result = viewModel.clearHomeNote("latest draft") }
+        testDispatcher.scheduler.runCurrent()
+        assertEquals(false, result)
+        assertTrue(viewModel.showNoteEditor.value)
+        assertEquals("latest draft", viewModel.noteDraft.value)
+    }
+
+    @Test
     fun `saving clears the recovered draft`() {
         coEvery { preferencesManager.setHomeNoteText(any()) } returns Unit
         val viewModel = createViewModel()
