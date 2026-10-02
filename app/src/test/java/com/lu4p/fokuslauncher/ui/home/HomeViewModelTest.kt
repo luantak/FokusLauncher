@@ -243,6 +243,26 @@ class HomeViewModelTest {
         coVerify(exactly = 1) { arcticonsIconPackRepository.warmUp() }
     }
 
+    @Test
+    fun shortcutIconEditsPreserveTheOtherModeChoice() {
+        val enabled = MutableStateFlow(true)
+        every { preferencesManager.useArcticonsDrawerIconsFlow } returns enabled
+        every { arcticonsIconPackRepository.installedPackage } returns MutableStateFlow("com.donnnno.arcticons")
+        every { preferencesManager.rightSideShortcutsFlow } returns flowOf(
+            listOf(HomeShortcut("star", ShortcutTarget.App("com.example.app"), arcticonName = "example")))
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.runCurrent()
+        viewModel.startEditingShortcuts()
+        viewModel.updateShortcutIcon(0, "calendar")
+        assertEquals("star", viewModel.editRightShortcuts.value[0].iconName)
+        assertEquals("calendar", viewModel.editRightShortcuts.value[0].arcticonName)
+        enabled.value = false
+        testDispatcher.scheduler.runCurrent()
+        viewModel.updateShortcutIcon(0, "music")
+        assertEquals("music", viewModel.editRightShortcuts.value[0].iconName)
+        assertEquals("calendar", viewModel.editRightShortcuts.value[0].arcticonName)
+    }
+
     private fun createViewModel() = HomeViewModel(
         context,
         appRepository,

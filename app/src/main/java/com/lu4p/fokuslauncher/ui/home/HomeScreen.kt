@@ -96,6 +96,7 @@ import com.lu4p.fokuslauncher.ui.util.LocalSystemClickSound
 import com.lu4p.fokuslauncher.utils.LockScreenHelper
 
 internal val LocalHomeIconLoader = compositionLocalOf<suspend (AppInfo) -> android.graphics.drawable.Drawable?> { { null } }
+internal val LocalHomeNamedIconLoader = compositionLocalOf<suspend (String) -> android.graphics.drawable.Drawable?> { { null } }
 
 @Composable
 fun HomeScreen(
@@ -160,7 +161,8 @@ fun HomeScreen(
 
     Box(modifier = modifier.fillMaxSize()) {
         CompositionLocalProvider(
-            LocalHomeIconLoader provides remember(viewModel, uiState.arcticonsPackage) { { app -> viewModel.loadArcticonsIcon(app) } }
+            LocalHomeIconLoader provides remember(viewModel, uiState.arcticonsPackage) { { app -> viewModel.loadArcticonsIcon(app) } },
+            LocalHomeNamedIconLoader provides remember(viewModel, uiState.arcticonsPackage) { { name -> viewModel.loadArcticonByName(name) } },
         ) {
             HomeScreenContent(
             uiState = uiState,
@@ -932,29 +934,34 @@ private fun RightShortcutIcons(
 }
 
 @Composable
-private fun HomeShortcutIcon(
+internal fun HomeShortcutIcon(
     shortcut: HomeShortcut,
     installedApps: List<AppInfo>,
     arcticonsPackage: String?,
     iconSize: Dp,
-    outlined: Boolean,
+    outlined: Boolean = false,
+    modifier: Modifier = Modifier,
+    contentDescription: String? = stringResource(R.string.cd_shortcut_icon),
+    loadIcon: suspend (AppInfo) -> android.graphics.drawable.Drawable? = LocalHomeIconLoader.current,
+    loadNamedIcon: suspend (String) -> android.graphics.drawable.Drawable? = LocalHomeNamedIconLoader.current,
 ) {
     val context = LocalContext.current
-    val loadIcon = LocalHomeIconLoader.current
     val icon by produceState<android.graphics.drawable.Drawable?>(
-        null, shortcut, installedApps, arcticonsPackage, loadIcon,
+        null, shortcut, installedApps, arcticonsPackage, loadIcon, loadNamedIcon,
     ) {
         value = null
         if (arcticonsPackage != null) {
-            value = loadHomeShortcutIcon(context, shortcut, installedApps, loadIcon)
+            value = shortcut.arcticonName.takeIf { it.isNotBlank() }?.let { loadNamedIcon(it) }
+                ?: loadHomeShortcutIcon(context, shortcut, installedApps, loadIcon)
+                ?: loadNamedIcon("circle")
         }
     }
     val drawable = icon.takeIf { arcticonsPackage != null }
     if (drawable != null) {
         LauncherIcon(
             drawable = drawable,
-            contentDescription = stringResource(R.string.cd_shortcut_icon),
-            modifier = Modifier.testTag("shortcut_arcticon"),
+            contentDescription = contentDescription,
+            modifier = modifier.testTag("shortcut_arcticon"),
             tint = MaterialTheme.colorScheme.onBackground,
             iconSize = 32.dp,
             forceTint = true,
@@ -963,8 +970,8 @@ private fun HomeShortcutIcon(
     } else {
         LauncherIcon(
             imageVector = MinimalIcons.iconFor(shortcut.iconName),
-            contentDescription = stringResource(R.string.cd_shortcut_icon),
-            modifier = Modifier.testTag("shortcut_custom_icon"),
+            contentDescription = contentDescription,
+            modifier = modifier.testTag("shortcut_custom_icon"),
             tint = MaterialTheme.colorScheme.onBackground,
             iconSize = iconSize,
             outlined = outlined,
