@@ -295,6 +295,7 @@ private fun SettingsHubContent(
         item { SettingsDivider() }
 
         item { SectionHeader(stringResource(R.string.settings_section_data)) }
+        item { ConfigurationBackupRow() }
         item {
             ExportLogsRow(
                     context = context,
