@@ -117,6 +117,7 @@ data class HomeUiState(
     /** Uniform outline stroke in dp when [usesPhotoWallpaper]; 0 = per-widget defaults. */
     val photoWallpaperOutlineWidthDp: Float = PhotoWallpaperOutlineWidthDp.DEFAULT,
     val homeAppIconMode: HomeAppIconMode = HomeAppIconMode.TEXT,
+    val arcticonsPackage: String? = null,
 )
 
 data class HomeNotificationIndicatorUiState(
@@ -804,7 +805,11 @@ class HomeViewModel @Inject constructor(
     fun updateShortcutIcon(index: Int, iconName: String) {
         val current = _editRightShortcuts.value.toMutableList()
         if (index in current.indices) {
-            current[index] = current[index].copy(iconName = iconName)
+            current[index] = if (uiState.value.arcticonsPackage != null) {
+                current[index].copy(arcticonName = iconName)
+            } else {
+                current[index].copy(iconName = iconName)
+            }
             _editRightShortcuts.value = current
         }
     }
@@ -813,7 +818,10 @@ class HomeViewModel @Inject constructor(
         val toSave = _editRightShortcuts.value
         viewModelScope.launch {
             try {
-                preferencesManager.setRightSideShortcuts(toSave)
+                val resolved = if (arcticonsIconPackRepository.isArcticonsInstalled()) {
+                    toSave.map { it.copy(arcticonName = shortcutArcticonName(it)) }
+                } else toSave
+                preferencesManager.setRightSideShortcuts(resolved)
             } finally {
                 // Keep the session until persist finishes so a quick re-entry cannot reload stale prefs.
                 isEditingRightShortcuts = false
@@ -1104,17 +1112,32 @@ class HomeViewModel @Inject constructor(
                 preferencesManager.useArcticonsDrawerIconsFlow,
                 arcticonsIconPackRepository.installedPackage,
             ) { mode, enabled, installed ->
-                if (!enabled || installed == null) HomeAppIconMode.TEXT else HomeAppIconMode.fromStored(mode)
+                val pack = installed.takeIf { enabled }
+                (if (pack == null) HomeAppIconMode.TEXT else HomeAppIconMode.fromStored(mode)) to pack
             }
-        ) { mode ->
-            _uiState.value = _uiState.value.copy(homeAppIconMode = mode)
-            if (mode != HomeAppIconMode.TEXT) {
+        ) { (mode, pack) ->
+            _uiState.value = _uiState.value.copy(homeAppIconMode = mode, arcticonsPackage = pack)
+            if (pack != null) {
                 viewModelScope.launch { arcticonsIconPackRepository.warmUp() }
             }
         }
     }
 
     suspend fun loadArcticonsIcon(app: AppInfo) = arcticonsIconPackRepository.getIcon(app)
+
+    suspend fun loadArcticonByName(name: String) = arcticonsIconPackRepository.getIconByName(name)
+
+    suspend fun arcticonNames() = arcticonsIconPackRepository.getIconNames()
+
+    suspend fun shortcutArcticonName(shortcut: HomeShortcut): String {
+        if (shortcut.arcticonName.isNotBlank()) return shortcut.arcticonName
+        var name = "circle"
+        loadHomeShortcutIcon(context, shortcut, allInstalledApps.value) { app ->
+            name = arcticonsIconPackRepository.getIconName(app)
+            null
+        }
+        return name
+    }
 
     fun refreshArcticonsInstallState() = arcticonsIconPackRepository.refreshInstalledPackage()
 
