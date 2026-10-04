@@ -103,6 +103,56 @@ class AppRepositoryTest {
         repository = AppRepository(context, appDao, privateSpaceManager, mockk(relaxed = true))
     }
 
+    @Test
+    fun `added actions appear only in drawer and unavailable actions remain removable`() {
+        val preferences = RuntimeEnvironment.getApplication().getSharedPreferences("drawer_shortcuts", Context.MODE_PRIVATE)
+        preferences.edit().clear().commit()
+        every { context.getSharedPreferences("drawer_shortcuts", Context.MODE_PRIVATE) } returns preferences
+        every { launcherApps.getActivityList(null, myUser) } returns
+                listOf(createMockLauncherActivity("chat", "Chat"))
+        val hosts = repository.getInstalledApps()
+        val published = createMockShortcut("alice", "Alice")
+        every { launcherApps.getShortcuts(any(), myUser) } returns listOf(published)
+        val action = AppShortcutAction("Chat", "Alice",
+                com.lu4p.fokuslauncher.data.model.ShortcutTarget.LauncherShortcut("chat", "alice"))
+        assertTrue(repository.addDrawerShortcut(action))
+        val row = repository.getDrawerShortcutApps(hosts).single()
+        assertEquals("Chat - Alice", row.label)
+        assertEquals("alice", row.launcherShortcutId)
+        assertTrue(row.isDrawerShortcut)
+        assertTrue(hosts.none { it.isDrawerShortcut })
+        every { published.isEnabled } returns false
+        assertTrue(repository.getDrawerShortcutApps(hosts).isEmpty())
+        assertEquals(listOf(action), repository.getDrawerShortcuts().value)
+        repository.removeDrawerShortcut(action)
+        assertTrue(repository.getDrawerShortcuts().value.isEmpty())
+        verify(exactly = 0) { launcherApps.pinShortcuts(any(), any(), any()) }
+    }
+
+    @Test
+    fun `drawer shortcut resolution preserves profiles and hides locked Private Space`() {
+        val preferences = RuntimeEnvironment.getApplication().getSharedPreferences("drawer_shortcuts", Context.MODE_PRIVATE)
+        preferences.edit().clear().commit()
+        every { context.getSharedPreferences("drawer_shortcuts", Context.MODE_PRIVATE) } returns preferences
+        val privateUser = secondaryUserHandle()
+        every { userManager.userProfiles } returns listOf(myUser, privateUser)
+        every { privateSpaceManager.isPrivateSpaceProfile(privateUser) } returns true
+        every { privateSpaceManager.isPrivateSpaceUnlocked() } returns true
+        every { launcherApps.getShortcuts(any(), any()) } returns listOf(createMockShortcut("alice", "Alice"))
+        val personal = AppShortcutAction("Chat", "Alice",
+                com.lu4p.fokuslauncher.data.model.ShortcutTarget.LauncherShortcut("chat", "alice"))
+        val privateAction = personal.copy(profileKey = "10")
+        assertTrue(repository.addDrawerShortcut(personal))
+        assertTrue(repository.addDrawerShortcut(privateAction))
+        val hosts = listOf(AppInfo("chat", "Chat", null), AppInfo("chat", "Chat", null, userHandle = privateUser))
+        assertEquals(listOf(null, privateUser), repository.getDrawerShortcutApps(hosts).map { it.userHandle })
+        every { privateSpaceManager.isPrivateSpaceUnlocked() } returns false
+        assertEquals(listOf(null), repository.getDrawerShortcutApps(hosts).map { it.userHandle })
+        assertFalse(repository.addDrawerShortcut(privateAction))
+        repository.removeDrawerShortcut(personal)
+        assertEquals(listOf(privateAction), repository.getDrawerShortcuts().value)
+    }
+
     // --- App Loading Tests ---
 
     @Test

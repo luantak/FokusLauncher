@@ -202,6 +202,32 @@ class AppDrawerViewModelTest {
     }
 
     @Test
+    fun `saved drawer shortcuts are searchable and removed without changing home or pins`() {
+        val shortcut = AppInfo("com.lu4p.twitter", "Twitter - Alice", null,
+                launcherShortcutId = "alice", isDrawerShortcut = true)
+        val saved = MutableStateFlow<List<AppShortcutAction>>(emptyList())
+        every { appRepository.getDrawerShortcuts() } returns saved
+        every { appRepository.getDrawerShortcutApps(any()) } answers {
+            if (saved.value.isEmpty()) emptyList() else listOf(shortcut)
+        }
+        viewModel = AppDrawerViewModel(context, appRepository, privateSpaceManager,
+                preferencesManager, notificationIndicatorRepository, arcticonsIconPackRepository,
+                Dispatchers.Unconfined)
+        val action = AppShortcutAction("Twitter", "Alice", ShortcutTarget.LauncherShortcut("com.lu4p.twitter", "alice"))
+        saved.value = listOf(action)
+        awaitState("saved shortcut row") { it.allApps.any { app -> app.isDrawerShortcut } }
+        viewModel.onSearchQueryChanged(" Alice")
+        awaitState("shortcut search result") { flatFiltered(it) == listOf(shortcut) }
+        assertTrue(viewModel.launchTarget(launchTargetFromAppInfo(shortcut)))
+        verify { appRepository.launchLauncherShortcut("com.lu4p.twitter", "alice", null) }
+        viewModel.addToHomeScreen(shortcut)
+        coVerify(exactly = 0) { preferencesManager.setFavorites(any()) }
+        viewModel.removeLauncherShortcut(shortcut)
+        verify { appRepository.removeDrawerShortcut(action) }
+        coVerify(exactly = 0) { appRepository.unpinLauncherShortcut(any(), any(), any()) }
+    }
+
+    @Test
     fun `initial state loads all apps`() {
         awaitState("initial filtered apps") { flatFiltered(it).size == testApps.size }
         val state = viewModel.uiState.value

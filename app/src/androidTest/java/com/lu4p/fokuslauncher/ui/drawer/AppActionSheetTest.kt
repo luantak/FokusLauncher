@@ -15,6 +15,35 @@ class AppActionSheetTest {
     @get:Rule val composeTestRule = createComposeRule()
 
     @Test
+    fun drawerShortcut_cannotBeAddedToHome() {
+        val shortcut = AppInfo("chat", "Chat - Alice", null,
+                launcherShortcutId = "alice", isDrawerShortcut = true)
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                AppActionSheet(app = shortcut, categories = emptyList(), onDismiss = {},
+                        onAddToHome = {}, onRename = {}, onSetCategory = {}, onHide = {},
+                        onAppInfo = {}, onUninstall = {}, onRemoveShortcut = {})
+            }
+        }
+        assertEquals(0, composeTestRule.onAllNodesWithTag("action_add_to_home").fetchSemanticsNodes().size)
+        composeTestRule.onNodeWithTag("action_remove_shortcut").assertIsDisplayed()
+    }
+
+    @Test
+    fun publishedShortcut_hasAddToDrawerAction() {
+        val action = com.lu4p.fokuslauncher.data.model.AppShortcutAction("Chat", "Alice",
+                com.lu4p.fokuslauncher.data.model.ShortcutTarget.LauncherShortcut("chat", "alice"))
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                AppActionSheet(app = AppInfo("chat", "Chat", null), categories = emptyList(),
+                        shortcuts = listOf(action), onDismiss = {}, onAddToHome = {},
+                        onRename = {}, onSetCategory = {}, onHide = {}, onAppInfo = {}, onUninstall = {})
+            }
+        }
+        composeTestRule.onNodeWithTag("action_add_shortcut_${action.id}").assertIsDisplayed()
+    }
+
+    @Test
     fun pwaShortcut_showsRemoveShortcut_notUninstall() {
         val pwa =
                 AppInfo(

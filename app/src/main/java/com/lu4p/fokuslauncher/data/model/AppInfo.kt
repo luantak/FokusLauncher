@@ -21,6 +21,7 @@ data class AppInfo(
     val launcherShortcutId: String? = null,
     /** True when Android has archived the app and it should only be shown in Settings. */
     val isArchived: Boolean = false,
+    val isDrawerShortcut: Boolean = false,
 ) {
     val normalizedLabel: String by lazy(LazyThreadSafetyMode.NONE) { label.normalizedForSearch() }
 }
