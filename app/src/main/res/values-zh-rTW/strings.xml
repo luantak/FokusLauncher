@@ -1,3 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="drawer_filter_all_apps">所有應用</string>
+    <string name="drawer_filter_private">隱私</string>
+    <string name="drawer_filter_work">工作</string>
+    <string name="drawer_filter_uncategorized">未分類</string>
+    <string name="drawer_menu_launcher_settings">起動器設定</string>
+    <string name="drawer_reorder">重新排序</string>
+    <string name="drawer_reorder_done">完成</string>
+    <string name="drawer_private_space_lock">鎖定隱私空間</string>
+    <string name="drawer_private_space_unlock">解鎖隱私空間</string>
+    <string name="drawer_section_personal">個人</string>
+    <string name="drawer_section_work_profile">工作專區</string>
+    <string name="drawer_section_profile_numbered">專區設定 %1$d</string>
+    <string name="drawer_section_other_profile">其他專區</string>
+    <string name="drawer_section_clone_profile">雙開應用</string>
+    <string name="drawer_section_private_space">隱私空間</string>
+    <string name="search">搜尋</string>
+    <string name="search_apps">搜尋應用</string>
+    <string name="search_apps_and_actions">搜尋應用和操作</string>
+    <string name="action_back">返回</string>
+    <string name="action_done">完成</string>
+    <string name="action_cancel">取消</string>
+    <string name="action_save">儲存</string>
+    <string name="action_add">增新</string>
+    <string name="action_rename">重新命名</string>
+    <string name="action_change">更改</string>
+    <string name="action_clear">清除</string>
+    <string name="action_reset">重置</string>
+    <string name="cd_drag_to_reorder">拖曳以重新排序</string>
+    <string name="cd_change_icon">更改圖示</string>
+    <string name="cd_shortcut_icon">捷徑圖示</string>
+    <string name="cd_edit_home_screen">編輯主畫面</string>
+    <string name="cd_settings">設定</string>
+    <string name="cd_menu">菜單</string>
+    <string name="cd_open_link">打開連結</string>
+    <string name="cd_open_subpage">開啟另一個頁面</string>
+    <string name="cd_unhide_app">取消隱藏應用</string>
+    <string name="cd_remove_rename">重置應用名稱</string>
+    <string name="cd_restore_archived_app">還原封存應用</string>
+    <string name="cd_delete_category">刪除分類</string>
 </resources>
