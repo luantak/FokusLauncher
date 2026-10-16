@@ -501,4 +501,13 @@
     <string name="settings_paypal_subtitle">Napiwki przez PayPal — fundusze na kofeinę mile widziane</string>
     <string name="settings_double_tap">Podwójne stuknięcie</string>
     <string name="settings_double_tap_open_app">Wybierz aplikację do otwarcia po podwójnym stuknięciu</string>
+    <string name="configuration_backup_title">Import / eksport konfiguracji</string>
+    <string name="configuration_backup_subtitle">Utwórz kopię zapasową lub przywróć zapisaną konfigurację</string>
+    <string name="configuration_backup_busy">Czekaj…</string>
+    <string name="configuration_backup_details">Tworzy kopię zapasową preferencji, ulubionych, skrótów, niestandardowych kategorii, nazw aplikacji, ukrytych aplikacji, notatek i niestandardowej czcionki. Styl tapety jest zapisywany, ale systemowy obraz tapety, widżety Androida i uprawnienia pozostają na tym urządzeniu. Kopie zapasowe nie są szyfrowane i mogą zawierać osobiste dane. Trzymaj je w bezpiecznym miejscu.</string>
+    <string name="configuration_export">Eksportuj konfigurację</string>
+    <string name="configuration_import">Importuj konfigurację</string>
+    <string name="configuration_import_confirm">Zamienić aktualną konfigurację launchera na tą z kopii zapasowej? Istniejące widżety Androida i uprawnienia będą zatrzymane. Aplikacje i skróty muszą być dostępne na tym urządzeniu.</string>
+    <string name="configuration_export_success">Konfiguracja wyeksportowana</string>
+    <string name="configuration_import_success">Konfiguracja przywrócona</string>
 </resources>
