@@ -468,4 +468,20 @@
     <string name="pomodoro_mode_break"></string>
     <string name="cd_app_icon"></string>
     <string name="settings_arcticons_drawer_icons"></string>
+    <string name="settings_notification_indicator_color_green">Grün</string>
+    <string name="settings_notification_indicator_color_yellow">Gelb</string>
+    <string name="settings_notification_indicator_color_white">Weiß</string>
+    <string name="drawer_reorder">Neu anordnen</string>
+    <string name="settings_notification_indicator_color_red">Rot</string>
+    <string name="settings_look_section_colors">Farben</string>
+    <string name="settings_notification_indicator_color_orange">Orange</string>
+    <string name="settings_notification_indicator_color_cyan">Cyan</string>
+    <string name="settings_notification_indicator_color_gray">Grau</string>
+    <string name="settings_notification_indicator_color_blue">Blau</string>
+    <string name="settings_apps_management_title">Versteckt, umbenannt &amp; archiviert</string>
+    <string name="settings_look_section_text">Text</string>
+    <string name="settings_look_section_notifications">Benachrichtigungen</string>
+    <string name="settings_notification_indicator_color_purple">Lila</string>
+    <string name="settings_look_section_display">Anzeige</string>
+    <string name="drawer_reorder_done">Fertig</string>
 </resources>
