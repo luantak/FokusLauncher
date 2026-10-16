@@ -484,4 +484,7 @@
     <string name="pomodoro_mode_break">Перерыв</string>
     <string name="cd_app_icon">Значок приложения</string>
     <string name="settings_arcticons_drawer_icons">Значки Arcticons</string>
+    <string name="edit_home_section_all_apps" translatable="false"></string>
+    <string name="pomodoro_mode_focus" translatable="false"></string>
+    <string name="app_name" translatable="false"></string>
 </resources>
