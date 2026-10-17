@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Special drawer categories: English keys live in ReservedCategoryNames.kt; translate these for UI. -->
     <string name="drawer_filter_all_apps">Wszystkie aplikacje</string>
     <string name="drawer_filter_private">Prywatne</string>
@@ -356,12 +356,12 @@
     <string name="settings_drawer_scroll_to_top_auto_keyboard_subtitle">Automatycznie otwórz klawiaturę i wyszukiwarkę po dojechaniu na górę listy aplikacji</string>
     <string name="home_alignment_middle">Środek</string>
     <string name="action_remove_shortcut">Usuń skrót</string>
-    <string name="settings_font_import_ttf">Zaimportuj czcionkę (.ttf)</string>
-    <string name="settings_font_import_ttf_subtitle">Użyj pliku czcionki TrueType z twojego urządzenia</string>
+    <string name="settings_font_import_ttf">Zaimportuj czcionkę (.ttf, .otf)</string>
+    <string name="settings_font_import_ttf_subtitle">Użyj pliku czcionki TrueType lub OpenType z twojego urządzenia</string>
     <string name="settings_font_clear_custom">Usuń zaimportowaną czcionkę</string>
     <string name="settings_font_custom_imported">Zaimportowana czcionka</string>
     <string name="settings_font_import_failed_unreadable">Nie udało się odczytać tego pliku</string>
-    <string name="settings_font_import_failed_invalid">To nie jest prawidłowy plik czcionki TrueType</string>
+    <string name="settings_font_import_failed_invalid">To nie jest obsługiwany plik czcionki</string>
     <string name="settings_font_import_failed_io">Nie udało się zapisać pliku czcionki</string>
     <string name="cd_restore_archived_app">Przywróć zarchiwizowaną aplikację</string>
     <string name="toast_digital_wellbeing_launch_failed">Cyfrowa równowaga nie mogła zostać otwarta</string>
@@ -490,10 +490,10 @@
     <string name="pomodoro_decrease">Odejmij jedną minutę</string>
     <string name="pomodoro_mode_break">Przerwa</string>
     <string name="settings_arcticons_drawer_icons">Ikony aplikacji Arcticons</string>
-    <string name="settings_arcticons_drawer_icons_subtitle">Pokazuj ikony Arcticons obok nazw aplikacji w szufladzie</string>
+    <string name="settings_arcticons_drawer_icons_subtitle">Pokazuj ikony Arcticons w szufladzie i wybierz styl ikon aplikacji na ekranie głównym poniżej</string>
     <string name="settings_arcticons_drawer_icons_subtitle_missing">Wymaga Arcticons — włącz, aby zainstalować</string>
     <string name="settings_arcticons_install_title">Zainstalować Arcticons?</string>
-    <string name="settings_arcticons_install_message">Fokus Launcher używa paczki ikon Arcticons dla uproszczonych ikon w szufladzie. Zainstaluj Arcticons z F-Droida lub Sklepu Play, i wtedy włącz tę opcję ponownie.</string>
+    <string name="settings_arcticons_install_message">Fokus Launcher używa paczki ikon Arcticons w szufladzie i dla ikon aplikacji na ekranie głównym. Zainstaluj Arcticons z F-Droida lub Sklepu Play, i wtedy włącz tę opcję ponownie.</string>
     <string name="settings_arcticons_install_fdroid">Otwórz F-Droida</string>
     <string name="settings_arcticons_install_play">Otwórz Sklep Play</string>
     <string name="cd_app_icon">Ikona aplikacji</string>
@@ -510,4 +510,32 @@
     <string name="configuration_import_confirm">Zamienić aktualną konfigurację launchera na tą z kopii zapasowej? Istniejące widżety Androida i uprawnienia będą zatrzymane. Aplikacje i skróty muszą być dostępne na tym urządzeniu.</string>
     <string name="configuration_export_success">Konfiguracja wyeksportowana</string>
     <string name="configuration_import_success">Konfiguracja przywrócona</string>
+    <string name="configuration_backup_failed">Nie udało się zapisać lub przywrócić konfiguracji. Wybierz prawidłową kopię zapasową Fokus i sprawdź dostęp do pliku.</string>
+    <string name="settings_show_home_note">Pokaż notatkę</string>
+    <string name="settings_show_home_note_subtitle">Notatka na ekranie głównym. Stuknij w zadania, aby je odznaczać, przytrzymaj, aby je edytować.</string>
+    <string name="home_note_edit_action">Edytuj notatkę</string>
+    <string name="home_note_add_task">Dodaj zadanie</string>
+    <string name="home_note_toggle_task">Przełącz %1$s</string>
+    <string name="home_note_placeholder">Stuknij, aby dodać notatkę</string>
+    <string name="home_note_clear" tools:ignore="MissingTranslation">Wyczyść notatkę</string>
+    <string name="settings_home_note_folder" tools:ignore="MissingTranslation">Folder notatek</string>
+    <string name="settings_home_note_folder_local" tools:ignore="MissingTranslation">Tylko w Fokus. Wybierz folder do zapisywania plików Markdown.</string>
+    <string name="home_note_storage_error" tools:ignore="MissingTranslation">Nie udało się zapisać pliku notatki. Wersja robocza jest zachowana. Wybierz folder notatek ponownie lub wyłącz zapisywanie plików.</string>
+    <string name="home_note_edit_title">Notatka</string>
+    <string name="home_note_edit_hint">Jeden element na linię...</string>
+    <string name="settings_gestures">Gesty</string>
+    <string name="settings_gestures_subtitle">Skróty przesuwania i podwójnego stuknięcia</string>
+    <string name="settings_two_finger_gestures">Przesunięcia dwoma palcami</string>
+    <string name="settings_two_finger_up">Dwa palce w górę</string>
+    <string name="settings_two_finger_down">Dwa palce w dół</string>
+    <string name="settings_two_finger_left">Dwa palce w lewo</string>
+    <string name="settings_two_finger_right">Dwa palce w prawo</string>
+    <string name="settings_home_app_icons">Ikony aplikacji na ekranie głównym</string>
+    <string name="settings_home_app_icons_text">Tylko tekst</string>
+    <string name="settings_home_app_icons_with_label">Arcticons i etykiety</string>
+    <string name="settings_home_app_icons_only">Tylko Arcticons</string>
+    <string name="action_add_shortcut_to_drawer">Dodaj %1$s do szuflady aplikacji</string>
+    <string name="settings_section_drawer_shortcuts">Skróty szuflady aplikacji</string>
+    <string name="settings_no_drawer_shortcuts">Brak dodanych skrótów. Wciśnij przycisk + obok akcji aplikacji w menu długiego przytrzymania w szufladzie.</string>
+    <string name="cd_remove_drawer_shortcut">Usuń skrót z szuflady aplikacji</string>
 </resources>
