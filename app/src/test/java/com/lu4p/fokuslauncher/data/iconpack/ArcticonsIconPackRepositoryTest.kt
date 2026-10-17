@@ -29,6 +29,23 @@ class ArcticonsIconPackRepositoryTest {
     }
 
     @Test
+    fun namedIconCanBeChosenWithoutChangingAppMapping() = runBlocking {
+        repository.seedLoadedPackForTest(
+            "com.donnnno.arcticons",
+            mapOf("ComponentInfo{com.example.app/com.example.app.Main}" to "example"),
+            mapOf("example" to ColorDrawable(Color.WHITE), "calendar" to ColorDrawable(Color.BLACK)),
+        )
+        val chosen = repository.getIconByName("calendar") as ColorDrawable
+        assertEquals(Color.BLACK, chosen.color)
+        val app = AppInfo("com.example.app", "Example", null,
+            componentName = ComponentName("com.example.app", "com.example.app.Main"))
+        assertEquals("example", repository.getIconName(app))
+        assertEquals(Color.WHITE, (repository.getIcon(app) as ColorDrawable).color)
+        assertTrue(repository.getIconNames().contains("example"))
+        assertNull(repository.getIconByName("missing"))
+    }
+
+    @Test
     fun getIcon_reusesCachedDrawableWithoutRedecode() = runBlocking {
         val drawable = ColorDrawable(Color.WHITE)
         repository.seedLoadedPackForTest(

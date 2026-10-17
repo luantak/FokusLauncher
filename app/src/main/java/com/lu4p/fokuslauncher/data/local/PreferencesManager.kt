@@ -1284,6 +1284,21 @@ private constructor(
 
     private fun parseRightSideShortcuts(raw: String): List<HomeShortcut> {
         if (raw.isBlank() || raw == RIGHT_SIDE_SHORTCUTS_EMPTY_MARKER) return emptyList()
+        if (raw.startsWith("v2:")) {
+            return try {
+                val entries = JSONArray(raw.removePrefix("v2:"))
+                (0 until entries.length()).mapNotNull { index ->
+                    val entry = entries.optJSONObject(index) ?: return@mapNotNull null
+                    val target = ShortcutTarget.decode(entry.optString("target")) ?: return@mapNotNull null
+                    HomeShortcut(
+                        iconName = entry.optString("iconName", "circle"),
+                        target = target,
+                        profileKey = entry.optString("profileKey", "0"),
+                        arcticonName = entry.optString("arcticonName", ""),
+                    )
+                }
+            } catch (_: Exception) { emptyList() }
+        }
         return raw.split("|").mapNotNull { entry ->
             // Targets (especially intent URIs) may contain ';', so only treat the first and last
             // semicolons as field separators: iconName ; target ; profileKey
@@ -1308,9 +1323,16 @@ private constructor(
 
     private fun serializeRightSideShortcuts(shortcuts: List<HomeShortcut>): String {
         if (shortcuts.isEmpty()) return RIGHT_SIDE_SHORTCUTS_EMPTY_MARKER
-        return shortcuts.joinToString("|") { shortcut ->
-            "${shortcut.iconName};${ShortcutTarget.encode(shortcut.target)};${shortcut.profileKey}"
+        val entries = JSONArray()
+        shortcuts.forEach { shortcut ->
+            entries.put(JSONObject().apply {
+                put("iconName", shortcut.iconName)
+                put("target", ShortcutTarget.encode(shortcut.target))
+                put("profileKey", shortcut.profileKey)
+                put("arcticonName", shortcut.arcticonName)
+            })
         }
+        return "v2:$entries"
     }
 
     private fun parseDrawerOpenCounts(raw: String): Map<String, Int> {

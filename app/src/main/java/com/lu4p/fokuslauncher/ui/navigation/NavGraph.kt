@@ -969,9 +969,33 @@ fun FokusNavGraph(
                 }
                 val homeViewModel: HomeViewModel = hiltViewModel(homeBackStackEntry)
                 val editShortcuts by homeViewModel.editRightShortcuts.collectAsStateWithLifecycle()
-                val storedIconKey = editShortcuts.getOrNull(index)?.iconName ?: "circle"
-                IconPickerScreen(
-                        storedIconKey = storedIconKey,
+                val shortcut = editShortcuts.getOrNull(index)
+                val uiState by homeViewModel.uiState.collectAsStateWithLifecycle()
+                if (uiState.arcticonsPackage != null && shortcut != null) {
+                    val pack = uiState.arcticonsPackage
+                    val apps by homeViewModel.allInstalledApps.collectAsStateWithLifecycle()
+                    val names by androidx.compose.runtime.produceState(emptyList<String>(), pack) {
+                        value = homeViewModel.arcticonNames()
+                    }
+                    val selected by androidx.compose.runtime.produceState("circle", shortcut, apps, pack) {
+                        value = homeViewModel.shortcutArcticonName(shortcut)
+                    }
+                    val loadIcon: suspend (String) -> android.graphics.drawable.Drawable? = remember(homeViewModel, pack) {
+                        { name -> homeViewModel.loadArcticonByName(name) }
+                    }
+                    com.lu4p.fokuslauncher.ui.settings.ArcticonsIconPickerScreen(
+                        storedIconKey = selected,
+                        names = names,
+                        loadIcon = loadIcon,
+                        onSelect = { name ->
+                            homeViewModel.updateShortcutIcon(index, name)
+                            navController.popBackStack()
+                        },
+                        onNavigateBack = { navController.popBackStack() },
+                    )
+                } else {
+                    IconPickerScreen(
+                        storedIconKey = shortcut?.iconName ?: "circle",
                         titleText = stringResource(R.string.edit_shortcuts_choose_icon),
                         onSelect = { name ->
                             homeViewModel.updateShortcutIcon(index, name)
@@ -979,7 +1003,8 @@ fun FokusNavGraph(
                         },
                         onNavigateBack = { navController.popBackStack() },
                         backgroundScrim = Color.Black,
-                )
+                    )
+                }
             }
         }
         }
