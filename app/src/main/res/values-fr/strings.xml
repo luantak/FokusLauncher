@@ -384,7 +384,7 @@
     </plurals>
     <string name="settings_show_home_air_quality">Afficher l\'index de qualité de l\'air</string>
     <string name="settings_show_home_air_quality_subtitle">Afficher l\'AQI à proximité de la température</string>
-    <string name="weather_with_aqi_format">%1$s · %2$d</string>
+    <string name="weather_with_aqi_format">%1$s ·%2$d</string>
     <string name="settings_show_world_clock_weather">Afficher la météo sur les horloges mondiales</string>
     <string name="settings_show_world_clock_weather_subtitle">Rechercher les conditions météo depuis le nom de chaque ville</string>
     <string name="settings_show_home_pomodoro">Afficher le minuteur Pomodoro</string>
@@ -465,7 +465,7 @@
     <string name="settings_paypal_title">Acheter moi une pause</string>
     <string name="settings_countdown_clear">Réinitialiser le décompte</string>
     <string name="settings_pomodoro_configure_subtitle">%1$s et les durées de pause pour la minuterie d\'accueil</string>
-    <string name="settings_arcticons_install_title">Installer Arcticons ?</string>
+    <string name="settings_arcticons_install_title">Installer Arcticons ?</string>
     <string name="settings_show_home_pomodoro_subtitle">%1$s minuterie au lieu des contrôles de média</string>
     <string name="settings_countdown_edit">Modifier le décompte</string>
     <string name="settings_double_tap">Double appui</string>
