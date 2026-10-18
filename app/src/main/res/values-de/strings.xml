@@ -341,4 +341,25 @@
     <string name="settings_notification_indicator_color_purple">Lila</string>
     <string name="settings_look_section_display">Anzeige</string>
     <string name="drawer_reorder_done">Fertig</string>
+    <string name="settings_paypal_title">Spendier mir eine Denkpause</string>
+    <string name="settings_paypal_subtitle">Gönn\' uns mit PayPal eine Kaffeepause</string>
+    <string name="settings_section_drawer_shortcuts">Verknüpfungen der App-Übersicht</string>
+    <string name="settings_no_drawer_shortcuts">Es sind bisher keine Verknüpfungen vorhanden. Verwende „+“ neben einer App-Aktion im Menü der App-Leiste.</string>
+    <string name="cd_remove_drawer_shortcut">Entferne die Verknüpfung aus der App-Übersicht</string>
+    <string name="configuration_backup_title">Import- und Export-Einstellungen</string>
+    <string name="configuration_backup_subtitle">Einstellungen sichern oder gesicherte wiederherstellen</string>
+    <string name="configuration_backup_busy">Beschäftigt…</string>
+    <string name="configuration_backup_details">Sichern der Einstellungen, Favoriten, Verknüpfungen, benutzerdefinierte Kategorien, App-Namen, ausgeblendete Apps, Notizen und Ihre benutzerdefinierte Schriftart. Der Hintergrund-Thema wird gespeichert, das System-Hintergrundbild, Android-Widgets und Berechtigungen verbleiben jedoch auf diesem Gerät. Die Sicherungen sind nicht verschlüsselt und können personenbezogene Daten enthalten. Bewahren Sie sie an einem sicheren Ort auf.</string>
+    <string name="configuration_export">Export-Einstellungen</string>
+    <string name="configuration_import">Import-Einstellungen</string>
+    <string name="configuration_import_confirm">Aktuelle Launcher-Konfiguration durch diese Sicherungskopie ersetzen? Vorhandene Android-Widgets und Berechtigungen bleiben erhalten. Apps und Verknüpfungen müssen auch weiterhin auf diesem Gerät verfügbar sein.</string>
+    <string name="configuration_export_success">Einstellungen wurden exportiert</string>
+    <string name="configuration_import_success">Einstellungen wiederhergestellt</string>
+    <string name="configuration_backup_failed">Die Einstellungen konnten nicht gespeichert oder wiederhergestellt werden. Wählen Sie ein gültiges Fokus-Backup aus und überprüfen Sie ggf. die Zugriffsberechtigungen.</string>
+    <string name="visual_style_gold">Gold</string>
+    <string name="visual_style_neon_pink">Knalliges Pink</string>
+    <string name="visual_style_lavender">Lavendel</string>
+    <string name="visual_style_sky">Himmelblau</string>
+    <string name="visual_style_sage">Salbei</string>
+    <string name="visual_style_rose">Rosé</string>
 </resources>
