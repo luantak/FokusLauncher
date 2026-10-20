@@ -39,4 +39,7 @@
     <string name="action_add">增新</string>
     <string name="cd_settings">設定</string>
     <string name="drawer_section_personal">個人</string>
+    <string name="configuration_backup_title">導入 / 導出配置</string>
+    <string name="configuration_backup_subtitle">備份您的設定或還原已儲存的配置</string>
+    <string name="configuration_backup_busy">處理中…</string>
 </resources>
