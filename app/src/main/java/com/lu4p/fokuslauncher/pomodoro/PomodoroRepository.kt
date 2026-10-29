@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -80,27 +81,30 @@ constructor(
                     }
                     .distinctUntilChanged()
                     .collect { (show, config, runtime) ->
-                        if (enabled && !show) {
-                            completionAlerter.dismiss()
-                            activeNotifier.cancel()
+                        mutex.withLock {
+                            enabled = show
+                            latestConfig = config
+                            val reconciled =
+                                    if (show) {
+                                        reconcileRuntime(runtime, now = System.currentTimeMillis())
+                                    } else {
+                                        completionAlerter.dismiss()
+                                        idleRuntimeFor(config, runtime.mode)
+                                    }
+                            latestRuntime = reconciled
+                            if (reconciled != runtime) {
+                                preferencesManager.setPomodoroRuntime(reconciled)
+                            }
+                            if (show && reconciled.phase == PomodoroPhase.OVERTIME) {
+                                completionAlerter.ensureAlerting(
+                                        reconciled.mode,
+                                        config.alarmSoundUri,
+                                )
+                            }
+                            publishUi()
+                            syncTickerAndAlarm()
+                            syncActiveNotification()
                         }
-                        enabled = show
-                        latestConfig = config
-                        val reconciled = reconcileRuntime(runtime, now = System.currentTimeMillis())
-                        if (reconciled != runtime) {
-                            preferencesManager.setPomodoroRuntime(reconciled)
-                            return@collect
-                        }
-                        latestRuntime = reconciled
-                        if (reconciled.phase == PomodoroPhase.OVERTIME) {
-                            completionAlerter.ensureAlerting(
-                                    reconciled.mode,
-                                    config.alarmSoundUri,
-                            )
-                        }
-                        publishUi()
-                        syncTickerAndAlarm()
-                        syncActiveNotification()
                     }
         }
     }
@@ -108,6 +112,7 @@ constructor(
     fun togglePlayPause() {
         scope.launch {
             mutex.withLock {
+                if (!isEnabled()) return@withLock
                 when (latestRuntime.phase) {
                     PomodoroPhase.OVERTIME -> {
                         dismissOvertimeAndStartNextLocked()
@@ -134,6 +139,7 @@ constructor(
     fun selectMode(mode: PomodoroMode) {
         scope.launch {
             mutex.withLock {
+                if (!isEnabled()) return@withLock
                 completionAlerter.dismiss()
                 if (latestRuntime.mode == mode && latestRuntime.phase == PomodoroPhase.IDLE) {
                     return@withLock
@@ -148,6 +154,7 @@ constructor(
         if (deltaMinutes == 0) return
         scope.launch {
             mutex.withLock {
+                if (!isEnabled()) return@withLock
                 if (latestRuntime.phase == PomodoroPhase.OVERTIME) return@withLock
                 completionAlerter.dismiss()
                 val now = System.currentTimeMillis()
@@ -197,7 +204,7 @@ constructor(
     }
 
     private suspend fun dismissOvertimeAndStartNextLocked() {
-        if (latestRuntime.phase != PomodoroPhase.OVERTIME) {
+        if (!isEnabled() || latestRuntime.phase != PomodoroPhase.OVERTIME) {
             completionAlerter.dismiss()
             return
         }
@@ -208,6 +215,9 @@ constructor(
         val idle = idleRuntimeFor(latestConfig, nextMode)
         persist(startOrResume(idle, System.currentTimeMillis()))
     }
+
+    private suspend fun isEnabled(): Boolean =
+            enabled && preferencesManager.showHomePomodoroFlow.first()
 
     private suspend fun persist(state: PomodoroRuntimeState) {
         latestRuntime = state
@@ -268,9 +278,7 @@ constructor(
         if (!needsTicker) {
             tickerJob?.cancel()
             tickerJob = null
-            if (phase != PomodoroPhase.RUNNING) {
-                alarmScheduler.cancel()
-            }
+            alarmScheduler.cancel()
             return
         }
         if (phase == PomodoroPhase.RUNNING) {
@@ -284,7 +292,7 @@ constructor(
                     while (true) {
                         delay(TICK_MS)
                         mutex.withLock {
-                            if (!enabled) {
+                            if (!isEnabled()) {
                                 return@launch
                             }
                             when (latestRuntime.phase) {

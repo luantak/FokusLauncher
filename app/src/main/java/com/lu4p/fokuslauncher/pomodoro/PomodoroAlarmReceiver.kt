@@ -10,6 +10,7 @@ import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
@@ -26,6 +27,7 @@ class PomodoroAlarmReceiver : BroadcastReceiver() {
             try {
                 val appContext = context.applicationContext
                 val preferencesManager = PreferencesManager(appContext)
+                if (!preferencesManager.showHomePomodoroFlow.first()) return@launch
                 val runtime = preferencesManager.getPomodoroRuntime()
                 if (runtime.phase != PomodoroPhase.RUNNING) return@launch
 
@@ -36,6 +38,7 @@ class PomodoroAlarmReceiver : BroadcastReceiver() {
                 val config = preferencesManager.getPomodoroConfig()
                 preferencesManager.setPomodoroRuntime(runtime.copy(phase = PomodoroPhase.OVERTIME))
                 PomodoroAlarmScheduler(appContext).cancel()
+                if (!preferencesManager.showHomePomodoroFlow.first()) return@launch
                 EntryPointAccessors.fromApplication(appContext, PomodoroEntryPoint::class.java)
                         .pomodoroCompletionAlerter()
                         .announceComplete(runtime.mode, config.alarmSoundUri)
