@@ -538,4 +538,8 @@
     <string name="settings_section_drawer_shortcuts">Skróty szuflady aplikacji</string>
     <string name="settings_no_drawer_shortcuts">Brak dodanych skrótów. Wciśnij przycisk + obok akcji aplikacji w menu długiego przytrzymania w szufladzie.</string>
     <string name="cd_remove_drawer_shortcut">Usuń skrót z szuflady aplikacji</string>
+    <string name="settings_air_quality_scale">Skala jakości powietrza</string>
+    <string name="settings_air_quality_scale_system">Automatyczna (według regionu)</string>
+    <string name="settings_air_quality_scale_european">Europejska AQI</string>
+    <string name="settings_air_quality_scale_us">Amerykańska AQI</string>
 </resources>
