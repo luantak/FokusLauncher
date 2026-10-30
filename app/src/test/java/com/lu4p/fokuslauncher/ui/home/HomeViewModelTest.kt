@@ -36,6 +36,7 @@ import com.lu4p.fokuslauncher.pomodoro.PomodoroRepository
 import com.lu4p.fokuslauncher.pomodoro.PomodoroUiState
 import com.lu4p.fokuslauncher.usage.ScreenTimeRepository
 import com.lu4p.fokuslauncher.utils.LockScreenHelper
+import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -84,6 +85,7 @@ class HomeViewModelTest {
     private lateinit var screenTimeRepository: ScreenTimeRepository
     private lateinit var notificationIndicatorRepository: NotificationIndicatorRepository
     private lateinit var pomodoroRepository: PomodoroRepository
+    private val privateSpaceManager = mockk<PrivateSpaceManager>(relaxed = true)
     private lateinit var removedPackages: MutableSharedFlow<RemovedApp>
     private val testDispatcher = StandardTestDispatcher()
     private var originalLocale: Locale = Locale.getDefault()
@@ -239,6 +241,7 @@ class HomeViewModelTest {
         screenTimeRepository,
         notificationIndicatorRepository,
         pomodoroRepository,
+        privateSpaceManager,
     )
 
     private fun createViewModel(withContext: Context) = HomeViewModel(
@@ -251,7 +254,28 @@ class HomeViewModelTest {
         screenTimeRepository,
         notificationIndicatorRepository,
         pomodoroRepository,
+        privateSpaceManager,
     )
+
+    @Test
+    fun `unlock shortcut requests system authentication without launching an app`() {
+        val viewModel = createViewModel()
+        viewModel.launchShortcut(HomeShortcut(target = ShortcutTarget.UnlockPrivateSpace))
+        verify(exactly = 1) { privateSpaceManager.requestUnlock() }
+        verify(exactly = 0) { privateSpaceManager.lock() }
+        verify(exactly = 0) { appRepository.launchApp(any()) }
+    }
+
+    @Test
+    fun `double tap can unlock private space when screen lock is disabled`() {
+        every { preferencesManager.doubleTapEmptyLockFlow } returns MutableStateFlow(false)
+        every { preferencesManager.doubleTapEmptyTargetFlow } returns
+            MutableStateFlow(WidgetTapTarget(ShortcutTarget.UnlockPrivateSpace))
+        val viewModel = createViewModel()
+        viewModel.onDoubleTapEmpty()
+        testDispatcher.scheduler.runCurrent()
+        verify(exactly = 1) { privateSpaceManager.requestUnlock() }
+    }
 
     /**
      * Sticky battery read uses [androidx.core.content.ContextCompat.registerReceiver], which maps

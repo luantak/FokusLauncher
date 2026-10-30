@@ -20,7 +20,8 @@ data class AppShortcutAction(
     val displayLabel: String
         get() =
                 if (actionLabel == OPEN_APP_LABEL || target is ShortcutTarget.PhoneDial) appLabel
-                else if (target is ShortcutTarget.WidgetPage) actionLabel
+                else if (target is ShortcutTarget.WidgetPage ||
+                        target is ShortcutTarget.UnlockPrivateSpace) actionLabel
                 else "$appLabel - $actionLabel"
 
     companion object {

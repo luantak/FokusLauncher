@@ -101,6 +101,7 @@ data class SettingsUiState(
         val suppressedCategories: List<String> = emptyList(),
         val favorites: List<FavoriteApp> = emptyList(),
         val rightSideShortcuts: List<HomeShortcut> = emptyList(),
+        val hasPrivateSpace: Boolean = false,
         val swipeLeftTarget: ShortcutTarget? = null,
         val swipeRightTarget: ShortcutTarget? = null,
         val doubleTapEmptyTarget: WidgetTapTarget? = null,
@@ -671,6 +672,7 @@ constructor(
                                 lockRail.longLockReturnHomeThresholdMinutes,
                         allApps = installedApps,
                         allShortcutActions = allShortcutActions,
+                        hasPrivateSpace = privateProfileKey != null,
                         profileDisplayNameOverrides = profileDisplayNameOverrides,
                 )
             }.collectLatest { state ->

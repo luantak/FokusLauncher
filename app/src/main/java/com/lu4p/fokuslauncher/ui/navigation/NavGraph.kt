@@ -66,6 +66,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import android.view.WindowManager
+import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.local.TwoFingerDirection
 import com.lu4p.fokuslauncher.ui.drawer.AppDrawerScreen
@@ -430,6 +431,8 @@ fun FokusNavGraph(
                                                 widgetPageSide = side
                                                 horizontalOffsetPx = if (side == SwipeSide.LEFT)
                                                     -pageWidthPx else pageWidthPx
+                                            } else if (target is ShortcutTarget.UnlockPrivateSpace) {
+                                                homeViewModel.launchShortcut(HomeShortcut(target = target))
                                             } else {
                                                 activity?.launchWithBottomReveal(target)
                                             }
@@ -562,7 +565,11 @@ fun FokusNavGraph(
                                                                     } else {
                                                                         0f
                                                                     }
-                                                                activity?.launchWithBottomReveal(target)
+                                                                if (target is ShortcutTarget.UnlockPrivateSpace) {
+                                                                    homeViewModel.launchShortcut(HomeShortcut(target = target))
+                                                                } else {
+                                                                    activity?.launchWithBottomReveal(target)
+                                                                }
                                                             }
                                                         }
                                                     },
@@ -1017,6 +1024,7 @@ private fun Activity.launchWithBottomReveal(target: ShortcutTarget) {
             Intent(Intent.ACTION_DIAL, "tel:".toUri()).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
         is ShortcutTarget.LauncherShortcut -> null
         is ShortcutTarget.WidgetPage -> null
+        is ShortcutTarget.UnlockPrivateSpace -> null
     } ?: return
 
     val root = window.decorView

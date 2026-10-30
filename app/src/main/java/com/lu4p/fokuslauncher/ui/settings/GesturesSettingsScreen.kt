@@ -105,6 +105,7 @@ fun GesturesSettingsScreen(
             },
             onDismiss = { picker.value = null },
             includeWidgetPageTarget = !doubleTap,
+            includePrivateSpaceUnlockTarget = state.hasPrivateSpace,
             profileDisplayNameOverrides = state.profileDisplayNameOverrides,
         )
     }

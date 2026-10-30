@@ -11,6 +11,7 @@ import java.util.Base64
  * - Launcher shortcut action: "launcher:<base64(packageName)>:<base64(shortcutId)>"
  * - Default phone/dialer: "internal:phone" ([PhoneDial] — uses [android.content.Intent.ACTION_DIAL])
  * - Launcher widget page: "internal:widget_page" ([WidgetPage])
+ * - Private Space unlock: "internal:unlock_private_space" ([UnlockPrivateSpace])
  *
  * Legacy values without a prefix are treated as app package names.
  */
@@ -25,6 +26,9 @@ sealed interface ShortcutTarget {
     /** Opens Fokus' in-launcher Android widget page. */
     data object WidgetPage : ShortcutTarget
 
+    /** Requests Android's Private Space authentication flow. */
+    data object UnlockPrivateSpace : ShortcutTarget
+
     companion object {
         private const val APP_PREFIX = "app:"
         private const val INTENT_PREFIX = "intent:"
@@ -32,6 +36,7 @@ sealed interface ShortcutTarget {
         private const val INTERNAL_PREFIX = "internal:"
         private const val PHONE_INTERNAL_KEY = "phone"
         private const val WIDGET_PAGE_INTERNAL_KEY = "widget_page"
+        private const val UNLOCK_PRIVATE_SPACE_INTERNAL_KEY = "unlock_private_space"
 
         /**
          * [FavoriteApp.packageName] for a built-in phone-dial row — not an installed package.
@@ -46,6 +51,7 @@ sealed interface ShortcutTarget {
                         when (raw.removePrefix(INTERNAL_PREFIX).trim()) {
                             PHONE_INTERNAL_KEY -> PhoneDial
                             WIDGET_PAGE_INTERNAL_KEY -> WidgetPage
+                            UNLOCK_PRIVATE_SPACE_INTERNAL_KEY -> UnlockPrivateSpace
                             else -> null
                         }
                 raw.startsWith(APP_PREFIX) -> {
@@ -77,6 +83,7 @@ sealed interface ShortcutTarget {
                 LAUNCHER_PREFIX + encodePart(target.packageName) + ":" + encodePart(target.shortcutId)
             is PhoneDial -> INTERNAL_PREFIX + PHONE_INTERNAL_KEY
             is WidgetPage -> INTERNAL_PREFIX + WIDGET_PAGE_INTERNAL_KEY
+            is UnlockPrivateSpace -> INTERNAL_PREFIX + UNLOCK_PRIVATE_SPACE_INTERNAL_KEY
         }
 
         private fun encodePart(value: String): String =

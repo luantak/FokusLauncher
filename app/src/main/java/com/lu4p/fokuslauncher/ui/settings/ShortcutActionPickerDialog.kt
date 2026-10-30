@@ -47,6 +47,7 @@ fun ShortcutActionPickerDialog(
     onDismiss: () -> Unit,
     containerColor: Color = MaterialTheme.colorScheme.surfaceVariant,
     includeWidgetPageTarget: Boolean = false,
+    includePrivateSpaceUnlockTarget: Boolean = false,
     profileDisplayNameOverrides: Map<String, String> = emptyMap(),
 ) {
     SearchablePickerDialog(
@@ -55,6 +56,9 @@ fun ShortcutActionPickerDialog(
         containerColor = containerColor,
     ) { filter, onFilterChange ->
         val context = LocalContext.current
+        val appLabel = stringResource(R.string.app_name)
+        val widgetPageLabel = stringResource(R.string.widget_page_shortcut_label)
+        val unlockLabel = stringResource(R.string.drawer_private_space_unlock)
         val filtered =
             remember(filter, allActions) {
                 if (filter.isBlank()) allActions
@@ -93,19 +97,33 @@ fun ShortcutActionPickerDialog(
                                 .clickableWithSystemSound {
                                     onSelect(
                                         AppShortcutAction(
-                                            appLabel =
-                                                context.getString(
-                                                    R.string.app_name
-                                                ),
-                                            actionLabel =
-                                                context.getString(
-                                                    R.string.widget_page_shortcut_label
-                                                ),
+                                            appLabel = appLabel,
+                                            actionLabel = widgetPageLabel,
                                             target = ShortcutTarget.WidgetPage,
                                         )
                                     )
                                 }
                                 .padding(vertical = 10.dp, horizontal = 8.dp),
+                    )
+                }
+            }
+
+            if (includePrivateSpaceUnlockTarget &&
+                (filter.isBlank() || unlockLabel.containsNormalizedSearch(filter))) {
+                item(key = "shortcut_action_unlock_private_space") {
+                    Text(
+                        text = unlockLabel,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.fillMaxWidth()
+                            .clickableWithSystemSound {
+                                onSelect(AppShortcutAction(
+                                    appLabel = appLabel,
+                                    actionLabel = unlockLabel,
+                                    target = ShortcutTarget.UnlockPrivateSpace,
+                                ))
+                            }
+                            .padding(vertical = 10.dp, horizontal = 8.dp),
                     )
                 }
             }

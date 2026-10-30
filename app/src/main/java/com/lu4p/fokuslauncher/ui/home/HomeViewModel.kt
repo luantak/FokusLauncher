@@ -65,6 +65,7 @@ import com.lu4p.fokuslauncher.usage.ScreenTimeRepository
 import com.lu4p.fokuslauncher.usage.UsageStatsHelper
 import com.lu4p.fokuslauncher.usage.formatScreenTimeDuration
 import com.lu4p.fokuslauncher.utils.LockScreenHelper
+import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
 import com.lu4p.fokuslauncher.utils.registerBroadcastReceiverNotExported
 import com.lu4p.fokuslauncher.utils.registerStickyBroadcastReceiverNotExported
 import com.lu4p.fokuslauncher.utils.isDefaultHomeApp
@@ -205,6 +206,7 @@ class HomeViewModel @Inject constructor(
     private val screenTimeRepository: ScreenTimeRepository,
     private val notificationIndicatorRepository: NotificationIndicatorRepository,
     private val pomodoroRepository: PomodoroRepository,
+    private val privateSpaceManager: PrivateSpaceManager,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -1648,6 +1650,7 @@ class HomeViewModel @Inject constructor(
                 true
             }
             is ShortcutTarget.WidgetPage -> false
+            is ShortcutTarget.UnlockPrivateSpace -> privateSpaceManager.requestUnlock()
             is ShortcutTarget.DeepLink -> {
                 launchDeepLink(target.intentUri)
                 true
@@ -1917,7 +1920,8 @@ class HomeViewModel @Inject constructor(
                         drawerOpenCountKey(target.packageName, shortcut.profileKey)
                 is ShortcutTarget.DeepLink,
                 is ShortcutTarget.PhoneDial,
-                is ShortcutTarget.WidgetPage -> null
+                is ShortcutTarget.WidgetPage,
+                is ShortcutTarget.UnlockPrivateSpace -> null
             }
 
     private fun FavoriteApp.matches(packageName: String, profileKey: String): Boolean =

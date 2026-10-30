@@ -45,6 +45,7 @@ fun formatShortcutTargetDisplay(
         }
         is ShortcutTarget.PhoneDial -> context.getString(R.string.shortcut_target_phone)
         is ShortcutTarget.WidgetPage -> context.getString(R.string.widget_page_shortcut_label)
+        is ShortcutTarget.UnlockPrivateSpace -> context.getString(R.string.drawer_private_space_unlock)
         is ShortcutTarget.LauncherShortcut -> {
             val appName =
                     allApps.find {

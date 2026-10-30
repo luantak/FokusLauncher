@@ -893,6 +893,7 @@ internal constructor(
                             mode == DotSearchTargetMode.SHORTCUT &&
                             launchDotShortcutTarget(profileKey, target)
             is ShortcutTarget.WidgetPage -> return false
+            is ShortcutTarget.UnlockPrivateSpace -> return false
         }
     }
 
@@ -937,6 +938,7 @@ internal constructor(
                     startDotSearchActivity(dotSearchLaunchContext(profileKey, target), intent)
                 }
                 is ShortcutTarget.WidgetPage -> false
+                is ShortcutTarget.UnlockPrivateSpace -> false
             }
 
     private fun intentUriContainsQueryPlaceholder(uri: String): Boolean =
@@ -961,7 +963,8 @@ internal constructor(
                     is ShortcutTarget.LauncherShortcut -> target.packageName
                     is ShortcutTarget.DeepLink,
                     is ShortcutTarget.PhoneDial,
-                    is ShortcutTarget.WidgetPage -> null
+                    is ShortcutTarget.WidgetPage,
+                    is ShortcutTarget.UnlockPrivateSpace -> null
                     null -> null
                 } ?: return Process.myUserHandle()
         val app =

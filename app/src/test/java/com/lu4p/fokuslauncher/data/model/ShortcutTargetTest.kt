@@ -67,6 +67,14 @@ class ShortcutTargetTest {
     }
 
     @Test
+    fun `private space unlock target survives persistence`() {
+        val raw = "internal:unlock_private_space"
+        val target = ShortcutTarget.decode(raw)
+        assertEquals(ShortcutTarget.UnlockPrivateSpace, target)
+        assertEquals(raw, ShortcutTarget.encode(target))
+    }
+
+    @Test
     fun `decode unknown internal token returns null`() {
         assertNull(ShortcutTarget.decode("internal:unknown"))
     }
