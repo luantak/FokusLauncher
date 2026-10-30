@@ -514,4 +514,8 @@
     <string name="configuration_backup_details">Esegui il backup di preferenze, preferiti, scorciatoie, categorie personalizzate, nomi delle app, app nascoste, note e del tuo font personalizzato. Lo stile dello sfondo viene salvato, ma l\'immagine dello sfondo di sistema, i widget Android e i permessi restano su questo dispositivo. I backup non sono cifrati e possono contenere dati personali. Conservali in un posto sicuro.</string>
     <string name="configuration_import_confirm">Sostituire la configurazione attuale del launcher con questo backup? I widget Android e i permessi esistenti verranno mantenuti. Le app e le scorciatoie devono essere ancora disponibili su questo dispositivo.</string>
     <string name="configuration_export_success">Configurazione esportata</string>
+    <string name="settings_air_quality_scale">Scala della qualità dell\'aria</string>
+    <string name="settings_air_quality_scale_system">Automatica (regione)</string>
+    <string name="settings_air_quality_scale_european">AQI europea</string>
+    <string name="settings_air_quality_scale_us">AQI USA</string>
 </resources>
