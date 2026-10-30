@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
-import com.lu4p.fokuslauncher.ui.components.LauncherIcon
+
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,7 +32,7 @@ import com.lu4p.fokuslauncher.data.model.HomeShortcut
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.model.stableSelectionKey
 import com.lu4p.fokuslauncher.ui.components.EditorScreenScaffold
-import com.lu4p.fokuslauncher.ui.components.MinimalIcons
+import com.lu4p.fokuslauncher.ui.home.HomeShortcutIcon
 import com.lu4p.fokuslauncher.ui.drawer.DrawerProfileShortcutSectionUi
 import com.lu4p.fokuslauncher.ui.drawer.groupShortcutActionsIntoProfileSections
 import com.lu4p.fokuslauncher.ui.drawer.profileGroupedShortcutItems
@@ -61,6 +61,7 @@ fun EditShortcutsScreen(
     val editShortcuts by viewModel.editRightShortcuts.collectAsStateWithLifecycle()
     val allActions by viewModel.allShortcutActions.collectAsStateWithLifecycle()
     val allApps by viewModel.allInstalledApps.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val profileDisplayNameOverrides by viewModel.profileDisplayNameOverrides.collectAsStateWithLifecycle()
 
     val saveAndBack: () -> Unit = {
@@ -101,6 +102,8 @@ fun EditShortcutsScreen(
                 listState = listState,
                 editShortcuts = editShortcuts,
                 allApps = allApps,
+                viewModel = viewModel,
+                arcticonsPackage = uiState.arcticonsPackage,
                 uncheckedShortcutSections = uncheckedShortcutSections,
                 profileDisplayNameOverrides = profileDisplayNameOverrides,
                 onToggleChecked = { shortcut ->
@@ -132,6 +135,8 @@ private fun ReorderableShortcutList(
         listState: LazyListState,
         editShortcuts: List<HomeShortcut>,
         allApps: List<AppInfo>,
+        viewModel: HomeViewModel,
+        arcticonsPackage: String?,
         uncheckedShortcutSections: List<DrawerProfileShortcutSectionUi>,
         profileDisplayNameOverrides: Map<String, String>,
         onToggleChecked: (HomeShortcut) -> Unit,
@@ -144,6 +149,8 @@ private fun ReorderableShortcutList(
     val openAppLabel = stringResource(R.string.shortcut_open_app)
     val openDialerLabel = stringResource(R.string.shortcut_open_dialer)
     val context = LocalContext.current
+    val loadIcon: suspend (AppInfo) -> android.graphics.drawable.Drawable? = remember(viewModel) { { viewModel.loadArcticonsIcon(it) } }
+    val loadNamedIcon: suspend (String) -> android.graphics.drawable.Drawable? = remember(viewModel) { { viewModel.loadArcticonByName(it) } }
 
     LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
         if (editShortcuts.isNotEmpty()) {
@@ -189,10 +196,13 @@ private fun ReorderableShortcutList(
                         onCheckedChange =
                                 rememberBooleanChangeWithSystemSound { _ -> onToggleChecked(shortcut) },
                 ) {
-                    LauncherIcon(
-                            imageVector = MinimalIcons.iconFor(shortcut.iconName),
+                    HomeShortcutIcon(
+                            shortcut = shortcut,
+                            installedApps = allApps,
+                            arcticonsPackage = arcticonsPackage,
+                            loadIcon = loadIcon,
+                            loadNamedIcon = loadNamedIcon,
                             contentDescription = stringResource(R.string.cd_change_icon),
-                            tint = MaterialTheme.colorScheme.onBackground,
                             iconSize = 24.dp,
                             modifier =
                                     Modifier.clickableWithSystemSound { onOpenIconPicker(index) },
