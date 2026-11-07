@@ -1,0 +1,11 @@
+Unlock Private Space with a home-screen gesture.
+
+Improve long-note layout and music controls on the home screen.
+
+Refresh weather from your current location, round temperatures, and choose European or US air quality scales.
+
+Stop Pomodoro timers and alerts when disabled.
+
+Fix drawer shortcut removal and returning from settings.
+
+Keep navigation bars dark in context menus.
