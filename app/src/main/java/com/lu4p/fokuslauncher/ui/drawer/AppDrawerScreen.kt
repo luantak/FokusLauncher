@@ -656,7 +656,6 @@ private fun DrawerAppListColumn(
         if (showWebSearch) {
             item(key = "drawer_web_search_item") {
                 DrawerWebSearchItem(
-                        query = trimmedQuery,
                         onClick = {
                             focusManager.clearFocus(force = true)
                             onAppClick(LaunchTarget.WebSearch(trimmedQuery))
@@ -1413,7 +1412,6 @@ fun AppListItem(
 
 @Composable
 private fun DrawerWebSearchItem(
-        query: String,
         onClick: () -> Unit,
         modifier: Modifier = Modifier,
         reserveNotificationDotSlot: Boolean = false,
@@ -1463,7 +1461,7 @@ private fun DrawerWebSearchItem(
             Spacer(modifier = Modifier.width(12.dp))
         }
         Text(
-                text = stringResource(R.string.drawer_web_search_shortcut_label, query),
+                text = stringResource(R.string.drawer_web_search_shortcut_label),
                 style = MaterialTheme.typography.bodyLarge,
                 color = textColor,
                 maxLines = 1,

@@ -472,7 +472,7 @@ class AppDrawerScreenTest {
         }
 
         composeTestRule.onNodeWithTag("drawer_web_search_item").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Search for \"rustlang\"").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Search on the web").assertIsDisplayed()
     }
 
     @Test
