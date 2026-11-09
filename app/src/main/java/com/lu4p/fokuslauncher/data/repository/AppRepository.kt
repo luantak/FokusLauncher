@@ -842,7 +842,15 @@ internal constructor(
                             putExtra(SearchManager.QUERY, query)
                             addFlags(flags)
                         }
-                return startDotSearchActivity(launchContext, intent)
+                if (startDotSearchActivity(launchContext, intent)) return true
+                val fallbackIntent =
+                        Intent(
+                                Intent.ACTION_VIEW,
+                                Uri.parse("https://www.google.com/search?q=${Uri.encode(query)}"),
+                        ).apply {
+                            addFlags(flags)
+                        }
+                return startDotSearchActivity(launchContext, fallbackIntent)
             }
             is ShortcutTarget.App -> {
                 val pkg = target.packageName

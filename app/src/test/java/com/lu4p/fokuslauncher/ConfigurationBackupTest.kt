@@ -171,4 +171,17 @@ class ConfigurationBackupTest {
             backup.parse(" ".repeat(ConfigurationBackup.MAX_BYTES + 1))
         }
     }
+
+    @Test
+    fun roundTripPreservesDrawerSearchWebShortcut() = runBlocking {
+        val shortcutKey = androidx.datastore.preferences.core.booleanPreferencesKey("drawer_search_web_shortcut")
+        context.fokusLauncherPreferencesDataStore.edit {
+            it[shortcutKey] = true
+        }
+        val exported = backup.export()
+        context.fokusLauncherPreferencesDataStore.edit { it.clear() }
+        backup.restore(backup.parse(exported))
+        val preferences = context.fokusLauncherPreferencesDataStore.data.first()
+        assertEquals(true, preferences[shortcutKey])
+    }
 }

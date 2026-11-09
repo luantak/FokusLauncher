@@ -56,13 +56,14 @@ internal fun SettingsToggleRow(
         label: String,
         checked: Boolean,
         onCheckedChange: (Boolean) -> Unit,
+        modifier: Modifier = Modifier,
         subtitle: String? = null,
         enabled: Boolean = true
 ) {
     Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier =
-                    Modifier.fillMaxWidth()
+                    modifier.fillMaxWidth()
                             .clickableWithSystemSound(enabled = enabled) { onCheckedChange(!checked) }
                             .padding(horizontal = 24.dp, vertical = 12.dp)
     ) {
@@ -79,7 +80,9 @@ internal fun SettingsToggleRow(
                 Text(
                         text = subtitle,
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.secondary
+                        color =
+                                if (enabled) MaterialTheme.colorScheme.secondary
+                                else MaterialTheme.colorScheme.secondary.copy(alpha = 0.38f)
                 )
             }
         }

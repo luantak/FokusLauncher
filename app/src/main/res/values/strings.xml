@@ -380,6 +380,9 @@
     <string name="settings_drawer_sidebar_categories_subtitle">Replaces the search bar with a vertical category sidebar.</string>
     <string name="settings_drawer_search_auto_launch">Auto launch apps</string>
     <string name="settings_drawer_search_auto_launch_subtitle">When only one app matches your search, open it automatically.</string>
+    <string name="settings_drawer_search_web_shortcut">Web search shortcut in drawer</string>
+    <string name="settings_drawer_search_web_shortcut_subtitle">When auto launch is off, show a shortcut at the bottom of the app list to search the web for your typed query.</string>
+    <string name="drawer_web_search_shortcut_label">Search web for \"%1$s\"</string>
     <string name="settings_drawer_category_rail_side">Category sidebar position</string>
     <string name="settings_drawer_category_rail_side_subtitle">By default, the sidebar is on the right. Long-press a category in the drawer to change its icon.</string>
     <string name="settings_drawer_rail_position_left">Left</string>
