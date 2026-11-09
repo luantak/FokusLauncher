@@ -1377,8 +1377,10 @@ class AppDrawerViewModelTest {
         val handled = viewModel.launchTarget(LaunchTarget.WebSearch("kotlin flow"))
 
         assertTrue(handled)
-        verify { appRepository.launchDotSearch("kotlin flow", DotSearchTargetPreference(), emptyMap(), false) }
-        verify(exactly = 0) { preferencesManager.recordDrawerAppOpen(any()) }
+        verify {
+            appRepository.launchDotSearch("0", null, "kotlin flow", DotSearchTargetMode.SEARCH)
+        }
+        coVerify(exactly = 0) { preferencesManager.recordDrawerAppOpen(any(), any()) }
     }
 
     @Test
@@ -1392,7 +1394,9 @@ class AppDrawerViewModelTest {
 
         viewModel.tryLaunchFirstSearchResult()
 
-        verify { appRepository.launchDotSearch("nonexistent query", any(), any(), any()) }
+        verify {
+            appRepository.launchDotSearch("0", null, "nonexistent query", DotSearchTargetMode.SEARCH)
+        }
         assertEquals("", viewModel.uiState.value.searchQuery)
     }
 
