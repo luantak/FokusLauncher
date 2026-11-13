@@ -158,8 +158,8 @@ All UI strings can be translated in your language through
 
 ### Community
 
-Join the Fokus community on [Discord](https://discord.gg/DHVPC9Ty7g) to get help,
-share feedback, and chat about Fokus.
+If you want to chat about Fokus feel free to join us on Discord
+[here](https://discord.gg/DHVPC9Ty7g).
 
 ## License
 
