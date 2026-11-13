@@ -158,7 +158,7 @@ internal val communityLinks =
                         Icons.Filled.ChatBubble,
                         R.string.settings_matrix_title,
                         R.string.settings_matrix_subtitle,
-                        "https://matrix.to/#/#fokus:matrix.org",
+                        "https://discord.gg/DHVPC9Ty7g",
                 ),
                 CommunityLink(
                         Icons.Outlined.LocalCafe,
