@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="drawer_filter_all_apps">Toutes les applications</string>
     <string name="drawer_filter_private">Privé</string>
     <string name="drawer_filter_work">Professionnel</string>
@@ -477,4 +477,48 @@
     <string name="settings_double_tap_open_app">Choisir l\'appli pour double appui</string>
     <string name="cd_app_icon">Icône d\'appli</string>
     <string name="settings_arcticons_drawer_icons">Icônes d\'applis Arcticons</string>
+    <string name="settings_show_home_note"></string>
+    <string name="settings_air_quality_scale_system"></string>
+    <string name="configuration_import_confirm"></string>
+    <string name="home_note_edit_hint"></string>
+    <string name="edit_home_section_all_apps" translatable="false"></string>
+    <string name="home_note_add_task"></string>
+    <string name="settings_section_drawer_shortcuts"></string>
+    <string name="settings_gestures_subtitle"></string>
+    <string name="settings_two_finger_gestures"></string>
+    <string name="home_note_toggle_task"></string>
+    <string name="settings_air_quality_scale"></string>
+    <string name="configuration_export_success"></string>
+    <string name="configuration_backup_details"></string>
+    <string name="configuration_backup_title"></string>
+    <string name="settings_two_finger_left"></string>
+    <string name="configuration_import"></string>
+    <string name="configuration_backup_failed"></string>
+    <string name="settings_home_app_icons_only"></string>
+    <string name="configuration_backup_busy"></string>
+    <string name="home_note_edit_action"></string>
+    <string name="configuration_export"></string>
+    <string name="settings_home_app_icons"></string>
+    <string name="settings_two_finger_right"></string>
+    <string name="settings_gestures"></string>
+    <string name="settings_no_drawer_shortcuts"></string>
+    <string name="action_add_shortcut_to_drawer"></string>
+    <string name="settings_show_home_note_subtitle"></string>
+    <string name="settings_home_note_folder_local" tools:ignore="MissingTranslation"></string>
+    <string name="settings_two_finger_down"></string>
+    <string name="configuration_backup_subtitle"></string>
+    <string name="configuration_import_success"></string>
+    <string name="cd_remove_drawer_shortcut"></string>
+    <string name="home_note_placeholder"></string>
+    <string name="settings_home_note_folder" tools:ignore="MissingTranslation"></string>
+    <string name="settings_two_finger_up"></string>
+    <string name="settings_air_quality_scale_european"></string>
+    <string name="pomodoro_mode_focus" translatable="false"></string>
+    <string name="home_note_clear" tools:ignore="MissingTranslation"></string>
+    <string name="app_name" translatable="false"></string>
+    <string name="settings_home_app_icons_text"></string>
+    <string name="settings_air_quality_scale_us"></string>
+    <string name="home_note_storage_error" tools:ignore="MissingTranslation"></string>
+    <string name="home_note_edit_title"></string>
+    <string name="settings_home_app_icons_with_label"></string>
 </resources>
