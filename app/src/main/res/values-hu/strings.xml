@@ -365,7 +365,7 @@
     <string name="configuration_backup_details">Beállítások, kedvencek, gyorsparancsok, egyedi kategóriák, alkalmazásnevek, rejtett alkalmazások, jegyzetek és egyedi betűtípusok mentése. Háttérstílus is mentésre kerül viszont a rendszer háttérképe, Android widgetei és hozzáférési engedélyei az eszközön maradnak. A mentések nem titkosítottak és személyes adatokat tárolhatnak. Tartsa őket biztonságban.</string>
     <string name="configuration_export">Beállítások exportálása</string>
     <string name="configuration_import">Beállítások importálása</string>
-    <string name="configuration_import_confirm">Felülírja a jelenlegi beállításokat ezzel a biztonsági mentéssel? A meglévő Android widgetek és engedélyek megmaradnak. Az alkalmazásoknak és a parancsikonoknak továbbra is elérhetőnek kell lenniük ezen az eszközön.</string>
+    <string name="configuration_import_confirm">Felülírja a jelenlegi beállításokat? A meglévő Android widgetek és engedélyek megmaradnak. Az alkalmazásoknak és a gyorsbillentyűknek továbbra is elérhetőnek kell lenniük ezen az eszközön.</string>
     <string name="configuration_export_success">Beállítások exportálva</string>
     <string name="configuration_import_success">Beállítások visszaállítva</string>
     <string name="configuration_backup_failed">Mentés vagy visszaállítás sikertelen. Kérjük válasszon egy érvényes Fokus mentést, és ellenőrize a fájlhozzáférést.</string>
@@ -378,7 +378,7 @@
     <string name="settings_look_section_wallpaper">Háttérkép</string>
     <string name="settings_look_section_notifications">Értesítések</string>
     <string name="settings_drawer_behavior_title">Alkalmazásfiók viselkedése</string>
-    <string name="settings_drawer_behavior_subtitle">Oldalsáv, alkalmazássorrend, automatikus indítás, és keresési billentyűzet</string>
+    <string name="settings_drawer_behavior_subtitle">Oldalsáv, alkalmazássorrend, automatikus indítás, és keresés</string>
     <string name="settings_section_apps">Alkalmazások</string>
     <string name="settings_apps_management_title">Rejtett, átnevezett, és archivált</string>
     <string name="settings_apps_management_subtitle_empty">Nincs menedzselt alkalmazás</string>
@@ -396,14 +396,14 @@
     <string name="settings_show_world_clock_weather">Időjárás megjelenítése a világórákon</string>
     <string name="settings_show_home_pomodoro">Pomodoro időzítő mutatása</string>
     <string name="settings_show_home_pomodoro_subtitle">%1$s időzítő a médialejátszó helyén</string>
-    <string name="settings_show_home_pomodoro_subtitle_grant_notifications">Értesítési engedély szükséges — kapcsolja be hogy az időzítő jelezzen mikor véget ér</string>
+    <string name="settings_show_home_pomodoro_subtitle_grant_notifications">Értesítési hozzáférés szükséges — kapcsolja be hogy az időzítő jelezzen mikor véget ér</string>
     <string name="pomodoro_notification_channel_name">Pomodoro időzítő</string>
-    <string name="pomodoro_notification_channel_description">Jelez mikor a %1$s vagy egy Szünet szakasz véget ér</string>
+    <string name="pomodoro_notification_channel_description">Jelez mikor a %1$s vagy egy Szünet szekció véget ér</string>
     <string name="pomodoro_notification_active_channel_name">Pomodoro folyamatban</string>
-    <string name="pomodoro_notification_active_channel_description">Mutatja a visszaszámlálót míg a szakasz fut</string>
+    <string name="pomodoro_notification_active_channel_description">Mutatja e visszaszámlálót míg a szekció fut</string>
     <string name="pomodoro_notification_active_title">%1$s folyamatban</string>
     <string name="pomodoro_notification_active_body">Hátralévő idő</string>
-    <string name="pomodoro_notification_focus_complete">%1$s szakasz kész</string>
+    <string name="pomodoro_notification_focus_complete">%1$s szekció kész</string>
     <string name="pomodoro_notification_break_complete">Szünet kész</string>
     <string name="settings_show_home_media_or_pomodoro_exclusive">Medialejátszó és a Pomodoro ugyanazt a helyet használja — egyszerre csak egy lehet bekapcsolva</string>
     <string name="settings_pomodoro_title">Pomodoro</string>
