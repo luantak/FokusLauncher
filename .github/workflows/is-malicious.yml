@@ -39,4 +39,4 @@ jobs:
           # is-malicious uses this variable for any compatible provider's key.
           TYPESAFE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           BASE_REF: ${{ github.base_ref }}
-        run: npx --yes is-malicious@0.1.1 . --base-url https://opencode.ai/zen --model jev-1.13-free --diff-from "origin/$BASE_REF"
+        run: npx --yes is-malicious@0.1.1 . --base-url https://opencode.ai/zen --model jev-1.13 --diff-from "origin/$BASE_REF"
