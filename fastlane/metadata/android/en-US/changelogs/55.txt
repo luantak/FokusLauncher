@@ -1,0 +1,3 @@
+Add an optional web search shortcut to the app drawer when automatic app launching is disabled.
+
+Improve translations in German, Basque, Hungarian, Indonesian, Italian, Polish, Brazilian Portuguese, Russian, Turkish, and Traditional Chinese.
