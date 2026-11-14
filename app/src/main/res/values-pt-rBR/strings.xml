@@ -518,4 +518,7 @@
     </plurals>
     <string name="media_play"></string>
     <string name="settings_pomodoro_title"></string>
+    <string name="edit_home_section_all_apps" translatable="false"></string>
+    <string name="pomodoro_mode_focus" translatable="false"></string>
+    <string name="app_name" translatable="false"></string>
 </resources>
