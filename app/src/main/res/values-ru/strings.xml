@@ -362,7 +362,7 @@
     <string name="settings_weblate_title">Помочь с переводом</string>
     <string name="media_unsave">Удалить из библиотеки</string>
     <string name="settings_connect_section">Связь</string>
-    <string name="visual_style_rose">Ярко-розовый</string>
+    <string name="visual_style_rose">Пыльная роза</string>
     <string name="visual_style_sky">Небесный</string>
     <string name="settings_matrix_title">Присоединяйтесь к обсуждению</string>
     <string name="settings_glow_subtitle">Мягкий ореол вокруг текста и значков</string>
@@ -426,7 +426,7 @@
     <string name="settings_look_section_icons">Значки</string>
     <string name="settings_arcticons_drawer_icons_subtitle_missing">Требует Arcticons — включите для установки</string>
     <string name="settings_show_home_air_quality_subtitle">Отображать AQI рядом с температурой</string>
-    <string name="pomodoro_notification_dismiss_body">Закройте уведомление, чтобы остановить будильник и начать следующий сеанс</string>
+    <string name="pomodoro_notification_dismiss_body">Отклоните, чтобы остановить будильник и начать следующий сеанс</string>
     <string name="pomodoro_notification_active_channel_name">Pomodoro в процессе</string>
     <string name="settings_drawer_behavior_title">Поведение меню приложений</string>
     <string name="pomodoro_notification_active_channel_description">Показывает обратный отсчет во время сеанса</string>
@@ -457,7 +457,7 @@
     <string name="pomodoro_decrease">Убрать минуту</string>
     <string name="settings_apps_management_subtitle_empty">Пока нет управляемых приложений</string>
     <string name="settings_look_section_notifications">Уведомления</string>
-    <string name="pomodoro_notification_dismiss_action">Отключить</string>
+    <string name="pomodoro_notification_dismiss_action">Отклонить</string>
     <string name="settings_pomodoro_configure_subtitle">Длительность %1$s и перерывов для домашнего таймера</string>
     <string name="settings_pomodoro_title">Pomodoro</string>
     <string name="settings_arcticons_install_title">Установить Arcticons?</string>
@@ -473,13 +473,13 @@
     <string name="settings_pomodoro_focus_duration">Длительность %1$s</string>
     <plurals name="settings_apps_management_count">
         <item quantity="one">%d управляемое приложение</item>
-        <item quantity="few">%d управляемых приложения</item>
+        <item quantity="few">%d управляемых приложений</item>
         <item quantity="many">%d управляемых приложений</item>
         <item quantity="other">%d управляемых приложений</item>
     </plurals>
     <string name="pomodoro_notification_channel_name">Таймер Pomodoro</string>
     <string name="pomodoro_notification_channel_description">Оповещения об окончании сеанса %1$s или перерыва</string>
-    <string name="settings_double_tap_open_app">Выберите приложение для двойного касания</string>
+    <string name="settings_double_tap_open_app">Выберите приложение для двойного касание</string>
     <string name="settings_show_home_pomodoro">Показывать таймер Pomodoro</string>
     <string name="pomodoro_mode_break">Перерыв</string>
     <string name="cd_app_icon">Значок приложения</string>
