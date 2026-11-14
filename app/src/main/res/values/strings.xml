@@ -559,4 +559,8 @@
     <string name="settings_section_drawer_shortcuts">App drawer shortcuts</string>
     <string name="settings_no_drawer_shortcuts">No added shortcuts. Use the + button beside an app action in the drawer long-press menu.</string>
     <string name="cd_remove_drawer_shortcut">Remove shortcut from app drawer</string>
+    <string name="discord_invitation_title">Help shape Fokus</string>
+    <string name="discord_invitation_body">Join our Discord community to share ideas, get help, and see what’s coming next.</string>
+    <string name="discord_invitation_join">Join Discord</string>
+    <string name="discord_invitation_decline">No thanks</string>
 </resources>

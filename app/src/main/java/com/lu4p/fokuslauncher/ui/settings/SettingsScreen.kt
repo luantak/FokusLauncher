@@ -48,6 +48,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun SettingsScreen(
         viewModel: SettingsViewModel = hiltViewModel(),
+        discordInvitationViewModel: DiscordInvitationViewModel = hiltViewModel(),
         onNavigateBack: () -> Unit = {},
         onEditHomeScreen: () -> Unit = {},
         onEditRightShortcuts: () -> Unit = {},
@@ -66,6 +67,8 @@ fun SettingsScreen(
 
     val showResetConfirm = remember { mutableStateOf(false) }
 
+    DiscordInvitationHost(viewModel = discordInvitationViewModel)
+
     Column(
             modifier =
                     Modifier.fillMaxSize()
@@ -81,6 +84,7 @@ fun SettingsScreen(
 
         SettingsHubContent(
                 viewModel = viewModel,
+                discordInvitationViewModel = discordInvitationViewModel,
                 uiState = uiState,
                 context = context,
                 onOpenAppearanceSettings = onOpenAppearanceSettings,
@@ -110,6 +114,7 @@ fun SettingsScreen(
 @Composable
 private fun SettingsHubContent(
         viewModel: SettingsViewModel,
+        discordInvitationViewModel: DiscordInvitationViewModel,
         uiState: SettingsUiState,
         context: Context,
         onOpenAppearanceSettings: () -> Unit,
@@ -124,6 +129,7 @@ private fun SettingsHubContent(
         onOpenGesturesSettings: () -> Unit,
         onShowResetConfirm: () -> Unit,
 ) {
+    val scope = rememberCoroutineScope()
     val homeScreenSubpageRows =
             listOf(
                     SubpageNavRow(
@@ -284,11 +290,17 @@ private fun SettingsHubContent(
                         )
                     },
                     onClick = {
-                        context.startActivity(
-                                Intent(Intent.ACTION_VIEW, link.url.toUri()).apply {
-                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                }
-                        )
+                        if (link.url == DISCORD_COMMUNITY_URL) {
+                            scope.launch {
+                                discordInvitationViewModel.openDiscordLink { context.openDiscordCommunity() }
+                            }
+                        } else {
+                            context.startActivity(
+                                    Intent(Intent.ACTION_VIEW, link.url.toUri()).apply {
+                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    }
+                            )
+                        }
                     },
             )
         }

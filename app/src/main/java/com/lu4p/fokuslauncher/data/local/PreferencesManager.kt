@@ -207,6 +207,11 @@ private constructor(
         private val DRAWER_SCROLL_TO_TOP_AUTO_KEYBOARD_KEY =
                 booleanPreferencesKey("drawer_scroll_to_top_auto_keyboard")
         private val HAS_COMPLETED_ONBOARDING_KEY = booleanPreferencesKey("has_completed_onboarding")
+        // Install-local history: deliberately excluded from ConfigurationBackup's portable whitelist.
+        private const val LEGACY_DISCORD_INVITATION_COMPLETION = -1L
+        private val DISCORD_INVITATION_COMPLETED_AT_KEY =
+                longPreferencesKey("discord_invitation_onboarding_completed_at_ms")
+        private val DISCORD_INVITATION_OUTCOME_KEY = stringPreferencesKey("discord_invitation_outcome")
         private val ONBOARDING_REACHED_SET_DEFAULT_KEY = booleanPreferencesKey("onboarding_reached_set_default")
         /**
          * User completed the in-app prominent AccessibilityService disclosure (checkbox + continue).
@@ -1022,11 +1027,55 @@ private constructor(
     val hasCompletedOnboardingFlow: Flow<Boolean> =
             prefFlow(HAS_COMPLETED_ONBOARDING_KEY, false)
 
-    suspend fun setHasCompletedOnboarding(completed: Boolean) {
+    suspend fun setHasCompletedOnboarding(
+            completed: Boolean,
+            completedAtEpochMs: Long = System.currentTimeMillis(),
+    ) {
         dataStore.edit { prefs ->
+            if (completed && prefs[HAS_COMPLETED_ONBOARDING_KEY] != true &&
+                    !prefs.contains(DISCORD_INVITATION_COMPLETED_AT_KEY)) {
+                prefs[DISCORD_INVITATION_COMPLETED_AT_KEY] = completedAtEpochMs
+            }
             prefs[HAS_COMPLETED_ONBOARDING_KEY] = completed
             if (completed) prefs.remove(ONBOARDING_REACHED_SET_DEFAULT_KEY)
         }
+    }
+
+    val discordInvitationOutcomeFlow: Flow<DiscordInvitationOutcome> =
+            dataStore.data.map { prefs ->
+                DiscordInvitationOutcome.entries.firstOrNull { it.name == prefs[DISCORD_INVITATION_OUTCOME_KEY] }
+                        ?: DiscordInvitationOutcome.NOT_SHOWN
+            }
+
+    suspend fun recordDiscordInvitationDismissed() {
+        dataStore.edit { prefs ->
+            if (prefs[DISCORD_INVITATION_OUTCOME_KEY] == DiscordInvitationOutcome.SHOWN.name) {
+                prefs[DISCORD_INVITATION_OUTCOME_KEY] = DiscordInvitationOutcome.DISMISSED.name
+            }
+        }
+    }
+
+    suspend fun recordDiscordLinkOpened() {
+        setPref(DISCORD_INVITATION_OUTCOME_KEY, DiscordInvitationOutcome.LINK_OPENED.name)
+    }
+
+    suspend fun claimDiscordInvitation(nowEpochMs: Long): Boolean {
+        var claimed = false
+        dataStore.edit { prefs ->
+            if (prefs[HAS_COMPLETED_ONBOARDING_KEY] != true) return@edit
+            // A completed install without timing metadata predates this feature. New completions
+            // write their timestamp atomically with the onboarding flag, so cannot take this path.
+            val completedAt = prefs[DISCORD_INVITATION_COMPLETED_AT_KEY] ?: LEGACY_DISCORD_INVITATION_COMPLETION.also {
+                prefs[DISCORD_INVITATION_COMPLETED_AT_KEY] = it
+            }
+            val eligible = completedAt == LEGACY_DISCORD_INVITATION_COMPLETION || (nowEpochMs >= completedAt &&
+                    nowEpochMs - completedAt >= java.util.concurrent.TimeUnit.DAYS.toMillis(3))
+            if (eligible && !prefs.contains(DISCORD_INVITATION_OUTCOME_KEY)) {
+                prefs[DISCORD_INVITATION_OUTCOME_KEY] = DiscordInvitationOutcome.SHOWN.name
+                claimed = true
+            }
+        }
+        return claimed
     }
 
     suspend fun setOnboardingReachedSetDefault(reached: Boolean) {
@@ -1267,9 +1316,17 @@ private constructor(
 
     suspend fun getLongLockLastScreenOffAtMs(): Long = longLockLastScreenOffAtMsFlow.first()
 
-    /** Clears all preferences, equivalent to clearing app storage. */
+    /** Resets user settings, retaining install-local invitation history. */
     suspend fun clearAll() {
-        noteStorage.withLock { dataStore.edit { prefs -> prefs.clear() } }
+        noteStorage.withLock {
+            dataStore.edit { prefs ->
+                val completedAt = prefs[DISCORD_INVITATION_COMPLETED_AT_KEY]
+                val outcome = prefs[DISCORD_INVITATION_OUTCOME_KEY]
+                prefs.clear()
+                if (completedAt != null) prefs[DISCORD_INVITATION_COMPLETED_AT_KEY] = completedAt
+                if (outcome != null) prefs[DISCORD_INVITATION_OUTCOME_KEY] = outcome
+            }
+        }
     }
 
     // --- Parsing ---
