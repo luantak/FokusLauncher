@@ -516,4 +516,11 @@
         <item quantity="many">%d minutos</item>
         <item quantity="other">%d minutos</item>
     </plurals>
+    <string name="settings_drawer_search_web_shortcut">Atalho de pesquisa na web</string>
+    <string name="settings_drawer_search_web_shortcut_subtitle">Quando o início automático estiver desativado, mostre um atalho na parte inferior da lista de aplicativos para pesquisar na web o que você digitou.</string>
+    <string name="drawer_web_search_shortcut_label">Pesquisar na web</string>
+    <string name="discord_invitation_title">Ajude a melhorar o Fokus</string>
+    <string name="discord_invitation_body">Entre na nossa comunidade no Discord para compartilhar ideias, tirar dúvidas e ver as novidades que estão por vir.</string>
+    <string name="discord_invitation_join">Junte-se ao Discord</string>
+    <string name="discord_invitation_decline">Não obrigado</string>
 </resources>
