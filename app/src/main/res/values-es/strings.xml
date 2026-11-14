@@ -270,7 +270,7 @@
     <string name="pomodoro_notification_active_channel_description">Mostrar la cuenta regresiva mientras una sesión está en curso</string>
     <string name="settings_show_home_media_or_pomodoro_exclusive">Los controles de multimedia y el Pomodoro comparten el mismo espacio — solo uno puede estar activo</string>
     <string name="settings_show_world_clock_weather_subtitle">Busca las condiciones según la etiqueta de cada ciudad</string>
-    <string name="settings_dot_search_add_search_target_app">Buscar destino</string>
+    <string name="settings_dot_search_add_search_target_app">Destino de búsqueda</string>
     <string name="settings_section_apps">Aplicaciones</string>
     <string name="settings_world_clock_cities_empty">Aún no hay ciudades</string>
     <string name="settings_look_section_colors">Colores</string>
