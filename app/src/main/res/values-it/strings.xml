@@ -518,7 +518,4 @@
     <string name="settings_air_quality_scale_system">Automatica (regione)</string>
     <string name="settings_air_quality_scale_european">AQI europea</string>
     <string name="settings_air_quality_scale_us">AQI USA</string>
-    <string name="edit_home_section_all_apps" translatable="false"></string>
-    <string name="pomodoro_mode_focus" translatable="false"></string>
-    <string name="app_name" translatable="false"></string>
 </resources>
