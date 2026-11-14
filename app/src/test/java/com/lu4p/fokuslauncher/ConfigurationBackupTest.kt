@@ -166,6 +166,33 @@ class ConfigurationBackupTest {
     }
 
     @Test
+    fun portableConfigurationNeverExportsOrResetsInvitationHistory() = runBlocking {
+        val preferences = com.lu4p.fokuslauncher.data.local.PreferencesManager(context)
+        val emptySnapshot = backup.parse(backup.export())
+        preferences.setHasCompletedOnboarding(true, 1_000L)
+        backup.restore(emptySnapshot)
+        org.junit.Assert.assertFalse(preferences.claimDiscordInvitation(1_000L))
+        val timestamp = androidx.datastore.preferences.core.longPreferencesKey("discord_invitation_onboarding_completed_at_ms")
+        assertEquals(1_000L, context.fokusLauncherPreferencesDataStore.data.first()[timestamp])
+        org.junit.Assert.assertTrue(preferences.claimDiscordInvitation(Long.MAX_VALUE))
+        for (expected in listOf(
+                com.lu4p.fokuslauncher.data.local.DiscordInvitationOutcome.SHOWN,
+                com.lu4p.fokuslauncher.data.local.DiscordInvitationOutcome.DISMISSED,
+                com.lu4p.fokuslauncher.data.local.DiscordInvitationOutcome.LINK_OPENED,
+        )) {
+            if (expected == com.lu4p.fokuslauncher.data.local.DiscordInvitationOutcome.DISMISSED) preferences.recordDiscordInvitationDismissed()
+            if (expected == com.lu4p.fokuslauncher.data.local.DiscordInvitationOutcome.LINK_OPENED) preferences.recordDiscordLinkOpened()
+            val exported = org.json.JSONObject(backup.export()).getJSONObject("preferences")
+            org.junit.Assert.assertFalse(exported.has("discord_invitation_outcome"))
+            org.junit.Assert.assertFalse(exported.has("discord_invitation_onboarding_completed_at_ms"))
+            backup.restore(emptySnapshot)
+            assertEquals(expected, preferences.discordInvitationOutcomeFlow.first())
+            assertEquals(1_000L, context.fokusLauncherPreferencesDataStore.data.first()[timestamp])
+            org.junit.Assert.assertFalse(preferences.claimDiscordInvitation(Long.MAX_VALUE))
+        }
+    }
+
+    @Test
     fun oversizedBackupIsRejected() {
         org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
             backup.parse(" ".repeat(ConfigurationBackup.MAX_BYTES + 1))

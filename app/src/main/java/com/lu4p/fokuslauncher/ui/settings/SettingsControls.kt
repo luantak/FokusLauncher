@@ -140,6 +140,8 @@ internal data class CommunityLink(
         val url: String,
 )
 
+internal const val DISCORD_COMMUNITY_URL = "https://discord.gg/DHVPC9Ty7g"
+
 internal val communityLinks =
         listOf(
                 CommunityLink(
@@ -158,7 +160,7 @@ internal val communityLinks =
                         Icons.Filled.ChatBubble,
                         R.string.settings_matrix_title,
                         R.string.settings_matrix_subtitle,
-                        "https://discord.gg/DHVPC9Ty7g",
+                        DISCORD_COMMUNITY_URL,
                 ),
                 CommunityLink(
                         Icons.Outlined.LocalCafe,
