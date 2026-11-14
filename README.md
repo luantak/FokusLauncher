@@ -1,6 +1,7 @@
 # Fokus Launcher
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![Join Discord](https://img.shields.io/badge/Join-Discord-5865F2?logo=discord&logoColor=white)](https://discord.gg/DHVPC9Ty7g)
 <a href="https://hosted.weblate.org/engage/fokus-launcher/">
 <img src="https://hosted.weblate.org/widget/fokus-launcher/fokus-launcher-app/svg-badge.svg" alt="Translation status" />
 </a>
