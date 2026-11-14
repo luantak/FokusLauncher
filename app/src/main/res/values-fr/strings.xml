@@ -465,7 +465,7 @@
     <string name="settings_paypal_title">Acheter moi une pause</string>
     <string name="settings_countdown_clear">Réinitialiser le décompte</string>
     <string name="settings_pomodoro_configure_subtitle">%1$s et les durées de pause pour la minuterie d\'accueil</string>
-    <string name="settings_arcticons_install_title">Installer Arcticons ?</string>
+    <string name="settings_arcticons_install_title">Installer Arcticons ?</string>
     <string name="settings_show_home_pomodoro_subtitle">%1$s minuterie au lieu des contrôles de média</string>
     <string name="settings_countdown_edit">Modifier le décompte</string>
     <string name="settings_double_tap">Double appui</string>
