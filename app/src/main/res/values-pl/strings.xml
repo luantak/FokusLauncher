@@ -507,12 +507,12 @@
     <string name="configuration_backup_details">Tworzy kopię zapasową preferencji, ulubionych, skrótów, niestandardowych kategorii, nazw aplikacji, ukrytych aplikacji, notatek i niestandardowej czcionki. Styl tapety jest zapisywany, ale systemowy obraz tapety, widżety Androida i uprawnienia pozostają na tym urządzeniu. Kopie zapasowe nie są szyfrowane i mogą zawierać osobiste dane. Trzymaj je w bezpiecznym miejscu.</string>
     <string name="configuration_export">Eksportuj konfigurację</string>
     <string name="configuration_import">Importuj konfigurację</string>
-    <string name="configuration_import_confirm">Zamienić aktualną konfigurację launchera na tę z kopii zapasowej? Istniejące widżety Androida i uprawnienia zostaną zachowane. Aplikacje i skróty muszą być dostępne na tym urządzeniu.</string>
+    <string name="configuration_import_confirm">Zamienić aktualną konfigurację launchera na tą z kopii zapasowej? Istniejące widżety Androida i uprawnienia będą zatrzymane. Aplikacje i skróty muszą być dostępne na tym urządzeniu.</string>
     <string name="configuration_export_success">Konfiguracja wyeksportowana</string>
     <string name="configuration_import_success">Konfiguracja przywrócona</string>
     <string name="configuration_backup_failed">Nie udało się zapisać lub przywrócić konfiguracji. Wybierz prawidłową kopię zapasową Fokus i sprawdź dostęp do pliku.</string>
     <string name="settings_show_home_note">Pokaż notatkę</string>
-    <string name="settings_show_home_note_subtitle">Notatka na ekranie głównym. Stuknij w zadania, aby je odhaczać, przytrzymaj, aby je edytować.</string>
+    <string name="settings_show_home_note_subtitle">Notatka na ekranie głównym. Stuknij w zadania, aby je odznaczać, przytrzymaj, aby je edytować.</string>
     <string name="home_note_edit_action">Edytuj notatkę</string>
     <string name="home_note_add_task">Dodaj zadanie</string>
     <string name="home_note_toggle_task">Przełącz %1$s</string>
