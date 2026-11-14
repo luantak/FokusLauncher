@@ -249,7 +249,7 @@ class ConfigurationBackup @Inject constructor(
                 "show_home_air_quality", "show_world_clock_weather", "show_home_battery",
                 "show_home_media", "show_home_pomodoro", "show_home_screen_time", "show_home_note",
                 "show_notification_indicators", "drawer_sidebar_categories", "drawer_category_sidebar_on_left",
-                "drawer_search_auto_launch", "drawer_scroll_to_top_auto_keyboard", "launcher_glow_enabled",
+                "drawer_search_auto_launch", "drawer_search_web_shortcut", "drawer_scroll_to_top_auto_keyboard", "launcher_glow_enabled",
                 "use_arcticons_drawer_icons", "home_uses_photo_wallpaper", "allow_landscape_rotation",
                 "double_tap_empty_lock", "long_lock_return_home",
             ).forEach { put(it, Type.BOOLEAN) }

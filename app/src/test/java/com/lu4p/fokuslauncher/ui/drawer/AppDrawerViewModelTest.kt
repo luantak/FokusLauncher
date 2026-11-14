@@ -77,6 +77,7 @@ class AppDrawerViewModelTest {
     private val drawerCustomAppOrderFlow = MutableStateFlow<Map<String, List<String>>>(emptyMap())
     private val drawerSidebarCategoriesFlow = MutableStateFlow(false)
     private val drawerSearchAutoLaunchFlow = MutableStateFlow(true)
+    private val drawerSearchWebShortcutFlow = MutableStateFlow(false)
     private val drawerDotSearchDefaultFlow = MutableStateFlow(DotSearchTargetPreference())
     private val drawerDotSearchAliasesFlow =
             MutableStateFlow<Map<Char, DotSearchTargetPreference>>(emptyMap())
@@ -144,6 +145,7 @@ class AppDrawerViewModelTest {
         every { preferencesManager.drawerCustomAppOrderFlow } returns drawerCustomAppOrderFlow
         every { preferencesManager.drawerSidebarCategoriesFlow } returns drawerSidebarCategoriesFlow
         every { preferencesManager.drawerSearchAutoLaunchFlow } returns drawerSearchAutoLaunchFlow
+        every { preferencesManager.drawerSearchWebShortcutFlow } returns drawerSearchWebShortcutFlow
         every { preferencesManager.showNotificationIndicatorsFlow } returns flowOf(false)
         every { preferencesManager.notificationIndicatorStyleFlow } returns
                 flowOf(NotificationIndicatorStyle.DOT)
@@ -1349,5 +1351,66 @@ class AppDrawerViewModelTest {
         assertFalse(state.isPrivateSpaceUnlocked)
         assertTrue(state.privateSpaceApps.isEmpty())
         assertFalse(state.showMenu)
+    }
+
+    @Test
+    fun `showWebSearchEntry is true only when autoLaunch is false and webShortcut is true`() {
+        drawerSearchAutoLaunchFlow.value = true
+        drawerSearchWebShortcutFlow.value = false
+        assertFalse(viewModel.uiState.value.showWebSearchEntry)
+
+        drawerSearchAutoLaunchFlow.value = true
+        drawerSearchWebShortcutFlow.value = true
+        assertFalse(viewModel.uiState.value.showWebSearchEntry)
+
+        drawerSearchAutoLaunchFlow.value = false
+        drawerSearchWebShortcutFlow.value = false
+        assertFalse(viewModel.uiState.value.showWebSearchEntry)
+
+        drawerSearchAutoLaunchFlow.value = false
+        drawerSearchWebShortcutFlow.value = true
+        assertTrue(viewModel.uiState.value.showWebSearchEntry)
+    }
+
+    @Test
+    fun `launchTarget with WebSearch delegates to launchDotSearch without recording app open`() {
+        val handled = viewModel.launchTarget(LaunchTarget.WebSearch("kotlin flow"))
+
+        assertTrue(handled)
+        verify {
+            appRepository.launchDotSearch("0", null, "kotlin flow", DotSearchTargetMode.SEARCH)
+        }
+        coVerify(exactly = 0) { preferencesManager.recordDrawerAppOpen(any(), any()) }
+    }
+
+    @Test
+    fun `tryLaunchFirstSearchResult triggers web search when no apps match and showWebSearchEntry is true`() {
+        drawerSearchAutoLaunchFlow.value = false
+        drawerSearchWebShortcutFlow.value = true
+        assertTrue(viewModel.uiState.value.showWebSearchEntry)
+
+        viewModel.onSearchQueryChanged("nonexistent query")
+        assertTrue(flatFiltered(viewModel.uiState.value).isEmpty())
+
+        viewModel.tryLaunchFirstSearchResult()
+
+        verify {
+            appRepository.launchDotSearch("0", null, "nonexistent query", DotSearchTargetMode.SEARCH)
+        }
+        assertEquals("", viewModel.uiState.value.searchQuery)
+    }
+
+    @Test
+    fun `tryLaunchFirstSearchResult does not trigger web search when showWebSearchEntry is false`() {
+        drawerSearchAutoLaunchFlow.value = false
+        drawerSearchWebShortcutFlow.value = false
+        assertFalse(viewModel.uiState.value.showWebSearchEntry)
+
+        viewModel.onSearchQueryChanged("nonexistent query")
+        assertTrue(flatFiltered(viewModel.uiState.value).isEmpty())
+
+        viewModel.tryLaunchFirstSearchResult()
+
+        verify(exactly = 0) { appRepository.launchDotSearch(any(), any(), any(), any()) }
     }
 }

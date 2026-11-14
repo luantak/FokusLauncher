@@ -136,6 +136,8 @@ data class SettingsUiState(
         val drawerSidebarCategories: Boolean = false,
         /** Launch the app when search narrows to a single match (drawer search). */
         val drawerSearchAutoLaunch: Boolean = true,
+        /** Web search shortcut in drawer when auto launch is off. */
+        val drawerSearchWebShortcut: Boolean = false,
         /** Auto-launch keyboard when scrolling to the top of the app drawer. */
         val drawerScrollToTopAutoKeyboard: Boolean = false,
         /** When true, category rail is on the left; default false places it on the right. */
@@ -429,8 +431,9 @@ constructor(
                                     preferencesManager.drawerSidebarCategoriesFlow,
                                     preferencesManager.drawerAppSortModeFlow,
                                     preferencesManager.drawerSearchAutoLaunchFlow,
+                                    preferencesManager.drawerSearchWebShortcutFlow,
                                     preferencesManager.drawerScrollToTopAutoKeyboardFlow,
-                            ) { sidebarCategories, sortMode, searchAutoLaunch, scrollToTopAutoKeyboard ->
+                            ) { sidebarCategories, sortMode, searchAutoLaunch, searchWebShortcut, scrollToTopAutoKeyboard ->
                                 DrawerPrefs(
                                         swipeRightTarget = null, // placeholder
                                         preferredWeatherTap = null, // placeholder
@@ -438,6 +441,7 @@ constructor(
                                         drawerSidebarCategories = sidebarCategories,
                                         drawerAppSortMode = sortMode,
                                         drawerSearchAutoLaunch = searchAutoLaunch,
+                                        drawerSearchWebShortcut = searchWebShortcut,
                                         drawerScrollToTopAutoKeyboard = scrollToTopAutoKeyboard,
                                 )
                             },
@@ -646,6 +650,7 @@ constructor(
                         temperatureUnit = homeWidgetItems.temperatureUnit,
                         drawerSidebarCategories = drawer.drawerSidebarCategories,
                         drawerSearchAutoLaunch = drawer.drawerSearchAutoLaunch,
+                        drawerSearchWebShortcut = drawer.drawerSearchWebShortcut,
                         drawerScrollToTopAutoKeyboard = drawer.drawerScrollToTopAutoKeyboard,
                         drawerCategorySidebarOnLeft = lockRail.drawerCategorySidebarOnLeft,
                         categoryDrawerIconOverrides = lockRail.categoryDrawerIconOverrides,
@@ -757,6 +762,7 @@ constructor(
             val drawerSidebarCategories: Boolean,
             val drawerAppSortMode: DrawerAppSortMode,
             val drawerSearchAutoLaunch: Boolean,
+            val drawerSearchWebShortcut: Boolean,
             val drawerScrollToTopAutoKeyboard: Boolean,
     )
 
@@ -1299,6 +1305,9 @@ constructor(
 
     fun setDrawerSearchAutoLaunch(enabled: Boolean) =
             launchPreferences { setDrawerSearchAutoLaunch(enabled) }
+
+    fun setDrawerSearchWebShortcut(enabled: Boolean) =
+            launchPreferences { setDrawerSearchWebShortcut(enabled) }
 
     fun setDrawerScrollToTopAutoKeyboard(enabled: Boolean) =
             launchPreferences { setDrawerScrollToTopAutoKeyboard(enabled) }

@@ -84,6 +84,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -112,6 +113,7 @@ import com.lu4p.fokuslauncher.ui.components.SheetInlineRenameTitleRow
 import com.lu4p.fokuslauncher.ui.settings.CategoryIconPickerScreen
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
 import com.lu4p.fokuslauncher.ui.util.categoryChipDisplayLabel
+import com.lu4p.fokuslauncher.ui.util.clickableWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.combinedClickableWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.rememberClickWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.resolvedCategoryDrawerIconName
@@ -641,6 +643,27 @@ private fun DrawerAppListColumn(
                         notificationIndicatorStyle = uiState.notificationIndicatorStyle,
                         notificationIndicatorColor = uiState.notificationIndicatorColor,
                         appsWithNotifications = uiState.appsWithNotifications,
+                        useArcticonsDrawerIcons = uiState.useArcticonsDrawerIcons,
+                )
+            }
+        }
+        val trimmedQuery = uiState.searchQuery.trim()
+        val showWebSearch =
+                uiState.showWebSearchEntry &&
+                        !uiState.drawerReorderSessionActive &&
+                        trimmedQuery.isNotEmpty() &&
+                        !DotSearchSyntax.isPossibleDotSearchPrefix(trimmedQuery)
+        if (showWebSearch) {
+            item(key = "drawer_web_search_item") {
+                DrawerWebSearchItem(
+                        onClick = {
+                            focusManager.clearFocus(force = true)
+                            onAppClick(LaunchTarget.WebSearch(trimmedQuery))
+                        },
+                        reserveNotificationDotSlot =
+                                uiState.showNotificationIndicators &&
+                                        uiState.notificationIndicatorStyle ==
+                                                NotificationIndicatorStyle.DOT,
                         useArcticonsDrawerIcons = uiState.useArcticonsDrawerIcons,
                 )
             }
@@ -1383,6 +1406,66 @@ fun AppListItem(
                 text = app.label,
                 style = MaterialTheme.typography.bodyLarge,
                 color = labelColor,
+        )
+    }
+}
+
+@Composable
+private fun DrawerWebSearchItem(
+        onClick: () -> Unit,
+        modifier: Modifier = Modifier,
+        reserveNotificationDotSlot: Boolean = false,
+        useArcticonsDrawerIcons: Boolean = false,
+) {
+    val textColor = MaterialTheme.colorScheme.onBackground
+    Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier =
+                    modifier.fillMaxWidth()
+                            .clickableWithSystemSound(onClick = onClick)
+                            .padding(horizontal = 24.dp, vertical = 12.dp)
+                            .heightIn(min = 56.dp)
+                            .testTag("drawer_web_search_item"),
+    ) {
+        if (reserveNotificationDotSlot) {
+            Box(
+                    modifier =
+                            Modifier.size(8.dp)
+                                    .background(
+                                            color = Color.Transparent,
+                                            shape = CircleShape,
+                                    ),
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+        }
+        if (useArcticonsDrawerIcons) {
+            Box(
+                    modifier = Modifier.size(ArcticonsDrawerIconSlotSize),
+                    contentAlignment = Alignment.Center,
+            ) {
+                LauncherIcon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = null,
+                        tint = textColor,
+                        iconSize = ArcticonsDrawerIconPlaceholderSize,
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+        } else {
+            LauncherIcon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = null,
+                    tint = textColor,
+                    iconSize = 20.dp,
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+        }
+        Text(
+                text = stringResource(R.string.drawer_web_search_shortcut_label),
+                style = MaterialTheme.typography.bodyLarge,
+                color = textColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
         )
     }
 }

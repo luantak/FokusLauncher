@@ -107,6 +107,8 @@ data class AppDrawerUiState(
         val appsWithNotifications: Set<String> = emptySet(),
         /** Opt-in Arcticons icons beside drawer app labels (requires pack installed). */
         val useArcticonsDrawerIcons: Boolean = false,
+        /** When true, a web search shortcut is appended to the drawer list during search. */
+        val showWebSearchEntry: Boolean = false,
 )
 
 sealed interface DrawerEvent {
@@ -125,6 +127,7 @@ sealed interface LaunchTarget {
             val componentName: ComponentName,
             val userHandle: UserHandle
     ) : LaunchTarget
+    data class WebSearch(val query: String) : LaunchTarget
 }
 
 fun launchTargetFromAppInfo(app: AppInfo): LaunchTarget {
@@ -429,8 +432,14 @@ constructor(
 
     private fun observeDrawerSearchAutoLaunch() {
         viewModelScope.launch {
-            preferencesManager.drawerSearchAutoLaunchFlow.collect { enabled ->
-                drawerSearchAutoLaunchEnabled = enabled
+            combine(
+                    preferencesManager.drawerSearchAutoLaunchFlow,
+                    preferencesManager.drawerSearchWebShortcutFlow,
+            ) { autoLaunch, webShortcut ->
+                drawerSearchAutoLaunchEnabled = autoLaunch
+                !autoLaunch && webShortcut
+            }.collect { showWebSearch ->
+                _uiState.update { it.copy(showWebSearchEntry = showWebSearch) }
             }
         }
     }
@@ -1100,16 +1109,24 @@ constructor(
         if (firstMain != null) {
             return launchTarget(launchTargetFromAppInfo(firstMain))
         }
-        val firstPrivate = state.filteredPrivateSpaceApps.firstOrNull() ?: return false
-        val cn = firstPrivate.componentName ?: return false
-        val uh = firstPrivate.userHandle ?: return false
-        return launchTarget(
-                LaunchTarget.PrivateApp(
-                        packageName = firstPrivate.packageName,
-                        componentName = cn,
-                        userHandle = uh
-                )
-        )
+        val firstPrivate = state.filteredPrivateSpaceApps.firstOrNull()
+        if (firstPrivate != null) {
+            val cn = firstPrivate.componentName ?: return false
+            val uh = firstPrivate.userHandle ?: return false
+            return launchTarget(
+                    LaunchTarget.PrivateApp(
+                            packageName = firstPrivate.packageName,
+                            componentName = cn,
+                            userHandle = uh
+                    )
+            )
+        }
+        if (state.showWebSearchEntry) {
+            val ok = launchTarget(LaunchTarget.WebSearch(trimmed))
+            if (ok) resetSearchState()
+            return ok
+        }
+        return false
     }
 
     private fun launchDotSearchWithPreference(
@@ -1204,6 +1221,8 @@ constructor(
                             )
                     is LaunchTarget.PrivateApp ->
                             privateSpaceManager.launchApp(target.componentName, target.userHandle)
+                    is LaunchTarget.WebSearch ->
+                            launchDotSearchWithPreference(drawerDotSearchDefault, target.query.trim())
                 }
         if (ok) {
             viewModelScope.launch {
@@ -1220,6 +1239,9 @@ constructor(
                                     target.packageName,
                                     target.userHandle
                             )
+                    is LaunchTarget.WebSearch -> {
+                        // Web search is not an installed app open
+                    }
                 }
             }
         }

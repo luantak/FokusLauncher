@@ -454,4 +454,45 @@ class AppDrawerScreenTest {
         }
         composeTestRule.onNodeWithText("WORK PROFILE").assertIsDisplayed()
     }
+
+    @Test
+    fun appDrawer_showsWebSearchItem_whenEnabledAndNonEmptyQuery() {
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                AppDrawerContent(
+                    uiState = singleProfileState(testApps, searchQuery = "rustlang").copy(
+                        showWebSearchEntry = true
+                    ),
+                    onSearchQueryChanged = {},
+                    onCategorySelected = {},
+                    onAppClick = {},
+                    onSettingsClick = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("drawer_web_search_item").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Search on the web").assertIsDisplayed()
+    }
+
+    @Test
+    fun appDrawer_hidesWebSearchItem_whenQueryIsDotSearch() {
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                AppDrawerContent(
+                    uiState = singleProfileState(testApps, searchQuery = ".rustlang").copy(
+                        showWebSearchEntry = true
+                    ),
+                    onSearchQueryChanged = {},
+                    onCategorySelected = {},
+                    onAppClick = {},
+                    onSettingsClick = {}
+                )
+            }
+        }
+
+        composeTestRule.onAllNodesWithTag("drawer_web_search_item").fetchSemanticsNodes().also {
+            assertEquals(0, it.size)
+        }
+    }
 }

@@ -54,6 +54,16 @@ fun DrawerBehaviorSettingsScreen(
                         onCheckedChange = viewModel::setDrawerSearchAutoLaunch,
                 )
             }
+            item {
+                SettingsToggleRow(
+                        label = stringResource(R.string.settings_drawer_search_web_shortcut),
+                        subtitle =
+                                stringResource(R.string.settings_drawer_search_web_shortcut_subtitle),
+                        checked = !uiState.drawerSearchAutoLaunch && uiState.drawerSearchWebShortcut,
+                        onCheckedChange = viewModel::setDrawerSearchWebShortcut,
+                        enabled = !uiState.drawerSearchAutoLaunch,
+                )
+            }
             if (!uiState.drawerSidebarCategories) {
                 item {
                     SettingsToggleRow(

@@ -204,6 +204,12 @@ private constructor(
          */
         private val DRAWER_SEARCH_AUTO_LAUNCH_KEY =
                 booleanPreferencesKey("drawer_search_auto_launch")
+        /**
+         * When true (and auto launch is false), shows a shortcut at the bottom of the drawer
+         * to search the web for the current query.
+         */
+        private val DRAWER_SEARCH_WEB_SHORTCUT_KEY =
+                booleanPreferencesKey("drawer_search_web_shortcut")
         private val DRAWER_SCROLL_TO_TOP_AUTO_KEYBOARD_KEY =
                 booleanPreferencesKey("drawer_scroll_to_top_auto_keyboard")
         private val HAS_COMPLETED_ONBOARDING_KEY = booleanPreferencesKey("has_completed_onboarding")
@@ -999,8 +1005,19 @@ private constructor(
 
     val drawerSearchAutoLaunchFlow: Flow<Boolean> =
             prefFlow(DRAWER_SEARCH_AUTO_LAUNCH_KEY, true)
-    suspend fun setDrawerSearchAutoLaunch(enabled: Boolean) =
-            setPref(DRAWER_SEARCH_AUTO_LAUNCH_KEY, enabled)
+    suspend fun setDrawerSearchAutoLaunch(enabled: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[DRAWER_SEARCH_AUTO_LAUNCH_KEY] = enabled
+            if (enabled) {
+                prefs[DRAWER_SEARCH_WEB_SHORTCUT_KEY] = false
+            }
+        }
+    }
+
+    val drawerSearchWebShortcutFlow: Flow<Boolean> =
+            prefFlow(DRAWER_SEARCH_WEB_SHORTCUT_KEY, false)
+    suspend fun setDrawerSearchWebShortcut(enabled: Boolean) =
+            setPref(DRAWER_SEARCH_WEB_SHORTCUT_KEY, enabled)
 
     val drawerScrollToTopAutoKeyboardFlow: Flow<Boolean> =
             prefFlow(DRAWER_SCROLL_TO_TOP_AUTO_KEYBOARD_KEY, false)
