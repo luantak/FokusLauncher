@@ -367,7 +367,7 @@
     <string name="pomodoro_notification_dismiss_body">Baztertu alarma gelditzeko eta hurrengo saioa hasteko</string>
     <string name="pomodoro_notification_active_channel_name">Pomodoro martxan</string>
     <string name="settings_drawer_behavior_title">Tiraderaren portaera</string>
-    <string name="pomodoro_notification_active_channel_description">Erakutsi atzerako kontaketa saio bat martxan dagoenean</string>
+    <string name="pomodoro_notification_active_channel_description">Erakutsi atzerako kontaneta saio bat martxan dagoenean</string>
     <string name="settings_show_world_clock_weather_subtitle">Egoera bilatzen du hiriaren etiketaren arabera</string>
     <string name="settings_section_apps">Aplikazioak</string>
     <string name="settings_look_section_colors">Koloreak</string>
@@ -395,14 +395,14 @@
     <string name="pomodoro_notification_channel_description">Abisatu %1$s minutuko saioa edo atsedena amaitzen denean</string>
     <string name="settings_show_home_pomodoro">Erakutsi pomodoro tenporizadore</string>
     <string name="configuration_backup_title">Ezarpenak inportatu/esportatu</string>
-    <string name="configuration_backup_subtitle">Gorde zure ezarpenak edo berrezarri gordetakoak</string>
+    <string name="configuration_backup_subtitle">Gorde zure ezarpenak eta berezarri gordetakoak</string>
     <string name="configuration_backup_busy">Lanean…</string>
-    <string name="configuration_backup_details">Gorde hobespenak, gogokoak, lasterbideak, kategoria pertsonalizatuak, aplikazioen izenak, aplikazio ezkutuak, oharrak eta zure letra-tipo pertsonalizatua. Horma-paperaren estiloa gordetzen da, baina sistemaren horma-paperaren irudia, Android widgetak eta baimenak gailu honetan geratzen dira. Segurtasun-kopiak ez daude zifratuta eta datu pertsonalak izan ditzakete. Gorde itzazu leku seguru batean.</string>
+    <string name="configuration_backup_details">Lehentsitakoak, gogokoak, lasterbideak, kategoria pertsonalizatuak, aplikazioen izenak, aplikazio ezkutuak, oharrak eta zure iturri pertsonalizatua. Wallpaper estiloa gordeta dago, baina Android widgetak eta baimenak gailu honetan geratzen dira. Segurtasun kopiak ez daude zifratuta eta datu pertsonalak izan ditzakete. Gorde itzazu leku seguru batean.</string>
     <string name="configuration_export">Ezarpenak esportatu</string>
     <string name="configuration_import">Ezarpenak inportatu</string>
     <string name="configuration_import_confirm">Aldatu zure abiarazlearen konfigurazioa babeskopia honekin? Androiden dauden widgetak eta baimenak gordeko dira. Aplikazioek eta lasterbideek gailu honetan egon behar dute.</string>
     <string name="configuration_export_success">Ezarpenak esportatuak</string>
-    <string name="configuration_import_success">Ezarpenak berrezarrita</string>
+    <string name="configuration_import_success">Ezarpenak berrezarritak</string>
     <string name="configuration_backup_failed">Ezin izan da konfigurazioa gorde edo berrezarri. Fokusen babeskopia balioduna aukeratu eta fitxategirako sarbidea egiaztatu.</string>
     <string name="settings_air_quality_scale">Airearen kalitatearen eskala</string>
     <string name="settings_air_quality_scale_system">Automatikoa (herrialdea)</string>
@@ -412,7 +412,7 @@
     <string name="settings_show_home_media_or_pomodoro_exclusive">Multimedia kontrolek eta Pomodoroak espazio bera partekatzen dute — bakar bat egon daiteke aktibo</string>
     <string name="settings_pomodoro_title">Pomodoro</string>
     <string name="settings_pomodoro_configure">Pomodororako ezarpenak</string>
-    <string name="settings_pomodoro_configure_subtitle">%1$s eta atsedenaren iraupenak hasierako tenporizadorerako</string>
+    <string name="settings_pomodoro_configure_subtitle">% 1$s-ko iraupenak eta atsedena hasierako tenporizadorerako</string>
     <string name="settings_pomodoro_focus_duration">%1$s-ko iraupena</string>
     <string name="settings_pomodoro_focus_duration_subtitle">Lehenetsitako iraupena %1$s aukeratuta dagoenean</string>
     <string name="settings_pomodoro_break_duration">Atsedenaren iraupena</string>
