@@ -7,7 +7,7 @@
     <string name="drawer_section_profile_numbered">Profiel %1$d</string>
     <string name="search_apps">Zoek apps</string>
     <string name="search_apps_and_actions">Zoek apps en acties</string>
-    <string name="action_back">Standaard acties</string>
+    <string name="action_back">Terug</string>
     <string name="action_done">Klaar</string>
     <string name="action_cancel">Annuleer</string>
     <string name="action_save">Opslaan</string>
@@ -23,6 +23,6 @@
     <string name="action_remove_shortcut">Verwijder snelkoppeling</string>
     <string name="action_remove_from_home">Verwijder van startscherm</string>
     <string name="action_reset">Reset</string>
-    <string name="drawer_filter_private">Prive</string>
+    <string name="drawer_filter_private">Privé</string>
     <string name="drawer_filter_uncategorized">Zonder categorie</string>
 </resources>
