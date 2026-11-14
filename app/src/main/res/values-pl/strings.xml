@@ -542,4 +542,11 @@
     <string name="settings_air_quality_scale_system">Automatyczna (według regionu)</string>
     <string name="settings_air_quality_scale_european">Europejska AQI</string>
     <string name="settings_air_quality_scale_us">Amerykańska AQI</string>
+    <string name="settings_drawer_search_web_shortcut">Skrót do wyszukiwarki internetowej w szufladzie</string>
+    <string name="settings_drawer_search_web_shortcut_subtitle">Gdy automatyczne uruchamianie jest wyłączone, pokazuj skrót na dole listy aplikacji do wyszukiwania wpisanej frazy w internecie.</string>
+    <string name="drawer_web_search_shortcut_label">Wyszukaj w internecie</string>
+    <string name="discord_invitation_title">Pomóż kształtować Fokus</string>
+    <string name="discord_invitation_body">Dołącz do naszej społeczności na Discordzie, aby dzielić się pomysłami, otrzymywać pomoc i zobaczyć co nadchodzi.</string>
+    <string name="discord_invitation_join">Dołącz do Discorda</string>
+    <string name="discord_invitation_decline">Nie, dziękuję</string>
 </resources>
