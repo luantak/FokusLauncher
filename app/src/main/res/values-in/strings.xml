@@ -500,11 +500,4 @@
     <string name="settings_section_drawer_shortcuts">Pintasan laci aplikasi</string>
     <string name="settings_no_drawer_shortcuts">Belum ada pintasan yang ditambahkan. Gunakan tombol + di samping tindakan aplikasi pada menu tekan lama di laci aplikasi.</string>
     <string name="cd_remove_drawer_shortcut">Hapus pintasan dari laci aplikasi</string>
-    <string name="settings_air_quality_scale_system"></string>
-    <string name="edit_home_section_all_apps" translatable="false"></string>
-    <string name="settings_air_quality_scale"></string>
-    <string name="settings_air_quality_scale_european"></string>
-    <string name="pomodoro_mode_focus" translatable="false"></string>
-    <string name="app_name" translatable="false"></string>
-    <string name="settings_air_quality_scale_us"></string>
 </resources>

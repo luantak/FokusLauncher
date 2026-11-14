@@ -542,5 +542,4 @@
     <string name="settings_air_quality_scale_system">Automatyczna (według regionu)</string>
     <string name="settings_air_quality_scale_european">Europejska AQI</string>
     <string name="settings_air_quality_scale_us">Amerykańska AQI</string>
-    <string name="pomodoro_mode_focus" translatable="false"></string>
 </resources>
