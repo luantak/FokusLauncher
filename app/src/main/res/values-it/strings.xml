@@ -518,4 +518,11 @@
     <string name="settings_air_quality_scale_system">Automatica (regione)</string>
     <string name="settings_air_quality_scale_european">AQI europea</string>
     <string name="settings_air_quality_scale_us">AQI USA</string>
+    <string name="settings_drawer_search_web_shortcut">Scorciatoia di ricerca sul web nel drawer</string>
+    <string name="settings_drawer_search_web_shortcut_subtitle">Quando l\'avvio automatico è disattivato, mostra in fondo all\'elenco delle app una scorciatoia per cercare sul web ciò che hai digitato.</string>
+    <string name="drawer_web_search_shortcut_label">Cerca sul web</string>
+    <string name="discord_invitation_title">Aiuta a migliorare Fokus</string>
+    <string name="discord_invitation_body">Entra nella nostra community Discord per condividere idee, ricevere aiuto e scoprire le novità in arrivo.</string>
+    <string name="discord_invitation_join">Unisciti a Discord</string>
+    <string name="discord_invitation_decline">No grazie</string>
 </resources>
