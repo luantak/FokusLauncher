@@ -2,6 +2,9 @@ package com.lu4p.fokuslauncher.ui.settings
 
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.Checkbox
+import androidx.compose.ui.Alignment
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -31,6 +34,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.data.iconpack.IconPackInfo
+import com.lu4p.fokuslauncher.data.iconpack.ArcticonsPackages
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.font.CustomFontImportFailure
 import com.lu4p.fokuslauncher.media.MediaNotificationHelper
@@ -61,6 +65,10 @@ fun AppearanceSettingsScreen(
     var mediaNotificationAccessTick by remember { mutableIntStateOf(0) }
     var pendingNotificationIndicatorsEnable by remember { mutableStateOf(false) }
     var showArcticonsInstallDialog by remember { mutableStateOf(false) }
+    var showIconPackDisclaimer by remember { mutableStateOf(false) }
+    var pendingIconPackSelection by remember { mutableStateOf<String?>(null) }
+    val iconPackDisclaimerAccepted by
+            viewModel.iconPackDisclaimerAccepted.collectAsStateWithLifecycle()
     OnResumeEffect(lifecycleOwner) {
         mediaNotificationAccessTick++
         viewModel.refreshArcticonsInstallState()
@@ -290,7 +298,14 @@ fun AppearanceSettingsScreen(
                         fieldEnabled = uiState.installedIconPacks.isNotEmpty(),
                         itemContent = { pack -> Text(pack.label) },
                         onItemSelected = { pack ->
-                            viewModel.setSelectedIconPack(pack.packageName)
+                            if (!iconPackDisclaimerAccepted &&
+                                            !ArcticonsPackages.isWhitelisted(pack.packageName) &&
+                                            pack.packageName.isNotEmpty()) {
+                                pendingIconPackSelection = pack.packageName
+                                showIconPackDisclaimer = true
+                            } else {
+                                viewModel.setSelectedIconPack(pack.packageName)
+                            }
                         },
                 )
             }
@@ -442,6 +457,72 @@ fun AppearanceSettingsScreen(
                     ) {
                         Text(
                                 stringResource(R.string.settings_arcticons_install_play),
+                                color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                },
+        )
+    }
+
+    if (showIconPackDisclaimer) {
+        var disclaimerChecked by remember { mutableStateOf(false) }
+        FokusAlertDialog(
+                onDismissRequest = {
+                    showIconPackDisclaimer = false
+                    pendingIconPackSelection = null
+                },
+                title = {
+                    Text(
+                            stringResource(R.string.settings_icon_pack_disclaimer_title),
+                            color = MaterialTheme.colorScheme.onBackground,
+                    )
+                },
+                text = {
+                    Column {
+                        Text(
+                                stringResource(R.string.settings_icon_pack_disclaimer_body),
+                                color = MaterialTheme.colorScheme.onBackground,
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(
+                                    checked = disclaimerChecked,
+                                    onCheckedChange = { disclaimerChecked = it },
+                            )
+                            Text(
+                                    stringResource(R.string.settings_icon_pack_disclaimer_checkbox),
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    FokusTextButton(
+                            onClick = {
+                                showIconPackDisclaimer = false
+                                pendingIconPackSelection?.let {
+                                    viewModel.acceptIconPackDisclaimerAndSelect(it)
+                                }
+                                pendingIconPackSelection = null
+                            },
+                            enabled = disclaimerChecked,
+                    ) {
+                        Text(
+                                stringResource(R.string.settings_icon_pack_disclaimer_accept),
+                                color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                },
+                dismissButton = {
+                    FokusTextButton(
+                            onClick = {
+                                showIconPackDisclaimer = false
+                                pendingIconPackSelection = null
+                            }
+                    ) {
+                        Text(
+                                stringResource(R.string.action_cancel),
                                 color = MaterialTheme.colorScheme.primary,
                         )
                     }

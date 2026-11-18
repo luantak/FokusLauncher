@@ -239,6 +239,9 @@ private constructor(
          * selection: first installed Arcticons variant, else first discovered ADW/Nova pack.
          */
         private val SELECTED_ICON_PACK_KEY = stringPreferencesKey("selected_icon_pack")
+        /** Accepted once; gates use of third-party icon packs (issue #295 maintainer request). */
+        private val ICON_PACK_DISCLAIMER_ACCEPTED_KEY =
+                booleanPreferencesKey("icon_pack_disclaimer_accepted")
         private val HOME_APP_ICON_MODE_KEY = stringPreferencesKey("home_app_icon_mode")
         /**
          * True after the user keeps or sets an image wallpaper; false after setting black wallpaper
@@ -1171,6 +1174,12 @@ private constructor(
      * (first installed Arcticons variant, else first discovered ADW/Nova pack).
      */
     val selectedIconPackFlow: Flow<String> = prefFlow(SELECTED_ICON_PACK_KEY, "")
+
+    val iconPackDisclaimerAcceptedFlow: Flow<Boolean> =
+            prefFlow(ICON_PACK_DISCLAIMER_ACCEPTED_KEY, false)
+
+    suspend fun setIconPackDisclaimerAccepted() =
+            setPref(ICON_PACK_DISCLAIMER_ACCEPTED_KEY, true)
 
     suspend fun setSelectedIconPack(packageName: String) {
         val trimmed = packageName.trim()

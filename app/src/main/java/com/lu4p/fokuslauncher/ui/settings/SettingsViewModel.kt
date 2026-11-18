@@ -169,6 +169,8 @@ data class SettingsUiState(
         val installedIconPacks: List<IconPackInfo> = emptyList(),
         /** Package name of the user-selected icon pack. Null = automatic selection. */
         val selectedIconPack: String? = null,
+        /** True after the user accepted the third-party icon pack disclaimer. */
+        val iconPackDisclaimerAccepted: Boolean = false,
         /** True when the home wallpaper is not solid black (image or busy wallpaper). */
         val homeUsesPhotoWallpaper: Boolean = false,
         /** Uniform outline stroke in dp on image wallpaper; 0 = launcher defaults per widget. */
@@ -248,6 +250,12 @@ constructor(
     private val _installedIconPacks = MutableStateFlow<List<IconPackInfo>>(emptyList())
     val installedIconPacks: StateFlow<List<IconPackInfo>> =
             _installedIconPacks.asStateFlow()
+
+    val iconPackDisclaimerAccepted =
+            preferencesManager.iconPackDisclaimerAcceptedFlow.stateWhileSubscribedIn(
+                    viewModelScope,
+                    false,
+            )
     val installedFontFamilies: StateFlow<List<String>> = _installedFontFamilies.asStateFlow()
     private val privateSpaceRefreshTick = MutableStateFlow(0)
 
@@ -1288,6 +1296,14 @@ constructor(
             preferencesManager.setSelectedIconPack(packageName)
             arcticonsIconPackRepository.setSelectedPackage(packageName)
             refreshInstalledIconPacks()
+        }
+    }
+
+    /** Records disclaimer acceptance (once) and applies the pending pack selection. */
+    fun acceptIconPackDisclaimerAndSelect(packageName: String) {
+        viewModelScope.launch {
+            preferencesManager.setIconPackDisclaimerAccepted()
+            setSelectedIconPack(packageName)
         }
     }
 
