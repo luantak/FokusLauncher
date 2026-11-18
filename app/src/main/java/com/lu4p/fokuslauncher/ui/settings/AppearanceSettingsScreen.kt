@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.lu4p.fokuslauncher.data.iconpack.IconPackInfo
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.font.CustomFontImportFailure
 import com.lu4p.fokuslauncher.media.MediaNotificationHelper
@@ -263,6 +264,34 @@ fun AppearanceSettingsScreen(
                                             R.string.settings_arcticons_drawer_icons_subtitle_missing
                                         }
                                 ),
+                )
+            }
+
+            if (uiState.arcticonsInstalled) item {
+                var packExpanded by remember { mutableStateOf(false) }
+                val onPackExpandedChange =
+                        rememberBooleanChangeWithSystemSound { packExpanded = it }
+                val automaticLabel = stringResource(R.string.settings_icon_pack_automatic)
+                // Empty package name = automatic selection (issue #295).
+                val packOptions =
+                        listOf(IconPackInfo(packageName = "", label = automaticLabel, icon = null)) +
+                                uiState.installedIconPacks
+                val selectedPackLabel =
+                        packOptions
+                                .firstOrNull { it.packageName == (uiState.selectedIconPack ?: "") }
+                                ?.label
+                                ?: automaticLabel
+                SettingsDropdown(
+                        title = stringResource(R.string.settings_icon_pack_picker),
+                        options = packOptions,
+                        expanded = packExpanded,
+                        onExpandedChange = onPackExpandedChange,
+                        selectedDisplayText = selectedPackLabel,
+                        fieldEnabled = uiState.installedIconPacks.isNotEmpty(),
+                        itemContent = { pack -> Text(pack.label) },
+                        onItemSelected = { pack ->
+                            viewModel.setSelectedIconPack(pack.packageName)
+                        },
                 )
             }
 

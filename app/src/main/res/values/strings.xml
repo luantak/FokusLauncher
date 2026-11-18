@@ -461,6 +461,8 @@
     <string name="settings_glow_label">Glow</string>
     <string name="settings_glow_subtitle">Soft halo on text and icons</string>
     <string name="settings_arcticons_drawer_icons">Arcticons app icons</string>
+    <string name="settings_icon_pack_picker">Icon pack</string>
+    <string name="settings_icon_pack_automatic">Automatic</string>
     <string name="settings_home_app_icons">Home app icons</string>
     <string name="settings_home_app_icons_text">Text only</string>
     <string name="settings_home_app_icons_with_label">Arcticons and labels</string>
