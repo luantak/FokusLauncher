@@ -1,6 +1,7 @@
 package com.lu4p.fokuslauncher.ui.home
 
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.click
@@ -49,6 +50,31 @@ class HomeScreenTest {
     ) = HomeClockUiState(currentTime = time, currentDate = date, batteryPercent = battery)
 
     private val weatherOff = HomeWeatherUiState()
+
+    @Test
+    fun favoriteAppOptionsActionSelectsTheFocusedFavorite() {
+        var selected: FavoriteApp? = null
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                HomeScreenContent(
+                        uiState = HomeUiState(),
+                        clockUiState = clock(),
+                        weatherUiState = weatherOff,
+                        favorites = testFavorites.take(2),
+                        rightSideShortcuts = emptyList(),
+                        onLabelClick = {},
+                        onLabelLongPress = { selected = it },
+                        onIconClick = {},
+                )
+            }
+        }
+        val node = composeTestRule.onNodeWithTag("favorite_Work").fetchSemanticsNode()
+        val action = node.config[SemanticsActions.CustomActions].single { it.label == "App options" }
+        composeTestRule.runOnIdle {
+            assertTrue(action.action())
+            assertEquals(testFavorites[1], selected)
+        }
+    }
 
     @Test
     fun homeIconsAreIndependentOfDrawerAndTextRemainsDefault() {
