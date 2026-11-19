@@ -472,8 +472,8 @@
     <string name="settings_home_app_icons_only">%1$s only</string>
     <string name="settings_arcticons_drawer_icons_subtitle">Show icon pack icons in the drawer and choose a home app icon style below</string>
     <string name="settings_arcticons_drawer_icons_subtitle_missing">Requires an icon pack - turn on to install</string>
-    <string name="settings_arcticons_install_title">Install Arcticons?</string>
-    <string name="settings_arcticons_install_message">Fokus Launcher uses the Arcticons icon pack for drawer and home app icons. Install Arcticons from F-Droid or the Play Store, then enable this option again.</string>
+    <string name="settings_arcticons_install_title">Install an icon pack?</string>
+    <string name="settings_arcticons_install_message">Fokus Launcher can use any installed icon pack for drawer and home app icons. We recommend Arcticons from F-Droid or the Play Store, but any pack with an appfilter.xml works. Install one, then enable this option again.</string>
     <string name="settings_arcticons_install_fdroid">Open F-Droid</string>
     <string name="settings_arcticons_install_play">Open Play Store</string>
     <string name="cd_app_icon">App icon</string>
