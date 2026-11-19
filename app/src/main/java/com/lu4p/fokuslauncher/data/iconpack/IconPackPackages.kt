@@ -2,7 +2,6 @@ package com.lu4p.fokuslauncher.data.iconpack
 
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.drawable.Drawable
 
 /**
  * Third-party icon pack discovery.
@@ -15,12 +14,7 @@ import android.graphics.drawable.Drawable
 data class IconPackInfo(
         val packageName: String,
         val label: String,
-        val icon: Drawable?,
-) {
-    /** Stable key for preference storage; empty string means automatic selection. */
-    val storageValue: String
-        get() = packageName
-}
+)
 
 object IconPackPackages {
     /**
@@ -81,11 +75,6 @@ object IconPackPackages {
             IconPackInfo(
                     packageName = packageName,
                     label = packageManager.getApplicationLabel(appInfo).toString(),
-                    icon = try {
-                        packageManager.getApplicationIcon(packageName)
-                    } catch (_: Exception) {
-                        null
-                    },
             )
         } catch (_: PackageManager.NameNotFoundException) {
             null

@@ -114,9 +114,6 @@ constructor(@param:ApplicationContext private val context: Context) {
         invalidate()
     }
 
-    /** Currently installed (active) pack, or null. */
-    fun activePackageName(): String? = installedPackage.value
-
     /**
      * Ensures the appfilter for the current installed pack is loaded. Safe to call when enabling
      * the feature; no-ops when already warm.
