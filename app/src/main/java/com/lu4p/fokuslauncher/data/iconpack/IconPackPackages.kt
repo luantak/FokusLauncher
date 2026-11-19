@@ -44,7 +44,8 @@ object IconPackPackages {
             if (ArcticonsPackages.isPackageInstalled(packageManager, pkg)) seen.add(pkg)
         }
         for (action in DISCOVERY_ACTIONS) {
-            val intent = Intent(action).addCategory(Intent.CATEGORY_DEFAULT)
+            // No CATEGORY_DEFAULT: icon packs commonly declare the action bare.
+            val intent = Intent(action)
             val resolved = try {
                 packageManager.queryIntentActivities(intent, 0)
             } catch (_: Exception) {

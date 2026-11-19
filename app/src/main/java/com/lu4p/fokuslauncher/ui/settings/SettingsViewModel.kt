@@ -165,6 +165,8 @@ data class SettingsUiState(
         val homeAppIconMode: HomeAppIconMode = HomeAppIconMode.TEXT,
         /** True when an icon pack (any discovered ADW/Nova pack or Arcticons) is installed. */
         val arcticonsInstalled: Boolean = false,
+        /** Package name of the pack currently in effect (resolved; may be auto-selected). */
+        val activeIconPack: String? = null,
         /** All installed icon packs, for the picker. */
         val installedIconPacks: List<IconPackInfo> = emptyList(),
         /** Package name of the user-selected icon pack. Null = automatic selection. */
@@ -513,18 +515,17 @@ constructor(
                                     preferencesManager.useArcticonsDrawerIconsFlow,
                                     preferencesManager.homeAppIconModeFlow,
                                     preferencesManager.selectedIconPackFlow,
-                                    arcticonsIconPackRepository.installedPackage.map {
-                                        it != null
-                                    },
-                            ) { allowLandscape, useArcticons, homeIconMode, selectedIconPack, arcticonsInstalled ->
+                                    arcticonsIconPackRepository.installedPackage,
+                            ) { allowLandscape, useArcticons, homeIconMode, selectedIconPack, activePack ->
                                 Triple(allowLandscape, useArcticons, HomeAppIconMode.fromStored(homeIconMode)) to
-                                        Pair(selectedIconPack, arcticonsInstalled)
+                                        Pair(selectedIconPack, activePack)
                             },
                     ) { fontOutlineDrawer, localeTag, homeAlignment, landscapeAndIcons ->
                         val (fontVisual, outlineWidthDp, drawerOverlayIntensity) = fontOutlineDrawer
                         val (allowLandscape, useArcticons, homeIconMode) = landscapeAndIcons.first
                         val selectedIconPack = landscapeAndIcons.second.first
-                        val arcticonsInstalled = landscapeAndIcons.second.second
+                        val activeIconPack = landscapeAndIcons.second.second
+                        val arcticonsInstalled = activeIconPack != null
                         LookPrefs(
                                 launcherFontFamilyName = fontVisual.family,
                                 hasCustomFontFile = customFontStore.hasStoredFont(),
@@ -536,6 +537,7 @@ constructor(
                                 homeAppIconMode = homeIconMode,
                                 arcticonsInstalled = arcticonsInstalled,
                                 selectedIconPack = selectedIconPack,
+                                activeIconPack = activeIconPack,
                                 homeUsesPhotoWallpaper = fontVisual.usesPhotoWallpaper,
                                 photoWallpaperOutlineWidthDp = outlineWidthDp,
                                 photoWallpaperDrawerOverlayIntensity = drawerOverlayIntensity,
@@ -696,6 +698,7 @@ constructor(
                         arcticonsInstalled = look.arcticonsInstalled,
                         installedIconPacks = _installedIconPacks.value,
                         selectedIconPack = look.selectedIconPack.ifBlank { null },
+                        activeIconPack = look.activeIconPack,
                         homeUsesPhotoWallpaper = look.homeUsesPhotoWallpaper,
                         photoWallpaperOutlineWidthDp = look.photoWallpaperOutlineWidthDp,
                         photoWallpaperDrawerOverlayIntensity =
@@ -817,6 +820,7 @@ constructor(
             val homeAppIconMode: HomeAppIconMode,
             val arcticonsInstalled: Boolean,
             val selectedIconPack: String,
+            val activeIconPack: String?,
             val homeUsesPhotoWallpaper: Boolean,
             val photoWallpaperOutlineWidthDp: Float,
             val photoWallpaperDrawerOverlayIntensity: Float,

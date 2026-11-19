@@ -279,16 +279,17 @@ fun AppearanceSettingsScreen(
                 var packExpanded by remember { mutableStateOf(false) }
                 val onPackExpandedChange =
                         rememberBooleanChangeWithSystemSound { packExpanded = it }
-                val automaticLabel = stringResource(R.string.settings_icon_pack_automatic)
-                // Empty package name = automatic selection (issue #295).
-                val packOptions =
-                        listOf(IconPackInfo(packageName = "", label = automaticLabel, icon = null)) +
-                                uiState.installedIconPacks
+                val packOptions = uiState.installedIconPacks
+                // Nothing selected = automatic: show the pack currently in effect.
                 val selectedPackLabel =
                         packOptions
-                                .firstOrNull { it.packageName == (uiState.selectedIconPack ?: "") }
+                                .firstOrNull { it.packageName == uiState.selectedIconPack }
                                 ?.label
-                                ?: automaticLabel
+                                ?: packOptions
+                                        .firstOrNull {
+                                            it.packageName == uiState.activeIconPack
+                                        }
+                                        ?.label.orEmpty()
                 SettingsDropdown(
                         title = stringResource(R.string.settings_icon_pack_picker),
                         options = packOptions,
@@ -299,8 +300,7 @@ fun AppearanceSettingsScreen(
                         itemContent = { pack -> Text(pack.label) },
                         onItemSelected = { pack ->
                             if (!iconPackDisclaimerAccepted &&
-                                            !ArcticonsPackages.isWhitelisted(pack.packageName) &&
-                                            pack.packageName.isNotEmpty()) {
+                                            !ArcticonsPackages.isWhitelisted(pack.packageName)) {
                                 pendingIconPackSelection = pack.packageName
                                 showIconPackDisclaimer = true
                             } else {
@@ -313,18 +313,33 @@ fun AppearanceSettingsScreen(
             if (uiState.useArcticonsDrawerIcons && uiState.arcticonsInstalled) item {
                 var expanded by remember { mutableStateOf(false) }
                 val onExpandedChange = rememberBooleanChangeWithSystemSound { expanded = it }
+                val packOptions = uiState.installedIconPacks
+                val packName =
+                        packOptions
+                                .firstOrNull { it.packageName == uiState.activeIconPack }
+                                ?.label
+                                ?: stringResource(R.string.app_name)
                 val labels = mapOf(
-                    HomeAppIconMode.TEXT to R.string.settings_home_app_icons_text,
-                    HomeAppIconMode.WITH_LABEL to R.string.settings_home_app_icons_with_label,
-                    HomeAppIconMode.ICON_ONLY to R.string.settings_home_app_icons_only,
+                    HomeAppIconMode.TEXT to
+                            stringResource(R.string.settings_home_app_icons_text),
+                    HomeAppIconMode.WITH_LABEL to
+                            stringResource(
+                                    R.string.settings_home_app_icons_with_label,
+                                    packName,
+                            ),
+                    HomeAppIconMode.ICON_ONLY to
+                            stringResource(
+                                    R.string.settings_home_app_icons_only,
+                                    packName,
+                            ),
                 )
                 SettingsDropdown(
                     title = stringResource(R.string.settings_home_app_icons),
                     options = HomeAppIconMode.entries,
                     expanded = expanded,
                     onExpandedChange = onExpandedChange,
-                    selectedDisplayText = stringResource(labels.getValue(uiState.homeAppIconMode)),
-                    itemContent = { mode -> Text(stringResource(labels.getValue(mode))) },
+                    selectedDisplayText = labels.getValue(uiState.homeAppIconMode),
+                    itemContent = { mode -> Text(labels.getValue(mode)) },
                     onItemSelected = { mode ->
                         if (!viewModel.setHomeAppIconMode(mode)) showArcticonsInstallDialog = true
                     },
