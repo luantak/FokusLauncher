@@ -112,6 +112,7 @@ import com.lu4p.fokuslauncher.ui.components.SheetActionRow
 import com.lu4p.fokuslauncher.ui.components.SheetInlineRenameTitleRow
 import com.lu4p.fokuslauncher.ui.settings.CategoryIconPickerScreen
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
+import com.lu4p.fokuslauncher.ui.util.appOptionsAccessibilityAction
 import com.lu4p.fokuslauncher.ui.util.categoryChipDisplayLabel
 import com.lu4p.fokuslauncher.ui.util.clickableWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.combinedClickableWithSystemSound
@@ -264,13 +265,9 @@ private fun LazyItemScope.ReorderableDrawerAppListItem(
                         drawerOpenCountKey(app.packageName, app.userHandle) in appsWithNotifications
         AppListItem(
                 app = app,
-                onClick = {
-                    if (allowCustomDragReorder) return@AppListItem
-                    onLaunchWhenNotReordering()
-                },
-                onLongClick = {
-                    if (!allowCustomDragReorder) onLongPressWhenNotReordering()
-                },
+                onClick = onLaunchWhenNotReordering,
+                onLongClick = onLongPressWhenNotReordering,
+                enabled = !allowCustomDragReorder,
                 modifier = Modifier.weight(1f),
                 hasNotification = hasNotification,
                 notificationIndicatorStyle = notificationIndicatorStyle,
@@ -1346,6 +1343,7 @@ fun AppListItem(
         onClick: () -> Unit,
         onLongClick: () -> Unit,
         modifier: Modifier = Modifier,
+        enabled: Boolean = true,
         hasNotification: Boolean = false,
         notificationIndicatorStyle: NotificationIndicatorStyle = NotificationIndicatorStyle.DOT,
         notificationIndicatorColor: Int = NotificationIndicatorColorPreset.DEFAULT.argb,
@@ -1364,14 +1362,17 @@ fun AppListItem(
             }
     val showDot =
             hasNotification && notificationIndicatorStyle == NotificationIndicatorStyle.DOT
+    val interactions = if (enabled) {
+        Modifier.combinedClickableWithSystemSound(onClick = onClick, onLongClick = onLongClick)
+                .appOptionsAccessibilityAction(onLongClick)
+    } else {
+        Modifier
+    }
     Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier =
                     modifier.fillMaxWidth()
-                            .combinedClickableWithSystemSound(
-                                    onClick = onClick,
-                                    onLongClick = onLongClick
-                            )
+                            .then(interactions)
                             .padding(horizontal = 24.dp, vertical = 12.dp)
                             .testTag("app_item_${app.packageName}"),
     ) {
