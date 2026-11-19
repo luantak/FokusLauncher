@@ -24,7 +24,14 @@ class ArcticonsIconPackRepositoryTest {
 
     @Before
     fun setUp() {
-        repository = ArcticonsIconPackRepository(RuntimeEnvironment.getApplication())
+        val preferencesManager =
+                com.lu4p.fokuslauncher.data.local.PreferencesManager(
+                        RuntimeEnvironment.getApplication()
+                )
+        repository = ArcticonsIconPackRepository(
+                RuntimeEnvironment.getApplication(),
+                preferencesManager,
+        )
         repository.resetCountersForTest()
     }
 

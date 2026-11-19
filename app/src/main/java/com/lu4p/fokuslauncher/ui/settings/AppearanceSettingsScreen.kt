@@ -67,8 +67,11 @@ fun AppearanceSettingsScreen(
     var showArcticonsInstallDialog by remember { mutableStateOf(false) }
     var showIconPackDisclaimer by remember { mutableStateOf(false) }
     var pendingIconPackSelection by remember { mutableStateOf<String?>(null) }
+    var packPickerExpanded by remember { mutableStateOf(false) }
     val iconPackDisclaimerAccepted by
             viewModel.iconPackDisclaimerAccepted.collectAsStateWithLifecycle()
+    val installedIconPacks by
+            viewModel.installedIconPacks.collectAsStateWithLifecycle()
     OnResumeEffect(lifecycleOwner) {
         mediaNotificationAccessTick++
         viewModel.refreshArcticonsInstallState()
@@ -257,8 +260,24 @@ fun AppearanceSettingsScreen(
                         checked = uiState.useArcticonsDrawerIcons && uiState.arcticonsInstalled,
                         onCheckedChange = { checked ->
                             if (checked) {
-                                if (!viewModel.setUseArcticonsDrawerIcons(true)) {
-                                    showArcticonsInstallDialog = true
+                                when {
+                                    !iconPackDisclaimerAccepted &&
+                                                    viewModel.wouldApplyThirdPartyPack() -> {
+                                        // A third-party pack would resolve on enable;
+                                        // require the disclaimer first (issue #295).
+                                        pendingIconPackSelection = null
+                                        showIconPackDisclaimer = true
+                                    }
+                                    // Multiple packs but no explicit selection: enable and
+                                    // open the picker so the user picks, not auto-bind.
+                                    uiState.installedIconPacks.size > 1 &&
+                                                    !viewModel.hasExplicitPackSelection() -> {
+                                        viewModel.setUseArcticonsDrawerIcons(true)
+                                        packPickerExpanded = true
+                                    }
+                                    else -> if (!viewModel.setUseArcticonsDrawerIcons(true)) {
+                                        showArcticonsInstallDialog = true
+                                    }
                                 }
                             } else {
                                 viewModel.setUseArcticonsDrawerIcons(false)
@@ -275,11 +294,11 @@ fun AppearanceSettingsScreen(
                 )
             }
 
-            if (uiState.arcticonsInstalled) item {
-                var packExpanded by remember { mutableStateOf(false) }
+            if (uiState.useArcticonsDrawerIcons && uiState.arcticonsInstalled) item {
+                val packExpanded = packPickerExpanded
                 val onPackExpandedChange =
-                        rememberBooleanChangeWithSystemSound { packExpanded = it }
-                val packOptions = uiState.installedIconPacks
+                        rememberBooleanChangeWithSystemSound { packPickerExpanded = it }
+                val packOptions = installedIconPacks
                 // Nothing selected = automatic: show the pack currently in effect.
                 val selectedPackLabel =
                         packOptions
@@ -296,7 +315,7 @@ fun AppearanceSettingsScreen(
                         expanded = packExpanded,
                         onExpandedChange = onPackExpandedChange,
                         selectedDisplayText = selectedPackLabel,
-                        fieldEnabled = uiState.installedIconPacks.isNotEmpty(),
+                        fieldEnabled = installedIconPacks.isNotEmpty(),
                         itemContent = { pack -> Text(pack.label) },
                         onItemSelected = { pack ->
                             if (!iconPackDisclaimerAccepted &&
@@ -313,7 +332,7 @@ fun AppearanceSettingsScreen(
             if (uiState.useArcticonsDrawerIcons && uiState.arcticonsInstalled) item {
                 var expanded by remember { mutableStateOf(false) }
                 val onExpandedChange = rememberBooleanChangeWithSystemSound { expanded = it }
-                val packOptions = uiState.installedIconPacks
+                val packOptions = installedIconPacks
                 val packName =
                         packOptions
                                 .firstOrNull { it.packageName == uiState.activeIconPack }
@@ -520,6 +539,9 @@ fun AppearanceSettingsScreen(
                                     viewModel.acceptIconPackDisclaimerAndSelect(it)
                                 }
                                 pendingIconPackSelection = null
+                                if (!uiState.useArcticonsDrawerIcons) {
+                                    viewModel.setUseArcticonsDrawerIcons(true)
+                                }
                             },
                             enabled = disclaimerChecked,
                     ) {

@@ -263,11 +263,6 @@ constructor(
 
     init {
         refreshInstalledIconPacks()
-        viewModelScope.launch {
-            preferencesManager.selectedIconPackFlow.collect { selected ->
-                arcticonsIconPackRepository.setSelectedPackage(selected)
-            }
-        }
         observeState()
         viewModelScope.launch {
             combine(appRepository.getDrawerShortcuts(), privateSpaceRefreshTick) { shortcuts, _ ->
@@ -1257,7 +1252,7 @@ constructor(
     fun setUseArcticonsDrawerIcons(enabled: Boolean): Boolean {
         if (enabled) {
             arcticonsIconPackRepository.refreshInstalledPackage()
-            if (!arcticonsIconPackRepository.isArcticonsInstalled()) {
+            if (!arcticonsIconPackRepository.isIconPackInstalled()) {
                 return false
             }
         }
@@ -1268,7 +1263,7 @@ constructor(
     fun setHomeAppIconMode(mode: HomeAppIconMode): Boolean {
         if (mode != HomeAppIconMode.TEXT) {
             arcticonsIconPackRepository.refreshInstalledPackage()
-            if (!arcticonsIconPackRepository.isArcticonsInstalled()) return false
+            if (!arcticonsIconPackRepository.isIconPackInstalled()) return false
         }
         launchPreferences { setHomeAppIconMode(mode.name) }
         return true
@@ -1292,6 +1287,17 @@ constructor(
     }
 
     /**
+     * True when enabling icon packs *would* apply a third-party pack (issue #295 consent
+     * gate): a selected third-party pack is installed, or auto-selection would pick one.
+     */
+    fun wouldApplyThirdPartyPack(): Boolean =
+            arcticonsIconPackRepository.wouldResolveToThirdPartyPack()
+
+    /** True when the user has no explicit pack selection (automatic mode). */
+    fun hasExplicitPackSelection(): Boolean =
+            !uiState.value.selectedIconPack.isNullOrBlank()
+
+    /**
      * Applies a user icon pack selection (issue #295). Blank selects automatic mode
      * (first installed Arcticons variant, else first discovered pack).
      */
@@ -1307,6 +1313,7 @@ constructor(
     fun acceptIconPackDisclaimerAndSelect(packageName: String) {
         viewModelScope.launch {
             preferencesManager.setIconPackDisclaimerAccepted()
+            arcticonsIconPackRepository.setThirdPartyPacksAllowed()
             setSelectedIconPack(packageName)
         }
     }
