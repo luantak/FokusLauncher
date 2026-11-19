@@ -1121,6 +1121,9 @@ class HomeViewModel @Inject constructor(
 
     suspend fun loadArcticonsIcon(app: AppInfo) = arcticonsIconPackRepository.getIcon(app)
 
+    /** True when the active pack wants launcher tinting (Arcticons). */
+    fun isIconPackMonochrome() = arcticonsIconPackRepository.isActivePackMonochrome()
+
     fun refreshArcticonsInstallState() = arcticonsIconPackRepository.refreshInstalledPackage()
 
     private fun observeLauncherFontScale() {

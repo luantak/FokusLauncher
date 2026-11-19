@@ -10,3 +10,9 @@ import com.lu4p.fokuslauncher.data.model.AppInfo
  */
 val LocalArcticonsIconLoader =
         staticCompositionLocalOf<suspend (AppInfo) -> Drawable?> { { null } }
+
+/**
+ * True when the active pack wants launcher tinting (Arcticons line icons).
+ * Colored packs render untinted.
+ */
+val LocalIconPackMonochrome = staticCompositionLocalOf { true }

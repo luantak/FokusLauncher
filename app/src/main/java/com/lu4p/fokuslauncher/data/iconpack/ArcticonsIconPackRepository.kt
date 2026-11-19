@@ -87,6 +87,14 @@ constructor(@param:ApplicationContext private val context: Context) {
 
     fun isArcticonsInstalled(): Boolean = installedPackage.value != null
 
+
+    /**
+     * True when the active pack draws monochrome glyphs meant to be tinted by the launcher
+     * (Arcticons line icons). Colored packs (Delta etc.) render untinted.
+     */
+    fun isActivePackMonochrome(): Boolean =
+            installedPackage.value?.let { ArcticonsPackages.isWhitelisted(it) } ?: false
+
     /**
      * Drops appfilter + icon caches. Call only when the pack may have changed (install/update /
      * uninstall / user selection), not on ordinary drawer open/scroll.

@@ -761,6 +761,7 @@ fun AppDrawerScreen(
 
     CompositionLocalProvider(
             LocalArcticonsIconLoader provides arcticonsIconLoader,
+            LocalIconPackMonochrome provides viewModel.isIconPackMonochrome(),
     ) {
     AppDrawerContent(
             uiState = uiState,
@@ -1478,6 +1479,7 @@ private val ArcticonsDrawerIconPlaceholderSize = 24.dp
 @Composable
 private fun ArcticonsDrawerAppIcon(app: AppInfo, tint: Color) {
     val loadIcon = LocalArcticonsIconLoader.current
+    val packMonochrome = LocalIconPackMonochrome.current
     val iconKey = appListStableKey(app)
     val loadedIcon by
             produceState<android.graphics.drawable.Drawable?>(
@@ -1498,7 +1500,7 @@ private fun ArcticonsDrawerAppIcon(app: AppInfo, tint: Color) {
                     contentDescription = stringResource(R.string.cd_app_icon),
                     tint = tint,
                     iconSize = ArcticonsDrawerIconSize,
-                    forceTint = true,
+                    forceTint = packMonochrome,
             )
         } else {
             // Brief load / last-resort only — unmapped apps use Arcticons' outlined `circle`.

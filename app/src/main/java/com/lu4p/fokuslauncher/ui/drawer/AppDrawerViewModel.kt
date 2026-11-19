@@ -413,6 +413,9 @@ constructor(
 
     suspend fun loadArcticonsIcon(app: AppInfo) = arcticonsIconPackRepository.getIcon(app)
 
+    /** True when the active pack wants launcher tinting (Arcticons). */
+    fun isIconPackMonochrome() = arcticonsIconPackRepository.isActivePackMonochrome()
+
     /** Ensures the Arcticons appfilter is loaded without wiping icon caches. */
     fun warmArcticonsPack() {
         viewModelScope.launch { arcticonsIconPackRepository.warmUp() }
