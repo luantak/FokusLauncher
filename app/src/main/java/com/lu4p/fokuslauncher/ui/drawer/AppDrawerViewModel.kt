@@ -432,7 +432,6 @@ constructor(
         }
     }
 
-
     private fun observeDrawerDotSearchPreferences() {
         viewModelScope.launch {
             combine(

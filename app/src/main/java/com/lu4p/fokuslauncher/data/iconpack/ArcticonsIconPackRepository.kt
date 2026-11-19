@@ -22,7 +22,6 @@ import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
@@ -122,10 +121,14 @@ constructor(
         packageFilter.addAction(Intent.ACTION_PACKAGE_REPLACED)
         packageFilter.addDataScheme("package")
         try {
-            context.registerReceiver(packageChangedReceiver, packageFilter)
+            context.registerReceiver(
+                    packageChangedReceiver,
+                    packageFilter,
+                    Context.RECEIVER_NOT_EXPORTED,
+            )
         } catch (_: Exception) {
-            // Receiver registration refused (e.g. restricted environment); polling
-            // through settings visits still works.
+            // Registration refused (restricted environment); settings-visit refresh
+            // still works as fallback.
         }
         // Restore persisted state independent of any ViewModel lifecycle: the drawer and
         // home read installedPackage long before the settings screen exists.
@@ -247,7 +250,6 @@ constructor(
             apps.forEach { app -> getIcon(app) }
         }
     }
-
 
     suspend fun getIcon(app: AppInfo): Drawable? =
             withContext(Dispatchers.IO) {
