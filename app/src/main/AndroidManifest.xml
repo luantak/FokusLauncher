@@ -15,10 +15,13 @@
 
     <queries>
         <intent>
-            <action android:name="org.adw.launcher.themes" />
+            <action android:name="org.adw.launcher.THEMES" />
         </intent>
         <intent>
-            <action android:name="com.novaline.appfilter" />
+            <action android:name="com.anddoes.launcher.THEME" />
+        </intent>
+        <intent>
+            <action android:name="com.gau.go.launcherex.theme" />
         </intent>
         <intent>
             <action android:name="android.intent.action.MAIN" />

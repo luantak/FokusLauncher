@@ -23,14 +23,19 @@ data class IconPackInfo(
 }
 
 object IconPackPackages {
-    /** Standard icon-pack discovery actions (ADW / Nova conventions). */
-    const val ACTION_ADW_THEME = "org.adw.launcher.themes"
-    const val ACTION_NOVA_APPFILTER = "com.novaline.appfilter"
+    /**
+     * Standard icon-pack discovery actions, as declared by packs themselves.
+     * Case matters: the ADW convention is "org.adw.launcher.THEMES" (uppercase).
+     */
+    const val ACTION_ADW_THEMES = "org.adw.launcher.THEMES"
+    const val ACTION_APEX_THEME = "com.anddoes.launcher.THEME"
+    const val ACTION_GO_THEME = "com.gau.go.launcherex.theme"
 
     val DISCOVERY_ACTIONS: List<String> =
             listOf(
-                    ACTION_ADW_THEME,
-                    ACTION_NOVA_APPFILTER,
+                    ACTION_ADW_THEMES,
+                    ACTION_APEX_THEME,
+                    ACTION_GO_THEME,
             )
 
     /**
