@@ -22,6 +22,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import com.lu4p.fokuslauncher.data.iconpack.ArcticonsIconPackRepository
+import com.lu4p.fokuslauncher.data.iconpack.ArcticonsPackages
 import com.lu4p.fokuslauncher.data.local.TwoFingerDirection
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.dynamicCategoryExtras
@@ -1114,12 +1115,22 @@ class HomeViewModel @Inject constructor(
         ) { mode ->
             _uiState.value = _uiState.value.copy(homeAppIconMode = mode)
             if (mode != HomeAppIconMode.TEXT) {
-                viewModelScope.launch { arcticonsIconPackRepository.warmUp() }
+                viewModelScope.launch {
+                    arcticonsIconPackRepository.warmUp()
+                    arcticonsIconPackRepository.prefetchIcons(_allInstalledApps.value)
+                }
             }
         }
     }
 
+    val activeHomePack: StateFlow<String?> = arcticonsIconPackRepository.installedPackage
+
     suspend fun loadArcticonsIcon(app: AppInfo) = arcticonsIconPackRepository.getIcon(app)
+
+    /** True when the active pack wants launcher tinting (Arcticons). */
+    /** True when the active pack wants launcher tinting (Arcticons). */
+    fun isIconPackMonochrome(activePack: String? = arcticonsIconPackRepository.installedPackage.value) =
+            activePack?.let { ArcticonsPackages.isWhitelisted(it) } ?: false
 
     fun refreshArcticonsInstallState() = arcticonsIconPackRepository.refreshInstalledPackage()
 

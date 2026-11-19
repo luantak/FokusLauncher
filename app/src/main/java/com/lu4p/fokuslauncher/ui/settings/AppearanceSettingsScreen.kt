@@ -5,12 +5,14 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -21,6 +23,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -32,18 +35,20 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.font.CustomFontImportFailure
+import com.lu4p.fokuslauncher.data.iconpack.ArcticonsPackages
+import com.lu4p.fokuslauncher.data.iconpack.IconPackInfo
 import com.lu4p.fokuslauncher.media.MediaNotificationHelper
 import com.lu4p.fokuslauncher.ui.components.FokusAlertDialog
 import com.lu4p.fokuslauncher.ui.components.FokusTextButton
 import com.lu4p.fokuslauncher.ui.home.HomeAppIconMode
-import com.lu4p.fokuslauncher.ui.settings.components.SettingsDropdown
-import com.lu4p.fokuslauncher.ui.util.rememberBooleanChangeWithSystemSound
 import com.lu4p.fokuslauncher.ui.settings.components.SectionHeader
 import com.lu4p.fokuslauncher.ui.settings.components.SettingsDivider
+import com.lu4p.fokuslauncher.ui.settings.components.SettingsDropdown
 import com.lu4p.fokuslauncher.ui.settings.components.SettingsRow
 import com.lu4p.fokuslauncher.ui.settings.components.SettingsToggleRow
 import com.lu4p.fokuslauncher.ui.theme.FokusBackdrop
 import com.lu4p.fokuslauncher.ui.util.OnResumeEffect
+import com.lu4p.fokuslauncher.ui.util.rememberBooleanChangeWithSystemSound
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,6 +65,13 @@ fun AppearanceSettingsScreen(
     var mediaNotificationAccessTick by remember { mutableIntStateOf(0) }
     var pendingNotificationIndicatorsEnable by remember { mutableStateOf(false) }
     var showArcticonsInstallDialog by remember { mutableStateOf(false) }
+    var showIconPackDisclaimer by remember { mutableStateOf(false) }
+    var pendingIconPackSelection by remember { mutableStateOf<String?>(null) }
+    var packPickerExpanded by remember { mutableStateOf(false) }
+    val iconPackDisclaimerAccepted by
+            viewModel.iconPackDisclaimerAccepted.collectAsStateWithLifecycle()
+    val installedIconPacks by
+            viewModel.installedIconPacks.collectAsStateWithLifecycle()
     OnResumeEffect(lifecycleOwner) {
         mediaNotificationAccessTick++
         viewModel.refreshArcticonsInstallState()
@@ -248,8 +260,24 @@ fun AppearanceSettingsScreen(
                         checked = uiState.useArcticonsDrawerIcons && uiState.arcticonsInstalled,
                         onCheckedChange = { checked ->
                             if (checked) {
-                                if (!viewModel.setUseArcticonsDrawerIcons(true)) {
-                                    showArcticonsInstallDialog = true
+                                when {
+                                    !iconPackDisclaimerAccepted &&
+                                                    viewModel.wouldApplyThirdPartyPack() -> {
+                                        // A third-party pack would resolve on enable;
+                                        // require the disclaimer first (issue #295).
+                                        pendingIconPackSelection = null
+                                        showIconPackDisclaimer = true
+                                    }
+                                    // Multiple packs but no explicit selection: enable and
+                                    // open the picker so the user picks, not auto-bind.
+                                    uiState.installedIconPacks.size > 1 &&
+                                                    !viewModel.hasExplicitPackSelection() -> {
+                                        viewModel.setUseArcticonsDrawerIcons(true)
+                                        packPickerExpanded = true
+                                    }
+                                    else -> if (!viewModel.setUseArcticonsDrawerIcons(true)) {
+                                        showArcticonsInstallDialog = true
+                                    }
                                 }
                             } else {
                                 viewModel.setUseArcticonsDrawerIcons(false)
@@ -267,20 +295,70 @@ fun AppearanceSettingsScreen(
             }
 
             if (uiState.useArcticonsDrawerIcons && uiState.arcticonsInstalled) item {
+                val packExpanded = packPickerExpanded
+                val onPackExpandedChange =
+                        rememberBooleanChangeWithSystemSound { packPickerExpanded = it }
+                val packOptions = installedIconPacks
+                // Nothing selected = automatic: show the pack currently in effect.
+                val selectedPackLabel =
+                        packOptions
+                                .firstOrNull { it.packageName == uiState.selectedIconPack }
+                                ?.label
+                                ?: packOptions
+                                        .firstOrNull {
+                                            it.packageName == uiState.activeIconPack
+                                        }
+                                        ?.label.orEmpty()
+                SettingsDropdown(
+                        title = stringResource(R.string.settings_icon_pack_picker),
+                        options = packOptions,
+                        expanded = packExpanded,
+                        onExpandedChange = onPackExpandedChange,
+                        selectedDisplayText = selectedPackLabel,
+                        fieldEnabled = installedIconPacks.isNotEmpty(),
+                        itemContent = { pack -> Text(pack.label) },
+                        onItemSelected = { pack ->
+                            if (!iconPackDisclaimerAccepted &&
+                                            !ArcticonsPackages.isWhitelisted(pack.packageName)) {
+                                pendingIconPackSelection = pack.packageName
+                                showIconPackDisclaimer = true
+                            } else {
+                                viewModel.setSelectedIconPack(pack.packageName)
+                            }
+                        },
+                )
+            }
+
+            if (uiState.useArcticonsDrawerIcons && uiState.arcticonsInstalled) item {
                 var expanded by remember { mutableStateOf(false) }
                 val onExpandedChange = rememberBooleanChangeWithSystemSound { expanded = it }
+                val packOptions = installedIconPacks
+                val packName =
+                        packOptions
+                                .firstOrNull { it.packageName == uiState.activeIconPack }
+                                ?.label
+                                ?: stringResource(R.string.app_name)
                 val labels = mapOf(
-                    HomeAppIconMode.TEXT to R.string.settings_home_app_icons_text,
-                    HomeAppIconMode.WITH_LABEL to R.string.settings_home_app_icons_with_label,
-                    HomeAppIconMode.ICON_ONLY to R.string.settings_home_app_icons_only,
+                    HomeAppIconMode.TEXT to
+                            stringResource(R.string.settings_home_app_icons_text),
+                    HomeAppIconMode.WITH_LABEL to
+                            stringResource(
+                                    R.string.settings_home_app_icons_with_label,
+                                    packName,
+                            ),
+                    HomeAppIconMode.ICON_ONLY to
+                            stringResource(
+                                    R.string.settings_home_app_icons_only,
+                                    packName,
+                            ),
                 )
                 SettingsDropdown(
                     title = stringResource(R.string.settings_home_app_icons),
                     options = HomeAppIconMode.entries,
                     expanded = expanded,
                     onExpandedChange = onExpandedChange,
-                    selectedDisplayText = stringResource(labels.getValue(uiState.homeAppIconMode)),
-                    itemContent = { mode -> Text(stringResource(labels.getValue(mode))) },
+                    selectedDisplayText = labels.getValue(uiState.homeAppIconMode),
+                    itemContent = { mode -> Text(labels.getValue(mode)) },
                     onItemSelected = { mode ->
                         if (!viewModel.setHomeAppIconMode(mode)) showArcticonsInstallDialog = true
                     },
@@ -413,6 +491,75 @@ fun AppearanceSettingsScreen(
                     ) {
                         Text(
                                 stringResource(R.string.settings_arcticons_install_play),
+                                color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                },
+        )
+    }
+
+    if (showIconPackDisclaimer) {
+        var disclaimerChecked by remember { mutableStateOf(false) }
+        FokusAlertDialog(
+                onDismissRequest = {
+                    showIconPackDisclaimer = false
+                    pendingIconPackSelection = null
+                },
+                title = {
+                    Text(
+                            stringResource(R.string.settings_icon_pack_disclaimer_title),
+                            color = MaterialTheme.colorScheme.onBackground,
+                    )
+                },
+                text = {
+                    Column {
+                        Text(
+                                stringResource(R.string.settings_icon_pack_disclaimer_body),
+                                color = MaterialTheme.colorScheme.onBackground,
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(
+                                    checked = disclaimerChecked,
+                                    onCheckedChange = { disclaimerChecked = it },
+                            )
+                            Text(
+                                    stringResource(R.string.settings_icon_pack_disclaimer_checkbox),
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    FokusTextButton(
+                            onClick = {
+                                showIconPackDisclaimer = false
+                                pendingIconPackSelection?.let {
+                                    viewModel.acceptIconPackDisclaimerAndSelect(it)
+                                }
+                                pendingIconPackSelection = null
+                                if (!uiState.useArcticonsDrawerIcons) {
+                                    viewModel.setUseArcticonsDrawerIcons(true)
+                                }
+                            },
+                            enabled = disclaimerChecked,
+                    ) {
+                        Text(
+                                stringResource(R.string.settings_icon_pack_disclaimer_accept),
+                                color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                },
+                dismissButton = {
+                    FokusTextButton(
+                            onClick = {
+                                showIconPackDisclaimer = false
+                                pendingIconPackSelection = null
+                            }
+                    ) {
+                        Text(
+                                stringResource(R.string.action_cancel),
                                 color = MaterialTheme.colorScheme.primary,
                         )
                     }

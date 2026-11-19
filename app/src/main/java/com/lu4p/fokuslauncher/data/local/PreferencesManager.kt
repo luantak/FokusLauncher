@@ -234,6 +234,14 @@ private constructor(
          */
         private val USE_ARCTICONS_DRAWER_ICONS_KEY =
                 booleanPreferencesKey("use_arcticons_drawer_icons")
+        /**
+         * Package name of the user-selected icon pack (issue #295). Missing/blank = automatic
+         * selection: first installed Arcticons variant, else first discovered ADW/Nova pack.
+         */
+        private val SELECTED_ICON_PACK_KEY = stringPreferencesKey("selected_icon_pack")
+        /** Accepted once; gates use of third-party icon packs (issue #295 maintainer request). */
+        private val ICON_PACK_DISCLAIMER_ACCEPTED_KEY =
+                booleanPreferencesKey("icon_pack_disclaimer_accepted")
         private val HOME_APP_ICON_MODE_KEY = stringPreferencesKey("home_app_icon_mode")
         /**
          * True after the user keeps or sets an image wallpaper; false after setting black wallpaper
@@ -1160,6 +1168,26 @@ private constructor(
 
     suspend fun setUseArcticonsDrawerIcons(enabled: Boolean) =
             setPref(USE_ARCTICONS_DRAWER_ICONS_KEY, enabled)
+
+    /**
+     * Package name of the user-selected icon pack. Blank = automatic selection
+     * (first installed Arcticons variant, else first discovered ADW/Nova pack).
+     */
+    val selectedIconPackFlow: Flow<String> = prefFlow(SELECTED_ICON_PACK_KEY, "")
+
+    val iconPackDisclaimerAcceptedFlow: Flow<Boolean> =
+            prefFlow(ICON_PACK_DISCLAIMER_ACCEPTED_KEY, false)
+
+    suspend fun setIconPackDisclaimerAccepted() =
+            setPref(ICON_PACK_DISCLAIMER_ACCEPTED_KEY, true)
+
+    suspend fun setSelectedIconPack(packageName: String) {
+        val trimmed = packageName.trim()
+        dataStore.edit { prefs ->
+            if (trimmed.isEmpty()) prefs.remove(SELECTED_ICON_PACK_KEY)
+            else prefs[SELECTED_ICON_PACK_KEY] = trimmed
+        }
+    }
 
     val homeAppIconModeFlow: Flow<String> = prefFlow(HOME_APP_ICON_MODE_KEY, "TEXT")
 
