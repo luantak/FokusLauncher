@@ -61,11 +61,18 @@ object IconPackPackages {
     /**
      * Automatic pack selection: first Arcticons variant when installed, else the first
      * discovered pack alphabetically for determinism.
+     *
+     * When [thirdPartyAllowed] is false, only Arcticons variants may be auto-selected;
+     * an unconsented third-party pack is never auto-applied (issue #295).
      */
-    fun findInstalledPackage(packageManager: PackageManager): String? {
+    fun findPreferredInstalledPackage(
+            packageManager: PackageManager,
+            thirdPartyAllowed: Boolean,
+    ): String? {
         val packs = findInstalledIconPacks(packageManager)
         val arcticons = packs.firstOrNull { ArcticonsPackages.isWhitelisted(it.packageName) }
         if (arcticons != null) return arcticons.packageName
+        if (!thirdPartyAllowed) return null
         return packs.minByOrNull { it.packageName }?.packageName
     }
 

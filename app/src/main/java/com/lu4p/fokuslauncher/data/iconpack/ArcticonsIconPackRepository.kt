@@ -1,20 +1,32 @@
 package com.lu4p.fokuslauncher.data.iconpack
 
 import android.content.ComponentName
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.LauncherApps
 import android.content.res.Resources
 import android.graphics.drawable.Drawable
 import android.os.Process
 import android.os.UserHandle
 import android.util.Log
+import android.view.ContextThemeWrapper
 import androidx.annotation.VisibleForTesting
 import androidx.core.content.res.ResourcesCompat
+import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.appListStableKey
+import com.google.android.material.color.DynamicColors
+import com.lu4p.fokuslauncher.data.local.PreferencesManager
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -38,8 +50,28 @@ import kotlinx.coroutines.withContext
 @Singleton
 class ArcticonsIconPackRepository
 @Inject
-constructor(@param:ApplicationContext private val context: Context) {
+constructor(
+        @param:ApplicationContext private val context: Context,
+        private val preferencesManager: PreferencesManager,
+) {
     private val loadMutex = Mutex()
+
+    /**
+     * Context used to inflate pack drawables. Wrapped in a MaterialComponents theme with
+     * Material You dynamic colors applied: packs like Arcticons You reference "?attr"
+     * theme colors at inflate time; without a themed context those vectors render blank.
+     */
+    private val themedInflationContext: Context by lazy {
+        val wrapped = ContextThemeWrapper(context, R.style.IconPackThemedInflation)
+        try {
+            DynamicColors::class.java
+                    .getMethod("applyContextIfAvailable", Context::class.java)
+                    .invoke(null, wrapped)
+        } catch (_: Exception) {
+            // Material lib without dynamic colors support: static theme attrs still resolve.
+        }
+        wrapped
+    }
     private val loadedPack = AtomicReference<LoadedPack?>(null)
     private val _installedPackage = MutableStateFlow<String?>(null)
     val installedPackage: StateFlow<String?> = _installedPackage.asStateFlow()
@@ -61,8 +93,52 @@ constructor(@param:ApplicationContext private val context: Context) {
     /** Marks the selected-pack preference read at least once after process start. */
     private val preferencePrimed = AtomicReference<String?>(null)
 
+    /**
+     * Whether third-party packs may become the active pack. Starts false each process;
+     * flipped true once the user accepts the disclaimer. Consent gates third-party icon
+     * rendering itself, not merely picker clicks, so auto-selection can never silently
+     * apply a third-party pack (issue #295 maintainer request).
+     */
+    private val thirdPartyAllowed = AtomicBoolean(false)
+
+    /** Application-scoped collector for persisted consent + selection (see init). */
+    private val preferenceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    /** Re-resolves the active pack whenever any package changes on device. */
+    private val packageChangedReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            // Data races with the resolution path are harmless: worst case an extra reload.
+            refreshInstalledPackage()
+        }
+    }
+
     init {
         refreshInstalledPackage()
+        // Track pack installs/uninstalls so the active pack reflects reality without a
+        // settings visit.
+        val packageFilter = IntentFilter()
+        packageFilter.addAction(Intent.ACTION_PACKAGE_ADDED)
+        packageFilter.addAction(Intent.ACTION_PACKAGE_REMOVED)
+        packageFilter.addAction(Intent.ACTION_PACKAGE_REPLACED)
+        packageFilter.addDataScheme("package")
+        try {
+            context.registerReceiver(packageChangedReceiver, packageFilter)
+        } catch (_: Exception) {
+            // Receiver registration refused (e.g. restricted environment); polling
+            // through settings visits still works.
+        }
+        // Restore persisted state independent of any ViewModel lifecycle: the drawer and
+        // home read installedPackage long before the settings screen exists.
+        preferenceScope.launch {
+            preferencesManager.iconPackDisclaimerAcceptedFlow.collect { accepted ->
+                if (accepted) setThirdPartyPacksAllowed()
+            }
+        }
+        preferenceScope.launch {
+            preferencesManager.selectedIconPackFlow.collect { selected ->
+                setSelectedPackage(selected)
+            }
+        }
     }
 
     /**
@@ -72,12 +148,7 @@ constructor(@param:ApplicationContext private val context: Context) {
      */
     fun refreshInstalledPackage() {
         val selected = preferencePrimed.get()
-        val installed =
-                if (selected != null && ArcticonsPackages.isPackageInstalled(context.packageManager, selected)) {
-                    selected
-                } else {
-                    IconPackPackages.findInstalledPackage(context.packageManager)
-                }
+        val installed = resolveActivePack(selected)
         val previous = _installedPackage.value
         _installedPackage.value = installed
         if (previous != installed) {
@@ -85,8 +156,23 @@ constructor(@param:ApplicationContext private val context: Context) {
         }
     }
 
-    fun isArcticonsInstalled(): Boolean = installedPackage.value != null
+    /**
+     * The pack actually used for icons. A user selection always wins when installed.
+     * Automatic selection only ever resolves to Arcticons variants unless third-party
+     * packs are allowed; unconsented third-party packs are never auto-applied.
+     */
+    private fun resolveActivePack(selected: String?): String? {
+        if (selected != null && ArcticonsPackages.isPackageInstalled(context.packageManager, selected)) {
+            return selected
+        }
+        return IconPackPackages.findPreferredInstalledPackage(
+                context.packageManager,
+                thirdPartyAllowed.get(),
+        )
+    }
 
+    /** True when an icon pack (selected, Arcticons, or discovered) is installed. */
+    fun isIconPackInstalled(): Boolean = installedPackage.value != null
 
     /**
      * True when the active pack draws monochrome glyphs meant to be tinted by the launcher
@@ -114,6 +200,33 @@ constructor(@param:ApplicationContext private val context: Context) {
         invalidate()
     }
 
+    /** Records disclaimer acceptance; lets third-party packs become the active pack. */
+    fun setThirdPartyPacksAllowed() {
+        if (thirdPartyAllowed.getAndSet(true)) return
+        refreshInstalledPackage()
+    }
+
+    /**
+     * The pack that would resolve as active if third-party packs were permitted
+     * (whether or not the disclaimer was accepted). Pure query: mutates nothing. Used by
+     * the enable-toggle consent gate, which must know whether a third-party pack *would*
+     * become active — the actually-active pack is null until consent is given.
+     */
+    fun wouldResolveToThirdPartyPack(): Boolean {
+        val selected = preferencePrimed.get()
+        if (selected != null &&
+                    ArcticonsPackages.isPackageInstalled(context.packageManager, selected) &&
+                    !ArcticonsPackages.isWhitelisted(selected)
+        ) {
+            return true
+        }
+        val candidate = IconPackPackages.findPreferredInstalledPackage(
+                context.packageManager,
+                thirdPartyAllowed = true,
+        )
+        return candidate != null && !ArcticonsPackages.isWhitelisted(candidate)
+    }
+
     /**
      * Ensures the appfilter for the current installed pack is loaded. Safe to call when enabling
      * the feature; no-ops when already warm.
@@ -121,6 +234,20 @@ constructor(@param:ApplicationContext private val context: Context) {
     suspend fun warmUp() {
         withContext(Dispatchers.IO) { ensureLoaded() }
     }
+
+    /**
+     * Parses the appfilter (when needed) and pre-decodes pack icons for [apps], populating
+     * the same caches [getIcon] reads, so drawer scrolling does not decode on demand.
+     * Cheap after the first pass: every hit short-circuits on cache.
+     */
+    suspend fun prefetchIcons(apps: List<AppInfo>) {
+        if (apps.isEmpty()) return
+        if (installedPackage.value == null) return
+        withContext(Dispatchers.IO) {
+            apps.forEach { app -> getIcon(app) }
+        }
+    }
+
 
     suspend fun getIcon(app: AppInfo): Drawable? =
             withContext(Dispatchers.IO) {
@@ -178,7 +305,11 @@ constructor(@param:ApplicationContext private val context: Context) {
         return loadMutex.withLock {
             loadedPack.get()?.let { return@withLock it }
             val installed =
-                    _installedPackage.value ?: IconPackPackages.findInstalledPackage(context.packageManager).also {
+                    _installedPackage.value
+                            ?: IconPackPackages.findPreferredInstalledPackage(
+                                    context.packageManager,
+                                    thirdPartyAllowed.get(),
+                            ).also {
                         _installedPackage.value = it
                     }
             if (installed == null) {
@@ -194,7 +325,6 @@ constructor(@param:ApplicationContext private val context: Context) {
     private fun loadPack(packageName: String): LoadedPack? {
         return try {
             val resources = context.packageManager.getResourcesForApplication(packageName)
-            val themedContext = try { context.createPackageContext(packageName, 0) } catch (_: Exception) { null }
             val componentMap = parseAppfilter(resources, packageName) ?: return null
             appfilterParseCount.incrementAndGet()
             val packageMap = HashMap<String, String>(componentMap.size / 4)
@@ -205,7 +335,6 @@ constructor(@param:ApplicationContext private val context: Context) {
             LoadedPack(
                     packageName = packageName,
                     resources = resources,
-                    themedContext = themedContext,
                     componentToDrawable = componentMap,
                     packageToDrawable = packageMap,
             )
@@ -250,9 +379,10 @@ constructor(@param:ApplicationContext private val context: Context) {
         if (id == 0) return null
         return try {
             drawableDecodeCount.incrementAndGet()
-            // Inflate against the pack theme: themed variants (e.g. Arcticons You /
-            // day-night) reference ?attr colors that resolve to blank white without one.
-            ResourcesCompat.getDrawable(pack.resources, id, pack.themedContext?.theme)?.constantState
+            // Inflate against the launcher theme. Dynamic-color packs (Arcticons You,
+            // day-night) reference ?attr colors that resolve against the launcher's
+            // Material You palette; a null theme leaves them blank white.
+            ResourcesCompat.getDrawable(pack.resources, id, themedInflationContext.theme)?.constantState
         } catch (_: Exception) {
             null
         }
@@ -301,8 +431,6 @@ constructor(@param:ApplicationContext private val context: Context) {
     private data class LoadedPack(
             val packageName: String,
             val resources: Resources,
-            /** Themed context of the pack; drawables resolve ?attr colors against it. */
-            val themedContext: Context?,
             val componentToDrawable: Map<String, String>,
             val packageToDrawable: Map<String, String>,
             /** Successful drawable ConstantStates only (ConcurrentHashMap forbids null values). */
@@ -344,7 +472,6 @@ constructor(@param:ApplicationContext private val context: Context) {
                 LoadedPack(
                         packageName = packageName,
                         resources = resources,
-                        themedContext = null,
                         componentToDrawable = componentToDrawable,
                         packageToDrawable = packageMap,
                         drawableConstantStates = states,

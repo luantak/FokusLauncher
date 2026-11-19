@@ -20,4 +20,12 @@
         <item name="android:windowShowWallpaper">true</item>
     </style>
 
+
+
+    <!-- Theme used only to inflate icon-pack drawables that reference ?attr colors
+         (Arcticons You). Must stay MaterialComponents-based so those attrs resolve. -->
+    <style name="IconPackThemedInflation" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
 </resources>
