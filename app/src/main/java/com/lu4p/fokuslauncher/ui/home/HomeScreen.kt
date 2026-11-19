@@ -57,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.ui.drawer.LocalIconPackMonochrome
+import com.lu4p.fokuslauncher.ui.drawer.LocalActiveIconPack
 import com.lu4p.fokuslauncher.data.model.LauncherFontScale
 import androidx.compose.ui.unit.Dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -177,10 +178,13 @@ fun HomeScreen(
         }
     }
 
+    val activeHomePack by viewModel.activeHomePack.collectAsStateWithLifecycle()
+
     Box(modifier = modifier.fillMaxSize()) {
         CompositionLocalProvider(
             LocalHomeIconLoader provides remember(viewModel) { { app -> viewModel.loadArcticonsIcon(app) } },
-            LocalIconPackMonochrome provides viewModel.isIconPackMonochrome(),
+            LocalIconPackMonochrome provides viewModel.isIconPackMonochrome(activeHomePack),
+            LocalActiveIconPack provides activeHomePack,
         ) {
             HomeScreenContent(
             uiState = uiState,
@@ -988,7 +992,13 @@ private fun FavoriteAppItem(
         if (homeAppIconMode == HomeAppIconMode.TEXT) null else findHomeFavoriteIconApp(fav, installedApps)
     }
     val loadIcon = LocalHomeIconLoader.current
-    val icon by produceState<android.graphics.drawable.Drawable?>(null, iconApp?.let(::appListStableKey), loadIcon) {
+    val activePack = LocalActiveIconPack.current
+    val icon by produceState<android.graphics.drawable.Drawable?>(
+            null,
+            iconApp?.let(::appListStableKey),
+            loadIcon,
+            activePack,
+    ) {
         value = iconApp?.let { loadIcon(it) }
     }
     val badge =

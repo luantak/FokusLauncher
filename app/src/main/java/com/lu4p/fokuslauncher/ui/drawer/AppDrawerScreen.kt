@@ -758,10 +758,12 @@ fun AppDrawerScreen(
 
     val arcticonsIconLoader: suspend (AppInfo) -> android.graphics.drawable.Drawable? =
             remember(viewModel) { { app -> viewModel.loadArcticonsIcon(app) } }
+    val activePack by viewModel.activeIconPack.collectAsStateWithLifecycle()
 
     CompositionLocalProvider(
             LocalArcticonsIconLoader provides arcticonsIconLoader,
-            LocalIconPackMonochrome provides viewModel.isIconPackMonochrome(),
+            LocalIconPackMonochrome provides viewModel.isIconPackMonochrome(activePack),
+            LocalActiveIconPack provides activePack,
     ) {
     AppDrawerContent(
             uiState = uiState,
@@ -1480,12 +1482,14 @@ private val ArcticonsDrawerIconPlaceholderSize = 24.dp
 private fun ArcticonsDrawerAppIcon(app: AppInfo, tint: Color) {
     val loadIcon = LocalArcticonsIconLoader.current
     val packMonochrome = LocalIconPackMonochrome.current
+    val activePack = LocalActiveIconPack.current
     val iconKey = appListStableKey(app)
     val loadedIcon by
             produceState<android.graphics.drawable.Drawable?>(
                     initialValue = null,
                     key1 = iconKey,
                     key2 = loadIcon,
+                    key3 = activePack,
             ) {
                 value = loadIcon(app)
             }

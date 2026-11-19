@@ -30,6 +30,7 @@ import com.lu4p.fokuslauncher.data.model.appProfileKey
 import com.lu4p.fokuslauncher.data.model.drawerOpenCountKey
 import com.lu4p.fokuslauncher.data.model.favoriteAppStableKey
 import com.lu4p.fokuslauncher.data.iconpack.ArcticonsIconPackRepository
+import com.lu4p.fokuslauncher.data.iconpack.ArcticonsPackages
 import com.lu4p.fokuslauncher.data.repository.AppRepository
 import com.lu4p.fokuslauncher.media.MediaNotificationHelper
 import com.lu4p.fokuslauncher.notification.NotificationIndicatorRepository
@@ -413,13 +414,24 @@ constructor(
 
     suspend fun loadArcticonsIcon(app: AppInfo) = arcticonsIconPackRepository.getIcon(app)
 
-    /** True when the active pack wants launcher tinting (Arcticons). */
-    fun isIconPackMonochrome() = arcticonsIconPackRepository.isActivePackMonochrome()
+    /** Active pack identity; rows re-load icons when this changes. */
+    val activeIconPack: StateFlow<String?> = arcticonsIconPackRepository.installedPackage
 
-    /** Ensures the Arcticons appfilter is loaded without wiping icon caches. */
+    /** True when the active pack wants launcher tinting (Arcticons). */
+    fun isIconPackMonochrome(activePack: String? = arcticonsIconPackRepository.installedPackage.value) =
+            activePack?.let { ArcticonsPackages.isWhitelisted(it) } ?: false
+
+    /** Latest unfiltered app snapshot; used to prefetch pack icons off the UI path. */
+    private var latestAppsSnapshot: List<AppInfo> = emptyList()
+
+    /** Ensures the pack appfilter is loaded without wiping icon caches. */
     fun warmArcticonsPack() {
-        viewModelScope.launch { arcticonsIconPackRepository.warmUp() }
+        viewModelScope.launch {
+            arcticonsIconPackRepository.warmUp()
+            arcticonsIconPackRepository.prefetchIcons(latestAppsSnapshot)
+        }
     }
+
 
     private fun observeDrawerDotSearchPreferences() {
         viewModelScope.launch {
@@ -621,6 +633,7 @@ constructor(
     private suspend fun prewarmDrawerCachesSuspend() {
         val state = _uiState.value
         buildProfileSectionsSuspend(state.allApps)
+        latestAppsSnapshot = state.allApps
         if (state.privateSpaceApps.isNotEmpty()) {
             sortPrivateSpaceAppsCachedSuspend(state.privateSpaceApps)
         }
