@@ -197,6 +197,7 @@ constructor(@param:ApplicationContext private val context: Context) {
     private fun loadPack(packageName: String): LoadedPack? {
         return try {
             val resources = context.packageManager.getResourcesForApplication(packageName)
+            val themedContext = try { context.createPackageContext(packageName, 0) } catch (_: Exception) { null }
             val componentMap = parseAppfilter(resources, packageName) ?: return null
             appfilterParseCount.incrementAndGet()
             val packageMap = HashMap<String, String>(componentMap.size / 4)
@@ -207,6 +208,7 @@ constructor(@param:ApplicationContext private val context: Context) {
             LoadedPack(
                     packageName = packageName,
                     resources = resources,
+                    themedContext = themedContext,
                     componentToDrawable = componentMap,
                     packageToDrawable = packageMap,
             )
@@ -251,7 +253,9 @@ constructor(@param:ApplicationContext private val context: Context) {
         if (id == 0) return null
         return try {
             drawableDecodeCount.incrementAndGet()
-            ResourcesCompat.getDrawable(pack.resources, id, null)?.constantState
+            // Inflate against the pack theme: themed variants (e.g. Arcticons You /
+            // day-night) reference ?attr colors that resolve to blank white without one.
+            ResourcesCompat.getDrawable(pack.resources, id, pack.themedContext?.theme)?.constantState
         } catch (_: Exception) {
             null
         }
@@ -300,6 +304,8 @@ constructor(@param:ApplicationContext private val context: Context) {
     private data class LoadedPack(
             val packageName: String,
             val resources: Resources,
+            /** Themed context of the pack; drawables resolve ?attr colors against it. */
+            val themedContext: Context?,
             val componentToDrawable: Map<String, String>,
             val packageToDrawable: Map<String, String>,
             /** Successful drawable ConstantStates only (ConcurrentHashMap forbids null values). */
@@ -341,6 +347,7 @@ constructor(@param:ApplicationContext private val context: Context) {
                 LoadedPack(
                         packageName = packageName,
                         resources = resources,
+                        themedContext = null,
                         componentToDrawable = componentToDrawable,
                         packageToDrawable = packageMap,
                         drawableConstantStates = states,
