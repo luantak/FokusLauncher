@@ -1,10 +1,13 @@
 package com.lu4p.fokuslauncher.ui.drawer
 
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.SoftwareKeyboardController
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -16,9 +19,13 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
 import com.lu4p.fokuslauncher.data.model.AppInfo
+import com.lu4p.fokuslauncher.data.model.DrawerAppSortMode
 import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import com.lu4p.fokuslauncher.ui.theme.FokusLauncherTheme
+import com.lu4p.fokuslauncher.ui.util.LocalSystemClickSound
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -47,6 +54,65 @@ class AppDrawerScreenTest {
         searchQuery = searchQuery,
         categories = listOf("All apps", "Productivity", "Social")
     )
+
+    @Test
+    fun drawerAppOptionsActionSelectsTheFocusedApp() {
+        var selected: AppInfo? = null
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                AppDrawerContent(
+                    uiState = singleProfileState(testApps),
+                    onSearchQueryChanged = {},
+                    onCategorySelected = {},
+                    onAppClick = {},
+                    onAppLongPress = { selected = it },
+                    onSettingsClick = {},
+                )
+            }
+        }
+        val node = composeTestRule.onNodeWithText("Calculator").fetchSemanticsNode()
+        val action = node.config[SemanticsActions.CustomActions].single { it.label == "App options" }
+        composeTestRule.runOnIdle {
+            assertTrue(action.action())
+            assertEquals(testApps[1], selected)
+        }
+    }
+
+    @Test
+    fun drawerAppDoesNotPlayClickSoundOnLongPressDuringReorder() {
+        val reordering = mutableStateOf(false)
+        var clickSounds = 0
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                CompositionLocalProvider(LocalSystemClickSound provides { clickSounds++ }) {
+                    AppDrawerContent(
+                        uiState = singleProfileState(testApps).copy(
+                            useSidebarCategoryDrawer = true,
+                            drawerAppSortMode = DrawerAppSortMode.CUSTOM,
+                            drawerReorderSessionActive = reordering.value,
+                            selectedCategory = "Productivity",
+                        ),
+                        onSearchQueryChanged = {},
+                        onCategorySelected = {},
+                        onAppClick = { error("App launched while reordering") },
+                        onAppLongPress = { error("App options opened while reordering") },
+                        onSettingsClick = {},
+                        useSidebarCategoryDrawer = true,
+                    )
+                }
+            }
+        }
+        val row = composeTestRule.onNodeWithTag("app_item_com.lu4p.calculator")
+        assertTrue(SemanticsActions.CustomActions in row.fetchSemanticsNode().config)
+        composeTestRule.runOnIdle { reordering.value = true }
+        assertFalse(SemanticsActions.CustomActions in row.fetchSemanticsNode().config)
+        row.performTouchInput { longClick() }
+        composeTestRule.runOnIdle {
+            assertEquals(0, clickSounds)
+            reordering.value = false
+        }
+        assertTrue(SemanticsActions.CustomActions in row.fetchSemanticsNode().config)
+    }
 
     @Test
     fun appDrawer_displaysAppList() {

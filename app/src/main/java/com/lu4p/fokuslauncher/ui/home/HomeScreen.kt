@@ -95,6 +95,7 @@ import com.lu4p.fokuslauncher.ui.components.WeatherWidget
 import com.lu4p.fokuslauncher.ui.theme.LocalLauncherFontScale
 import com.lu4p.fokuslauncher.ui.theme.LocalPhotoWallpaperOutlineWidthDp
 import com.lu4p.fokuslauncher.ui.util.OnResumeEffect
+import com.lu4p.fokuslauncher.ui.util.appOptionsAccessibilityAction
 import com.lu4p.fokuslauncher.ui.util.clickableNoRippleWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.combinedClickableWithSystemSound
 import com.lu4p.fokuslauncher.ui.util.LocalSystemClickSound
@@ -1027,6 +1028,7 @@ private fun FavoriteAppItem(
                     onClick = onClick,
                     onLongClick = onLongPress,
                 )
+                .appOptionsAccessibilityAction(onLongPress)
                 .testTag("favorite_${fav.label}"),
     ) {
         Box {
