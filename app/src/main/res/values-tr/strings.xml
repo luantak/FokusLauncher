@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="drawer_filter_all_apps">Tüm uygulamalar</string>
     <string name="drawer_filter_work">İş</string>
     <string name="drawer_menu_launcher_settings">Launcher ayarları</string>
@@ -16,20 +16,20 @@
     <string name="search_apps_and_actions">Uygulamaları ve işlemleri ara</string>
     <string name="action_back">Yaygın işlemler</string>
     <string name="action_done">Bitti</string>
-    <string name="action_cancel">İptal</string>
+    <string name="action_cancel">İptal et</string>
     <string name="action_save">Kaydet</string>
     <string name="action_add">Ekle</string>
     <string name="action_rename">Yeniden adlandır</string>
     <string name="action_change">Değiştir</string>
     <string name="action_clear">Temizle</string>
     <string name="action_reset">Sıfırla</string>
-    <string name="cd_drag_to_reorder">Sıralamak için sürükle</string>
+    <string name="cd_drag_to_reorder">Yeniden sıralamak için sürükle</string>
     <string name="cd_change_icon">İkonu değiştir</string>
     <string name="cd_shortcut_icon">Kısayol ikonu</string>
     <string name="cd_edit_home_screen">Ana ekranı düzenle</string>
     <string name="cd_settings">Ayarlar</string>
     <string name="cd_menu">Menü</string>
-    <string name="cd_open_link">Linki aç</string>
+    <string name="cd_open_link">Bağlantıyı aç</string>
     <string name="cd_unhide_app">Uygulamayı göster</string>
     <string name="cd_remove_rename">Yeniden adlandırmayı kaldır</string>
     <string name="cd_delete_category">Kategoriyi sil</string>
@@ -196,7 +196,7 @@
     <string name="settings_drawer_category_rail_side_subtitle">Varsayılan olarak, kenar çubuğu sağda yer alır. Çekmecedeki bir kategoriye uzun süre basılı tutarak ikonunu değiştirebilirsiniz.</string>
     <string name="settings_drawer_rail_position_left">Sol</string>
     <string name="settings_drawer_rail_position_right">Sağ</string>
-    <string name="drawer_reorder">Sırala</string>
+    <string name="drawer_reorder">Yeniden sırala</string>
     <string name="drawer_reorder_done">Bitti</string>
     <string name="cd_open_subpage">Başka bir ekran açar</string>
     <string name="shortcut_open_dialer">Arayıcıyı aç</string>
@@ -319,8 +319,8 @@
     <string name="settings_dot_search_add_shortcut_help">Anına bir uygulama açmak, telefonla ilgili bir işlem yapmak, veya başlatıcı kısayolu açmak için \".x\" yazınız</string>
     <string name="edit_home_section_all_apps" translatable="false">\@string/drawer_filter_all_apps</string>
     <string name="app_name" translatable="false">Fokus Launcher</string>
-    <string name="toast_digital_wellbeing_launch_failed">Dijital Denge uygulaması açılamadı</string>
-    <string name="settings_look_and_feel_subtitle">Dil, yazı tipleri, renkler, parıltı, duvar kağıdı ve bildirim göstergeleri</string>
+    <string name="toast_digital_wellbeing_launch_failed">Dijital Sağlık uygulaması açılamadı</string>
+    <string name="settings_look_and_feel_subtitle">Dil, yazı tipleri, renkler, parlaklik, duvar kağıdı ve bildirim göstergeleri</string>
     <string name="settings_look_section_icons">Simgeler</string>
     <string name="settings_drawer_behavior_title">Uygulama Çekmecesi</string>
     <string name="settings_section_apps">Uygulamalar</string>
@@ -331,5 +331,53 @@
     <string name="settings_look_section_text">Metin</string>
     <string name="settings_look_section_notifications">Bildirimler</string>
     <string name="settings_look_section_display">Ekran</string>
-    <string name="cd_restore_archived_app">Arşivlenmiş uygulamayı geri yükle</string>
+    <string name="cd_restore_archived_app">Arşivlenmiș uygulamayı geri yükle</string>
+    <string name="configuration_backup_subtitle">Kurulumunuzu yedekleyin veya kaydedilmiş bir yapılandırmayı geri yükleyin</string>
+    <string name="configuration_backup_busy">Çalışıyor…</string>
+    <string name="configuration_backup_title">Yapılandırmayı içe / dışa aktar</string>
+    <string name="configuration_export">Yapılandırmayı dışa aktar</string>
+    <string name="configuration_import">Yapılandırmayı içe aktar</string>
+    <string name="configuration_export_success">Yapılandırma dışa aktarıldı</string>
+    <string name="configuration_import_success">Yapılandırma içe aktarıldı</string>
+    <string name="configuration_backup_failed">Yapılandırma kaydedilemedi veya geri yüklenemedi. Geçerli bir Fokus yedeği seçin ve dosyaya erişimi kontrol edin.</string>
+    <string name="settings_show_home_air_quality">Hava kalitesi indeksini göster</string>
+    <string name="settings_show_home_air_quality_subtitle">Hava kalitesi indeksini hava sıcaklığının yanında göster</string>
+    <string name="settings_air_quality_scale">Hava kalitesi ölçeği</string>
+    <string name="configuration_backup_details">Tercihleri, favorileri, kısayolları, özel kategorileri, uygulama adlarını, gizli uygulamaları, notları ve özel yazı tipinizi yedekleyin. Duvar kağıdı stili kaydedilir ancak sistem duvar kağıdı görseli, Android widget\'ları ve izinler bu cihazda kalır. Yedekler şifrelenmez ve kişisel veriler içerebilir.Bu dosyaları güvenli bir yerde saklayın.</string>
+    <string name="settings_drawer_behavior_subtitle">Kenar çubuğu, uygulama sıralaması, otomatik başlatma ve arama klavyesi</string>
+    <string name="settings_apps_management_subtitle_empty">Henüz yönetilen uygulama yok</string>
+    <plurals name="settings_apps_management_count">
+        <item quantity="one">%d yönetilen uygulama</item>
+        <item quantity="other">%d yönetilen uygulama</item>
+    </plurals>
+    <string name="settings_air_quality_scale_system">Otomatik (bölge)</string>
+    <string name="settings_air_quality_scale_european">Avrupa Hava Kalitesi İndeksi</string>
+    <string name="settings_air_quality_scale_us">ABD Hava Kalitesi İndeksi</string>
+    <string name="settings_show_world_clock_weather">Dünya saatlerinde hava durumunu göster</string>
+    <string name="settings_show_home_media">Medya kontrollerini göster</string>
+    <string name="settings_show_home_media_subtitle">Ses etkinken oynatma denetimlerini gösterir</string>
+    <string name="settings_show_home_media_subtitle_grant_access">Bildirim erişimi gerektirir — sistem ayarlarından etkinleştirin</string>
+    <string name="settings_show_home_pomodoro">Pomodoro zamanlayıcısını göster</string>
+    <string name="settings_show_home_pomodoro_subtitle">Medya kontrolleri yerine %1$s zamanlayıcı</string>
+    <string name="settings_show_home_pomodoro_subtitle_grant_notifications">Bildirim izni gerektirir — zamanlayıcı bittiğinde net uyarı verebilmesi için etkinleştirin</string>
+    <string name="pomodoro_notification_channel_name">Pomodoro zamanlayıcısı</string>
+    <string name="pomodoro_notification_channel_description">Bir %1$s veya Mola oturumu bittiğinde uyarır</string>
+    <string name="pomodoro_notification_active_channel_name">Pomodoro devam ediyor</string>
+    <string name="pomodoro_notification_active_channel_description">Bir oturum devam ederken geri sayımı gösterir</string>
+    <string name="pomodoro_notification_active_title">%1$s devam ediyor</string>
+    <string name="pomodoro_notification_active_body">Kalan süre</string>
+    <string name="pomodoro_notification_focus_complete">%1$s oturumu tamamlandı</string>
+    <string name="pomodoro_notification_break_complete">Mola bitti</string>
+    <string name="pomodoro_notification_dismiss_body">Alarmı durdurmak ve sonraki oturumu başlatmak için yoksayın</string>
+    <string name="pomodoro_notification_dismiss_action">Yoksay</string>
+    <string name="pomodoro_dismiss_alarm">Alarmı yoksay</string>
+    <string name="settings_show_home_media_or_pomodoro_exclusive">Medya denetimleri ve Pomodoro aynı alanı paylaşır — aynı anda yalnızca biri açık olabilir</string>
+    <string name="settings_pomodoro_title">Pomodoro</string>
+    <string name="settings_pomodoro_configure">Pomodoro ayarları</string>
+    <string name="settings_pomodoro_configure_subtitle">Ana ekran zamanlayıcısı için %1$s ve mola süreleri</string>
+    <string name="settings_pomodoro_focus_duration">%1$s süresi</string>
+    <string name="settings_pomodoro_focus_duration_subtitle">%1$s seçildiğinde varsayılan süre</string>
+    <string name="settings_pomodoro_break_duration">Mola süresi</string>
+    <string name="settings_pomodoro_break_duration_subtitle">Mola seçildiğinde varsayılan süre</string>
+    <string name="settings_pomodoro_alarm_sound">Alarm sesi</string>
 </resources>

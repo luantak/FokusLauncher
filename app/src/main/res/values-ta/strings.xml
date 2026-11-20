@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="drawer_filter_all_apps">அனைத்து செயலிகளும்</string>
     <string name="drawer_filter_private">தனிப்பட்ட பயன்பாடுகள்</string>
     <string name="drawer_filter_uncategorized">வகைப்படுத்தப்படாதது</string>
