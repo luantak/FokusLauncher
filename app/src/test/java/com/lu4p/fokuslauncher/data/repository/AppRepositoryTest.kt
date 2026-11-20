@@ -2,6 +2,7 @@ package com.lu4p.fokuslauncher.data.repository
 
 import android.content.ComponentName
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
@@ -15,6 +16,7 @@ import android.os.UserManager
 import com.lu4p.fokuslauncher.R
 import com.lu4p.fokuslauncher.data.database.dao.AppDao
 import com.lu4p.fokuslauncher.data.local.AppListSnapshotStore
+import com.lu4p.fokuslauncher.data.local.DrawerShortcutStore
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryDefinitionEntity
 import com.lu4p.fokuslauncher.data.database.entity.AppCategoryEntity
 import com.lu4p.fokuslauncher.data.database.entity.HiddenAppEntity
@@ -25,6 +27,7 @@ import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.HOST_APP_METADATA_SENTINEL
 import com.lu4p.fokuslauncher.data.model.LEGACY_PACKAGE_WIDE_METADATA
 import com.lu4p.fokuslauncher.data.model.AppShortcutAction
+import com.lu4p.fokuslauncher.data.model.ShortcutTarget
 import com.lu4p.fokuslauncher.data.model.SystemCategoryKeys
 import com.lu4p.fokuslauncher.utils.PrivateSpaceManager
 import com.lu4p.fokuslauncher.utils.containsNormalizedSearch
@@ -127,6 +130,44 @@ class AppRepositoryTest {
         repository.removeDrawerShortcut(action)
         assertTrue(repository.getDrawerShortcuts().value.isEmpty())
         verify(exactly = 0) { launcherApps.pinShortcuts(any(), any(), any()) }
+    }
+
+    @Test
+    @Config(sdk = [35])
+    fun `uninstall drops persisted drawer shortcuts only for the removed package and profile`() {
+        val realContext = RuntimeEnvironment.getApplication()
+        val broadcastContext = object : ContextWrapper(realContext) {
+            override fun getSystemService(name: String): Any? = when (name) {
+                Context.LAUNCHER_APPS_SERVICE -> launcherApps
+                Context.USER_SERVICE -> userManager
+                else -> super.getSystemService(name)
+            }
+        }
+        val privateUser = secondaryUserHandle()
+        every { userManager.userProfiles } returns listOf(myUser, privateUser)
+        every { launcherApps.getShortcuts(any(), any()) } returns listOf(createMockShortcut("alice", "Alice"))
+        val repo = AppRepository(broadcastContext, appDao, privateSpaceManager, mockk(relaxed = true))
+        val owner = AppShortcutAction("Chat", "Alice", ShortcutTarget.LauncherShortcut("chat", "alice"))
+        val privateCopy = owner.copy(profileKey = "10")
+        val unrelated = owner.copy(target = ShortcutTarget.LauncherShortcut("other", "alice"))
+        listOf(owner, privateCopy, unrelated).forEach { assertTrue(repo.addDrawerShortcut(it)) }
+
+        fun packageRemoved(replacing: Boolean = false, archival: Boolean = false) {
+            realContext.sendBroadcast(Intent(Intent.ACTION_PACKAGE_REMOVED, Uri.parse("package:chat")).apply {
+                putExtra(Intent.EXTRA_USER, myUser)
+                putExtra(Intent.EXTRA_REPLACING, replacing)
+                putExtra(Intent.EXTRA_ARCHIVAL, archival)
+            })
+            org.robolectric.shadows.ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
+        }
+
+        packageRemoved(replacing = true)
+        packageRemoved(archival = true)
+        assertEquals(listOf(owner, privateCopy, unrelated), repo.getDrawerShortcuts().value)
+
+        packageRemoved()
+        assertEquals(listOf(privateCopy, unrelated), repo.getDrawerShortcuts().value)
+        assertEquals(listOf(privateCopy, unrelated), DrawerShortcutStore(realContext).shortcuts.value)
     }
 
     @Test

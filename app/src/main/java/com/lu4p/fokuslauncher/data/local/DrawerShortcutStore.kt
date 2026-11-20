@@ -24,6 +24,16 @@ class DrawerShortcutStore(context: Context) {
         save(state.value.filterNot { it.id == action.id })
     }
 
+    @Synchronized
+    fun removeForPackage(packageName: String, profileKey: String) {
+        val before = state.value
+        val after = before.filterNot {
+            it.profileKey == profileKey &&
+                    (it.target as? ShortcutTarget.LauncherShortcut)?.packageName == packageName
+        }
+        if (after.size != before.size) save(after)
+    }
+
     private fun save(actions: List<AppShortcutAction>) {
         val json = JSONArray()
         actions.forEach {

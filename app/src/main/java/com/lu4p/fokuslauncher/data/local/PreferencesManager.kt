@@ -59,6 +59,7 @@ import com.lu4p.fokuslauncher.data.model.serializePomodoroConfig
 import com.lu4p.fokuslauncher.data.model.serializePomodoroRuntime
 import com.lu4p.fokuslauncher.data.model.serializeWorldClockCities
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
+import com.lu4p.fokuslauncher.data.model.targetsPackage
 import com.lu4p.fokuslauncher.utils.WallpaperHelper
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -371,6 +372,17 @@ private constructor(
     suspend fun setRightSideShortcuts(shortcuts: List<HomeShortcut>) {
         dataStore.edit { prefs ->
             prefs[RIGHT_SIDE_SHORTCUTS_KEY] = serializeRightSideShortcuts(shortcuts)
+        }
+    }
+
+    suspend fun removeRightSideShortcutsForPackage(packageName: String, profileKey: String) {
+        dataStore.edit { prefs ->
+            val raw = prefs[RIGHT_SIDE_SHORTCUTS_KEY] ?: return@edit
+            val before = parseRightSideShortcuts(raw)
+            val after = before.filterNot { it.targetsPackage(packageName, profileKey) }
+            if (after.size != before.size) {
+                prefs[RIGHT_SIDE_SHORTCUTS_KEY] = serializeRightSideShortcuts(after)
+            }
         }
     }
 

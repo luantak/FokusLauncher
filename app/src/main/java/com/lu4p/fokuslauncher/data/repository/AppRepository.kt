@@ -151,7 +151,8 @@ internal constructor(
                         Intent.ACTION_PACKAGE_REMOVED,
                         Intent.ACTION_PACKAGE_REPLACED -> {
                             if (intent.action == Intent.ACTION_PACKAGE_REMOVED && replacing) return
-                            if (intent.action == Intent.ACTION_PACKAGE_REMOVED) {
+                            if (intent.action == Intent.ACTION_PACKAGE_REMOVED &&
+                                    !intent.getBooleanExtra(Intent.EXTRA_ARCHIVAL, false)) {
                                 extractRemovedApp(intent)?.let { removed ->
                                     Log.i(
                                             TAG,
@@ -159,6 +160,10 @@ internal constructor(
                                                     "profile=${removed.profileKey}",
                                     )
                                     removedPackages.tryEmit(removed)
+                                    drawerShortcutStore.removeForPackage(
+                                            removed.packageName,
+                                            removed.profileKey,
+                                    )
                                 }
                             }
                             scheduleInstalledAppsRefresh()

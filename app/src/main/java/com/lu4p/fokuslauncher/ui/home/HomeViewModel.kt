@@ -48,6 +48,7 @@ import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import com.lu4p.fokuslauncher.data.model.WorldClockCity
 import com.lu4p.fokuslauncher.data.model.ianaLeafLabel
 import com.lu4p.fokuslauncher.data.model.ShortcutTarget
+import com.lu4p.fokuslauncher.data.model.targetsPackage
 import com.lu4p.fokuslauncher.data.model.WeatherData
 import com.lu4p.fokuslauncher.data.model.WidgetTapTarget
 import com.lu4p.fokuslauncher.R
@@ -1884,6 +1885,8 @@ class HomeViewModel @Inject constructor(
                 }
         _editFavorites.value =
                 _editFavorites.value.filterNot { it.matches(removedPkg, removedProfileKey) }
+        _editRightShortcuts.value =
+                _editRightShortcuts.value.filterNot { it.targetsPackage(removedPkg, removedProfileKey) }
         val currentFavorites = rawFavorites.value
         val updatedFavorites =
                 currentFavorites.filterNot { it.matches(removedPkg, removedProfileKey) }
@@ -1898,6 +1901,7 @@ class HomeViewModel @Inject constructor(
         } else {
             Log.i(TAG, "package removed $removedPkg profile=$removedProfileKey; no favorites matched")
         }
+        preferencesManager.removeRightSideShortcutsForPackage(removedPkg, removedProfileKey)
     }
 
     private fun endAppMenuIfPhoneFavoriteSentinel(favorite: FavoriteApp): Boolean {
