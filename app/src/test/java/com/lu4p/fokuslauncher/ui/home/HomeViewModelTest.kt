@@ -703,6 +703,29 @@ class HomeViewModelTest {
     }
 
     @Test
+    fun `uninstall removes matching home shortcuts from an open editor`() {
+        val app = HomeShortcut(target = ShortcutTarget.App("com.lu4p.music"))
+        val action = HomeShortcut(target = ShortcutTarget.LauncherShortcut("com.lu4p.music", "play"))
+        val workCopy = action.copy(profileKey = "42")
+        val phone = HomeShortcut(target = ShortcutTarget.PhoneDial)
+        val link = HomeShortcut(target = ShortcutTarget.DeepLink("https://example.org"))
+        every { preferencesManager.rightSideShortcutsFlow } returns
+                flowOf(listOf(app, workCopy, action, phone, link))
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.runCurrent()
+        viewModel.startEditingShortcuts()
+        assertEquals(listOf(app, workCopy, action, phone, link), viewModel.editRightShortcuts.value)
+
+        removedPackages.tryEmit(RemovedApp(packageName = "com.lu4p.music", profileKey = "0"))
+        testDispatcher.scheduler.runCurrent()
+
+        assertEquals(listOf(workCopy, phone, link), viewModel.editRightShortcuts.value)
+        coVerify(exactly = 1) {
+            preferencesManager.removeRightSideShortcutsForPackage("com.lu4p.music", "0")
+        }
+    }
+
+    @Test
     fun `removed package only clears matching favorite profile`() {
         every { preferencesManager.favoritesFlow } returns flowOf(
             listOf(
