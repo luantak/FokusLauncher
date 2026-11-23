@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="settings_nav_shortcuts">Lasterbideak</string>
     <string name="settings_font_size_subtitle">Metatu gailuaren letra tamainarekin</string>
     <string name="onboarding_location_title">Eguraldirako kokalekua</string>
@@ -395,14 +395,14 @@
     <string name="pomodoro_notification_channel_description">Abisatu %1$s minutuko saioa edo atsedena amaitzen denean</string>
     <string name="settings_show_home_pomodoro">Erakutsi pomodoro tenporizadore</string>
     <string name="configuration_backup_title">Ezarpenak inportatu/esportatu</string>
-    <string name="configuration_backup_subtitle">Gorde zure ezarpenak edo berrezarri gordetakoak</string>
+    <string name="configuration_backup_subtitle">Gorde zure ezarpenak eta berezarri gordetakoak</string>
     <string name="configuration_backup_busy">Lanean…</string>
-    <string name="configuration_backup_details">Gorde hobespenak, gogokoak, lasterbideak, kategoria pertsonalizatuak, aplikazioen izenak, aplikazio ezkutuak, oharrak eta zure letra-tipo pertsonalizatua. Horma-paperaren estiloa gordetzen da, baina sistemaren horma-paperaren irudia, Android widgetak eta baimenak gailu honetan geratzen dira. Segurtasun-kopiak ez daude zifratuta eta datu pertsonalak izan ditzakete. Gorde itzazu leku seguru batean.</string>
+    <string name="configuration_backup_details">Lehentsitakoak, gogokoak, lasterbideak, kategoria pertsonalizatuak, aplikazioen izenak, aplikazio ezkutuak, oharrak eta zure iturri pertsonalizatua. Wallpaper estiloa gordeta dago, baina Android widgetak eta baimenak gailu honetan geratzen dira. Segurtasun kopiak ez daude zifratuta eta datu pertsonalak izan ditzakete. Gorde itzazu leku seguru batean.</string>
     <string name="configuration_export">Ezarpenak esportatu</string>
     <string name="configuration_import">Ezarpenak inportatu</string>
     <string name="configuration_import_confirm">Aldatu zure abiarazlearen konfigurazioa babeskopia honekin? Androiden dauden widgetak eta baimenak gordeko dira. Aplikazioek eta lasterbideek gailu honetan egon behar dute.</string>
     <string name="configuration_export_success">Ezarpenak esportatuak</string>
-    <string name="configuration_import_success">Ezarpenak berrezarrita</string>
+    <string name="configuration_import_success">Ezarpenak berrezarritak</string>
     <string name="configuration_backup_failed">Ezin izan da konfigurazioa gorde edo berrezarri. Fokusen babeskopia balioduna aukeratu eta fitxategirako sarbidea egiaztatu.</string>
     <string name="settings_air_quality_scale">Airearen kalitatearen eskala</string>
     <string name="settings_air_quality_scale_system">Automatikoa (herrialdea)</string>
@@ -412,7 +412,7 @@
     <string name="settings_show_home_media_or_pomodoro_exclusive">Multimedia kontrolek eta Pomodoroak espazio bera partekatzen dute — bakar bat egon daiteke aktibo</string>
     <string name="settings_pomodoro_title">Pomodoro</string>
     <string name="settings_pomodoro_configure">Pomodororako ezarpenak</string>
-    <string name="settings_pomodoro_configure_subtitle">%1$s eta atsedenaren iraupenak hasierako tenporizadorerako</string>
+    <string name="settings_pomodoro_configure_subtitle">% 1$s-ko iraupenak eta atsedena hasierako tenporizadorerako</string>
     <string name="settings_pomodoro_focus_duration">%1$s-ko iraupena</string>
     <string name="settings_pomodoro_focus_duration_subtitle">Lehenetsitako iraupena %1$s aukeratuta dagoenean</string>
     <string name="settings_pomodoro_break_duration">Atsedenaren iraupena</string>
@@ -432,4 +432,35 @@
     <string name="settings_notification_indicators_subtitle">Hasierako pantailan eta aplikazioen tiraderan jakinarazpen aktiboak dituzten aplikazioak nabarmentzea</string>
     <string name="settings_notification_indicators_subtitle_grant_access">Jakinarazpenetarako sarbidea behar du — gaitu aukera hau sistema-ezarpenetan</string>
     <string name="settings_notification_indicator_style">Adierazlearen estiloa</string>
+    <string name="settings_notification_indicator_style_dot">Puntu bat etiketa ondoan</string>
+    <string name="settings_notification_indicator_style_colored_label">Etiketa kolorduna</string>
+    <string name="settings_notification_indicator_color">Adieazle kolorduna</string>
+    <string name="settings_notification_indicator_color_red">Gorria</string>
+    <string name="settings_notification_indicator_color_orange">Laranja</string>
+    <string name="settings_notification_indicator_color_yellow">Horia</string>
+    <string name="settings_notification_indicator_color_green">Berdea</string>
+    <string name="settings_notification_indicator_color_cyan">Ziana</string>
+    <string name="settings_notification_indicator_color_blue">Urdina</string>
+    <string name="settings_notification_indicator_color_purple">Purpura</string>
+    <string name="settings_notification_indicator_color_pink">Arrosa</string>
+    <string name="settings_notification_indicator_color_white">Zuria</string>
+    <string name="settings_notification_indicator_color_gray">Grisa</string>
+    <string name="settings_show_home_note">Oharra erakutsi</string>
+    <string name="settings_show_home_note_subtitle">Hasierako pantailan ohar bat. Ukitu atazetan markatzeko, ukitu luze editatzeko.</string>
+    <string name="home_note_edit_action">Oharra editatu</string>
+    <string name="home_note_add_task">Ataza gehitu</string>
+    <string name="home_note_toggle_task">Toggle %1$s</string>
+    <string name="home_note_placeholder">Sakatu oharra gehitzeko</string>
+    <string name="home_note_clear" tools:ignore="MissingTranslation">Oharra garbitu</string>
+    <string name="settings_home_note_folder" tools:ignore="MissingTranslation">Oharren karpeta</string>
+    <string name="settings_home_note_folder_local" tools:ignore="MissingTranslation">Bakarrik Fokusen. Aukeratu karpeta bat Markdown fitxategiak gordetzeko.</string>
+    <string name="home_note_storage_error" tools:ignore="MissingTranslation">Ezin izan da oharra gorde. Zirriborroa mantentzen da. Aukeratu berriro oharen karpeta edo desaktibatu fitxategiak gordetzea.</string>
+    <string name="home_note_edit_title">Oharra</string>
+    <string name="home_note_edit_hint">Gauza bat lerro bakoitzeko...</string>
+    <string name="settings_show_home_world_clock_subtitle">Hiriak dataren azpian</string>
+    <string name="settings_world_clock_cities">Munduko erlojuak</string>
+    <string name="settings_world_clock_cities_subtitle">Hasierako pantailan erakusteko hiriak gehitu</string>
+    <string name="settings_world_clock_cities_empty">Oraindik hiririk ez</string>
+    <string name="settings_world_clock_add_city">Hiria gehitu</string>
+    <string name="settings_world_clock_edit_city">Hiria editatu</string>
 </resources>
