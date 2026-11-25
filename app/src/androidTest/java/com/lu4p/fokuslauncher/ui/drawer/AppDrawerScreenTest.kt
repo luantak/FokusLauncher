@@ -1,5 +1,8 @@
 package com.lu4p.fokuslauncher.ui.drawer
 
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -10,11 +13,13 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeUp
 import com.lu4p.fokuslauncher.data.model.AppInfo
 import com.lu4p.fokuslauncher.data.model.ReservedCategoryNames
 import com.lu4p.fokuslauncher.ui.theme.FokusLauncherTheme
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -494,5 +499,84 @@ class AppDrawerScreenTest {
         composeTestRule.onAllNodesWithTag("drawer_web_search_item").fetchSemanticsNodes().also {
             assertEquals(0, it.size)
         }
+    }
+
+    @Test
+    fun appDrawer_pullDownPastThreshold_closesOnceAndDoesNotReshowKeyboard() {
+        var closeCount = 0
+        var hideCount = 0
+        var showAfterCloseCount = 0
+        val fakeKeyboardController =
+            object : SoftwareKeyboardController {
+                override fun show() {
+                    if (closeCount > 0) showAfterCloseCount++
+                }
+
+                override fun hide() {
+                    hideCount++
+                }
+            }
+
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                CompositionLocalProvider(
+                    LocalSoftwareKeyboardController provides fakeKeyboardController
+                ) {
+                    AppDrawerContent(
+                        uiState = singleProfileState(testApps).copy(
+                            drawerScrollToTopAutoKeyboard = true
+                        ),
+                        onSearchQueryChanged = {},
+                        onCategorySelected = {},
+                        onAppClick = {},
+                        onSettingsClick = {},
+                        onClose = { closeCount++ }
+                    )
+                }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag("app_list").performTouchInput { swipeDown() }
+        composeTestRule.waitForIdle()
+
+        assertEquals(1, closeCount)
+        assertEquals(0, showAfterCloseCount)
+        assertTrue(hideCount > 0)
+    }
+
+    @Test
+    fun appDrawer_whenClosing_doesNotShowKeyboard() {
+        var showCount = 0
+        val fakeKeyboardController =
+            object : SoftwareKeyboardController {
+                override fun show() {
+                    showCount++
+                }
+
+                override fun hide() {}
+            }
+
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                CompositionLocalProvider(
+                    LocalSoftwareKeyboardController provides fakeKeyboardController
+                ) {
+                    AppDrawerContent(
+                        uiState = singleProfileState(testApps).copy(
+                            drawerScrollToTopAutoKeyboard = true
+                        ),
+                        onSearchQueryChanged = {},
+                        onCategorySelected = {},
+                        onAppClick = {},
+                        onSettingsClick = {},
+                        isClosing = true
+                    )
+                }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+        assertEquals(0, showCount)
     }
 }

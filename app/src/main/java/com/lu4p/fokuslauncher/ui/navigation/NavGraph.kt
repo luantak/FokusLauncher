@@ -755,6 +755,7 @@ fun FokusNavGraph(
                 ) {
                     AppDrawerScreen(
                         viewModel = appDrawerViewModel,
+                        isClosing = !showDrawer,
                         onSettingsClick = {
                             navController.navigateSingleTop(Routes.SETTINGS)
                         },

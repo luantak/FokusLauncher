@@ -709,6 +709,7 @@ private fun ColumnScope.DrawerAppListBody(
 fun AppDrawerScreen(
         modifier: Modifier = Modifier,
         viewModel: AppDrawerViewModel = hiltViewModel(),
+        isClosing: Boolean = false,
         onSettingsClick: () -> Unit = {},
         onEditCategoryApps: (String) -> Unit = {},
         onClose: () -> Unit = {},
@@ -718,11 +719,10 @@ fun AppDrawerScreen(
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
     val onCloseUpdated = rememberUpdatedState(onClose)
-    val closeAndReset = remember(viewModel, keyboardController, focusManager) {
+    val closeAndReset = remember(view, viewModel, keyboardController, focusManager) {
         {
             // Start IME hide with the drawer exit, not after AnimatedVisibility tears down.
-            keyboardController?.hide()
-            focusManager.clearFocus(force = true)
+            hideDrawerSearchKeyboard(focusManager, keyboardController, view)
             viewModel.resetSearchState()
             onCloseUpdated.value()
         }
@@ -730,9 +730,9 @@ fun AppDrawerScreen(
     // Defer closing until after startActivity is processed so the drawer exit animation does not
     // run in the same frame as the launch handoff (smoother transition, avoids perceived "close
     // before open").
-    val closeAndResetAfterLaunch = remember(view, viewModel, keyboardController) {
+    val closeAndResetAfterLaunch = remember(view, viewModel, keyboardController, focusManager) {
         {
-            keyboardController?.hide()
+            hideDrawerSearchKeyboard(focusManager, keyboardController, view)
             view.post {
                 viewModel.resetSearchState()
                 onCloseUpdated.value()
@@ -777,6 +777,7 @@ fun AppDrawerScreen(
                 onSettingsClick()
             },
             modifier = modifier,
+            isClosing = isClosing,
             onSearchImeAction = {
                 if (viewModel.tryLaunchFirstSearchResult()) closeAndResetAfterLaunch()
             },
@@ -867,6 +868,7 @@ fun AppDrawerContent(
         onAppClick: (LaunchTarget) -> Unit,
         onSettingsClick: () -> Unit,
         modifier: Modifier = Modifier,
+        isClosing: Boolean = false,
         onSearchImeAction: () -> Unit = {},
         useSidebarCategoryDrawer: Boolean = false,
         drawerCategorySidebarOnRight: Boolean = true,
@@ -892,6 +894,14 @@ fun AppDrawerContent(
     val latestCategories = rememberUpdatedState(uiState.categories)
     val latestSelectedCategory = rememberUpdatedState(uiState.selectedCategory)
     var showSearch by remember { mutableStateOf(false) }
+    var localClosing by remember { mutableStateOf(false) }
+    LaunchedEffect(isClosing) {
+        if (!isClosing) {
+            localClosing = false
+        }
+    }
+    val effectiveClosing = isClosing || localClosing
+    val latestClosing = rememberUpdatedState(effectiveClosing)
 
     LaunchedEffect(uiState.selectedCategory) { listState.scrollToItem(0) }
 
@@ -915,16 +925,18 @@ fun AppDrawerContent(
     val anyProfileAppsVisible =
             uiState.filteredProfileSections.any { it.apps.isNotEmpty() }
     val closeWithFocusReset: () -> Unit = {
-        // Hide IME at close start so it animates with the drawer slide-out, not after.
-        // clearFocus alone is async on some devices/OEMs and only drops the keyboard when
-        // AnimatedVisibility tears down the still-composed search field.
-        keyboardController?.hide()
-        focusManager.clearFocus(force = true)
-        onClose()
+        if (!latestClosing.value) {
+            localClosing = true
+            // Hide IME at close start so it animates with the drawer slide-out, not after.
+            // clearFocus alone is async on some devices/OEMs and only drops the keyboard when
+            // AnimatedVisibility tears down the still-composed search field.
+            hideDrawerSearchKeyboard(focusManager, keyboardController, view)
+            onClose()
+        }
     }
+    val latestCloseWithFocusReset = rememberUpdatedState(closeWithFocusReset)
     val selectCategoryWithFocusReset: (String) -> Unit = { category ->
-        keyboardController?.hide()
-        focusManager.clearFocus(force = true)
+        hideDrawerSearchKeyboard(focusManager, keyboardController, view)
         if (useSidebarCategoryDrawer) showSearch = false
         onCategorySelected(category)
     }
@@ -960,15 +972,21 @@ fun AppDrawerContent(
     var userDraggedList by remember { mutableStateOf(false) }
 
     // Sidebar icon search: focus when opened (independent of list scroll position).
-    LaunchedEffect(showSearch, useSidebarCategoryDrawer) {
-        if (useSidebarCategoryDrawer && showSearch) {
+    LaunchedEffect(showSearch, useSidebarCategoryDrawer, effectiveClosing) {
+        if (!effectiveClosing && useSidebarCategoryDrawer && showSearch) {
             showDrawerSearchKeyboard(focusRequester, keyboardController, view)
         }
     }
 
     // Chip layout: auto-focus at top. Keyboard dismiss-on-scroll is handled in nestedScroll.
     // Sidebar: hide empty search only on scroll-away (not when reopening while already scrolled).
-    LaunchedEffect(isAtTop, useSidebarCategoryDrawer, uiState.drawerScrollToTopAutoKeyboard) {
+    LaunchedEffect(
+            isAtTop,
+            useSidebarCategoryDrawer,
+            uiState.drawerScrollToTopAutoKeyboard,
+            effectiveClosing,
+    ) {
+        if (effectiveClosing) return@LaunchedEffect
         if (isAtTop) {
             userDraggedList = false
         }
@@ -976,8 +994,7 @@ fun AppDrawerContent(
             if (!isAtTop) {
                 hasScrolledDown = true
                 if (wasAtTop && showSearch && uiState.searchQuery.isBlank() && userDraggedList) {
-                    keyboardController?.hide()
-                    focusManager.clearFocus(force = true)
+                    hideDrawerSearchKeyboard(focusManager, keyboardController, view)
                     showSearch = false
                 }
             }
@@ -995,9 +1012,10 @@ fun AppDrawerContent(
 
     // Start IME with the enter animation. IMM showSoftInput can no-op while the field is
     // still off-screen; WindowInsetsController + a short retry is more reliable.
-    LaunchedEffect(useSidebarCategoryDrawer) {
-        if (useSidebarCategoryDrawer) return@LaunchedEffect
+    LaunchedEffect(useSidebarCategoryDrawer, effectiveClosing) {
+        if (useSidebarCategoryDrawer || effectiveClosing) return@LaunchedEffect
         repeat(16) {
+            if (latestClosing.value) return@LaunchedEffect
             showDrawerSearchKeyboard(focusRequester, keyboardController, view)
             if (view.isImeVisible()) return@LaunchedEffect
             withFrameNanos {}
@@ -1007,11 +1025,13 @@ fun AppDrawerContent(
     var overscrollY by remember { mutableFloatStateOf(0f) }
     val latestUseSidebar = rememberUpdatedState(useSidebarCategoryDrawer)
     val latestShowSearch = rememberUpdatedState(showSearch)
-    val latestScrollToTopAutoKeyboard =
-            rememberUpdatedState(uiState.drawerScrollToTopAutoKeyboard)
     val nestedScrollConnection = remember {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                if (latestClosing.value) {
+                    overscrollY = 0f
+                    return Offset.Zero
+                }
                 if (source == NestedScrollSource.UserInput && available.y < 0) {
                     // Finger scrolling the list away from the top.
                     userDraggedList = true
@@ -1019,21 +1039,14 @@ fun AppDrawerContent(
                     // (chip mode always; sidebar only when the search field is shown).
                     val searchOpen = !latestUseSidebar.value || latestShowSearch.value
                     if (searchOpen) {
-                        keyboardController?.hide()
-                        focusManager.clearFocus(force = true)
+                        hideDrawerSearchKeyboard(focusManager, keyboardController, view)
                     }
                 }
                 if (source == NestedScrollSource.UserInput && available.y > 0 && !listState.canScrollBackward) {
-                    // Immediate response for pull-down gesture at the boundary
-                    if (latestScrollToTopAutoKeyboard.value && !latestUseSidebar.value) {
-                        // LaunchedEffect(isAtTop) handles focus when scrolling to top; re-request
-                        // if already at top and pulling down at the list boundary.
-                        showDrawerSearchKeyboard(focusRequester, keyboardController, view)
-                    }
                     overscrollY += available.y
                     if (overscrollY > 300f) {
                         overscrollY = 0f
-                        closeWithFocusReset()
+                        latestCloseWithFocusReset.value()
                         return available
                     }
                 } else {
@@ -1171,8 +1184,11 @@ fun AppDrawerContent(
                                                 if (uiState.searchQuery.isNotEmpty()) {
                                                     onSearchQueryChanged("")
                                                 }
-                                                keyboardController?.hide()
-                                                focusManager.clearFocus(force = true)
+                                                hideDrawerSearchKeyboard(
+                                                        focusManager,
+                                                        keyboardController,
+                                                        view,
+                                                )
                                             } else {
                                                 showSearch = true
                                             }
@@ -1527,6 +1543,11 @@ private fun View.showIme() {
     WindowInsetsControllerCompat(window, this).show(WindowInsetsCompat.Type.ime())
 }
 
+private fun View.hideIme() {
+    val window = (context as? Activity)?.window ?: return
+    WindowInsetsControllerCompat(window, this).hide(WindowInsetsCompat.Type.ime())
+}
+
 private fun View.isImeVisible(): Boolean =
         ViewCompat.getRootWindowInsets(this)?.isVisible(WindowInsetsCompat.Type.ime()) == true
 
@@ -1538,4 +1559,14 @@ private fun showDrawerSearchKeyboard(
     focusRequester.requestFocusIfAttached()
     keyboardController?.show()
     view.showIme()
+}
+
+private fun hideDrawerSearchKeyboard(
+        focusManager: FocusManager,
+        keyboardController: SoftwareKeyboardController?,
+        view: View,
+) {
+    keyboardController?.hide()
+    view.hideIme()
+    focusManager.clearFocus(force = true)
 }
