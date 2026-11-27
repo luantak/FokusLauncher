@@ -91,6 +91,53 @@ constructor(@param:ApplicationContext private val context: Context) {
         withContext(Dispatchers.IO) { ensureLoaded() }
     }
 
+    suspend fun getIconByName(name: String): Drawable? = withContext(Dispatchers.IO) {
+        ensureLoaded()?.constantStateFor(name)?.newDrawable()?.mutate()
+    }
+
+    suspend fun getIconNames(): List<String> = withContext(Dispatchers.IO) {
+        val pack = ensureLoaded() ?: return@withContext emptyList()
+        val names = pack.componentToDrawable.values.toMutableSet()
+        val xmlId = pack.resources.getIdentifier("drawable", "xml", pack.packageName)
+        if (xmlId != 0) {
+            try {
+                pack.resources.getXml(xmlId).use { parser ->
+                    while (parser.eventType != org.xmlpull.v1.XmlPullParser.END_DOCUMENT) {
+                        if (parser.eventType == org.xmlpull.v1.XmlPullParser.START_TAG && parser.name == "item") {
+                            parser.getAttributeValue(null, "drawable")?.let { names.add(it) }
+                        }
+                        parser.next()
+                    }
+                }
+            } catch (_: Exception) { }
+        } else {
+            try {
+                pack.resources.assets.open("drawable.xml").use { input ->
+                    val parser = org.xmlpull.v1.XmlPullParserFactory.newInstance().newPullParser()
+                    parser.setInput(input, null)
+                    while (parser.eventType != org.xmlpull.v1.XmlPullParser.END_DOCUMENT) {
+                        if (parser.eventType == org.xmlpull.v1.XmlPullParser.START_TAG && parser.name == "item") {
+                            parser.getAttributeValue(null, "drawable")?.let { names.add(it) }
+                        }
+                        parser.next()
+                    }
+                }
+            } catch (_: Exception) { }
+        }
+        names.add(PLACEHOLDER_DRAWABLE_NAME)
+        names.sorted()
+    }
+
+    suspend fun getIconName(app: AppInfo): String = withContext(Dispatchers.IO) {
+        val pack = ensureLoaded() ?: return@withContext PLACEHOLDER_DRAWABLE_NAME
+        val component = resolveComponentNameCached(app, appListStableKey(app))
+        val mapped = component?.let {
+            pack.componentToDrawable[ArcticonsAppfilterParser.componentKey(it.packageName, it.className)]
+                ?: pack.packageToDrawable[it.packageName]
+        }
+        if (mapped != null && pack.constantStateFor(mapped) != null) mapped else PLACEHOLDER_DRAWABLE_NAME
+    }
+
     suspend fun getIcon(app: AppInfo): Drawable? =
             withContext(Dispatchers.IO) {
                 val appKey = appListStableKey(app)
