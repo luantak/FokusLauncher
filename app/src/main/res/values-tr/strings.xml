@@ -301,7 +301,6 @@
         <item quantity="one">Ana ekranda %d uygulaması</item>
         <item quantity="other">Ana ekranda %d uygulamaları</item>
     </plurals>
-    <string name="settings_drawer_scroll_to_top_auto_keyboard_subtitle">Uygulama listesinin en üstüne kaydırıldığında klavyeyi ve arama özelliğini otomatik olarak aç</string>
     <string name="visual_style_sky">Gök</string>
     <string name="visual_style_sage">Adaçayı</string>
     <string name="visual_style_rose">Gül</string>
@@ -313,7 +312,6 @@
     <string name="settings_home_date_format_month_long">Ay GG, YYYY</string>
     <string name="settings_profile_names_subtitle">Çekmece ve ana ekrandaki kişisel, iş ve diğer profil bölümlerini yeniden adlandırın</string>
     <string name="settings_profile_names_help">Varsayılan adı geri yüklemek için alanı boş bırakıp Kaydet\'e dokunun. İsimler; çekmece başlıklarında, gruplandırılmış seçicilerde ve favorilerin yanındaki profil rozetlerinde geçerli olur.</string>
-    <string name="settings_drawer_scroll_to_top_auto_keyboard">Tepeye kaydırıldığı zaman klavyeyi aç</string>
     <string name="settings_glow_subtitle">Metin ve ikonlarda hafif hare</string>
     <string name="settings_font_size_subtitle">Cihaz yazı boyutunun üzerine eklenir</string>
     <string name="settings_dot_search_add_shortcut_help">Anına bir uygulama açmak, telefonla ilgili bir işlem yapmak, veya başlatıcı kısayolu açmak için \".x\" yazınız</string>

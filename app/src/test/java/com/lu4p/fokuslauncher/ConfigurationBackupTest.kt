@@ -1,6 +1,7 @@
 package com.lu4p.fokuslauncher
 
 import android.content.Context
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.room.Room
@@ -11,7 +12,9 @@ import com.lu4p.fokuslauncher.data.database.entity.AppCategoryEntity
 import com.lu4p.fokuslauncher.data.local.fokusLauncherPreferencesDataStore
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import org.json.JSONObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Before
 import org.junit.After
 import org.junit.Test
@@ -197,6 +200,24 @@ class ConfigurationBackupTest {
         org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
             backup.parse(" ".repeat(ConfigurationBackup.MAX_BYTES + 1))
         }
+    }
+
+    @Test
+    fun ignoresRetiredDrawerKeyboardSettingInOlderBackups() = runBlocking {
+        val retiredKey = booleanPreferencesKey("drawer_scroll_to_top_auto_keyboard")
+        val shortcutKey = booleanPreferencesKey("drawer_search_web_shortcut")
+        context.fokusLauncherPreferencesDataStore.edit { it[retiredKey] = true }
+
+        val document = JSONObject(backup.export())
+        val exportedPreferences = document.getJSONObject("preferences")
+        assertFalse(exportedPreferences.has(retiredKey.name))
+        exportedPreferences.put(retiredKey.name, true).put(shortcutKey.name, true)
+
+        context.fokusLauncherPreferencesDataStore.edit { it.clear() }
+        backup.restore(backup.parse(document.toString()))
+        val preferences = context.fokusLauncherPreferencesDataStore.data.first()
+        assertEquals(null, preferences[retiredKey])
+        assertEquals(true, preferences[shortcutKey])
     }
 
     @Test

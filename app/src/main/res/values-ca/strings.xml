@@ -171,7 +171,6 @@
     <string name="settings_weather_app_not_configured">No configurat</string>
     <string name="onboarding_customize_title">Personalitza la pantalla d\'inici</string>
     <string name="settings_drawer_search_auto_launch_subtitle">Quan només una aplicació coincideix amb la teua cerca, obre\'la automàticament.</string>
-    <string name="settings_drawer_scroll_to_top_auto_keyboard">Teclat al fer scroll fins a dalt</string>
     <string name="settings_show_home_clock">Mostra el rellotge</string>
     <string name="settings_visual_style_label">Estil de color</string>
     <string name="settings_widget_clock_app">Aplicació del rellotge</string>
@@ -192,7 +191,6 @@
     <string name="settings_weather_location_disabled">Habilita l\'ubicació per al temps</string>
     <string name="settings_profile_names_field_label">Nom a mostrar</string>
     <string name="onboarding_next">Següent</string>
-    <string name="settings_drawer_scroll_to_top_auto_keyboard_subtitle">Obre automàticament el teclat i cerca quan fas scroll fins a la part superior de la llista d\'aplicacions</string>
     <string name="settings_section_app_drawer">Calaix d\'aplicacions</string>
     <plurals name="settings_home_screen_apps_count">
         <item quantity="one">%d aplicació a la pantalla d\'inici</item>

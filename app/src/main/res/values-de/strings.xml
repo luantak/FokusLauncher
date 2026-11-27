@@ -277,13 +277,11 @@
     <string name="widget_picker_title">Widget hinzufügen</string>
     <string name="settings_home_date_format_weekday_month">Mon DD, YYYY</string>
     <string name="manage_widgets">Widgets verwalten</string>
-    <string name="settings_drawer_scroll_to_top_auto_keyboard">Tastatur beim Erreichen des oberen Endes</string>
     <string name="settings_world_clock_no_zones">Keine passenden Zeitzonen</string>
     <string name="settings_visual_style_label">Farbstil</string>
     <string name="add_widget">Widget hinzufügen</string>
     <string name="settings_home_date_format_eu_slashes">DD/MM/YYYY</string>
     <string name="settings_home_date_format">Datumsformat</string>
-    <string name="settings_drawer_scroll_to_top_auto_keyboard_subtitle">Tastatur automatisch öffnen und suchen, wenn in der Appliste bis ganz oben gescrollt wurde</string>
     <plurals name="settings_home_screen_apps_count">
         <item quantity="one">%d App auf dem Startbildschirm</item>
         <item quantity="other">%d Apps auf dem Startbildschirm</item>

@@ -1,5 +1,8 @@
 package com.lu4p.fokuslauncher.ui.drawer
 
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -8,6 +11,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
@@ -493,6 +497,44 @@ class AppDrawerScreenTest {
 
         composeTestRule.onAllNodesWithTag("drawer_web_search_item").fetchSemanticsNodes().also {
             assertEquals(0, it.size)
+        }
+    }
+
+    @Test
+    fun appDrawer_returningToTop_doesNotReshowKeyboard() {
+        val apps = List(50) { index -> AppInfo("com.lu4p.app$index", "App $index", null) }
+        var showCount = 0
+        val keyboardController = object : SoftwareKeyboardController {
+            override fun show() {
+                showCount++
+            }
+
+            override fun hide() {}
+        }
+
+        composeTestRule.setContent {
+            FokusLauncherTheme {
+                CompositionLocalProvider(
+                    LocalSoftwareKeyboardController provides keyboardController
+                ) {
+                    AppDrawerContent(
+                        uiState = singleProfileState(apps),
+                        onSearchQueryChanged = {},
+                        onCategorySelected = {},
+                        onAppClick = {},
+                        onSettingsClick = {},
+                    )
+                }
+            }
+        }
+
+        val appList = composeTestRule.onNodeWithTag("app_list")
+        val showsAfterOpening = composeTestRule.runOnIdle { showCount }
+        appList.performScrollToIndex(1)
+        composeTestRule.waitForIdle()
+        appList.performScrollToIndex(0)
+        composeTestRule.runOnIdle {
+            assertEquals(showsAfterOpening, showCount)
         }
     }
 }

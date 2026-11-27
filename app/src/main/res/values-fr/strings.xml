@@ -162,7 +162,6 @@
     <string name="settings_return_home_after_long_lock_subtitle">Après le déverrouillage, afficher l\'écran d\'accueil si le périphérique est resté longtemps verrouillé</string>
     <string name="settings_long_lock_duration">Durée du verrouillage long</string>
     <string name="settings_long_lock_duration_subtitle">Durée durant laquelle le périphérique doit rester verrouillé, suite à laquelle Fokus revient à l\'écran d\'accueil après le déverrouillage.</string>
-    <string name="settings_drawer_scroll_to_top_auto_keyboard_subtitle">Ouvrir automatiquement le clavier et la recherche lors d\'un scroll vers le haut de la liste des applications</string>
     <string name="settings_matrix_title">Rejoindre la discussion</string>
     <string name="settings_weblate_subtitle">Contribuer à la traduction sur Weblate</string>
     <string name="settings_github_title">Mettre une étoile sur GitHub</string>
@@ -256,7 +255,6 @@
     <string name="settings_weather_app_system_default">Réglage par défaut du système</string>
     <string name="settings_weblate_title">Aider à traduire</string>
     <string name="settings_matrix_subtitle">Obtenir de l\'aide et partager son expérience</string>
-    <string name="settings_drawer_scroll_to_top_auto_keyboard">Clavier lors du scroll vers le haut</string>
     <string name="settings_dot_search_url_template_help">Vous pouvez utiliser un lien HTTPS, ou un lien interne à une application (par exemple intent://). Mettez %1$s où les termes de votre requête doivent être insérés — le lanceur effectuera le remplacement avec ce que vous saisirez avec `. requête` ou `.x requête`. Exemple : https://example.com/search?q=%1$s</string>
     <string name="settings_dot_search_add_shortcut_title">Ajouter un raccourci</string>
     <string name="settings_dot_search_add_shortcut_app">Raccourci à lancer</string>

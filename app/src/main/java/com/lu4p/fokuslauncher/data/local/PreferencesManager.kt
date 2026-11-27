@@ -211,8 +211,6 @@ private constructor(
          */
         private val DRAWER_SEARCH_WEB_SHORTCUT_KEY =
                 booleanPreferencesKey("drawer_search_web_shortcut")
-        private val DRAWER_SCROLL_TO_TOP_AUTO_KEYBOARD_KEY =
-                booleanPreferencesKey("drawer_scroll_to_top_auto_keyboard")
         private val HAS_COMPLETED_ONBOARDING_KEY = booleanPreferencesKey("has_completed_onboarding")
         // Install-local history: deliberately excluded from ConfigurationBackup's portable whitelist.
         private const val LEGACY_DISCORD_INVITATION_COMPLETION = -1L
@@ -1030,11 +1028,6 @@ private constructor(
             prefFlow(DRAWER_SEARCH_WEB_SHORTCUT_KEY, false)
     suspend fun setDrawerSearchWebShortcut(enabled: Boolean) =
             setPref(DRAWER_SEARCH_WEB_SHORTCUT_KEY, enabled)
-
-    val drawerScrollToTopAutoKeyboardFlow: Flow<Boolean> =
-            prefFlow(DRAWER_SCROLL_TO_TOP_AUTO_KEYBOARD_KEY, false)
-    suspend fun setDrawerScrollToTopAutoKeyboard(enabled: Boolean) =
-            setPref(DRAWER_SCROLL_TO_TOP_AUTO_KEYBOARD_KEY, enabled)
 
     val drawerAppOpenCountsFlow: Flow<Map<String, Int>> =
             dataStore.data.map { prefs ->

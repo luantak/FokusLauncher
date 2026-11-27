@@ -352,8 +352,6 @@
     <string name="settings_dot_search_pick_alias_search_app">Wybierz aplikację wyszukiwania dla tego skrótu</string>
     <string name="settings_dot_search_shortcut_mode_label">Otwiera się od razu</string>
     <string name="settings_dot_search_search_mode_label">Cel wyszukiwania</string>
-    <string name="settings_drawer_scroll_to_top_auto_keyboard">Otwarcie klawiatury po dojechaniu do góry</string>
-    <string name="settings_drawer_scroll_to_top_auto_keyboard_subtitle">Automatycznie otwórz klawiaturę i wyszukiwarkę po dojechaniu na górę listy aplikacji</string>
     <string name="home_alignment_middle">Środek</string>
     <string name="action_remove_shortcut">Usuń skrót</string>
     <string name="settings_font_import_ttf">Zaimportuj czcionkę (.ttf, .otf)</string>

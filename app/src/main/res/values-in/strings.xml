@@ -324,8 +324,6 @@
     <string name="onboarding_swipe_not_set">Belum diatur</string>
     <string name="onboarding_tips_title">Tips singkat</string>
     <string name="onboarding_tip_swipe">Geser ke atas untuk membuka laci aplikasi</string>
-    <string name="settings_drawer_scroll_to_top_auto_keyboard">Keyboard saat gulir ke atas</string>
-    <string name="settings_drawer_scroll_to_top_auto_keyboard_subtitle">Secara otomatis buka keyboard dan pencarian saat menggulir ke bagian atas daftar aplikasi</string>
     <string name="settings_show_home_media">Tampilkan kontrol media</string>
     <string name="media_play">Putar</string>
     <string name="toast_digital_wellbeing_launch_failed">Digital Wellbeing tidak dapat dibuka</string>

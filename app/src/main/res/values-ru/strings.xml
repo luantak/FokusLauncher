@@ -321,7 +321,6 @@
     <string name="settings_font_import_ttf_subtitle">Используйте файл шрифта TrueType с вашего устройства</string>
     <string name="settings_export_logs_subtitle">Поделиться логом об ошибках</string>
     <string name="settings_font_import_failed_unreadable">Не удалось прочитать этот файл</string>
-    <string name="settings_drawer_scroll_to_top_auto_keyboard_subtitle">Автоматически открывать клавиатуру и поиск при достижении верха списка приложений</string>
     <string name="settings_font_size_subtitle">Применяется вместе с размером шрифта устройства</string>
     <string name="settings_show_home_media">Показывать элементы управления медиа</string>
     <string name="media_play">Воспроизвести</string>
@@ -331,7 +330,6 @@
     <string name="media_pause">Пауза</string>
     <string name="settings_show_home_media_subtitle_grant_access">Требуется доступ к уведомлениям — включите его в системных настройках</string>
     <string name="settings_weather_app_not_configured">Не настроено</string>
-    <string name="settings_drawer_scroll_to_top_auto_keyboard">Клавиатура при прокрутке к началу</string>
     <string name="visual_style_neon_lime">Зеленый терминал</string>
     <string name="visual_style_emerald">Изумрудный</string>
     <string name="settings_weather_location_disabled_subtitle">Нажмите, чтобы разрешить доступ к местоположению</string>
