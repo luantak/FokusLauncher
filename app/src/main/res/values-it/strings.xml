@@ -332,8 +332,6 @@
     <string name="settings_dot_search_pick_alias_search_app">Scegli l\'app di ricerca per questa scorciatoia</string>
     <string name="settings_dot_search_shortcut_mode_label">Apre immediatamente</string>
     <string name="settings_dot_search_search_mode_label">Deostinazione della ricerca</string>
-    <string name="settings_drawer_scroll_to_top_auto_keyboard_subtitle">Apri automaticamente tastiera e ricerca quando scorri fino in cima all\'elenco delle app</string>
-    <string name="settings_drawer_scroll_to_top_auto_keyboard">Tastiera scorrendo in cima</string>
     <string name="home_alignment_middle">Al centro</string>
     <string name="action_remove_shortcut">Rimuovi scorciatoia</string>
     <string name="settings_font_import_failed_io">Impossibile salvare il file del carattere</string>

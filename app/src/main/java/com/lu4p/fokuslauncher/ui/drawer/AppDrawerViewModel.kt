@@ -93,7 +93,6 @@ data class AppDrawerUiState(
         val usesPhotoWallpaper: Boolean = false,
         val drawerAppSortMode: DrawerAppSortMode = DrawerAppSortMode.ALPHABETICAL,
         /** Automatically open keyboard when scrolling to the top of the app drawer. */
-        val drawerScrollToTopAutoKeyboard: Boolean = false,
         /**
          * When true with [drawerAppSortMode] CUSTOM and sidebar layout, the list shows drag handles and
          * can be reordered. Cleared when the drawer closes, search filters, or CUSTOM layout is unavailable.
@@ -330,7 +329,6 @@ constructor(
         observeDrawerCategoryRailAndIcons()
         observeDrawerSortOpenCountsAndCustomOrder()
         observeDrawerDotSearchPreferences()
-        observeDrawerScrollToTopAutoKeyboard()
         observeProfileDisplayNameOverrides()
         observeLauncherAppearance()
         observeDrawerSearchAutoLaunch()
@@ -440,14 +438,6 @@ constructor(
                 !autoLaunch && webShortcut
             }.collect { showWebSearch ->
                 _uiState.update { it.copy(showWebSearchEntry = showWebSearch) }
-            }
-        }
-    }
-
-    private fun observeDrawerScrollToTopAutoKeyboard() {
-        viewModelScope.launch {
-            preferencesManager.drawerScrollToTopAutoKeyboardFlow.collect { enabled ->
-                _uiState.update { it.copy(drawerScrollToTopAutoKeyboard = enabled) }
             }
         }
     }

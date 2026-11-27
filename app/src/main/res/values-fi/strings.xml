@@ -282,8 +282,6 @@
     <string name="settings_connect_section">Yhdistä</string>
     <string name="settings_weblate_title">Auta kääntämään (paranna suomennostani)</string>
     <string name="settings_matrix_title">Liity keskusteluun</string>
-    <string name="settings_drawer_scroll_to_top_auto_keyboard">Näppäimistö ylösvierityksellä</string>
-    <string name="settings_drawer_scroll_to_top_auto_keyboard_subtitle">Avaa näppäimistö ja haku automaattisesti, kun vierität sovelluslistan ylälaitaan</string>
     <string name="shortcut_target_app_with_label">%1$s - %2$s</string>
     <string name="category_add_error_duplicate">Kategoria nimeltä \"%1$s\" on jo olemassa. Jos kirjoitit käännetyn sanan, se voi vastata jotain oletuskategoriaa.</string>
     <string name="widget_initial_height">%1$ddp</string>

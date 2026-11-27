@@ -219,7 +219,6 @@
     <string name="category_add_error_reserved_uncategorized">\"Kategória nélküli\" egy beépített lista a kategória nélküli alkalmazásokhoz. Használjon más nevet.</string>
     <string name="settings_weather_app_not_configured">Nincs beállítva</string>
     <string name="onboarding_customize_title">Kezdőképernyő testreszabása</string>
-    <string name="settings_drawer_scroll_to_top_auto_keyboard">Billentyűzet felgördítésre</string>
     <string name="settings_visual_style_label">Színséma</string>
     <string name="visual_style_neon_lime">Terminál Zöld</string>
     <string name="visual_style_emerald">Smaragd</string>
@@ -232,7 +231,6 @@
     <string name="settings_weather_location_disabled">Engedélyezze a helymeghatározást az időjárás megjelenítéséhez</string>
     <string name="settings_profile_names_field_label">Megjelenített név</string>
     <string name="onboarding_next">Következő</string>
-    <string name="settings_drawer_scroll_to_top_auto_keyboard_subtitle">A billentyűzet és a keresés automatikus megnyitása az alkalmazáslista tetejére görgetésekor</string>
     <plurals name="settings_home_screen_apps_count">
         <item quantity="one">%d alkalmazás a kezdőképernyőn</item>
         <item quantity="other">%d alkalmazás a kezdőképernyőn</item>

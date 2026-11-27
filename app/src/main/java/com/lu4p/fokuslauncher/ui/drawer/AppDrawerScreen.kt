@@ -966,9 +966,9 @@ fun AppDrawerContent(
         }
     }
 
-    // Chip layout: auto-focus at top. Keyboard dismiss-on-scroll is handled in nestedScroll.
+    // Chip layout: auto-focus on entry. Keyboard dismiss-on-scroll is handled in nestedScroll.
     // Sidebar: hide empty search only on scroll-away (not when reopening while already scrolled).
-    LaunchedEffect(isAtTop, useSidebarCategoryDrawer, uiState.drawerScrollToTopAutoKeyboard) {
+    LaunchedEffect(isAtTop, useSidebarCategoryDrawer) {
         if (isAtTop) {
             userDraggedList = false
         }
@@ -984,9 +984,7 @@ fun AppDrawerContent(
             wasAtTop = isAtTop
             return@LaunchedEffect
         }
-        val topAutoLaunch =
-                isAtTop && (!hasScrolledDown || uiState.drawerScrollToTopAutoKeyboard)
-        if (topAutoLaunch) {
+        if (isAtTop && !hasScrolledDown) {
             showDrawerSearchKeyboard(focusRequester, keyboardController, view)
         } else if (!isAtTop) {
             hasScrolledDown = true
@@ -1007,8 +1005,6 @@ fun AppDrawerContent(
     var overscrollY by remember { mutableFloatStateOf(0f) }
     val latestUseSidebar = rememberUpdatedState(useSidebarCategoryDrawer)
     val latestShowSearch = rememberUpdatedState(showSearch)
-    val latestScrollToTopAutoKeyboard =
-            rememberUpdatedState(uiState.drawerScrollToTopAutoKeyboard)
     val nestedScrollConnection = remember {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
@@ -1024,12 +1020,6 @@ fun AppDrawerContent(
                     }
                 }
                 if (source == NestedScrollSource.UserInput && available.y > 0 && !listState.canScrollBackward) {
-                    // Immediate response for pull-down gesture at the boundary
-                    if (latestScrollToTopAutoKeyboard.value && !latestUseSidebar.value) {
-                        // LaunchedEffect(isAtTop) handles focus when scrolling to top; re-request
-                        // if already at top and pulling down at the list boundary.
-                        showDrawerSearchKeyboard(focusRequester, keyboardController, view)
-                    }
                     overscrollY += available.y
                     if (overscrollY > 300f) {
                         overscrollY = 0f

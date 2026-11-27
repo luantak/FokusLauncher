@@ -323,12 +323,10 @@
     <string name="media_pause">Pausa</string>
     <string name="settings_show_home_media_subtitle_grant_access">Jakinarazpenetarako baimena behar da - aktibatu sistemako ezarpenetan</string>
     <string name="settings_profile_names_default_label">Lehenetsia: %1$s</string>
-    <string name="settings_drawer_scroll_to_top_auto_keyboard">Goraino korritzean teklatua</string>
     <string name="settings_profile_names_help">Utzi eremua hutsik eta sakatu Gorde lehenetsitako izena berrezartzeko. Izenak tiradera-buruei, taldekatutako bilatzaileei eta profil-bereizgarriei aplikatzen zaizkie, gogokoen ondoan.</string>
     <string name="media_unlike">Ez gustukoa</string>
     <string name="settings_show_home_screen_time_subtitle">Pantaila erabilitako denbora azkenengo 24 orduetan</string>
     <string name="settings_profile_names_field_label">Erakutsi izena</string>
-    <string name="settings_drawer_scroll_to_top_auto_keyboard_subtitle">Aplikazioen zerrendan goraino korritzean automatikoki ireki teklatua eta bilaketa</string>
     <string name="settings_font_import_ttf">Letra-tipoa inportatu (.ttf)</string>
     <string name="settings_dot_search_add_search_target_help">Idatzi `.x galdera` bilaketa erakusten duen aplikazio batera kontsulta bat bidaltzeko.</string>
     <string name="settings_show_home_screen_time_subtitle_grant_access">Erabilerarako baimena behar da - aktibatu sistemako ezarpenetan</string>

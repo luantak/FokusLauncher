@@ -504,8 +504,6 @@
     <string name="visual_style_gold">Dourado</string>
     <string name="settings_paypal_title">Me pague uma pausa para me concentrar</string>
     <string name="settings_paypal_subtitle">Gorjeta via PayPal — doações para café são bem-vindas</string>
-    <string name="settings_drawer_scroll_to_top_auto_keyboard">Teclado ao rolar para o topo</string>
-    <string name="settings_drawer_scroll_to_top_auto_keyboard_subtitle">Ao rolar até o topo da lista de apps, abrir automaticamente o teclado e a pesquisa</string>
     <string name="action_add_shortcut_to_drawer">Adicionar %1$s ao menu de apps</string>
     <string name="settings_section_drawer_shortcuts">Atalhos do menu de apps</string>
     <string name="settings_no_drawer_shortcuts">Nenhum atalho adicionado. Use o botão + ao lado de uma ação do app no menu de manter pressionado do menu de apps.</string>
